@@ -319,7 +319,7 @@ export default function RideShareApp() {
       </CardContent>
       <CardFooter>
         <Button variant="link" onClick={() => setCurrentPage("register")}>
-          Don't have an account? Register
+          Dont have an account? Register
         </Button>
       </CardFooter>
     </Card>
