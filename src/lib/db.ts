@@ -47,9 +47,42 @@ export async function initializeDb() {
         user_id INTEGER,
         message TEXT,
         type TEXT,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        ride_id INTEGER,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (ride_id) REFERENCES rides(id) ON DELETE CASCADE
       );
     `);
+
+    // Add ride_id column to notifications table if it doesn't exist
+    await db.exec(`
+      PRAGMA foreign_keys=off;
+      
+      BEGIN TRANSACTION;
+
+      ALTER TABLE notifications RENAME TO notifications_old;
+
+      CREATE TABLE notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        message TEXT,
+        type TEXT,
+        ride_id INTEGER,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (ride_id) REFERENCES rides(id) ON DELETE CASCADE
+      );
+
+      INSERT INTO notifications (id, user_id, message, type)
+      SELECT id, user_id, message, type FROM notifications_old;
+
+      DROP TABLE notifications_old;
+
+      COMMIT;
+
+      PRAGMA foreign_keys=on;
+    `).catch((error) => {
+      // If there's an error, it's likely because the column already exists
+      console.log('ride_id column might already exist in notifications table:', error);
+    });
 
     console.log('Database initialized successfully');
     return db;
