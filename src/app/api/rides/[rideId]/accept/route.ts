@@ -1,13 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { initializeDb } from '@/lib/db'
 
 export async function POST(
-  request: Request,
-  context: { params: { rideId: string } }
+  request: NextRequest,
+  { params: { rideId } }: { params: { rideId: string } }
 ) {
   try {
-    // Properly await and destructure the rideId from params
-    const { rideId } = context.params
     const { accepterId } = await request.json()
 
     if (!accepterId) {
@@ -19,7 +17,6 @@ export async function POST(
 
     const db = await initializeDb()
 
-    // Check if the ride exists and is still pending
     const existingRide = await db.get('SELECT * FROM rides WHERE id = ? AND status = ?', [rideId, 'pending'])
     if (!existingRide) {
       return NextResponse.json(
@@ -28,7 +25,6 @@ export async function POST(
       )
     }
 
-    // Check if the accepter is a contact of the requester
     const isContact = await db.get(`
       SELECT * FROM contacts 
       WHERE ((user_id = ? AND contact_id = ?) OR (user_id = ? AND contact_id = ?))
@@ -42,7 +38,6 @@ export async function POST(
       )
     }
 
-    // Update the ride status to accepted
     const result = await db.run(`
       UPDATE rides
       SET accepter_id = ?, status = 'accepted'
@@ -56,7 +51,6 @@ export async function POST(
       )
     }
 
-    // Fetch the updated ride
     const updatedRide = await db.get(`
       SELECT 
         r.id,
@@ -74,7 +68,6 @@ export async function POST(
       WHERE r.id = ?
     `, [rideId])
 
-    // Create a notification for the ride requester
     await db.run(`
       INSERT INTO notifications (user_id, message, type)
       VALUES (?, ?, 'rideAccepted')
