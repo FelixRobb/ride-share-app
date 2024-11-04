@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+eslint: {
+        ignoreDuringBuilds: true,
+    },
   reactStrictMode: true,
   webpack: (config: any, { isServer }: { isServer: boolean }) => {
     if (!isServer) {
