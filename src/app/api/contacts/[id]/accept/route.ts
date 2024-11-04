@@ -1,41 +1,34 @@
-import { NextResponse } from 'next/server'
-import { getDb, initializeDb } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getDb } from '@/lib/db';
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id
-  
+  const contactId = params.id;
+  const { userId } = await request.json();
+  const db = await getDb();
+
   try {
-    await initializeDb()
-    const db = await getDb()
-    const contactId = parseInt(id, 10)
-    const { userId } = await request.json()
-
-    if (isNaN(contactId)) {
-      return NextResponse.json({ error: 'Invalid contact ID' }, { status: 400 })
-    }
-
-    await db.run(
-      'UPDATE contacts SET status = ? WHERE id = ? AND contact_id = ?',
-      ['accepted', contactId, userId]
-    )
-
-    const contact = await db.get(`
-      SELECT c.*, u.name, u.phone 
-      FROM contacts c 
-      JOIN users u ON c.user_id = u.id 
-      WHERE c.id = ?
-    `, contactId)
-
+    const contact = await db.get('SELECT * FROM contacts WHERE id = ? AND contact_id = ?', [contactId, userId]);
     if (!contact) {
-      return NextResponse.json({ error: 'Contact not found or not authorized' }, { status: 404 })
+      return NextResponse.json({ error: 'Contact request not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ contact })
+    await db.run('UPDATE contacts SET status = ? WHERE id = ?', ['accepted', contactId]);
+    const updatedContact = await db.get(
+      `SELECT c.*, 
+              u1.name as user_name, u1.phone as user_phone,
+              u2.name as contact_name, u2.phone as contact_phone
+       FROM contacts c
+       JOIN users u1 ON c.user_id = u1.id
+       JOIN users u2 ON c.contact_id = u2.id
+       WHERE c.id = ?`,
+      [contactId]
+    );
+    return NextResponse.json({ contact: updatedContact });
   } catch (error) {
-    console.error('Accept contact error:', error)
-    return NextResponse.json({ error: 'Failed to accept contact' }, { status: 500 })
+    console.error('Accept contact error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

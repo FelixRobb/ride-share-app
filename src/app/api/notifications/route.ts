@@ -1,20 +1,20 @@
-import { NextResponse } from 'next/server'
-import { getDb, initializeDb } from '@/lib/db'
+import { NextResponse } from "next/server";
+import { getDb } from "@/lib/db";
 
-export async function GET(req: Request) {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const userId = searchParams.get("userId");
+
+  if (!userId) {
+    return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+  }
+
+  const db = await getDb();
   try {
-    await initializeDb()
-    const db = await getDb()
-    const { searchParams } = new URL(req.url)
-    const userId = searchParams.get('userId')
-    
-    if (userId) {
-      const notifications = await db.all('SELECT * FROM notifications WHERE user_id = ?', userId)
-      return NextResponse.json({ notifications })
-    }
-    return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+    const notifications = await db.all("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC", [userId]);
+    return NextResponse.json({ notifications });
   } catch (error) {
-    console.error('Get notifications error:', error)
-    return NextResponse.json({ error: 'Failed to get notifications' }, { status: 500 })
+    console.error("Fetch notifications error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
