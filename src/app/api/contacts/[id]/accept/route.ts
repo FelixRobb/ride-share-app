@@ -3,9 +3,9 @@ import { getDb } from '@/lib/db';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  const contactId = params.id;
+  const contactId = context.params.id;
   const { userId } = await request.json();
   const db = await getDb();
 
