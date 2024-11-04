@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: Request) {
   const { userId } = await request.json();
-  const rideId = params.id;
+
+  // Extract the `id` from the request URL
+  const url = new URL(request.url);
+  const rideId = url.pathname.split('/').at(-2);  // Assuming [id] is part of the URL structure
+
   const db = await getDb();
 
   try {

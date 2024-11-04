@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  const userId = params.id;
+export async function DELETE(request: Request) {
+  // Extract `id` from the request URL path
+  const url = new URL(request.url);
+  const userId = url.pathname.split('/').at(-2); // Adjust path segment as needed
+
+  if (!userId) {
+    return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+  }
+
   const db = await getDb();
 
   try {

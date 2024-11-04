@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
-export async function POST(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
-  const contactId = context.params.id;
+export async function POST(request: NextRequest) {
+  // Extract the `id` param directly from the request URL
+  const url = new URL(request.url);
+  const contactId = url.pathname.split('/').at(-2);  // assuming [id] is in the URL structure
+
   const { userId } = await request.json();
   const db = await getDb();
 

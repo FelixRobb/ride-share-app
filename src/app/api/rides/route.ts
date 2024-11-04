@@ -33,9 +33,17 @@ export async function POST(request: Request) {
   const db = await getDb();
 
   try {
-    const result = await db.run("INSERT INTO rides (from_location, to_location, time, requester_id, status) VALUES (?, ?, ?, ?, ?)", [from_location, to_location, time, requester_id, "pending"]);
-    const newRide = await db.get("SELECT * FROM rides WHERE id = ?", [result.lastID]);
-    return NextResponse.json({ ride: newRide });
+    const result = await db.run(
+      "INSERT INTO rides (from_location, to_location, time, requester_id, status) VALUES (?, ?, ?, ?, ?)", 
+      [from_location, to_location, time, requester_id, "pending"]
+    );
+
+    if (result && result.lastID) {
+      const newRide = await db.get("SELECT * FROM rides WHERE id = ?", [result.lastID]);
+      return NextResponse.json({ ride: newRide });
+    } else {
+      throw new Error("Ride creation failed, no ID returned.");
+    }
   } catch (error) {
     console.error("Create ride error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
