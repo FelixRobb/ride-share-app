@@ -313,14 +313,14 @@ export default function RideShareApp() {
   const addContact = async (phone: string) => {
     if (!currentUser) return;
     try {
-      const response = await fetch('/api/contacts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/contacts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: currentUser.id, contactPhone: phone }),
       });
       const data = await response.json();
       if (response.ok && data.contact) {
-        setContacts(prevContacts => [...prevContacts, data.contact]);
+        setContacts((prevContacts) => [...prevContacts, data.contact]);
         toast({
           title: "Success",
           description: "Contact request sent successfully!",
@@ -333,7 +333,7 @@ export default function RideShareApp() {
         });
       }
     } catch (error) {
-      console.error('Add contact error:', error);
+      console.error("Add contact error:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
@@ -440,8 +440,8 @@ export default function RideShareApp() {
   // Components
   const WelcomePage = () => (
     <div className="flex flex-col items-center justify-center min-h-screen text-white px-4">
-      <h1 className="text-5xl font-bold mb-6 text-center text-slate-950">Welcome to RideShare</h1>
-      <p className="text-xl mb-8 text-center max-w-md text-slate-900">Connect with friends, share rides, and travel together safely.</p>
+      <h1 className="text-4xl md:text-5xl font-bold mb-6 text-center text-slate-950">Welcome to RideShare</h1>
+      <p className="text-lg md:text-xl mb-8 text-center max-w-md text-slate-900">Connect with friends, share rides, and travel together safely.</p>
       <div className="space-y-4 w-full max-w-xs text-slate-950">
         <Button onClick={() => setCurrentPage("login")} variant="secondary" size="lg" className="w-full">
           Login
@@ -454,7 +454,7 @@ export default function RideShareApp() {
   );
 
   const LoginPage = () => (
-    <Card className="w-[350px]">
+    <Card className="w-full max-w-[350px] mx-auto">
       <CardHeader>
         <CardTitle>Login</CardTitle>
         <CardDescription>Enter your phone number and password to login.</CardDescription>
@@ -492,7 +492,7 @@ export default function RideShareApp() {
   );
 
   const RegisterPage = () => (
-    <Card className="w-[350px]">
+    <Card className="w-full max-w-[350px] mx-auto">
       <CardHeader>
         <CardTitle>Register</CardTitle>
         <CardDescription>Create a new account to start sharing rides.</CardDescription>
@@ -541,18 +541,24 @@ export default function RideShareApp() {
     const availableRides = safeRides.filter((ride) => ride.status === "pending" && ride.requester_id !== currentUser?.id && safeContacts.some((contact) => (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && contact.status === "accepted"));
 
     return (
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-4xl mx-auto">
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle className="text-2xl">Dashboard</CardTitle>
+            <CardTitle className="text-xl md:text-2xl">Dashboard</CardTitle>
             <CardDescription>Manage your rides and connections</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="available" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="available">Available Rides</TabsTrigger>
-                <TabsTrigger value="my-rides">My Rides</TabsTrigger>
-                <TabsTrigger value="accepted-rides">Accepted Rides</TabsTrigger>
+                <TabsTrigger value="available" className="text-xs md:text-sm">
+                  Available Rides
+                </TabsTrigger>
+                <TabsTrigger value="my-rides" className="text-xs md:text-sm">
+                  My Rides
+                </TabsTrigger>
+                <TabsTrigger value="accepted-rides" className="text-xs md:text-sm">
+                  Accepted Rides
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="available">
                 <ScrollArea className="h-[400px] w-full rounded-md border p-4">
@@ -562,7 +568,7 @@ export default function RideShareApp() {
                         <CardTitle className="text-lg">
                           {ride.from_location} to {ride.to_location}
                         </CardTitle>
-                        <CardDescription>Requested by: {ride.requester_id}</CardDescription>
+                        <CardDescription>Requested by: {safeContacts.find((contact) => contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id)?.user_name || "Unknown"}</CardDescription>
                       </CardHeader>
                       <CardContent className="pb-2">
                         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -625,7 +631,7 @@ export default function RideShareApp() {
                           <CardTitle className="text-lg">
                             {ride.from_location} to {ride.to_location}
                           </CardTitle>
-                          <CardDescription>Requested by: User {ride.requester_id}</CardDescription>
+                          <CardDescription>Requested by: {safeContacts.find((contact) => contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id)?.user_name || "Unknown"}</CardDescription>
                         </CardHeader>
                         <CardContent className="pb-2">
                           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -650,7 +656,7 @@ export default function RideShareApp() {
     );
   };
   const CreateRidePage = () => (
-    <Card className="w-[350px]">
+    <Card className="w-full max-w-[350px] mx-auto">
       <CardHeader>
         <CardTitle>Create New Ride</CardTitle>
         <CardDescription>Request a ride by filling out the details below.</CardDescription>
@@ -701,7 +707,7 @@ export default function RideShareApp() {
     });
 
     return (
-      <Card className="w-full max-w-2xl shadow-lg">
+      <Card className="w-full max-w-2xl mx-auto shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Profile</CardTitle>
           <CardDescription>Your account information</CardDescription>
@@ -832,7 +838,7 @@ export default function RideShareApp() {
           <div className="container mx-auto px-4 py-3 flex justify-between items-center">
             {/* Logo and brand */}
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-primary">RideShare</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-primary">RideShare</h1>
             </div>
 
             {/* Desktop Navigation */}
@@ -927,7 +933,7 @@ export default function RideShareApp() {
         <main className="flex-grow container mx-auto px-4 py-8">{children}</main>
 
         <footer className="bg-white border-t border-gray-200 py-4">
-          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">© {new Date().getFullYear()} RideShare. All rights reserved.</div>
+          <div className="container mx-auto px-4 text-center text-xs md:text-sm text-muted-foreground">© {new Date().getFullYear()} RideShare. All rights reserved.</div>
         </footer>
       </div>
     );
