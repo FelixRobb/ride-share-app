@@ -34,8 +34,11 @@ export async function POST(request: Request) {
   const db = await getDb();
 
   try {
+    await db.run('BEGIN TRANSACTION');
+
     const contactUser = await db.get('SELECT id, name, phone FROM users WHERE phone = ?', [contactPhone]);
     if (!contactUser) {
+      await db.run('ROLLBACK');
       return NextResponse.json({ error: 'Contact user not found' }, { status: 404 });
     }
 
@@ -45,12 +48,19 @@ export async function POST(request: Request) {
     );
 
     if (existingContact) {
+      await db.run('ROLLBACK');
       return NextResponse.json({ error: 'Contact already exists' }, { status: 409 });
     }
 
     const result = await db.run(
       'INSERT INTO contacts (user_id, contact_id, status) VALUES (?, ?, ?)',
       [userId, contactUser.id, 'pending']
+    );
+
+    // Create notification for the contact user
+    await db.run(
+      'INSERT INTO notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)',
+      [contactUser.id, 'You have a new contact request', 'contactRequest', result.lastID]
     );
 
     const newContact = {
@@ -63,8 +73,10 @@ export async function POST(request: Request) {
       contact_phone: contactUser.phone
     };
 
+    await db.run('COMMIT');
     return NextResponse.json({ contact: newContact });
   } catch (error) {
+    await db.run('ROLLBACK');
     console.error('Add contact error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

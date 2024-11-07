@@ -9,12 +9,12 @@ export async function POST(request: Request) {
   try {
     const user = await db.get('SELECT * FROM users WHERE phone = ?', [phone]);
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Invalid phone number or password' }, { status: 401 });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid phone number or password' }, { status: 401 });
     }
 
     // Don't send the password back to the client

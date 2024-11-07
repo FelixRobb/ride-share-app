@@ -33,6 +33,8 @@ export async function POST(request: Request) {
   const db = await getDb();
 
   try {
+    await db.run('BEGIN TRANSACTION');
+
     const result = await db.run(
       "INSERT INTO rides (from_location, to_location, time, requester_id, status) VALUES (?, ?, ?, ?, ?)", 
       [from_location, to_location, time, requester_id, "pending"]
@@ -40,11 +42,23 @@ export async function POST(request: Request) {
 
     if (result && result.lastID) {
       const newRide = await db.get("SELECT * FROM rides WHERE id = ?", [result.lastID]);
+
+      // Notify contacts about the new ride
+      const contacts = await db.all('SELECT contact_id FROM contacts WHERE user_id = ? AND status = "accepted"', [requester_id]);
+      for (const contact of contacts) {
+        await db.run(
+          'INSERT INTO notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)',
+          [contact.contact_id, 'A new ride is available from your contact', 'newRide', result.lastID]
+        );
+      }
+
+      await db.run('COMMIT');
       return NextResponse.json({ ride: newRide });
     } else {
       throw new Error("Ride creation failed, no ID returned.");
     }
   } catch (error) {
+    await db.run('ROLLBACK');
     console.error("Create ride error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

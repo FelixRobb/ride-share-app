@@ -1,4 +1,3 @@
-
 # Ride Sharing App for Parents
 
 This is a simplified ride-sharing app designed specifically for parents to coordinate and share rides for their children. The app connects parents based on phone numbers, allowing for easy ride requests, notifications, and a user-friendly interface.
@@ -22,21 +21,25 @@ This is a simplified ride-sharing app designed specifically for parents to coord
 ## Installation
 
 1. **Clone the repository**:
+
    ```bash
    git clone <repository-url>
    cd ride-sharing-app
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 3. **Set up SQLite database**:
+
    - Make sure SQLite is properly configured for the app.
    - Run any necessary database migrations or initial setup scripts provided.
 
 4. **Run the development server**:
+
    ```bash
    npm run dev
    ```

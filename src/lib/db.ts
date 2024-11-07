@@ -47,6 +47,7 @@ export async function initializeDb() {
       user_id INTEGER NOT NULL,
       message TEXT NOT NULL,
       type TEXT NOT NULL,
+      related_id INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id)
     );

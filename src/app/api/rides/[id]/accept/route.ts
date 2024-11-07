@@ -4,9 +4,8 @@ import { getDb } from '@/lib/db';
 export async function POST(request: Request) {
   const { userId } = await request.json();
 
-  // Extract the `id` from the request URL
   const url = new URL(request.url);
-  const rideId = url.pathname.split('/').at(-2);  // Assuming [id] is part of the URL structure
+  const rideId = url.pathname.split('/').at(-2);
 
   const db = await getDb();
 
@@ -27,6 +26,12 @@ export async function POST(request: Request) {
     await db.run(
       'UPDATE rides SET accepter_id = ?, status = ? WHERE id = ?',
       [userId, 'accepted', rideId]
+    );
+
+    // Notify the ride requester
+    await db.run(
+      'INSERT INTO notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)',
+      [ride.requester_id, 'Your ride request has been accepted', 'rideAccepted', rideId]
     );
 
     const updatedRide = await db.get('SELECT * FROM rides WHERE id = ?', [rideId]);

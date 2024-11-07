@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, LogOut, UserPlus, Home, Car, Users, Menu, Clock, User } from "lucide-react";
+import { Bell, LogOut, UserPlus, Home, Car, Users, Menu, Clock, User, Moon, Sun } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
 
@@ -46,6 +46,8 @@ type Notification = {
   user_id: number;
   message: string;
   type: "rideRequest" | "rideAccepted" | "contactRequest";
+  is_read: boolean;
+  created_at: string;
 };
 
 type RideData = {
@@ -61,16 +63,30 @@ export default function RideShareApp() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     const user = localStorage.getItem("currentUser");
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     if (user) {
       const parsedUser = JSON.parse(user) as User;
       setCurrentUser(parsedUser);
       setCurrentPage("dashboard");
       void fetchUserData(parsedUser.id);
     }
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.classList.toggle("dark", savedTheme === "dark");
+    }
   }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.classList.toggle("dark", newTheme === "dark");
+  };
 
   const fetchUserData = async (userId: number) => {
     try {
@@ -79,7 +95,6 @@ export default function RideShareApp() {
       const [ridesData, contactsData, notificationsData] = await Promise.all([ridesResponse.json(), contactsResponse.json(), notificationsResponse.json()]);
 
       setRides(ridesData.rides);
-      console.log("Contacts:", contactsData.contacts);
       setContacts(contactsData.contacts);
       setNotifications(notificationsData.notifications);
     } catch (error) {
@@ -110,19 +125,11 @@ export default function RideShareApp() {
           description: "Logged in successfully!",
         });
       } else {
-        toast({
-          title: "Login Failed",
-          description: data.error || "Invalid credentials. Please try again.",
-          variant: "destructive",
-        });
+        throw new Error(data.error || "Invalid credentials. Please try again.");
       }
     } catch (error) {
       console.error("Login error:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      throw error;
     }
   };
 
@@ -144,19 +151,11 @@ export default function RideShareApp() {
           description: "Registered successfully!",
         });
       } else {
-        toast({
-          title: "Registration Failed",
-          description: data.error || "Failed to register. Please try again.",
-          variant: "destructive",
-        });
+        throw new Error(data.error || "Failed to register. Please try again.");
       }
     } catch (error) {
       console.error("Registration error:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      throw error;
     }
   };
 
@@ -437,6 +436,35 @@ export default function RideShareApp() {
     }
   };
 
+  const markNotificationsAsRead = async (notificationIds: number[]) => {
+    if (!currentUser) return;
+    try {
+      const response = await fetch("/api/notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: currentUser.id, notificationIds }),
+      });
+
+      if (response.ok) {
+        setNotifications((prevNotifications) => prevNotifications.map((notification) => (notificationIds.includes(notification.id) ? { ...notification, is_read: true } : notification)));
+      } else {
+        console.error("Failed to mark notifications as read");
+      }
+    } catch (error) {
+      console.error("Error marking notifications as read:", error);
+    }
+  };
+
+  const handleOpenNotificationDialog = () => {
+    setIsNotificationDialogOpen(true);
+    const unreadNotifications = notifications.filter((n) => !n.is_read);
+    if (unreadNotifications.length > 0) {
+      markNotificationsAsRead(unreadNotifications.map((n) => n.id));
+    }
+  };
+
   // Components
   const WelcomePage = () => (
     <div className="flex flex-col items-center justify-center min-h-screen text-white px-4">
@@ -453,86 +481,106 @@ export default function RideShareApp() {
     </div>
   );
 
-  const LoginPage = () => (
-    <Card className="w-full max-w-[350px] mx-auto">
-      <CardHeader>
-        <CardTitle>Login</CardTitle>
-        <CardDescription>Enter your phone number and password to login.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const phone = (e.currentTarget.elements.namedItem("phone") as HTMLInputElement).value;
-            const password = (e.currentTarget.elements.namedItem("password") as HTMLInputElement).value;
-            login(phone, password);
-          }}
-        >
-          <div className="grid w-full items-center gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" placeholder="Enter your phone number" />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="Enter your password" />
-            </div>
-          </div>
-          <Button className="w-full mt-4" type="submit">
-            Login
-          </Button>
-        </form>
-      </CardContent>
-      <CardFooter>
-        <Button variant="link" onClick={() => setCurrentPage("register")}>
-          Don&apos;t have an account? Register
-        </Button>
-      </CardFooter>
-    </Card>
-  );
+  const LoginPage = () => {
+    const [error, setError] = useState<string | null>(null);
 
-  const RegisterPage = () => (
-    <Card className="w-full max-w-[350px] mx-auto">
-      <CardHeader>
-        <CardTitle>Register</CardTitle>
-        <CardDescription>Create a new account to start sharing rides.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const name = (e.currentTarget.elements.namedItem("name") as HTMLInputElement).value;
-            const phone = (e.currentTarget.elements.namedItem("phone") as HTMLInputElement).value;
-            const password = (e.currentTarget.elements.namedItem("password") as HTMLInputElement).value;
-            register(name, phone, password);
-          }}
-        >
-          <div className="grid w-full items-center gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" placeholder="Enter your name" />
+    return (
+      <Card className="w-full max-w-[350px] mx-auto">
+        <CardHeader>
+          <CardTitle>Login</CardTitle>
+          <CardDescription>Enter your phone number and password to login.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const phone = (e.currentTarget.elements.namedItem("phone") as HTMLInputElement).value;
+              const password = (e.currentTarget.elements.namedItem("password") as HTMLInputElement).value;
+              try {
+                await login(phone, password);
+                setError(null);
+              } catch (error) {
+                setError(error instanceof Error ? error.message : "An unexpected error occurred");
+              }
+            }}
+          >
+            <div className="grid w-full items-center gap-4">
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" placeholder="Enter your phone number" required />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" placeholder="Enter your password" required />
+              </div>
             </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" placeholder="Enter your phone number" />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="Create a password" />
-            </div>
-          </div>
-          <Button className="w-full mt-4" type="submit">
-            Register
+            {error && <p className="text-destructive mt-2">{error}</p>}
+            <Button className="w-full mt-4" type="submit">
+              Login
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter>
+          <Button variant="link" onClick={() => setCurrentPage("register")}>
+            Don&apos;t have an account? Register
           </Button>
-        </form>
-      </CardContent>
-      <CardFooter>
-        <Button variant="link" onClick={() => setCurrentPage("login")}>
-          Already have an account? Login
-        </Button>
-      </CardFooter>
-    </Card>
-  );
+        </CardFooter>
+      </Card>
+    );
+  };
+
+  const RegisterPage = () => {
+    const [error, setError] = useState<string | null>(null);
+
+    return (
+      <Card className="w-full max-w-[350px] mx-auto">
+        <CardHeader>
+          <CardTitle>Register</CardTitle>
+          <CardDescription>Create a new account to start sharing rides.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const name = (e.currentTarget.elements.namedItem("name") as HTMLInputElement).value;
+              const phone = (e.currentTarget.elements.namedItem("phone") as HTMLInputElement).value;
+              const password = (e.currentTarget.elements.namedItem("password") as HTMLInputElement).value;
+              try {
+                await register(name, phone, password);
+                setError(null);
+              } catch (error) {
+                setError(error instanceof Error ? error.message : "An unexpected error occurred");
+              }
+            }}
+          >
+            <div className="grid w-full items-center gap-4">
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" placeholder="Enter your name" required />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" placeholder="Enter your phone number" required />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" placeholder="Create a password" required />
+              </div>
+            </div>
+            {error && <p className="text-destructive mt-2">{error}</p>}
+            <Button className="w-full mt-4" type="submit">
+              Register
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter>
+          <Button variant="link" onClick={() => setCurrentPage("login")}>
+            Already have an account? Login
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  };
 
   const DashboardPage = () => {
     const safeRides = rides || [];
@@ -832,55 +880,60 @@ export default function RideShareApp() {
   const Layout = ({ children }: { children: React.ReactNode }) => {
     if (!currentUser) return children;
 
+    const unreadNotificationsCount = notifications.filter((n) => !n.is_read).length;
+
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
-        <header className="bg-white shadow-md border-b border-gray-200">
+      <div className={`flex flex-col min-h-screen ${theme === "dark" ? "bg-black text-white" : "bg-zinc-50"}`}>
+        <header className={`${theme === "dark" ? "bg-zinc-900" : "bg-white"} shadow-md border-b ${theme === "dark" ? "border-x-zinc-700" : "border-zinc-200"}`}>
           <div className="container mx-auto px-4 py-3 flex justify-between items-center">
             {/* Logo and brand */}
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl md:text-2xl font-bold text-primary">RideShare</h1>
+              <h1 className="text-2xl font-bold text-primary">RideShare</h1>
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-2 bg-gray-100 rounded-full p-1">
+            <nav className={`hidden md:flex space-x-2 ${theme === "dark" ? "bg-zinc-700" : "bg-zinc-100"} rounded-full p-1`}>
               {[
                 { icon: Home, label: "Dashboard", page: "dashboard" },
                 { icon: Car, label: "Create Ride", page: "create-ride" },
                 { icon: Users, label: "Profile", page: "profile" },
               ].map((item) => (
-                <Button key={item.page} variant={currentPage === item.page ? "default" : "ghost"} onClick={() => setCurrentPage(item.page)} className="rounded-full px-4 py-2 hover:bg-primary/10 transition-colors duration-200">
+                <Button key={item.page} variant={currentPage === item.page ? "default" : "ghost"} onClick={() => setCurrentPage(item.page)} className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"} transition-colors duration-200`}>
                   <item.icon className="mr-2 h-4 w-4" /> {item.label}
                 </Button>
               ))}
 
               {/* Notifications */}
-              <Dialog>
+              <Dialog open={isNotificationDialogOpen} onOpenChange={setIsNotificationDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" className="rounded-full px-4 py-2 hover:bg-primary/10 relative">
+                  <Button variant="ghost" className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"} relative`} onClick={handleOpenNotificationDialog}>
                     <Bell className="h-4 w-4" />
-                    {notifications && notifications.length > 0 && <span className="absolute top-0 right-0 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{notifications.length}</span>}
+                    {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className={theme === "dark" ? "bg-zinc-800 text-white" : ""}>
                   <DialogHeader>
                     <DialogTitle>Notifications</DialogTitle>
                   </DialogHeader>
                   <ScrollArea className="h-[300px]">
-                    {notifications && notifications.length > 0 ? (
-                      notifications.map((notification) => (
-                        <div key={notification.id} className="py-2 border-b last:border-b-0">
-                          <p>{notification.message}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-center text-muted-foreground py-4">No notifications</p>
-                    )}
+                    {notifications.map((notification) => (
+                      <div key={notification.id} className={`py-2 border-b ${theme === "dark" ? "border-zinc-700" : ""} rounded-md p-3 mb-2`}>
+                        <p>{notification.message}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(notification.created_at).toLocaleString()}</p>
+                      </div>
+                    ))}
+                    {notifications.length === 0 && <p className="text-center text-muted-foreground py-4">No notifications</p>}
                   </ScrollArea>
                 </DialogContent>
               </Dialog>
 
+              {/* Theme Toggle */}
+              <Button variant="ghost" size="icon" onClick={toggleTheme} className={`rounded-full ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"}`}>
+                {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </Button>
+
               {/* Logout Button */}
-              <Button variant="ghost" onClick={logout} className="rounded-full px-4 py-2 hover:bg-destructive/10 hover:text-destructive">
+              <Button variant="ghost" onClick={logout} className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-red-900 hover:text-red-100" : "hover:bg-destructive/10 hover:text-destructive"}`}>
                 <LogOut className="mr-2 h-4 w-4" /> Logout
               </Button>
             </nav>
@@ -892,11 +945,12 @@ export default function RideShareApp() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className={`w-56 ${theme === "dark" ? "bg-zinc-800 text-white" : ""}`}>
                 <DropdownMenuLabel className="flex items-center">
                   <User className="mr-2 h-4 w-4" /> {currentUser.name}
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+
+                <DropdownMenuSeparator className={` ${theme === "dark" ? "bg-zinc-900" : "bg-zinc-300"}  w-11/12 mx-auto `} />
 
                 {[
                   { icon: Home, label: "Dashboard", page: "dashboard" },
@@ -908,21 +962,20 @@ export default function RideShareApp() {
                   </DropdownMenuItem>
                 ))}
 
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className={` ${theme === "dark" ? "bg-zinc-900" : "bg-zinc-300"}  w-11/12 mx-auto `} />
 
-                <DropdownMenuItem
-                  onClick={() => {
-                    const notificationsDialog = document.querySelector("[data-radix-dialog-trigger]") as HTMLElement;
-                    notificationsDialog?.click();
-                  }}
-                  className="cursor-pointer"
-                >
+                <DropdownMenuItem onClick={handleOpenNotificationDialog} className="cursor-pointer">
                   <Bell className="mr-2 h-4 w-4" />
                   Notifications
-                  {notifications && notifications.length > 0 && <span className="ml-2 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{notifications.length}</span>}
+                  {unreadNotificationsCount > 0 && <span className="ml-2 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 cursor-pointer">
+                <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer">
+                  {theme === "light" ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
+                  {theme === "light" ? "Dark Mode" : "Light Mode"}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onClick={logout} className={`${theme === "dark" ? "text-red-400 focus:bg-red-900" : "text-destructive focus:bg-destructive/10"} cursor-pointer`}>
                   <LogOut className="mr-2 h-4 w-4" /> Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -930,18 +983,19 @@ export default function RideShareApp() {
           </div>
         </header>
 
-        <main className="flex-grow container mx-auto px-4 py-8">{children}</main>
+        <main className={`flex-grow container mx-auto px-4 py-8 ${theme === "dark" ? "text-white" : ""}`}>{children}</main>
 
-        <footer className="bg-white border-t border-gray-200 py-4">
-          <div className="container mx-auto px-4 text-center text-xs md:text-sm text-muted-foreground">© {new Date().getFullYear()} RideShare. All rights reserved.</div>
+        <footer className={`${theme === "dark" ? "bg-zinc-900 border-zinc-600" : "bg-white border-zinc-200"} border-t py-4`}>
+          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">© {new Date().getFullYear()} RideShare. All rights reserved.</div>
         </footer>
       </div>
     );
   };
+
   // Render the appropriate page based on the current state
   return (
     <Layout>
-      <div className="flex items-center justify-center min-h-[calc(100vh-12rem)]">
+      <div className={`flex items-center justify-center min-h-[calc(100vh-12rem)] ${theme === "dark" ? "text-white" : ""}`}>
         {currentPage === "welcome" && <WelcomePage />}
         {currentPage === "login" && <LoginPage />}
         {currentPage === "register" && <RegisterPage />}
