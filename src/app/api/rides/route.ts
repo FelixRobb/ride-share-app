@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const db = await getDb();
   try {
     const rides = await db.all(
-      `SELECT r.*, u.name as requester_name
+      `SELECT r.*, u.name as requester_name, u.phone as requester_phone
        FROM rides r
        JOIN users u ON r.requester_id = u.id
        WHERE r.status = 'pending'
@@ -29,15 +29,15 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { from_location, to_location, time, requester_id } = await request.json();
+  const { from_location, to_location, time, requester_id, rider_name, rider_phone, note } = await request.json();
   const db = await getDb();
 
   try {
     await db.run('BEGIN TRANSACTION');
 
     const result = await db.run(
-      "INSERT INTO rides (from_location, to_location, time, requester_id, status) VALUES (?, ?, ?, ?, ?)", 
-      [from_location, to_location, time, requester_id, "pending"]
+      "INSERT INTO rides (from_location, to_location, time, requester_id, status, rider_name, rider_phone, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [from_location, to_location, time, requester_id, "pending", rider_name, rider_phone, note]
     );
 
     if (result && result.lastID) {

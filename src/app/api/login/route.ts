@@ -4,17 +4,17 @@ import bcrypt from 'bcrypt';
 
 export async function POST(request: Request) {
   const db = await getDb();
-  const { phone, password } = await request.json();
+  const { phoneOrEmail, password } = await request.json();
 
   try {
-    const user = await db.get('SELECT * FROM users WHERE phone = ?', [phone]);
+    const user = await db.get('SELECT * FROM users WHERE phone = ? OR email = ?', [phoneOrEmail, phoneOrEmail]);
     if (!user) {
-      return NextResponse.json({ error: 'Invalid phone number or password' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return NextResponse.json({ error: 'Invalid phone number or password' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     // Don't send the password back to the client
