@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, LogOut, UserPlus, Home, Car, Users, Menu, Clock, User, Moon, Sun } from "lucide-react";
+import { Bell, LogOut, UserPlus, Home, Car, Users, Menu, Clock, User, Moon, Sun, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Types
 type User = {
@@ -65,6 +66,8 @@ export default function RideShareApp() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const user = localStorage.getItem("currentUser");
@@ -79,6 +82,8 @@ export default function RideShareApp() {
       setTheme(savedTheme);
       document.documentElement.classList.toggle("dark", savedTheme === "dark");
     }
+    // Simulate loading delay
+    setTimeout(() => setIsLoading(false), 1000);
   }, []);
 
   const toggleTheme = () => {
@@ -202,6 +207,10 @@ export default function RideShareApp() {
         variant: "destructive",
       });
     }
+  };
+
+  const filteredRides = (rides: Ride[]) => {
+    return rides.filter((ride) => ride.from_location.toLowerCase().includes(searchTerm.toLowerCase()) || ride.to_location.toLowerCase().includes(searchTerm.toLowerCase()));
   };
 
   const acceptRide = async (rideId: number) => {
@@ -586,7 +595,7 @@ export default function RideShareApp() {
     const safeRides = rides || [];
     const safeContacts = contacts || [];
 
-    const availableRides = safeRides.filter((ride) => ride.status === "pending" && ride.requester_id !== currentUser?.id && safeContacts.some((contact) => (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && contact.status === "accepted"));
+    const availableRides = filteredRides(safeRides.filter((ride) => ride.status === "pending" && ride.requester_id !== currentUser?.id && safeContacts.some((contact) => (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && contact.status === "accepted")));
 
     return (
       <div className="w-full max-w-4xl mx-auto">
@@ -594,6 +603,10 @@ export default function RideShareApp() {
           <CardHeader>
             <CardTitle className="text-xl md:text-2xl">Dashboard</CardTitle>
             <CardDescription>Manage your rides and connections</CardDescription>
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Input type="text" placeholder="Search rides..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 w-full" />
+            </div>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="available" className="w-full">
@@ -610,28 +623,45 @@ export default function RideShareApp() {
               </TabsList>
               <TabsContent value="available">
                 <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                  {availableRides.map((ride) => (
-                    <Card key={`available-${ride.id}`} className="mb-4 overflow-hidden">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">
-                          {ride.from_location} to {ride.to_location}
-                        </CardTitle>
-                        <CardDescription>Requested by: {safeContacts.find((contact) => contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id)?.user_name || "Unknown"}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="pb-2">
-                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>{new Date(ride.time).toLocaleString()}</span>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="bg-muted py-2">
-                        <Button onClick={() => acceptRide(ride.id)} className="w-full">
-                          Offer Ride
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                  {availableRides.length === 0 && <div className="text-center py-4 text-muted-foreground">No available rides at the moment.</div>}
+                  {isLoading
+                    ? Array(3)
+                        .fill(0)
+                        .map((_, i) => (
+                          <Card key={i} className="mb-4">
+                            <CardHeader>
+                              <Skeleton className="h-4 w-[250px]" />
+                              <Skeleton className="h-4 w-[200px]" />
+                            </CardHeader>
+                            <CardContent>
+                              <Skeleton className="h-4 w-[150px]" />
+                            </CardContent>
+                            <CardFooter>
+                              <Skeleton className="h-10 w-full" />
+                            </CardFooter>
+                          </Card>
+                        ))
+                    : availableRides.map((ride) => (
+                        <Card key={`available-${ride.id}`} className="mb-4 overflow-hidden">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">
+                              {ride.from_location} to {ride.to_location}
+                            </CardTitle>
+                            <CardDescription>Requested by: {safeContacts.find((contact) => contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id)?.user_name || "Unknown"}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="pb-2">
+                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>{new Date(ride.time).toLocaleString()}</span>
+                            </div>
+                          </CardContent>
+                          <CardFooter className="bg-muted py-2">
+                            <Button onClick={() => acceptRide(ride.id)} className="w-full">
+                              Offer Ride
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
+                  {!isLoading && availableRides.length === 0 && <div className="text-center py-4 text-muted-foreground">No available rides at the moment.</div>}
                 </ScrollArea>
               </TabsContent>
               <TabsContent value="my-rides">
@@ -996,14 +1026,24 @@ export default function RideShareApp() {
   return (
     <Layout>
       <div className={`flex items-center justify-center min-h-[calc(100vh-12rem)] ${theme === "dark" ? "text-white" : ""}`}>
-        {currentPage === "welcome" && <WelcomePage />}
-        {currentPage === "login" && <LoginPage />}
-        {currentPage === "register" && <RegisterPage />}
-        {currentPage === "dashboard" && currentUser && <DashboardPage />}
-        {currentPage === "create-ride" && currentUser && <CreateRidePage />}
-        {currentPage === "profile" && currentUser && <ProfilePage />}
-        {!currentUser && currentPage !== "welcome" && currentPage !== "login" && currentPage !== "register" && <div>Loading...</div>}
+        {isLoading ? (
+          <div className="flex flex-col items-center space-y-4">
+            <Skeleton className="h-12 w-[400px] rounded-md" />
+            <Skeleton className="h-4 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
+          </div>
+        ) : (
+          <>
+            {currentPage === "welcome" && <WelcomePage />}
+            {currentPage === "login" && <LoginPage />}
+            {currentPage === "register" && <RegisterPage />}
+            {currentPage === "dashboard" && currentUser && <DashboardPage />}
+            {currentPage === "create-ride" && currentUser && <CreateRidePage />}
+            {currentPage === "profile" && currentUser && <ProfilePage />}
+            {!currentUser && currentPage !== "welcome" && currentPage !== "login" && currentPage !== "register" && <div>Loading...</div>}
+          </>
+        )}
       </div>
     </Layout>
-  );
+  )
 }
