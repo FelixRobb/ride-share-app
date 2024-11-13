@@ -36,12 +36,22 @@ export async function POST(request: Request) {
     );
 
     const newNote = await db.get(
-      `SELECT rn.*, u.name as user_name
+      `SELECT rn.*, u.name as user_name, r.requester_id as ride_requester_id, r.accepter_id as ride_accepter_id
        FROM ride_notes rn
        JOIN users u ON rn.user_id = u.id
+       JOIN rides r ON rn.ride_id = r.id
        WHERE rn.id = ?`,
       [result.lastID]
     );
+
+    // Create a notification for the other user involved in the ride
+    const otherUserId = userId === newNote.ride_requester_id ? newNote.ride_accepter_id : newNote.ride_requester_id;
+    if (otherUserId) {
+      await db.run(
+        'INSERT INTO notifications (user_id, message, type) VALUES (?, ?, ?)',
+        [otherUserId, `New message from ${newNote.user_name} for ride ${rideId}`, 'newNote']
+      );
+    }
 
     return NextResponse.json({ note: newNote });
   } catch (error) {
