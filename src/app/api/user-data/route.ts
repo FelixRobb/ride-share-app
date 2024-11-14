@@ -1,3 +1,4 @@
+// In /api/user-data/route.ts
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import crypto from 'crypto'
@@ -14,8 +15,29 @@ export async function GET(request: Request) {
 
   try {
     const [rides, contacts, notifications, associatedPeople, stats] = await Promise.all([
-      db.all('SELECT * FROM rides WHERE requester_id = ? OR accepter_id = ?', [userId, userId]),
-      db.all('SELECT * FROM contacts WHERE user_id = ? OR contact_id = ?', [userId, userId]),
+      db.all(`
+        SELECT r.*, 
+               u_requester.name as rider_name, u_requester.phone as rider_phone
+        FROM rides r
+        LEFT JOIN users u_requester ON r.requester_id = u_requester.id
+        WHERE r.requester_id = ? OR r.accepter_id = ? OR r.requester_id IN (
+          SELECT CASE
+            WHEN c.user_id = ? THEN c.contact_id
+            WHEN c.contact_id = ? THEN c.user_id
+          END
+          FROM contacts c
+          WHERE (c.user_id = ? OR c.contact_id = ?) AND c.status = 'accepted'
+        )
+      `, [userId, userId, userId, userId, userId, userId]),
+      db.all(`
+        SELECT c.*, 
+               u1.name as user_name, u1.phone as user_phone,
+               u2.name as contact_name, u2.phone as contact_phone
+        FROM contacts c
+        JOIN users u1 ON c.user_id = u1.id
+        JOIN users u2 ON c.contact_id = u2.id
+        WHERE c.user_id = ? OR c.contact_id = ?
+      `, [userId, userId]),
       db.all('SELECT * FROM notifications WHERE user_id = ?', [userId]),
       db.all('SELECT * FROM associated_people WHERE user_id = ?', [userId]),
       db.get('SELECT * FROM user_stats WHERE user_id = ?', [userId])

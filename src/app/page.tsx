@@ -8,84 +8,85 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Bell, LogOut, UserPlus, Home, Car, Users, Menu, Clock, User, Moon, Sun, Search, Mail, Phone, MapPin, Send } from 'lucide-react'
+import { Bell, LogOut, UserPlus, Home, Car, Users, Menu, Clock, User, Moon, Sun, Search, Mail, Phone, MapPin, Send } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { toast } from "@/hooks/use-toast"
+import { Toaster } from "@/components/ui/toaster"
+import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 // Types
 type User = {
-  id: number
-  name: string
-  phone: string
-  email: string
-}
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+};
 
 type Ride = {
-  id: number
-  from_location: string
-  to_location: string
-  time: string
-  requester_id: number
-  accepter_id: number | null
-  status: "pending" | "offered" | "cancelled"
-  rider_name: string
-  rider_phone: string | null
-  note: string | null
-}
+  id: number;
+  from_location: string;
+  to_location: string;
+  time: string;
+  requester_id: number;
+  accepter_id: number | null;
+  status: "pending" | "offered" | "cancelled";
+  rider_name: string;
+  rider_phone: string | null;
+  note: string | null;
+};
 
 type Contact = {
-  id: number
-  user_id: number
-  contact_id: number
-  status: "pending" | "accepted"
-  created_at: string
-  user_name: string
-  user_phone: string
-  contact_name: string
-  contact_phone: string
-}
+  id: number;
+  user_id: number;
+  contact_id: number;
+  status: "pending" | "accepted";
+  created_at: string;
+  user_name: string;
+  user_phone: string;
+  contact_name: string;
+  contact_phone: string;
+};
 
 type Notification = {
-  id: number
-  user_id: number
-  message: string
-  type: "rideRequest" | "rideAccepted" | "contactRequest"
-  is_read: boolean
-  created_at: string
-}
+  id: number;
+  user_id: number;
+  message: string;
+  type: "rideRequest" | "rideAccepted" | "contactRequest";
+  is_read: boolean;
+  created_at: string;
+};
 
 type RideData = {
-  from_location: string
-  to_location: string
-  time: string
-  rider_name: string
-  rider_phone: string | null
-  note: string | null
-}
+  from_location: string;
+  to_location: string;
+  time: string;
+  rider_name: string;
+  rider_phone: string | null;
+  note: string | null;
+};
 
 type AssociatedPerson = {
-  id: number
-  user_id: number
-  name: string
-  relationship: string
-}
+  id: number;
+  user_id: number;
+  name: string;
+  relationship: string;
+};
 
 type UserStats = {
-  rides_offered: number
-  rides_accepted: number
-}
+  rides_offered: number;
+  rides_accepted: number;
+};
 
 type Note = {
-  id: number
-  ride_id: number
-  user_id: number
-  note: string
-  created_at: string
-  user_name: string
-}
+  id: number;
+  ride_id: number;
+  user_id: number;
+  note: string;
+  created_at: string;
+  user_name: string;
+};
 
 export default function RideShareApp() {
   const [currentPage, setCurrentPage] = useState("welcome")
@@ -102,41 +103,58 @@ export default function RideShareApp() {
   const [theme, setTheme] = useState<"light" | "dark">("light")
   const [activeTab, setActiveTab] = useState("available")
   const [etag, setEtag] = useState<string | null>(null)
-  
 
-  const fetchUserData = useCallback(async (userId: number) => {
-    try {
-      const headers: HeadersInit = {}
-      if (etag) {
-        headers['If-None-Match'] = etag
-      }
+  const { toast } = useToast()
 
-      const response = await fetch(`/api/user-data?userId=${userId}`, { headers })
-
-      if (response.status === 304) {
-        // Data hasn't changed
-        return
-      }
-
-      if (response.ok) {
-        const newEtag = response.headers.get('ETag')
-        if (newEtag) {
-          setEtag(newEtag)
+  const fetchUserData = useCallback(
+    async (userId: number) => {
+      try {
+        const headers: HeadersInit = {}
+        if (etag) {
+          headers["If-None-Match"] = etag
         }
 
-        const data = await response.json()
-        setRides(data.rides)
-        setContacts(data.contacts)
-        setNotifications(data.notifications)
-        setAssociatedPeople(data.associatedPeople)
-        setUserStats(data.stats)
-      } else {
-        console.error("Failed to fetch user data")
+        const response = await fetch(`/api/user-data?userId=${userId}`, { headers })
+
+        if (response.status === 304) {
+          // Data hasn't changed
+          return
+        }
+
+        if (response.ok) {
+          const newEtag = response.headers.get("ETag")
+          if (newEtag) {
+            setEtag(newEtag)
+          }
+
+          const data = await response.json()
+          const newNotifications = data.notifications.filter(
+            (newNotif: Notification) => !notifications.some((oldNotif) => oldNotif.id === newNotif.id)
+          )
+
+          if (newNotifications.length > 0) {
+            newNotifications.forEach((notification: Notification) => {
+              toast({
+                title: "New Notification",
+                description: notification.message,
+              })
+            })
+          }
+
+          setRides(data.rides)
+          setContacts(data.contacts)
+          setNotifications(data.notifications)
+          setAssociatedPeople(data.associatedPeople)
+          setUserStats(data.stats)
+        } else {
+          console.error("Failed to fetch user data")
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error)
       }
-    } catch (error) {
-      console.error("Error fetching user data:", error)
-    }
-  }, [etag])
+    },
+    [etag, notifications, toast]
+  )
 
   useEffect(() => {
     const user = localStorage.getItem("currentUser")
@@ -166,12 +184,11 @@ export default function RideShareApp() {
   }, [currentUser, fetchUserData])
 
   const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light"
-    setTheme(newTheme)
-    localStorage.setItem("theme", newTheme)
-    document.documentElement.classList.toggle("dark", newTheme === "dark")
-  }
-
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.classList.toggle("dark", newTheme === "dark");
+  };
 
   const login = async (phoneOrEmail: string, password: string) => {
     try {
@@ -236,7 +253,7 @@ export default function RideShareApp() {
   };
 
   const createRide = async (rideData: RideData) => {
-    if (!currentUser) return
+    if (!currentUser) return;
     try {
       const response = await fetch("/api/rides", {
         method: "POST",
@@ -244,37 +261,37 @@ export default function RideShareApp() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ ...rideData, requester_id: currentUser.id }),
-      })
+      });
       if (response.ok) {
-        const data = await response.json()
-        setRides((prevRides) => [...prevRides, data.ride])
+        const data = await response.json();
+        setRides((prevRides) => [...prevRides, data.ride]);
         toast({
           title: "Ride Created",
           description: "Your ride request has been created successfully.",
-        })
-        setCurrentPage("dashboard")
-        setActiveTab("my-rides")
-        void fetchUserData(currentUser.id) // Fetch updated data
+        });
+        setCurrentPage("dashboard");
+        setActiveTab("my-rides");
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json();
         toast({
           title: "Error",
           description: errorData.error || "Failed to create ride. Please try again.",
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error("Error creating ride:", error)
+      console.error("Error creating ride:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const acceptRide = async (rideId: number) => {
-    if (!currentUser) return
+    if (!currentUser) return;
     try {
       const response = await fetch(`/api/rides/${rideId}/accept`, {
         method: "POST",
@@ -282,36 +299,35 @@ export default function RideShareApp() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId: currentUser.id }),
-      })
+      });
       if (response.ok) {
-        const data = await response.json()
-        setRides((prevRides) => prevRides.map((ride) => (ride.id === rideId ? { ...ride, status: "offered", accepter_id: currentUser.id } : ride)))
+        const data = await response.json();
+        setRides((prevRides) => prevRides.map((ride) => (ride.id === rideId ? { ...ride, status: "offered", accepter_id: currentUser.id } : ride)));
         toast({
           title: "Ride Accepted",
           description: "You have successfully accepted the ride.",
-        })
-        void fetchUserData(currentUser.id) // Fetch updated data
+        });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json();
         toast({
           title: "Error",
           description: errorData.error || "Failed to accept ride. Please try again.",
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error("Error accepting ride:", error)
+      console.error("Error accepting ride:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
-
+  };
 
   const cancelRequest = async (rideId: number) => {
-    if (!currentUser) return
+    if (!currentUser) return;
     try {
       const response = await fetch(`/api/rides/${rideId}/cancel`, {
         method: "POST",
@@ -319,35 +335,35 @@ export default function RideShareApp() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId: currentUser.id }),
-      })
+      });
       if (response.ok) {
-        const data = await response.json()
-        setRides((prevRides) => prevRides.map((ride) => (ride.id === rideId ? { ...ride, status: "cancelled" } : ride)))
+        const data = await response.json();
+        setRides((prevRides) => prevRides.map((ride) => (ride.id === rideId ? { ...ride, status: "cancelled" } : ride)));
         toast({
           title: "Request Cancelled",
           description: "Your ride request has been cancelled successfully.",
-        })
-        void fetchUserData(currentUser.id) // Fetch updated data
+        });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json();
         toast({
           title: "Error",
           description: errorData.error || "Failed to cancel request. Please try again.",
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error("Error cancelling request:", error)
+      console.error("Error cancelling request:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const cancelOffer = async (rideId: number) => {
-    if (!currentUser) return
+    if (!currentUser) return;
     try {
       const response = await fetch(`/api/rides/${rideId}/cancel-offer`, {
         method: "POST",
@@ -355,36 +371,35 @@ export default function RideShareApp() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId: currentUser.id }),
-      })
+      });
       if (response.ok) {
-        const data = await response.json()
-        setRides((prevRides) => prevRides.map((ride) => (ride.id === rideId ? { ...ride, status: "pending", accepter_id: null } : ride)))
+        const data = await response.json();
+        setRides((prevRides) => prevRides.map((ride) => (ride.id === rideId ? { ...ride, status: "pending", accepter_id: null } : ride)));
         toast({
           title: "Offer Cancelled",
           description: "Your ride offer has been cancelled successfully.",
-        })
-        void fetchUserData(currentUser.id) // Fetch updated data
+        });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json();
         toast({
           title: "Error",
           description: errorData.error || "Failed to cancel offer. Please try again.",
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error("Error cancelling offer:", error)
+      console.error("Error cancelling offer:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
-  
+  };
 
   const addNote = async (rideId: number, note: string) => {
-    if (!currentUser) return
+    if (!currentUser) return;
     try {
       const response = await fetch(`/api/rides/${rideId}/notes`, {
         method: "POST",
@@ -392,186 +407,183 @@ export default function RideShareApp() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId: currentUser.id, note }),
-      })
+      });
       if (response.ok) {
-        const data = await response.json()
+        const data = await response.json();
         toast({
           title: "Note Added",
           description: "Your note has been added successfully.",
-        })
-        void fetchUserData(currentUser.id) // Fetch updated data
-        return data.note
+        });
+        void fetchUserData(currentUser.id); // Fetch updated data
+        return data.note;
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json();
         toast({
           title: "Error",
           description: errorData.error || "Failed to add note. Please try again.",
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error("Error adding note:", error)
+      console.error("Error adding note:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const fetchNotes = async (rideId: number) => {
     try {
-      const response = await fetch(`/api/rides/${rideId}/notes`)
+      const response = await fetch(`/api/rides/${rideId}/notes`);
       if (response.ok) {
-        const data = await response.json()
-        return data.notes
+        const data = await response.json();
+        return data.notes;
       } else {
-        throw new Error("Failed to fetch notes")
+        throw new Error("Failed to fetch notes");
       }
     } catch (error) {
-      console.error("Error fetching notes:", error)
+      console.error("Error fetching notes:", error);
       toast({
         title: "Error",
         description: "Failed to fetch notes. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const addContact = async (phone: string) => {
-    if (!currentUser) return
+    if (!currentUser) return;
     try {
       const response = await fetch("/api/contacts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: currentUser.id, contactPhone: phone }),
-      })
-      const data = await response.json()
+      });
+      const data = await response.json();
       if (response.ok && data.contact) {
-        setContacts((prevContacts) => [...prevContacts, data.contact])
+        setContacts((prevContacts) => [...prevContacts, data.contact]);
         toast({
           title: "Success",
           description: "Contact request sent successfully!",
-        })
-        void fetchUserData(currentUser.id) // Fetch updated data
+        });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
         toast({
           title: "Error",
           description: data.error || "Failed to add contact. Please try again.",
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error("Add contact error:", error)
+      console.error("Add contact error:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
-  
+  };
 
   const acceptContact = async (contactId: number) => {
-    if (!currentUser) return
+    if (!currentUser) return;
     try {
       const response = await fetch(`/api/contacts/${contactId}/accept`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: currentUser.id }),
-      })
-      const data = await response.json()
+      });
+      const data = await response.json();
       if (response.ok && data.contact) {
-        setContacts((prevContacts) => prevContacts.map((contact) => (contact.id === contactId ? { ...contact, status: "accepted" } : contact)))
+        setContacts((prevContacts) => prevContacts.map((contact) => (contact.id === contactId ? { ...contact, status: "accepted" } : contact)));
         toast({
           title: "Success",
           description: "Contact accepted successfully!",
-        })
-        void fetchUserData(currentUser.id) // Fetch updated data
+        });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
         toast({
           title: "Error",
           description: data.error || "Failed to accept contact. Please try again.",
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error("Accept contact error:", error)
+      console.error("Accept contact error:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
-  
+  };
 
   const deleteContact = async (contactId: number) => {
-    if (!currentUser) return
+    if (!currentUser) return;
     try {
       const response = await fetch(`/api/contacts/${contactId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: currentUser.id }),
-      })
+      });
       if (response.ok) {
-        setContacts((prevContacts) => prevContacts.filter((contact) => contact.id !== contactId))
+        setContacts((prevContacts) => prevContacts.filter((contact) => contact.id !== contactId));
         toast({
           title: "Success",
           description: "Contact deleted successfully!",
-        })
-        void fetchUserData(currentUser.id) // Fetch updated data
+        });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json();
         toast({
           title: "Error",
           description: errorData.error || "Failed to delete contact. Please try again.",
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error("Delete contact error:", error)
+      console.error("Delete contact error:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
-  
+  };
 
   const deleteUser = async () => {
-    if (!currentUser) return
+    if (!currentUser) return;
     try {
       const response = await fetch(`/api/users/${currentUser.id}`, {
         method: "DELETE",
-      })
+      });
       if (response.ok) {
-        logout()
+        logout();
         toast({
           title: "Account Deleted",
           description: "Your account has been successfully deleted.",
-        })
+        });
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json();
         toast({
           title: "Error",
           description: errorData.error || "Failed to delete account. Please try again.",
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error("Delete user error:", error)
+      console.error("Delete user error:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
-  
+  };
+
   const markNotificationsAsRead = async (notificationIds: number[]) => {
-    if (!currentUser) return
+    if (!currentUser) return;
     try {
       const response = await fetch("/api/notifications", {
         method: "POST",
@@ -579,18 +591,18 @@ export default function RideShareApp() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId: currentUser.id, notificationIds }),
-      })
-  
+      });
+
       if (response.ok) {
-        setNotifications((prevNotifications) => prevNotifications.map((notification) => (notificationIds.includes(notification.id) ? { ...notification, is_read: true } : notification)))
-        void fetchUserData(currentUser.id) // Fetch updated data
+        setNotifications((prevNotifications) => prevNotifications.map((notification) => (notificationIds.includes(notification.id) ? { ...notification, is_read: true } : notification)));
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
-        console.error("Failed to mark notifications as read")
+        console.error("Failed to mark notifications as read");
       }
     } catch (error) {
-      console.error("Error marking notifications as read:", error)
+      console.error("Error marking notifications as read:", error);
     }
-  }
+  };
 
   const handleOpenNotificationDialog = () => {
     setIsNotificationDialogOpen(true);
@@ -601,45 +613,38 @@ export default function RideShareApp() {
   };
 
   const addAssociatedPerson = async (name: string, relationship: string) => {
-    if (!currentUser) return
+    if (!currentUser) return;
     try {
       const response = await fetch("/api/associated-people", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: currentUser.id, name, relationship }),
-      })
-      const data = await response.json()
+      });
+      const data = await response.json();
       if (response.ok && data.associatedPerson) {
-        setAssociatedPeople((prevPeople) => [...prevPeople, data.associatedPerson])
+        setAssociatedPeople((prevPeople) => [...prevPeople, data.associatedPerson]);
         toast({
           title: "Success",
           description: "Associated person added successfully!",
-        })
-        void fetchUserData(currentUser.id) // Fetch updated data
+        });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
         toast({
           title: "Error",
           description: data.error || "Failed to add associated person. Please try again.",
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error("Add associated person error:", error)
+      console.error("Add associated person error:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
-  const filteredRides = useCallback((rides: Ride[]) => {
-    if (!searchTerm.trim()) return rides;
-    return rides.filter((ride) =>
-      ride.from_location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ride.to_location.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm]);
 
   // Components
   const WelcomePage = () => (
@@ -658,9 +663,9 @@ export default function RideShareApp() {
   );
 
   const LoginPage = () => {
-    const [error, setError] = useState<string | null>(null)
-    const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
-    const [resetEmail, setResetEmail] = useState("")
+    const [error, setError] = useState<string | null>(null);
+    const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+    const [resetEmail, setResetEmail] = useState("");
 
     const handleResetPassword = async () => {
       try {
@@ -668,25 +673,25 @@ export default function RideShareApp() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: resetEmail }),
-        })
+        });
         if (response.ok) {
           toast({
             title: "Success",
             description: "Password reset email sent. Please check your inbox.",
-          })
-          setIsResetPasswordOpen(false)
+          });
+          setIsResetPasswordOpen(false);
         } else {
-          const data = await response.json()
-          throw new Error(data.error || "Failed to send reset email")
+          const data = await response.json();
+          throw new Error(data.error || "Failed to send reset email");
         }
       } catch (error) {
         toast({
           title: "Error",
           description: error instanceof Error ? error.message : "An unexpected error occurred",
           variant: "destructive",
-        })
+        });
       }
-    }
+    };
 
     return (
       <Card className="w-full max-w-[350px] mx-auto">
@@ -697,14 +702,14 @@ export default function RideShareApp() {
         <CardContent>
           <form
             onSubmit={async (e) => {
-              e.preventDefault()
-              const phoneOrEmail = (e.currentTarget.elements.namedItem("phoneOrEmail") as HTMLInputElement).value
-              const password = (e.currentTarget.elements.namedItem("password") as HTMLInputElement).value
+              e.preventDefault();
+              const phoneOrEmail = (e.currentTarget.elements.namedItem("phoneOrEmail") as HTMLInputElement).value;
+              const password = (e.currentTarget.elements.namedItem("password") as HTMLInputElement).value;
               try {
-                await login(phoneOrEmail, password)
-                setError(null)
+                await login(phoneOrEmail, password);
+                setError(null);
               } catch (error) {
-                setError("Invalid phone number/email or password. Please try again.")
+                setError("Invalid phone number/email or password. Please try again.");
               }
             }}
           >
@@ -744,12 +749,7 @@ export default function RideShareApp() {
                 <Label htmlFor="reset-email" className="text-right">
                   Email
                 </Label>
-                <Input
-                  id="reset-email"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  className="col-span-3"
-                />
+                <Input id="reset-email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="col-span-3" />
               </div>
             </div>
             <DialogFooter>
@@ -758,8 +758,8 @@ export default function RideShareApp() {
           </DialogContent>
         </Dialog>
       </Card>
-    )
-  }
+    );
+  };
 
   const RegisterPage = () => {
     const [error, setError] = useState<string | null>(null);
@@ -834,26 +834,47 @@ export default function RideShareApp() {
     );
   };
 
+
+  const filteredRides = useCallback(
+    (rides: Ride[]) => {
+      if (!searchTerm.trim()) return rides;
+      return rides.filter(
+        (ride) =>
+          ride.from_location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          ride.to_location.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    },
+    [searchTerm]
+  );
+
   const DashboardPage = () => {
     const safeRides = rides || [];
-    const safeContacts = contacts || [];
-
+  
+    // Filter available rides
     const availableRides = filteredRides(
-      safeRides.filter(
-        (ride) =>
-          ride.status === "pending" &&
-          ride.requester_id !== currentUser?.id &&
-          safeContacts.some(
-            (contact) =>
-              ((contact.user_id === currentUser?.id && contact.contact_id === ride.requester_id) ||
-                (contact.contact_id === currentUser?.id && contact.user_id === ride.requester_id)) &&
-              contact.status === "accepted"
-          )
-      )
+      safeRides.filter((ride) => {
+        // Check if the ride is pending and not requested by the current user
+        const isPendingAndNotOwn = ride.status === "pending" && ride.requester_id !== currentUser?.id;
+        
+        // Check if the ride requester is a connected user
+        const isConnectedUser = contacts.some(
+          (contact) => 
+            (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) &&
+            contact.status === "accepted"
+        );
+  
+        return isPendingAndNotOwn && isConnectedUser;
+      })
     );
-
+  
     const myRides = filteredRides(safeRides.filter((ride) => ride.requester_id === currentUser?.id));
     const offeredRides = filteredRides(safeRides.filter((ride) => ride.accepter_id === currentUser?.id));
+  
+    console.log("All Rides:", safeRides);
+    console.log("Available Rides:", availableRides);
+    console.log("My Rides:", myRides);
+    console.log("Offered Rides:", offeredRides);
+  
 
     return (
       <div className="w-full max-w-4xl mx-auto">
@@ -877,126 +898,42 @@ export default function RideShareApp() {
             <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="available" className="text-xs md:text-sm">
-                  Available Rides
+                  Available Rides ({availableRides.length})
                 </TabsTrigger>
                 <TabsTrigger value="my-rides" className="text-xs md:text-sm">
-                  My Rides
+                  My Rides ({myRides.length})
                 </TabsTrigger>
                 <TabsTrigger value="offered-rides" className="text-xs md:text-sm">
-                  Offered Rides
+                  Offered Rides ({offeredRides.length})
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="available">
                 <ScrollArea className="h-[400px] w-full rounded-md border p-4">
                   {isLoading ? (
-                    Array(3)
-                      .fill(0)
-                      .map((_, i) => (
-                        <Card key={i} className="mb-4">
-                          <CardHeader>
-                            <Skeleton className="h-4 w-[250px]" />
-                            <Skeleton className="h-4 w-[200px]" />
-                          </CardHeader>
-                          <CardContent>
-                            <Skeleton className="h-4 w-[150px]" />
-                          </CardContent>
-                          <CardFooter>
-                            <Skeleton className="h-10 w-full" />
-                          </CardFooter>
-                        </Card>
-                      ))
+                    Array(3).fill(0).map((_, i) => (
+                      <Card key={i} className="mb-4">
+                        <CardHeader>
+                          <Skeleton className="h-4 w-[250px]" />
+                          <Skeleton className="h-4 w-[200px]" />
+                        </CardHeader>
+                        <CardContent>
+                          <Skeleton className="h-4 w-[150px]" />
+                        </CardContent>
+                        <CardFooter>
+                          <Skeleton className="h-10 w-full" />
+                        </CardFooter>
+                      </Card>
+                    ))
                   ) : (
                     availableRides.map((ride) => (
-                      <RideDetailsDialog key={`available-${ride.id}`} ride={ride} onAcceptRide={acceptRide} onAddNote={addNote} fetchNotes={fetchNotes} currentUser={currentUser}>
-                        <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-lg">
-                              {ride.from_location} to {ride.to_location}
-                            </CardTitle>
-                            <CardDescription>
-                              Requested by: {safeContacts.find((contact) => contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id)?.user_name || "Unknown"}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="pb-2">
-                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              <span>{new Date(ride.time).toLocaleString()}</span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </RideDetailsDialog>
-                    ))
-                  )}
-                  {!isLoading && availableRides.length === 0 && <div className="text-center py-4 text-muted-foreground">No available rides at the moment.</div>}
-                </ScrollArea>
-              </TabsContent>
-              <TabsContent value="my-rides">
-                <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                  {isLoading ? (
-                    Array(3)
-                      .fill(0)
-                      .map((_, i) => (
-                        <Card key={i} className="mb-4">
-                          <CardHeader>
-                            <Skeleton className="h-4 w-[250px]" />
-                            <Skeleton className="h-4 w-[200px]" />
-                          </CardHeader>
-                          <CardContent>
-                            <Skeleton className="h-4 w-[150px]" />
-                          </CardContent>
-                          <CardFooter>
-                            <Skeleton className="h-10 w-full" />
-                          </CardFooter>
-                        </Card>
-                      ))
-                  ) : (
-                    myRides.map((ride) => (
-                      <RideDetailsDialog key={`my-${ride.id}`} ride={ride} onCancelRequest={cancelRequest} onAddNote={addNote} fetchNotes={fetchNotes} currentUser={currentUser}>
-                        <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-lg">
-                              {ride.from_location} to {ride.to_location}
-                            </CardTitle>
-                            <CardDescription>
-                              Status: {ride.status}
-                              {ride.status === "offered" && ` (Offered by: ${safeContacts.find((contact) => contact.user_id === ride.accepter_id || contact.contact_id === ride.accepter_id)?.user_name || "Unknown"})`}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="pb-2">
-                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              <span>{new Date(ride.time).toLocaleString()}</span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </RideDetailsDialog>
-                    ))
-                  )}
-                  {!isLoading && myRides.length === 0 && <div className="text-center py-4 text-muted-foreground">You haven&apos;t requested any rides yet.</div>}
-                </ScrollArea>
-              </TabsContent>
-              <TabsContent value="offered-rides">
-                <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                  {isLoading ? (
-                    Array(3)
-                      .fill(0)
-                      .map((_, i) => (
-                        <Card key={i} className="mb-4">
-                          <CardHeader>
-                            <Skeleton className="h-4 w-[250px]" />
-                            <Skeleton className="h-4 w-[200px]" />
-                          </CardHeader>
-                          <CardContent>
-                            <Skeleton className="h-4 w-[150px]" />
-                          </CardContent>
-                          <CardFooter>
-                            <Skeleton className="h-10 w-full" />
-                          </CardFooter>
-                        </Card>
-                      ))
-                  ) : (
-                    offeredRides.map((ride) => (
-                      <RideDetailsDialog key={`offered-${ride.id}`} ride={ride} onCancelOffer={cancelOffer} onAddNote={addNote} fetchNotes={fetchNotes} currentUser={currentUser}>
+                      <RideDetailsDialog 
+                        key={`available-${ride.id}`} 
+                        ride={ride} 
+                        onAcceptRide={acceptRide} 
+                        onAddNote={addNote} 
+                        fetchNotes={fetchNotes} 
+                        currentUser={currentUser}
+                      >
                         <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-lg">
@@ -1014,15 +951,258 @@ export default function RideShareApp() {
                       </RideDetailsDialog>
                     ))
                   )}
-                  {!isLoading && offeredRides.length === 0 && <div className="text-center py-4 text-muted-foreground">You haven&apos;t offered any rides yet.</div>}
+                  {!isLoading && availableRides.length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground">No available rides at the moment.</div>
+                  )}
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value="my-rides">
+                <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                  {isLoading ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <Card key={i} className="mb-4">
+                        <CardHeader>
+                          <Skeleton className="h-4 w-[250px]" />
+                          <Skeleton className="h-4 w-[200px]" />
+                        </CardHeader>
+                        <CardContent>
+                          <Skeleton className="h-4 w-[150px]" />
+                        </CardContent>
+                        <CardFooter>
+                          <Skeleton className="h-10 w-full" />
+                        </CardFooter>
+                      </Card>
+                    ))
+                  ) : (
+                    myRides.map((ride) => (
+                      <RideDetailsDialog 
+                        key={`my-${ride.id}`} 
+                        ride={ride} 
+                        onCancelRequest={cancelRequest} 
+                        onAddNote={addNote} 
+                        fetchNotes={fetchNotes} 
+                        currentUser={currentUser}
+                      >
+                        <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">
+                              {ride.from_location} to {ride.to_location}
+                            </CardTitle>
+                            <CardDescription>
+                              Status: {ride.status}
+                              {ride.status === "offered" && ` (Offered by: ${ride.accepter_id ? contacts.find(c => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user_name : "Unknown"})`}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="pb-2">
+                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>{new Date(ride.time).toLocaleString()}</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </RideDetailsDialog>
+                    ))
+                  )}
+                  {!isLoading && myRides.length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground">You haven't requested any rides yet.</div>
+                  )}
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value="offered-rides">
+                <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                  {isLoading ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <Card key={i} className="mb-4">
+                        <CardHeader>
+                          <Skeleton className="h-4 w-[250px]" />
+                          <Skeleton className="h-4 w-[200px]" />
+                        </CardHeader>
+                        <CardContent>
+                          <Skeleton className="h-4 w-[150px]" />
+                        </CardContent>
+                        <CardFooter>
+                          <Skeleton className="h-10 w-full" />
+                        </CardFooter>
+                      </Card>
+                    ))
+                  ) : (
+                    offeredRides.map((ride) => (
+                      <RideDetailsDialog 
+                        key={`offered-${ride.id}`} 
+                        ride={ride} 
+                        onCancelOffer={cancelOffer} 
+                        onAddNote={addNote} 
+                        fetchNotes={fetchNotes} 
+                        currentUser={currentUser}
+                      >
+                        <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">
+                              {ride.from_location} to {ride.to_location}
+                            </CardTitle>
+                            <CardDescription>Requested by: {ride.rider_name}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="pb-2">
+                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>{new Date(ride.time).toLocaleString()}</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </RideDetailsDialog>
+                    ))
+                  )}
+                  {!isLoading && offeredRides.length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground">You haven't offered any rides yet.</div>
+                  )}
                 </ScrollArea>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       </div>
-    )
-  }
+    );
+  };
+
+
+  const RideDetailsDialog = ({
+    children,
+    ride,
+    onCancelRequest,
+    onCancelOffer,
+    onAcceptRide,
+    onAddNote,
+    fetchNotes,
+    currentUser,
+  }: {
+    children: React.ReactNode;
+    ride: Ride;
+    onCancelRequest?: (rideId: number) => Promise<void>;
+    onCancelOffer?: (rideId: number) => Promise<void>;
+    onAcceptRide?: (rideId: number) => Promise<void>;
+    onAddNote: (rideId: number, note: string) => Promise<Note | undefined>;
+    fetchNotes: (rideId: number) => Promise<Note[]>;
+    currentUser: User | null;
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [notes, setNotes] = useState<Note[]>([]);
+    const [newNote, setNewNote] = useState("");
+
+    useEffect(() => {
+      if (isOpen) {
+        void loadNotes();
+      }
+    }, [isOpen]);
+
+    const loadNotes = async () => {
+      const fetchedNotes = await fetchNotes(ride.id);
+      setNotes(fetchedNotes);
+    };
+
+    const handleAddNote = async () => {
+      if (newNote.trim()) {
+        const addedNote = await onAddNote(ride.id, newNote);
+        if (addedNote) {
+          setNotes((prevNotes) => [...prevNotes, addedNote]);
+          setNewNote("");
+        }
+      }
+    };
+
+    return (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>{children}</DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Ride Details</DialogTitle>
+            <DialogDescription>
+              From {ride.from_location} to {ride.to_location}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="rider" className="text-right">
+                Rider
+              </Label>
+              <div id="rider" className="col-span-3">
+                {ride.rider_name}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="time" className="text-right">
+                Time
+              </Label>
+              <div id="time" className="col-span-3">
+                {new Date(ride.time).toLocaleString()}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">
+                Status
+              </Label>
+              <div id="status" className={`col-span-3 font-semibold ${
+                  ride.status === "offered"
+                    ? "text-green-500"
+                    : ride.status === "cancelled"
+                    ? "text-red-500"
+                    : "text-yellow-500"
+                }`}
+              >
+                {ride.status.charAt(0).toUpperCase() + ride.status.slice(1)}
+              </div>
+            </div>
+            {(ride.status === "offered" || ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
+              <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="notes" className="text-right">
+                    Messages
+                  </Label>
+                  <ScrollArea className="h-[200px] w-[300px] rounded-md border p-4 col-span-3">
+                    {notes.map((note) => (
+                      <div key={note.id} className={`mb-4 ${note.user_id === currentUser?.id ? 'text-right' : 'text-left'}`}>
+                        <div className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'} rounded-lg p-2`}>
+                          <p className="text-sm">{note.note}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {note.user_name} - {new Date(note.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </ScrollArea>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="new-note" className="text-right">
+                    New Message
+                  </Label>
+                  <div className="col-span-3 flex space-x-2">
+                    <Input id="new-note" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Type your message..." />
+                    <Button onClick={handleAddNote} size="icon">
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            {ride.requester_id === currentUser?.id && ride.status !== "cancelled" && onCancelRequest && (
+              <Button variant="destructive" onClick={() => onCancelRequest(ride.id)}>
+                Cancel Request
+              </Button>
+            )}
+            {ride.accepter_id === currentUser?.id && ride.status === "offered" && onCancelOffer && (
+              <Button variant="destructive" onClick={() => onCancelOffer(ride.id)}>
+                Cancel Offer
+              </Button>
+            )}
+            {ride.status === "pending" && onAcceptRide && (
+              <Button onClick={() => onAcceptRide(ride.id)}>Offer Ride</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
 
   const CreateRidePage = () => {
@@ -1033,13 +1213,13 @@ export default function RideShareApp() {
       rider_name: currentUser?.name || "",
       rider_phone: currentUser?.phone || null,
       note: null,
-    })
-    const [riderType, setRiderType] = useState("self")
+    });
+    const [riderType, setRiderType] = useState("self");
 
     const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault()
-      void createRide(rideData)
-    }
+      e.preventDefault();
+      void createRide(rideData);
+    };
 
     return (
       <Card className="w-full max-w-[350px] mx-auto">
@@ -1052,33 +1232,15 @@ export default function RideShareApp() {
             <div className="grid w-full items-center gap-4">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="from_location">From</Label>
-                <Input
-                  id="from_location"
-                  value={rideData.from_location}
-                  onChange={(e) => setRideData((prev) => ({ ...prev, from_location: e.target.value }))}
-                  placeholder="Enter starting location"
-                  required
-                />
+                <Input id="from_location" value={rideData.from_location} onChange={(e) => setRideData((prev) => ({ ...prev, from_location: e.target.value }))} placeholder="Enter starting location" required />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="to_location">To</Label>
-                <Input
-                  id="to_location"
-                  value={rideData.to_location}
-                  onChange={(e) => setRideData((prev) => ({ ...prev, to_location: e.target.value }))}
-                  placeholder="Enter destination"
-                  required
-                />
+                <Input id="to_location" value={rideData.to_location} onChange={(e) => setRideData((prev) => ({ ...prev, to_location: e.target.value }))} placeholder="Enter destination" required />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="time">Time</Label>
-                <Input
-                  id="time"
-                  type="datetime-local"
-                  value={rideData.time}
-                  onChange={(e) => setRideData((prev) => ({ ...prev, time: e.target.value }))}
-                  required
-                />
+                <Input id="time" type="datetime-local" value={rideData.time} onChange={(e) => setRideData((prev) => ({ ...prev, time: e.target.value }))} required />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="rider_type">Rider</Label>
@@ -1100,32 +1262,16 @@ export default function RideShareApp() {
               {riderType === "other" && (
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="rider_name">Rider Name</Label>
-                  <Input
-                    id="rider_name"
-                    value={rideData.rider_name}
-                    onChange={(e) => setRideData((prev) => ({ ...prev, rider_name: e.target.value }))}
-                    placeholder="Enter rider's name"
-                    required
-                  />
+                  <Input id="rider_name" value={rideData.rider_name} onChange={(e) => setRideData((prev) => ({ ...prev, rider_name: e.target.value }))} placeholder="Enter rider's name" required />
                 </div>
               )}
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="rider_phone">Rider Phone (optional)</Label>
-                <Input
-                  id="rider_phone"
-                  value={rideData.rider_phone || ""}
-                  onChange={(e) => setRideData((prev) => ({ ...prev, rider_phone: e.target.value }))}
-                  placeholder="Enter rider's phone number"
-                />
+                <Input id="rider_phone" value={rideData.rider_phone || ""} onChange={(e) => setRideData((prev) => ({ ...prev, rider_phone: e.target.value }))} placeholder="Enter rider's phone number" />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="note">Note (optional)</Label>
-                <Input
-                  id="note"
-                  value={rideData.note || ""}
-                  onChange={(e) => setRideData((prev) => ({ ...prev, note: e.target.value }))}
-                  placeholder="Add a note for the driver"
-                />
+                <Input id="note" value={rideData.note || ""} onChange={(e) => setRideData((prev) => ({ ...prev, note: e.target.value }))} placeholder="Add a note for the driver" />
               </div>
             </div>
             <Button className="w-full mt-4" type="submit">
@@ -1134,8 +1280,9 @@ export default function RideShareApp() {
           </form>
         </CardContent>
       </Card>
-    )
-  }
+    );
+  };
+
 
   const ProfilePage = () => {
     const [newContactPhone, setNewContactPhone] = useState("");
@@ -1210,9 +1357,9 @@ export default function RideShareApp() {
           <CardContent className="space-y-4">
             {contacts.map((contact) => {
               const isCurrentUserRequester = contact.user_id === currentUser?.id;
-              const contactName = isCurrentUserRequester ? contact.contact_id : contact.user_name;
+              const contactName = isCurrentUserRequester ? contact.contact_name : contact.user_name;
               const contactPhone = isCurrentUserRequester ? contact.contact_phone : contact.user_phone;
-              
+
               return (
                 <div key={contact.id} className="flex flex-col space-y-2 p-4 bg-secondary rounded-lg">
                   <div className="flex justify-between items-center">
@@ -1236,18 +1383,15 @@ export default function RideShareApp() {
               );
             })}
             <div className="flex space-x-2 mt-4">
-              <Input
-                type="tel"
-                placeholder="Enter contact's phone number"
-                value={newContactPhone}
-                onChange={(e) => setNewContactPhone(e.target.value)}
-              />
-              <Button onClick={() => {
-                if (newContactPhone.trim()) {
-                  addContact(newContactPhone);
-                  setNewContactPhone("");
-                }
-              }}>
+              <Input type="tel" placeholder="Enter contact's phone number" value={newContactPhone} onChange={(e) => setNewContactPhone(e.target.value)} />
+              <Button
+                onClick={() => {
+                  if (newContactPhone.trim()) {
+                    addContact(newContactPhone);
+                    setNewContactPhone("");
+                  }
+                }}
+              >
                 Add Contact
               </Button>
             </div>
@@ -1326,143 +1470,6 @@ export default function RideShareApp() {
     );
   };
 
-  const RideDetailsDialog = ({ children, ride, onCancelRequest, onCancelOffer, onAcceptRide, onAddNote, fetchNotes, currentUser }: { children: React.ReactNode; ride: Ride; onCancelRequest?: (rideId: number) => Promise<void>; onCancelOffer?: (rideId: number) => Promise<void>; onAcceptRide?: (rideId: number) => Promise<void>; onAddNote: (rideId: number, note: string) => Promise<Note | undefined>; fetchNotes: (rideId: number) => Promise<Note[]>; currentUser: User | null }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [notes, setNotes] = useState<Note[]>([]);
-    const [newNote, setNewNote] = useState("");
-
-    useEffect(() => {
-      if (isOpen && ride.status === "offered") {
-        void loadNotes();
-      }
-    }, [isOpen]);
-
-    const loadNotes = async () => {
-      const fetchedNotes = await fetchNotes(ride.id)
-      setNotes(fetchedNotes)
-    }
-
-    const handleAddNote = async () => {
-      if (newNote.trim()) {
-        const addedNote = await onAddNote(ride.id, newNote)
-        if (addedNote) {
-          setNotes((prevNotes) => [...prevNotes, addedNote])
-          setNewNote("")
-        }
-      }
-    }
-
-    return (
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>{children}</DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Ride Details</DialogTitle>
-            <DialogDescription>
-              From {ride.from_location} to {ride.to_location}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="rider" className="text-right">
-                Rider
-              </Label>
-              <div id="rider" className="col-span-3">
-                {ride.rider_name}
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="time" className="text-right">
-                Time
-              </Label>
-              <div id="time" className="col-span-3">
-                {new Date(ride.time).toLocaleString()}
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
-              </Label>
-              <div id="status" className={`col-span-3 font-semibold ${
-                  ride.status === "offered"
-                    ? "text-green-500"
-                    : ride.status === "cancelled"
-                    ? "text-red-500"
-                    : "text-yellow-500"
-                }`}
-              >
-                {ride.status.charAt(0).toUpperCase() + ride.status.slice(1)}
-              </div>
-            </div>
-            {ride.status === "offered" && (
-            <>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="notes" className="text-right">Messages</Label>
-                <ScrollArea className="h-[200px] w-[300px] rounded-md border p-4 col-span-3">
-                  {notes.map((note) => (
-                    <div key={note.id} className={`mb-4 ${note.user_id === currentUser?.id ? 'text-right' : 'text-left'}`}>
-                      <div className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'} rounded-lg p-2`}>
-                        <p className="text-sm">{note.note}</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {note.user_name} - {new Date(note.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
-                </ScrollArea>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="new-note" className="text-right">New Message</Label>
-                <div className="col-span-3 flex space-x-2">
-                  <Input
-                    id="new-note"
-                    value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
-                    placeholder="Type your message..."
-                  />
-                  <Button onClick={handleAddNote} size="icon">
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-            {ride.status === "offered" && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="new-note" className="text-right">
-                  New Message
-                </Label>
-                <div className="col-span-3 flex space-x-2">
-                  <Input id="new-note" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Type your message..." />
-                  <Button onClick={handleAddNote} size="icon">
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            {ride.requester_id === currentUser?.id && ride.status !== "cancelled" && onCancelRequest && (
-              <Button variant="destructive" onClick={() => onCancelRequest(ride.id)}>
-                Cancel Request
-              </Button>
-            )}
-            {ride.accepter_id === currentUser?.id && ride.status === "offered" && onCancelOffer && (
-              <Button variant="destructive" onClick={() => onCancelOffer(ride.id)}>
-                Cancel Offer
-              </Button>
-            )}
-            {ride.status === "pending" && onAcceptRide && (
-              <Button onClick={() => onAcceptRide(ride.id)}>
-                Offer Ride
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    )
-  }
-
 
   const Layout = ({ children }: { children: React.ReactNode }) => {
     if (!currentUser) return children;
@@ -1492,27 +1499,36 @@ export default function RideShareApp() {
 
               {/* Notifications */}
               <Dialog open={isNotificationDialogOpen} onOpenChange={setIsNotificationDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"} relative`} onClick={handleOpenNotificationDialog}>
-                    <Bell className="h-4 w-4" />
-                    {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className={theme === "dark" ? "bg-zinc-800 text-white" : ""}>
-                  <DialogHeader>
-                    <DialogTitle>Notifications</DialogTitle>
-                  </DialogHeader>
-                  <ScrollArea className="h-[300px]">
-                    {notifications.map((notification) => (
-                      <div key={notification.id} className={`py-2 border-b ${theme === "dark" ? "border-zinc-700" : ""} rounded-md p-3 mb-2`}>
-                        <p>{notification.message}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(notification.created_at).toLocaleString()}</p>
-                      </div>
-                    ))}
-                    {notifications.length === 0 && <p className="text-center text-muted-foreground py-4">No notifications</p>}
-                  </ScrollArea>
-                </DialogContent>
-              </Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"} relative`} onClick={handleOpenNotificationDialog}>
+                  <Bell className="h-4 w-4" />
+                  {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className={`sm:max-w-[425px] ${theme === "dark" ? "bg-zinc-800 text-white" : ""}`}>
+                <DialogHeader>
+                  <DialogTitle>Notifications</DialogTitle>
+                  <DialogDescription>Your recent notifications</DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="h-[300px] w-full pr-4">
+                  {notifications.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-4">No notifications</p>
+                  ) : (
+                    notifications.map((notification) => (
+                      <Card key={notification.id} className={`mb-4 ${notification.is_read ? 'opacity-60' : ''}`}>
+                        <CardHeader className="p-4">
+                          <CardTitle className="text-sm font-medium">{notification.type}</CardTitle>
+                          <CardDescription className="text-xs">{new Date(notification.created_at).toLocaleString()}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <p className="text-sm">{notification.message}</p>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
 
               {/* Theme Toggle */}
               <Button variant="ghost" size="icon" onClick={toggleTheme} className={`rounded-full ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"}`}>
@@ -1579,26 +1595,29 @@ export default function RideShareApp() {
   };
 
   return (
-    <Layout>
-      <div className={`flex items-center justify-center min-h-[calc(100vh-12rem)] ${theme === "dark" ? "text-white" : ""}`}>
-        {isLoading ? (
-          <div className="flex flex-col items-center space-y-4">
-            <Skeleton className="h-12 w-12 rounded-full" />
-            <Skeleton className="h-4 w-[250px]" />
-            <Skeleton className="h-4 w-[200px]" />
-          </div>
-        ) : (
-          <>
-            {currentPage === "welcome" && <WelcomePage />}
-            {currentPage === "login" && <LoginPage />}
-            {currentPage === "register" && <RegisterPage />}
-            {currentPage === "dashboard" && currentUser && <DashboardPage />}
-            {currentPage === "create-ride" && currentUser && <CreateRidePage />}
-            {currentPage === "profile" && currentUser && <ProfilePage />}
-            {!currentUser && currentPage !== "welcome" && currentPage !== "login" && currentPage !== "register" && <div>Loading...</div>}
-          </>
-        )}
-      </div>
-    </Layout>
+    <>
+      <Layout>
+        <div className={`flex items-center justify-center min-h-[calc(100vh-12rem)] ${theme === "dark" ? "text-white" : ""}`}>
+          {isLoading ? (
+            <div className="flex flex-col items-center space-y-4">
+              <Skeleton className="h-12 w-12 rounded-full" />
+              <Skeleton className="h-4 w-[250px]" />
+              <Skeleton className="h-4 w-[200px]" />
+            </div>
+          ) : (
+            <>
+              {currentPage === "welcome" && <WelcomePage />}
+              {currentPage === "login" && <LoginPage />}
+              {currentPage === "register" && <RegisterPage />}
+              {currentPage === "dashboard" && currentUser && <DashboardPage />}
+              {currentPage === "create-ride" && currentUser && <CreateRidePage />}
+              {currentPage === "profile" && currentUser && <ProfilePage />}
+              {!currentUser && currentPage !== "welcome" && currentPage !== "login" && currentPage !== "register" && <div>Loading...</div>}
+            </>
+          )}
+        </div>
+      </Layout>
+      <Toaster />
+    </>
   )
 }
