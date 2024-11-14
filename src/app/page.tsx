@@ -1,23 +1,27 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, LogOut, UserPlus, Home, Car, Users, Menu, Clock, User, Moon, Sun, Search } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { toast } from "@/hooks/use-toast";
+import { useState, useEffect, useCallback, useRef } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Bell, LogOut, UserPlus, Home, Car, Users, Menu, Clock, User, Moon, Sun, Search, Mail, Phone, MapPin, Send } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Toaster } from "@/components/ui/toaster"
+import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 // Types
 type User = {
   id: number;
   name: string;
   phone: string;
+  email: string;
 };
 
 type Ride = {
@@ -27,7 +31,10 @@ type Ride = {
   time: string;
   requester_id: number;
   accepter_id: number | null;
-  status: "pending" | "accepted" | "completed" | "cancelled";
+  status: "pending" | "offered" | "cancelled";
+  rider_name: string;
+  rider_phone: string | null;
+  note: string | null;
 };
 
 type Contact = {
@@ -55,36 +62,126 @@ type RideData = {
   from_location: string;
   to_location: string;
   time: string;
+  rider_name: string;
+  rider_phone: string | null;
+  note: string | null;
 };
 
-// Main App Component
+type AssociatedPerson = {
+  id: number;
+  user_id: number;
+  name: string;
+  relationship: string;
+};
+
+type UserStats = {
+  rides_offered: number;
+  rides_accepted: number;
+};
+
+type Note = {
+  id: number;
+  ride_id: number;
+  user_id: number;
+  note: string;
+  created_at: string;
+  user_name: string;
+};
+
 export default function RideShareApp() {
-  const [currentPage, setCurrentPage] = useState("welcome");
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [rides, setRides] = useState<Ride[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState("welcome")
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [rides, setRides] = useState<Ride[]>([])
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([])
+  const [userStats, setUserStats] = useState<UserStats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false)
+  const [theme, setTheme] = useState<"light" | "dark">("light")
+  const [activeTab, setActiveTab] = useState("available")
+  const [etag, setEtag] = useState<string | null>(null)
+
+  const { toast } = useToast()
+
+  const fetchUserData = useCallback(
+    async (userId: number) => {
+      try {
+        const headers: HeadersInit = {}
+        if (etag) {
+          headers["If-None-Match"] = etag
+        }
+
+        const response = await fetch(`/api/user-data?userId=${userId}`, { headers })
+
+        if (response.status === 304) {
+          // Data hasn't changed
+          return
+        }
+
+        if (response.ok) {
+          const newEtag = response.headers.get("ETag")
+          if (newEtag) {
+            setEtag(newEtag)
+          }
+
+          const data = await response.json()
+          const newNotifications = data.notifications.filter(
+            (newNotif: Notification) => !notifications.some((oldNotif) => oldNotif.id === newNotif.id)
+          )
+
+          if (newNotifications.length > 0) {
+            newNotifications.forEach((notification: Notification) => {
+              toast({
+                title: "New Notification",
+                description: notification.message,
+              })
+            })
+          }
+
+          setRides(data.rides)
+          setContacts(data.contacts)
+          setNotifications(data.notifications)
+          setAssociatedPeople(data.associatedPeople)
+          setUserStats(data.stats)
+        } else {
+          console.error("Failed to fetch user data")
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+      }
+    },
+    [etag, notifications, toast]
+  )
 
   useEffect(() => {
-    const user = localStorage.getItem("currentUser");
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
+    const user = localStorage.getItem("currentUser")
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null
     if (user) {
-      const parsedUser = JSON.parse(user) as User;
-      setCurrentUser(parsedUser);
-      setCurrentPage("dashboard");
-      void fetchUserData(parsedUser.id);
+      const parsedUser = JSON.parse(user) as User
+      setCurrentUser(parsedUser)
+      setCurrentPage("dashboard")
+      void fetchUserData(parsedUser.id)
     }
     if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.classList.toggle("dark", savedTheme === "dark");
+      setTheme(savedTheme)
+      document.documentElement.classList.toggle("dark", savedTheme === "dark")
     }
     // Simulate loading delay
-    setTimeout(() => setIsLoading(false), 1000);
-  }, []);
+    setTimeout(() => setIsLoading(false), 1000)
+  }, [fetchUserData])
+
+  useEffect(() => {
+    if (currentUser) {
+      const intervalId = setInterval(() => {
+        void fetchUserData(currentUser.id)
+      }, 10000) // Fetch every 10 seconds
+
+      return () => clearInterval(intervalId)
+    }
+  }, [currentUser, fetchUserData])
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
@@ -93,31 +190,12 @@ export default function RideShareApp() {
     document.documentElement.classList.toggle("dark", newTheme === "dark");
   };
 
-  const fetchUserData = async (userId: number) => {
-    try {
-      const [ridesResponse, contactsResponse, notificationsResponse] = await Promise.all([fetch(`/api/rides?userId=${userId}`), fetch(`/api/contacts?userId=${userId}`), fetch(`/api/notifications?userId=${userId}`)]);
-
-      const [ridesData, contactsData, notificationsData] = await Promise.all([ridesResponse.json(), contactsResponse.json(), notificationsResponse.json()]);
-
-      setRides(ridesData.rides);
-      setContacts(contactsData.contacts);
-      setNotifications(notificationsData.notifications);
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch user data. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const login = async (phone: string, password: string) => {
+  const login = async (phoneOrEmail: string, password: string) => {
     try {
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, password }),
+        body: JSON.stringify({ phoneOrEmail, password }),
       });
       const data = await response.json();
       if (response.ok && data.user) {
@@ -138,12 +216,12 @@ export default function RideShareApp() {
     }
   };
 
-  const register = async (name: string, phone: string, password: string) => {
+  const register = async (name: string, phone: string, email: string, password: string) => {
     try {
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, password }),
+        body: JSON.stringify({ name, phone, email, password }),
       });
       const data = await response.json();
       if (response.ok && data.user) {
@@ -191,6 +269,9 @@ export default function RideShareApp() {
           title: "Ride Created",
           description: "Your ride request has been created successfully.",
         });
+        setCurrentPage("dashboard");
+        setActiveTab("my-rides");
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
         const errorData = await response.json();
         toast({
@@ -209,10 +290,6 @@ export default function RideShareApp() {
     }
   };
 
-  const filteredRides = (rides: Ride[]) => {
-    return rides.filter((ride) => ride.from_location.toLowerCase().includes(searchTerm.toLowerCase()) || ride.to_location.toLowerCase().includes(searchTerm.toLowerCase()));
-  };
-
   const acceptRide = async (rideId: number) => {
     if (!currentUser) return;
     try {
@@ -225,11 +302,12 @@ export default function RideShareApp() {
       });
       if (response.ok) {
         const data = await response.json();
-        setRides((prevRides) => prevRides.map((ride) => (ride.id === rideId ? data.ride : ride)));
+        setRides((prevRides) => prevRides.map((ride) => (ride.id === rideId ? { ...ride, status: "offered", accepter_id: currentUser.id } : ride)));
         toast({
           title: "Ride Accepted",
           description: "You have successfully accepted the ride.",
         });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
         const errorData = await response.json();
         toast({
@@ -251,7 +329,7 @@ export default function RideShareApp() {
   const cancelRequest = async (rideId: number) => {
     if (!currentUser) return;
     try {
-      const response = await fetch(`/api/rides/${rideId}/cancelrequest`, {
+      const response = await fetch(`/api/rides/${rideId}/cancel`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -260,11 +338,12 @@ export default function RideShareApp() {
       });
       if (response.ok) {
         const data = await response.json();
-        setRides((prevRides) => prevRides.map((ride) => (ride.id === rideId ? data.ride : ride)));
+        setRides((prevRides) => prevRides.map((ride) => (ride.id === rideId ? { ...ride, status: "cancelled" } : ride)));
         toast({
           title: "Request Cancelled",
           description: "Your ride request has been cancelled successfully.",
         });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
         const errorData = await response.json();
         toast({
@@ -286,7 +365,7 @@ export default function RideShareApp() {
   const cancelOffer = async (rideId: number) => {
     if (!currentUser) return;
     try {
-      const response = await fetch(`/api/rides/${rideId}/canceloffer`, {
+      const response = await fetch(`/api/rides/${rideId}/cancel-offer`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -295,11 +374,12 @@ export default function RideShareApp() {
       });
       if (response.ok) {
         const data = await response.json();
-        setRides((prevRides) => prevRides.map((ride) => (ride.id === rideId ? data.ride : ride)));
+        setRides((prevRides) => prevRides.map((ride) => (ride.id === rideId ? { ...ride, status: "pending", accepter_id: null } : ride)));
         toast({
           title: "Offer Cancelled",
           description: "Your ride offer has been cancelled successfully.",
         });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
         const errorData = await response.json();
         toast({
@@ -313,6 +393,61 @@ export default function RideShareApp() {
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addNote = async (rideId: number, note: string) => {
+    if (!currentUser) return;
+    try {
+      const response = await fetch(`/api/rides/${rideId}/notes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: currentUser.id, note }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        toast({
+          title: "Note Added",
+          description: "Your note has been added successfully.",
+        });
+        void fetchUserData(currentUser.id); // Fetch updated data
+        return data.note;
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.error || "Failed to add note. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error adding note:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchNotes = async (rideId: number) => {
+    try {
+      const response = await fetch(`/api/rides/${rideId}/notes`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.notes;
+      } else {
+        throw new Error("Failed to fetch notes");
+      }
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch notes. Please try again.",
         variant: "destructive",
       });
     }
@@ -333,6 +468,7 @@ export default function RideShareApp() {
           title: "Success",
           description: "Contact request sent successfully!",
         });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
         toast({
           title: "Error",
@@ -361,11 +497,11 @@ export default function RideShareApp() {
       const data = await response.json();
       if (response.ok && data.contact) {
         setContacts((prevContacts) => prevContacts.map((contact) => (contact.id === contactId ? { ...contact, status: "accepted" } : contact)));
-        void fetchUserData(currentUser.id);
         toast({
           title: "Success",
           description: "Contact accepted successfully!",
         });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
         toast({
           title: "Error",
@@ -397,6 +533,7 @@ export default function RideShareApp() {
           title: "Success",
           description: "Contact deleted successfully!",
         });
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
         const errorData = await response.json();
         toast({
@@ -458,6 +595,7 @@ export default function RideShareApp() {
 
       if (response.ok) {
         setNotifications((prevNotifications) => prevNotifications.map((notification) => (notificationIds.includes(notification.id) ? { ...notification, is_read: true } : notification)));
+        void fetchUserData(currentUser.id); // Fetch updated data
       } else {
         console.error("Failed to mark notifications as read");
       }
@@ -470,9 +608,43 @@ export default function RideShareApp() {
     setIsNotificationDialogOpen(true);
     const unreadNotifications = notifications.filter((n) => !n.is_read);
     if (unreadNotifications.length > 0) {
-      markNotificationsAsRead(unreadNotifications.map((n) => n.id));
+      void markNotificationsAsRead(unreadNotifications.map((n) => n.id));
     }
   };
+
+  const addAssociatedPerson = async (name: string, relationship: string) => {
+    if (!currentUser) return;
+    try {
+      const response = await fetch("/api/associated-people", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUser.id, name, relationship }),
+      });
+      const data = await response.json();
+      if (response.ok && data.associatedPerson) {
+        setAssociatedPeople((prevPeople) => [...prevPeople, data.associatedPerson]);
+        toast({
+          title: "Success",
+          description: "Associated person added successfully!",
+        });
+        void fetchUserData(currentUser.id); // Fetch updated data
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to add associated person. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Add associated person error:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
 
   // Components
   const WelcomePage = () => (
@@ -492,31 +664,59 @@ export default function RideShareApp() {
 
   const LoginPage = () => {
     const [error, setError] = useState<string | null>(null);
+    const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+    const [resetEmail, setResetEmail] = useState("");
+
+    const handleResetPassword = async () => {
+      try {
+        const response = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: resetEmail }),
+        });
+        if (response.ok) {
+          toast({
+            title: "Success",
+            description: "Password reset email sent. Please check your inbox.",
+          });
+          setIsResetPasswordOpen(false);
+        } else {
+          const data = await response.json();
+          throw new Error(data.error || "Failed to send reset email");
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "An unexpected error occurred",
+          variant: "destructive",
+        });
+      }
+    };
 
     return (
       <Card className="w-full max-w-[350px] mx-auto">
         <CardHeader>
           <CardTitle>Login</CardTitle>
-          <CardDescription>Enter your phone number and password to login.</CardDescription>
+          <CardDescription>Enter your phone number or email and password to login.</CardDescription>
         </CardHeader>
         <CardContent>
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              const phone = (e.currentTarget.elements.namedItem("phone") as HTMLInputElement).value;
+              const phoneOrEmail = (e.currentTarget.elements.namedItem("phoneOrEmail") as HTMLInputElement).value;
               const password = (e.currentTarget.elements.namedItem("password") as HTMLInputElement).value;
               try {
-                await login(phone, password);
+                await login(phoneOrEmail, password);
                 setError(null);
               } catch (error) {
-                setError(error instanceof Error ? error.message : "An unexpected error occurred");
+                setError("Invalid phone number/email or password. Please try again.");
               }
             }}
           >
             <div className="grid w-full items-center gap-4">
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" placeholder="Enter your phone number" required />
+                <Label htmlFor="phoneOrEmail">Phone or Email</Label>
+                <Input id="phoneOrEmail" placeholder="Enter your phone number or email" required />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="password">Password</Label>
@@ -529,11 +729,34 @@ export default function RideShareApp() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col space-y-2">
           <Button variant="link" onClick={() => setCurrentPage("register")}>
             Don&apos;t have an account? Register
           </Button>
+          <Button variant="link" onClick={() => setIsResetPasswordOpen(true)}>
+            Forgot your password?
+          </Button>
         </CardFooter>
+
+        <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset Password</DialogTitle>
+              <DialogDescription>Enter your email to receive a password reset link.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="reset-email" className="text-right">
+                  Email
+                </Label>
+                <Input id="reset-email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="col-span-3" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={handleResetPassword}>Send Reset Link</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Card>
     );
   };
@@ -553,12 +776,24 @@ export default function RideShareApp() {
               e.preventDefault();
               const name = (e.currentTarget.elements.namedItem("name") as HTMLInputElement).value;
               const phone = (e.currentTarget.elements.namedItem("phone") as HTMLInputElement).value;
+              const email = (e.currentTarget.elements.namedItem("email") as HTMLInputElement).value;
               const password = (e.currentTarget.elements.namedItem("password") as HTMLInputElement).value;
+              const confirmPassword = (e.currentTarget.elements.namedItem("confirmPassword") as HTMLInputElement).value;
+
+              if (password !== confirmPassword) {
+                setError("Passwords do not match. Please try again.");
+                return;
+              }
+
               try {
-                await register(name, phone, password);
+                await register(name, phone, email, password);
                 setError(null);
               } catch (error) {
-                setError(error instanceof Error ? error.message : "An unexpected error occurred");
+                if (error instanceof Error && error.message.includes("User already exists")) {
+                  setError("This phone number or email is already registered. Please use a different one or login.");
+                } else {
+                  setError("Registration failed. Please try again.");
+                }
               }
             }}
           >
@@ -572,8 +807,16 @@ export default function RideShareApp() {
                 <Input id="phone" placeholder="Enter your phone number" required />
               </div>
               <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" placeholder="Enter your email" required />
+              </div>
+              <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" type="password" placeholder="Create a password" required />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input id="confirmPassword" type="password" placeholder="Confirm your password" required />
               </div>
             </div>
             {error && <p className="text-destructive mt-2">{error}</p>}
@@ -591,11 +834,47 @@ export default function RideShareApp() {
     );
   };
 
+
+  const filteredRides = useCallback(
+    (rides: Ride[]) => {
+      if (!searchTerm.trim()) return rides;
+      return rides.filter(
+        (ride) =>
+          ride.from_location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          ride.to_location.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    },
+    [searchTerm]
+  );
+
   const DashboardPage = () => {
     const safeRides = rides || [];
-    const safeContacts = contacts || [];
-
-    const availableRides = filteredRides(safeRides.filter((ride) => ride.status === "pending" && ride.requester_id !== currentUser?.id && safeContacts.some((contact) => (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && contact.status === "accepted")));
+  
+    // Filter available rides
+    const availableRides = filteredRides(
+      safeRides.filter((ride) => {
+        // Check if the ride is pending and not requested by the current user
+        const isPendingAndNotOwn = ride.status === "pending" && ride.requester_id !== currentUser?.id;
+        
+        // Check if the ride requester is a connected user
+        const isConnectedUser = contacts.some(
+          (contact) => 
+            (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) &&
+            contact.status === "accepted"
+        );
+  
+        return isPendingAndNotOwn && isConnectedUser;
+      })
+    );
+  
+    const myRides = filteredRides(safeRides.filter((ride) => ride.requester_id === currentUser?.id));
+    const offeredRides = filteredRides(safeRides.filter((ride) => ride.accepter_id === currentUser?.id));
+  
+    console.log("All Rides:", safeRides);
+    console.log("Available Rides:", availableRides);
+    console.log("My Rides:", myRides);
+    console.log("Offered Rides:", offeredRides);
+  
 
     return (
       <div className="w-full max-w-4xl mx-auto">
@@ -604,49 +883,63 @@ export default function RideShareApp() {
             <CardTitle className="text-xl md:text-2xl">Dashboard</CardTitle>
             <CardDescription>Manage your rides and connections</CardDescription>
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input type="text" placeholder="Search rides..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 w-full" />
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-zinc-400" />
+              <Input
+                type="text"
+                placeholder="Search rides..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 w-full"
+                ref={searchInputRef}
+              />
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="available" className="w-full">
+            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="available" className="text-xs md:text-sm">
-                  Available Rides
+                  Available Rides ({availableRides.length})
                 </TabsTrigger>
                 <TabsTrigger value="my-rides" className="text-xs md:text-sm">
-                  My Rides
+                  My Rides ({myRides.length})
                 </TabsTrigger>
-                <TabsTrigger value="accepted-rides" className="text-xs md:text-sm">
-                  Accepted Rides
+                <TabsTrigger value="offered-rides" className="text-xs md:text-sm">
+                  Offered Rides ({offeredRides.length})
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="available">
                 <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                  {isLoading
-                    ? Array(3)
-                        .fill(0)
-                        .map((_, i) => (
-                          <Card key={i} className="mb-4">
-                            <CardHeader>
-                              <Skeleton className="h-4 w-[250px]" />
-                              <Skeleton className="h-4 w-[200px]" />
-                            </CardHeader>
-                            <CardContent>
-                              <Skeleton className="h-4 w-[150px]" />
-                            </CardContent>
-                            <CardFooter>
-                              <Skeleton className="h-10 w-full" />
-                            </CardFooter>
-                          </Card>
-                        ))
-                    : availableRides.map((ride) => (
-                        <Card key={`available-${ride.id}`} className="mb-4 overflow-hidden">
+                  {isLoading ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <Card key={i} className="mb-4">
+                        <CardHeader>
+                          <Skeleton className="h-4 w-[250px]" />
+                          <Skeleton className="h-4 w-[200px]" />
+                        </CardHeader>
+                        <CardContent>
+                          <Skeleton className="h-4 w-[150px]" />
+                        </CardContent>
+                        <CardFooter>
+                          <Skeleton className="h-10 w-full" />
+                        </CardFooter>
+                      </Card>
+                    ))
+                  ) : (
+                    availableRides.map((ride) => (
+                      <RideDetailsDialog 
+                        key={`available-${ride.id}`} 
+                        ride={ride} 
+                        onAcceptRide={acceptRide} 
+                        onAddNote={addNote} 
+                        fetchNotes={fetchNotes} 
+                        currentUser={currentUser}
+                      >
+                        <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-lg">
                               {ride.from_location} to {ride.to_location}
                             </CardTitle>
-                            <CardDescription>Requested by: {safeContacts.find((contact) => contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id)?.user_name || "Unknown"}</CardDescription>
+                            <CardDescription>Requested by: {ride.rider_name}</CardDescription>
                           </CardHeader>
                           <CardContent className="pb-2">
                             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -654,77 +947,114 @@ export default function RideShareApp() {
                               <span>{new Date(ride.time).toLocaleString()}</span>
                             </div>
                           </CardContent>
-                          <CardFooter className="bg-muted py-2">
-                            <Button onClick={() => acceptRide(ride.id)} className="w-full">
-                              Offer Ride
-                            </Button>
-                          </CardFooter>
                         </Card>
-                      ))}
-                  {!isLoading && availableRides.length === 0 && <div className="text-center py-4 text-muted-foreground">No available rides at the moment.</div>}
+                      </RideDetailsDialog>
+                    ))
+                  )}
+                  {!isLoading && availableRides.length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground">No available rides at the moment.</div>
+                  )}
                 </ScrollArea>
               </TabsContent>
               <TabsContent value="my-rides">
                 <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                  {safeRides
-                    .filter((ride) => ride.requester_id === currentUser?.id)
-                    .map((ride) => (
-                      <Card key={`my-${ride.id}`} className="mb-4 overflow-hidden">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">
-                            {ride.from_location} to {ride.to_location}
-                          </CardTitle>
-                          <CardDescription>Status: {ride.status}</CardDescription>
+                  {isLoading ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <Card key={i} className="mb-4">
+                        <CardHeader>
+                          <Skeleton className="h-4 w-[250px]" />
+                          <Skeleton className="h-4 w-[200px]" />
                         </CardHeader>
-                        <CardContent className="pb-2">
-                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <Clock className="h-4 w-4" />
-                            <span>{new Date(ride.time).toLocaleString()}</span>
-                          </div>
+                        <CardContent>
+                          <Skeleton className="h-4 w-[150px]" />
                         </CardContent>
-                        <CardFooter className="bg-muted py-2">
-                          {ride.status === "pending" && (
-                            <Button onClick={() => cancelRequest(ride.id)} variant="destructive" className="w-full">
-                              Cancel Request
-                            </Button>
-                          )}
-                          {ride.status === "accepted" && (
-                            <Button onClick={() => cancelRequest(ride.id)} variant="destructive" className="w-full">
-                              Cancel Ride
-                            </Button>
-                          )}
+                        <CardFooter>
+                          <Skeleton className="h-10 w-full" />
                         </CardFooter>
                       </Card>
-                    ))}
-                  {safeRides.filter((ride) => ride.requester_id === currentUser?.id).length === 0 && <div className="text-center py-4 text-muted-foreground">You haven't requested any rides yet.</div>}
+                    ))
+                  ) : (
+                    myRides.map((ride) => (
+                      <RideDetailsDialog 
+                        key={`my-${ride.id}`} 
+                        ride={ride} 
+                        onCancelRequest={cancelRequest} 
+                        onAddNote={addNote} 
+                        fetchNotes={fetchNotes} 
+                        currentUser={currentUser}
+                      >
+                        <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">
+                              {ride.from_location} to {ride.to_location}
+                            </CardTitle>
+                            <CardDescription>
+                              Status: {ride.status}
+                              {ride.status === "offered" && ` (Offered by: ${ride.accepter_id ? contacts.find(c => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user_name : "Unknown"})`}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="pb-2">
+                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>{new Date(ride.time).toLocaleString()}</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </RideDetailsDialog>
+                    ))
+                  )}
+                  {!isLoading && myRides.length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground">You haven't requested any rides yet.</div>
+                  )}
                 </ScrollArea>
               </TabsContent>
-              <TabsContent value="accepted-rides">
+              <TabsContent value="offered-rides">
                 <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                  {safeRides
-                    .filter((ride) => ride.accepter_id === currentUser?.id && ride.status === "accepted")
-                    .map((ride) => (
-                      <Card key={`accepted-${ride.id}`} className="mb-4 overflow-hidden">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">
-                            {ride.from_location} to {ride.to_location}
-                          </CardTitle>
-                          <CardDescription>Requested by: {safeContacts.find((contact) => contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id)?.user_name || "Unknown"}</CardDescription>
+                  {isLoading ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <Card key={i} className="mb-4">
+                        <CardHeader>
+                          <Skeleton className="h-4 w-[250px]" />
+                          <Skeleton className="h-4 w-[200px]" />
                         </CardHeader>
-                        <CardContent className="pb-2">
-                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <Clock className="h-4 w-4" />
-                            <span>{new Date(ride.time).toLocaleString()}</span>
-                          </div>
+                        <CardContent>
+                          <Skeleton className="h-4 w-[150px]" />
                         </CardContent>
-                        <CardFooter className="bg-muted py-2">
-                          <Button onClick={() => cancelOffer(ride.id)} variant="destructive" className="w-full">
-                            Cancel Offer
-                          </Button>
+                        <CardFooter>
+                          <Skeleton className="h-10 w-full" />
                         </CardFooter>
                       </Card>
-                    ))}
-                  {safeRides.filter((ride) => ride.accepter_id === currentUser?.id && ride.status === "accepted").length === 0 && <div className="text-center py-4 text-muted-foreground">You haven't accepted any rides yet.</div>}
+                    ))
+                  ) : (
+                    offeredRides.map((ride) => (
+                      <RideDetailsDialog 
+                        key={`offered-${ride.id}`} 
+                        ride={ride} 
+                        onCancelOffer={cancelOffer} 
+                        onAddNote={addNote} 
+                        fetchNotes={fetchNotes} 
+                        currentUser={currentUser}
+                      >
+                        <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">
+                              {ride.from_location} to {ride.to_location}
+                            </CardTitle>
+                            <CardDescription>Requested by: {ride.rider_name}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="pb-2">
+                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>{new Date(ride.time).toLocaleString()}</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </RideDetailsDialog>
+                    ))
+                  )}
+                  {!isLoading && offeredRides.length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground">You haven't offered any rides yet.</div>
+                  )}
                 </ScrollArea>
               </TabsContent>
             </Tabs>
@@ -733,179 +1063,413 @@ export default function RideShareApp() {
       </div>
     );
   };
-  const CreateRidePage = () => (
-    <Card className="w-full max-w-[350px] mx-auto">
-      <CardHeader>
-        <CardTitle>Create New Ride</CardTitle>
-        <CardDescription>Request a ride by filling out the details below.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const from = (e.currentTarget.elements.namedItem("from") as HTMLInputElement).value;
-            const to = (e.currentTarget.elements.namedItem("to") as HTMLInputElement).value;
-            const time = (e.currentTarget.elements.namedItem("time") as HTMLInputElement).value;
-            createRide({ from_location: from, to_location: to, time });
-            setCurrentPage("dashboard");
-          }}
-        >
-          <div className="grid w-full items-center gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="from">From</Label>
-              <Input id="from" placeholder="Enter starting location" required />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="to">To</Label>
-              <Input id="to" placeholder="Enter destination" required />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="time">Time</Label>
-              <Input id="time" type="datetime-local" required />
-            </div>
-          </div>
-          <Button className="w-full mt-4" type="submit">
-            Create Ride
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  );
 
-  const ProfilePage = () => {
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-    if (!currentUser) {
-      return <div>Loading user profile...</div>;
-    }
+  const RideDetailsDialog = ({
+    children,
+    ride,
+    onCancelRequest,
+    onCancelOffer,
+    onAcceptRide,
+    onAddNote,
+    fetchNotes,
+    currentUser,
+  }: {
+    children: React.ReactNode;
+    ride: Ride;
+    onCancelRequest?: (rideId: number) => Promise<void>;
+    onCancelOffer?: (rideId: number) => Promise<void>;
+    onAcceptRide?: (rideId: number) => Promise<void>;
+    onAddNote: (rideId: number, note: string) => Promise<Note | undefined>;
+    fetchNotes: (rideId: number) => Promise<Note[]>;
+    currentUser: User | null;
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [notes, setNotes] = useState<Note[]>([]);
+    const [newNote, setNewNote] = useState("");
 
-    // Filter out the current user from contacts list and handle different contact states
-    const filteredContacts = contacts.filter((contact) => {
-      return contact.user_id === currentUser.id || contact.contact_id === currentUser.id;
-    });
+    useEffect(() => {
+      if (isOpen) {
+        void loadNotes();
+      }
+    }, [isOpen]);
+
+    const loadNotes = async () => {
+      const fetchedNotes = await fetchNotes(ride.id);
+      setNotes(fetchedNotes);
+    };
+
+    const handleAddNote = async () => {
+      if (newNote.trim()) {
+        const addedNote = await onAddNote(ride.id, newNote);
+        if (addedNote) {
+          setNotes((prevNotes) => [...prevNotes, addedNote]);
+          setNewNote("");
+        }
+      }
+    };
 
     return (
-      <Card className="w-full max-w-2xl mx-auto shadow-lg">
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>{children}</DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Ride Details</DialogTitle>
+            <DialogDescription>
+              From {ride.from_location} to {ride.to_location}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="rider" className="text-right">
+                Rider
+              </Label>
+              <div id="rider" className="col-span-3">
+                {ride.rider_name}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="time" className="text-right">
+                Time
+              </Label>
+              <div id="time" className="col-span-3">
+                {new Date(ride.time).toLocaleString()}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">
+                Status
+              </Label>
+              <div id="status" className={`col-span-3 font-semibold ${
+                  ride.status === "offered"
+                    ? "text-green-500"
+                    : ride.status === "cancelled"
+                    ? "text-red-500"
+                    : "text-yellow-500"
+                }`}
+              >
+                {ride.status.charAt(0).toUpperCase() + ride.status.slice(1)}
+              </div>
+            </div>
+            {(ride.status === "offered" || ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
+              <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="notes" className="text-right">
+                    Messages
+                  </Label>
+                  <ScrollArea className="h-[200px] w-[300px] rounded-md border p-4 col-span-3">
+                    {notes.map((note) => (
+                      <div key={note.id} className={`mb-4 ${note.user_id === currentUser?.id ? 'text-right' : 'text-left'}`}>
+                        <div className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'} rounded-lg p-2`}>
+                          <p className="text-sm">{note.note}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {note.user_name} - {new Date(note.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </ScrollArea>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="new-note" className="text-right">
+                    New Message
+                  </Label>
+                  <div className="col-span-3 flex space-x-2">
+                    <Input id="new-note" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Type your message..." />
+                    <Button onClick={handleAddNote} size="icon">
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            {ride.requester_id === currentUser?.id && ride.status !== "cancelled" && onCancelRequest && (
+              <Button variant="destructive" onClick={() => onCancelRequest(ride.id)}>
+                Cancel Request
+              </Button>
+            )}
+            {ride.accepter_id === currentUser?.id && ride.status === "offered" && onCancelOffer && (
+              <Button variant="destructive" onClick={() => onCancelOffer(ride.id)}>
+                Cancel Offer
+              </Button>
+            )}
+            {ride.status === "pending" && onAcceptRide && (
+              <Button onClick={() => onAcceptRide(ride.id)}>Offer Ride</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+
+  const CreateRidePage = () => {
+    const [rideData, setRideData] = useState<RideData>({
+      from_location: "",
+      to_location: "",
+      time: "",
+      rider_name: currentUser?.name || "",
+      rider_phone: currentUser?.phone || null,
+      note: null,
+    });
+    const [riderType, setRiderType] = useState("self");
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      void createRide(rideData);
+    };
+
+    return (
+      <Card className="w-full max-w-[350px] mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl">Profile</CardTitle>
-          <CardDescription>Your account information</CardDescription>
+          <CardTitle>Create a Ride</CardTitle>
+          <CardDescription>Fill in the details for your ride request.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center space-y-4">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-4xl font-bold text-white shadow-lg">{currentUser.name.charAt(0).toUpperCase()}</div>
-            <div className="text-center">
-              <h2 className="text-2xl font-bold">{currentUser.name}</h2>
-              <p className="text-muted-foreground">{currentUser.phone}</p>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-center space-x-4">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>Manage Contacts</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Contacts</DialogTitle>
-                <DialogDescription>Manage your contacts and friend requests.</DialogDescription>
-              </DialogHeader>
-              <div className="py-4">
-                <h3 className="mb-2 font-semibold">Add New Contact</h3>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const phone = (e.currentTarget.elements.namedItem("contactPhone") as HTMLInputElement).value;
-                    if (phone === currentUser.phone) {
-                      toast({
-                        title: "Error",
-                        description: "You cannot add yourself as a contact",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-                    addContact(phone);
-                    e.currentTarget.reset();
-                  }}
-                  className="flex space-x-2"
-                >
-                  <Input id="contactPhone" placeholder="Enter phone number" required />
-                  <Button type="submit">
-                    <UserPlus className="h-4 w-4 mr-2" /> Add
-                  </Button>
-                </form>
+          <form onSubmit={handleSubmit}>
+            <div className="grid w-full items-center gap-4">
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="from_location">From</Label>
+                <Input id="from_location" value={rideData.from_location} onChange={(e) => setRideData((prev) => ({ ...prev, from_location: e.target.value }))} placeholder="Enter starting location" required />
               </div>
-              <ScrollArea className="h-[200px]">
-                {filteredContacts.map((contact) => {
-                  const isOutgoingRequest = contact.user_id === currentUser.id;
-                  const contactName = isOutgoingRequest ? contact.contact_name : contact.user_name;
-                  const contactPhone = isOutgoingRequest ? contact.contact_phone : contact.user_phone;
-
-                  return (
-                    <div key={`contact-${contact.id}`} className="flex justify-between items-center py-2">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">{contactName.charAt(0).toUpperCase()}</div>
-                        <div>
-                          <p className="font-semibold">{contactName}</p>
-                          <p className="text-sm text-muted-foreground">{contactPhone}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {contact.status === "pending" && isOutgoingRequest && "Request sent"}
-                            {contact.status === "pending" && !isOutgoingRequest && "Request received"}
-                            {contact.status === "accepted" && "Connected"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        {contact.status === "pending" && isOutgoingRequest && (
-                          <Button onClick={() => deleteContact(contact.id)} size="sm" variant="destructive">
-                            Cancel
-                          </Button>
-                        )}
-                        {contact.status === "pending" && !isOutgoingRequest && (
-                          <>
-                            <Button onClick={() => acceptContact(contact.id)} size="sm">
-                              Accept
-                            </Button>
-                            <Button onClick={() => deleteContact(contact.id)} size="sm" variant="destructive">
-                              Decline
-                            </Button>
-                          </>
-                        )}
-                        {contact.status === "accepted" && (
-                          <Button onClick={() => deleteContact(contact.id)} size="sm" variant="destructive">
-                            Remove
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                {filteredContacts.length === 0 && <div className="text-center py-4 text-muted-foreground">No contacts found</div>}
-              </ScrollArea>
-            </DialogContent>
-          </Dialog>
-          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="destructive">Delete Account</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete Account</DialogTitle>
-                <DialogDescription>Are you sure you want to delete your account? This action cannot be undone.</DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button variant="destructive" onClick={deleteUser}>
-                  Delete
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </CardFooter>
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="to_location">To</Label>
+                <Input id="to_location" value={rideData.to_location} onChange={(e) => setRideData((prev) => ({ ...prev, to_location: e.target.value }))} placeholder="Enter destination" required />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="time">Time</Label>
+                <Input id="time" type="datetime-local" value={rideData.time} onChange={(e) => setRideData((prev) => ({ ...prev, time: e.target.value }))} required />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="rider_type">Rider</Label>
+                <Select value={riderType} onValueChange={setRiderType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select rider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="self">Myself</SelectItem>
+                    {associatedPeople.map((person) => (
+                      <SelectItem key={person.id} value={`associated_${person.id}`}>
+                        {person.name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {riderType === "other" && (
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="rider_name">Rider Name</Label>
+                  <Input id="rider_name" value={rideData.rider_name} onChange={(e) => setRideData((prev) => ({ ...prev, rider_name: e.target.value }))} placeholder="Enter rider's name" required />
+                </div>
+              )}
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="rider_phone">Rider Phone (optional)</Label>
+                <Input id="rider_phone" value={rideData.rider_phone || ""} onChange={(e) => setRideData((prev) => ({ ...prev, rider_phone: e.target.value }))} placeholder="Enter rider's phone number" />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="note">Note (optional)</Label>
+                <Input id="note" value={rideData.note || ""} onChange={(e) => setRideData((prev) => ({ ...prev, note: e.target.value }))} placeholder="Add a note for the driver" />
+              </div>
+            </div>
+            <Button className="w-full mt-4" type="submit">
+              Create Ride
+            </Button>
+          </form>
+        </CardContent>
       </Card>
     );
   };
+
+
+  const ProfilePage = () => {
+    const [newContactPhone, setNewContactPhone] = useState("");
+    const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" });
+    const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+    const [editedUser, setEditedUser] = useState<User | null>(currentUser);
+
+    return (
+      <div className="w-full max-w-4xl mx-auto">
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-2xl">Profile Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-4">
+                <User className="h-6 w-6 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Name</p>
+                  <p>{currentUser?.name}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Phone className="h-6 w-6 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Phone</p>
+                  <p>{currentUser?.phone}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Mail className="h-6 w-6 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Email</p>
+                  <p>{currentUser?.email}</p>
+                </div>
+              </div>
+            </div>
+            <Button className="mt-4" onClick={() => setIsEditProfileOpen(true)}>
+              Edit Profile
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-2xl">Statistics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-4">
+                <Car className="h-6 w-6 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Rides Offered</p>
+                  <p>{userStats?.rides_offered || 0}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <MapPin className="h-6 w-6 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Rides Accepted</p>
+                  <p>{userStats?.rides_accepted || 0}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Contacts</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {contacts.map((contact) => {
+              const isCurrentUserRequester = contact.user_id === currentUser?.id;
+              const contactName = isCurrentUserRequester ? contact.contact_name : contact.user_name;
+              const contactPhone = isCurrentUserRequester ? contact.contact_phone : contact.user_phone;
+
+              return (
+                <div key={contact.id} className="flex flex-col space-y-2 p-4 bg-secondary rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <div className="space-y-1">
+                      <p className="font-medium">{contactName}</p>
+                      <p className="text-sm text-muted-foreground">{contactPhone}</p>
+                      <p className="text-sm">({contact.status})</p>
+                    </div>
+                    <div className="flex space-x-2">
+                      {contact.status === "pending" && contact.contact_id === currentUser?.id && (
+                        <Button onClick={() => acceptContact(contact.id)} size="sm">
+                          Accept
+                        </Button>
+                      )}
+                      <Button onClick={() => deleteContact(contact.id)} variant="destructive" size="sm">
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="flex space-x-2 mt-4">
+              <Input type="tel" placeholder="Enter contact's phone number" value={newContactPhone} onChange={(e) => setNewContactPhone(e.target.value)} />
+              <Button
+                onClick={() => {
+                  if (newContactPhone.trim()) {
+                    addContact(newContactPhone);
+                    setNewContactPhone("");
+                  }
+                }}
+              >
+                Add Contact
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-2xl">Associated People</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {associatedPeople.map((person) => (
+                <div key={person.id} className="flex justify-between items-center p-2 bg-secondary rounded-md">
+                  <span>
+                    {person.name} ({person.relationship})
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 space-y-2">
+              <Input placeholder="Name" value={newAssociatedPerson.name} onChange={(e) => setNewAssociatedPerson((prev) => ({ ...prev, name: e.target.value }))} />
+              <Input placeholder="Relationship" value={newAssociatedPerson.relationship} onChange={(e) => setNewAssociatedPerson((prev) => ({ ...prev, relationship: e.target.value }))} />
+              <Button onClick={() => addAssociatedPerson(newAssociatedPerson.name, newAssociatedPerson.relationship)} className="w-full">
+                Add Associated Person
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl text-destructive">Danger Zone</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button variant="destructive" onClick={deleteUser}>
+              Delete Account
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Profile</DialogTitle>
+              <DialogDescription>Update your personal information</DialogDescription>
+            </DialogHeader>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                // Implement the logic to update the user profile
+                setIsEditProfileOpen(false);
+              }}
+            >
+              <div className="grid w-full items-center gap-4">
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="edit-name">Name</Label>
+                  <Input id="edit-name" value={editedUser?.name || ""} onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, name: e.target.value } : null))} />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="edit-phone">Phone</Label>
+                  <Input id="edit-phone" value={editedUser?.phone || ""} onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, phone: e.target.value } : null))} />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input id="edit-email" value={editedUser?.email || ""} onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, email: e.target.value } : null))} />
+                </div>
+              </div>
+              <DialogFooter className="mt-4">
+                <Button type="submit">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  };
+
 
   const Layout = ({ children }: { children: React.ReactNode }) => {
     if (!currentUser) return children;
@@ -913,8 +1477,8 @@ export default function RideShareApp() {
     const unreadNotificationsCount = notifications.filter((n) => !n.is_read).length;
 
     return (
-      <div className={`flex flex-col min-h-screen ${theme === "dark" ? "bg-black text-white" : "bg-zinc-50"}`}>
-        <header className={`${theme === "dark" ? "bg-zinc-900" : "bg-white"} shadow-md border-b ${theme === "dark" ? "border-x-zinc-700" : "border-zinc-200"}`}>
+      <div className={`flex flex-col min-h-screen ${theme === "dark" ? "bg-zinc-900 text-white" : "bg-zinc-50"}`}>
+        <header className={`${theme === "dark" ? "bg-zinc-800" : "bg-white"} shadow-md border-b ${theme === "dark" ? "border-zinc-700" : "border-zinc-200"}`}>
           <div className="container mx-auto px-4 py-3 flex justify-between items-center">
             {/* Logo and brand */}
             <div className="flex items-center space-x-4">
@@ -935,27 +1499,36 @@ export default function RideShareApp() {
 
               {/* Notifications */}
               <Dialog open={isNotificationDialogOpen} onOpenChange={setIsNotificationDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"} relative`} onClick={handleOpenNotificationDialog}>
-                    <Bell className="h-4 w-4" />
-                    {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className={theme === "dark" ? "bg-zinc-800 text-white" : ""}>
-                  <DialogHeader>
-                    <DialogTitle>Notifications</DialogTitle>
-                  </DialogHeader>
-                  <ScrollArea className="h-[300px]">
-                    {notifications.map((notification) => (
-                      <div key={notification.id} className={`py-2 border-b ${theme === "dark" ? "border-zinc-700" : ""} rounded-md p-3 mb-2`}>
-                        <p>{notification.message}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(notification.created_at).toLocaleString()}</p>
-                      </div>
-                    ))}
-                    {notifications.length === 0 && <p className="text-center text-muted-foreground py-4">No notifications</p>}
-                  </ScrollArea>
-                </DialogContent>
-              </Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"} relative`} onClick={handleOpenNotificationDialog}>
+                  <Bell className="h-4 w-4" />
+                  {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className={`sm:max-w-[425px] ${theme === "dark" ? "bg-zinc-800 text-white" : ""}`}>
+                <DialogHeader>
+                  <DialogTitle>Notifications</DialogTitle>
+                  <DialogDescription>Your recent notifications</DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="h-[300px] w-full pr-4">
+                  {notifications.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-4">No notifications</p>
+                  ) : (
+                    notifications.map((notification) => (
+                      <Card key={notification.id} className={`mb-4 ${notification.is_read ? 'opacity-60' : ''}`}>
+                        <CardHeader className="p-4">
+                          <CardTitle className="text-sm font-medium">{notification.type}</CardTitle>
+                          <CardDescription className="text-xs">{new Date(notification.created_at).toLocaleString()}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <p className="text-sm">{notification.message}</p>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
 
               {/* Theme Toggle */}
               <Button variant="ghost" size="icon" onClick={toggleTheme} className={`rounded-full ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"}`}>
@@ -979,8 +1552,7 @@ export default function RideShareApp() {
                 <DropdownMenuLabel className="flex items-center">
                   <User className="mr-2 h-4 w-4" /> {currentUser.name}
                 </DropdownMenuLabel>
-
-                <DropdownMenuSeparator className={` ${theme === "dark" ? "bg-zinc-900" : "bg-zinc-300"}  w-11/12 mx-auto `} />
+                <DropdownMenuSeparator />
 
                 {[
                   { icon: Home, label: "Dashboard", page: "dashboard" },
@@ -992,7 +1564,7 @@ export default function RideShareApp() {
                   </DropdownMenuItem>
                 ))}
 
-                <DropdownMenuSeparator className={` ${theme === "dark" ? "bg-zinc-900" : "bg-zinc-300"}  w-11/12 mx-auto `} />
+                <DropdownMenuSeparator />
 
                 <DropdownMenuItem onClick={handleOpenNotificationDialog} className="cursor-pointer">
                   <Bell className="mr-2 h-4 w-4" />
@@ -1015,35 +1587,37 @@ export default function RideShareApp() {
 
         <main className={`flex-grow container mx-auto px-4 py-8 ${theme === "dark" ? "text-white" : ""}`}>{children}</main>
 
-        <footer className={`${theme === "dark" ? "bg-zinc-900 border-zinc-600" : "bg-white border-zinc-200"} border-t py-4`}>
+        <footer className={`${theme === "dark" ? "bg-zinc-800 border-zinc-700" : "bg-white border-zinc-200"} border-t py-4`}>
           <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">© {new Date().getFullYear()} RideShare. All rights reserved.</div>
         </footer>
       </div>
     );
   };
 
-  // Render the appropriate page based on the current state
   return (
-    <Layout>
-      <div className={`flex items-center justify-center min-h-[calc(100vh-12rem)] ${theme === "dark" ? "text-white" : ""}`}>
-        {isLoading ? (
-          <div className="flex flex-col items-center space-y-4">
-            <Skeleton className="h-12 w-[400px] rounded-md" />
-            <Skeleton className="h-4 w-[250px]" />
-            <Skeleton className="h-4 w-[200px]" />
-          </div>
-        ) : (
-          <>
-            {currentPage === "welcome" && <WelcomePage />}
-            {currentPage === "login" && <LoginPage />}
-            {currentPage === "register" && <RegisterPage />}
-            {currentPage === "dashboard" && currentUser && <DashboardPage />}
-            {currentPage === "create-ride" && currentUser && <CreateRidePage />}
-            {currentPage === "profile" && currentUser && <ProfilePage />}
-            {!currentUser && currentPage !== "welcome" && currentPage !== "login" && currentPage !== "register" && <div>Loading...</div>}
-          </>
-        )}
-      </div>
-    </Layout>
+    <>
+      <Layout>
+        <div className={`flex items-center justify-center min-h-[calc(100vh-12rem)] ${theme === "dark" ? "text-white" : ""}`}>
+          {isLoading ? (
+            <div className="flex flex-col items-center space-y-4">
+              <Skeleton className="h-12 w-12 rounded-full" />
+              <Skeleton className="h-4 w-[250px]" />
+              <Skeleton className="h-4 w-[200px]" />
+            </div>
+          ) : (
+            <>
+              {currentPage === "welcome" && <WelcomePage />}
+              {currentPage === "login" && <LoginPage />}
+              {currentPage === "register" && <RegisterPage />}
+              {currentPage === "dashboard" && currentUser && <DashboardPage />}
+              {currentPage === "create-ride" && currentUser && <CreateRidePage />}
+              {currentPage === "profile" && currentUser && <ProfilePage />}
+              {!currentUser && currentPage !== "welcome" && currentPage !== "login" && currentPage !== "register" && <div>Loading...</div>}
+            </>
+          )}
+        </div>
+      </Layout>
+      <Toaster />
+    </>
   )
 }
