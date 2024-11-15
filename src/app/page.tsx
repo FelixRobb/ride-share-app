@@ -1742,7 +1742,7 @@ export default function RideShareApp() {
                   onClick={() => setCurrentPage(item.page)} 
                   className={`rounded-full px-4 py-2 transition-colors duration-200 ${
                     currentPage === item.page 
-                      ? `${theme === "dark" ? "bg-zinc-600" : "bg-primary text-primary-foreground"} hover:bg-primary/90` 
+                      ? `${theme === "dark" ? "bg-zinc-300" : "bg-primary text-primary-foreground"}` 
                       : `${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"}`
                   }`}
                 >
