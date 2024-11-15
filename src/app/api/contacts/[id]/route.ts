@@ -4,7 +4,8 @@ import { getDb } from '@/lib/db';
 export async function DELETE(request: Request) {
   // Extract the `id` param directly from the request URL
   const url = new URL(request.url);
-  const contactId = url.pathname.split('/').at(-2);  // Assuming [id] is in the URL structure
+  const contactId = url.pathname.split('/').at(-1);  // Assuming [id] is in the URL structure
+
 
   const db = await getDb();
 

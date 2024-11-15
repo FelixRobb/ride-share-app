@@ -43,3 +43,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  const userId = searchParams.get('userId');
+
+  if (!id || !userId) {
+    return NextResponse.json({ error: 'Associated person ID and User ID are required' }, { status: 400 });
+  }
+
+  const db = await getDb();
+
+  try {
+    const result = await db.run(
+      'DELETE FROM associated_people WHERE id = ? AND user_id = ?',
+      [id, userId]
+    );
+
+    if (result.changes === 0) {
+      return NextResponse.json({ error: 'Associated person not found or not authorized to delete' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete associated person error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

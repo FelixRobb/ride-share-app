@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const db = await getDb();
   try {
     const notifications = await db.all(
-      "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC",
+      "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at ASC",
       [userId]
     );
     return NextResponse.json({ notifications });
