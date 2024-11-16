@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,7 +98,6 @@ export default function RideShareApp() {
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [activeTab, setActiveTab] = useState("available");
@@ -1088,7 +1087,7 @@ export default function RideShareApp() {
                     ))
                   )}
                   {!isLoading && myRides.length === 0 && (
-                    <div className="text-center py-4 text-muted-foreground">You haven't requested any rides yet.</div>
+                    <div className="text-center py-4 text-muted-foreground">You haven&apos;t requested any rides yet.</div>
                   )}
                 </ScrollArea>
               </TabsContent>
@@ -1140,7 +1139,7 @@ export default function RideShareApp() {
                     ))
                   )}
                   {!isLoading && offeredRides.length === 0 && (
-                    <div className="text-center py-4 text-muted-foreground">You haven't offered any rides yet.</div>
+                    <div className="text-center py-4 text-muted-foreground">You haven&apos;t offered any rides yet.</div>
                   )}
                 </ScrollArea>
               </TabsContent>
@@ -1173,18 +1172,18 @@ export default function RideShareApp() {
   }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [notes, setNotes] = useState<Note[]>([]);
-    const [newNote, setNewNote] = useState("");
+    const [newNote, setNewNote] = useState("")
+
+    const loadNotes = async () => {
+      const fetchedNotes = await fetchNotes(ride.id);
+      setNotes(fetchedNotes);
+    };
 
     useEffect(() => {
       if (isOpen) {
         void loadNotes();
       }
     }, [isOpen]);
-
-    const loadNotes = async () => {
-      const fetchedNotes = await fetchNotes(ride.id);
-      setNotes(fetchedNotes);
-    };
 
     const handleAddNote = async () => {
       if (newNote.trim()) {
