@@ -127,9 +127,7 @@ export default function RideShareApp() {
           }
 
           const data = await response.json();
-          const newNotifications = data.notifications.filter(
-            (newNotif: Notification) => !notifications.some((oldNotif) => oldNotif.id === newNotif.id)
-          );
+          const newNotifications = data.notifications.filter((newNotif: Notification) => !notifications.some((oldNotif) => oldNotif.id === newNotif.id));
 
           if (newNotifications.length > 0) {
             newNotifications.forEach((notification: Notification) => {
@@ -551,32 +549,31 @@ export default function RideShareApp() {
     }
   };
 
-
   const updateProfile = async (updatedUser: User) => {
     if (!currentUser) return;
     try {
       const response = await fetch(`/api/users/${currentUser.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedUser),
       });
       if (response.ok) {
         setCurrentUser(updatedUser);
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        localStorage.setItem("currentUser", JSON.stringify(updatedUser));
         toast({
-          title: 'Success',
-          description: 'Profile updated successfully!',
+          title: "Success",
+          description: "Profile updated successfully!",
         });
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update profile');
+        throw new Error(errorData.error || "Failed to update profile");
       }
     } catch (error) {
-      console.error('Update profile error:', error);
+      console.error("Update profile error:", error);
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
-        variant: 'destructive',
+        title: "Error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
       });
     }
   };
@@ -585,26 +582,26 @@ export default function RideShareApp() {
     if (!currentUser) return;
     try {
       const response = await fetch(`/api/users/${currentUser.id}/change-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
       if (response.ok) {
         toast({
-          title: 'Success',
-          description: 'Password changed successfully!',
+          title: "Success",
+          description: "Password changed successfully!",
         });
         setIsChangePasswordOpen(false);
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to change password');
+        throw new Error(errorData.error || "Failed to change password");
       }
     } catch (error) {
-      console.error('Change password error:', error);
+      console.error("Change password error:", error);
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
-        variant: 'destructive',
+        title: "Error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
       });
     }
   };
@@ -646,29 +643,29 @@ export default function RideShareApp() {
     if (!currentUser) return;
     try {
       const response = await fetch(`/api/associated-people?id=${personId}&userId=${currentUser.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
       if (response.ok) {
         setAssociatedPeople((prevPeople) => prevPeople.filter((person) => person.id !== personId));
         toast({
-          title: 'Success',
-          description: 'Associated person deleted successfully!',
+          title: "Success",
+          description: "Associated person deleted successfully!",
         });
         void fetchUserData(currentUser.id); // Fetch updated data
       } else {
         const errorData = await response.json();
         toast({
-          title: 'Error',
-          description: errorData.error || 'Failed to delete associated person. Please try again.',
-          variant: 'destructive',
+          title: "Error",
+          description: errorData.error || "Failed to delete associated person. Please try again.",
+          variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Delete associated person error:', error);
+      console.error("Delete associated person error:", error);
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -732,7 +729,6 @@ export default function RideShareApp() {
       void markNotificationsAsRead(unreadNotifications.map((n) => n.id));
     }
   };
-
 
   // Components
   const WelcomePage = () => (
@@ -945,10 +941,7 @@ export default function RideShareApp() {
     const availableRides = filteredRides(
       safeRides.filter((ride) => {
         const isPendingAndNotOwn = ride.status === "pending" && ride.requester_id !== currentUser?.id;
-        const isConnectedUser = contacts.some((contact) => 
-          (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && 
-          contact.status === "accepted"
-        );
+        const isConnectedUser = contacts.some((contact) => (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && contact.status === "accepted");
         return isPendingAndNotOwn && isConnectedUser;
       })
     );
@@ -964,13 +957,7 @@ export default function RideShareApp() {
             <CardDescription>Manage your rides and connections</CardDescription>
             <div className="relative">
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-zinc-400" />
-              <Input 
-                type="text" 
-                placeholder="Search rides..." 
-                value={localSearchTerm} 
-                onChange={(e) => setLocalSearchTerm(e.target.value)} 
-                className="pl-10 pr-4 py-2 w-full" 
-              />
+              <Input id="search" type="text" placeholder="Search rides..." value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 w-full" />
             </div>
           </CardHeader>
           <CardContent>
@@ -988,159 +975,128 @@ export default function RideShareApp() {
               </TabsList>
               <TabsContent value="available">
                 <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                  {isLoading ? (
-                    Array(3).fill(0).map((_, i) => (
-                      <Card key={i} className="mb-4">
-                        <CardHeader>
-                          <Skeleton className="h-4 w-[250px]" />
-                          <Skeleton className="h-4 w-[200px]" />
-                        </CardHeader>
-                        <CardContent>
-                          <Skeleton className="h-4 w-[150px]" />
-                        </CardContent>
-                        <CardFooter>
-                          <Skeleton className="h-10 w-full" />
-                        </CardFooter>
-                      </Card>
-                    ))
-                  ) : (
-                    availableRides.map((ride) => (
-                      <RideDetailsDialog 
-                        key={`available-${ride.id}`} 
-                        ride={ride} 
-                        onAcceptRide={acceptRide} 
-                        onAddNote={addNote} 
-                        fetchNotes={fetchNotes} 
-                        currentUser={currentUser}
-                      >
-                        <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-lg">
-                              {ride.from_location} to {ride.to_location}
-                            </CardTitle>
-                            <CardDescription>Requested by: {ride.rider_name}</CardDescription>
-                          </CardHeader>
-                          <CardContent className="pb-2">
-                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              <span>{new Date(ride.time).toLocaleString()}</span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </RideDetailsDialog>
-                    ))
-                  )}
-                  {!isLoading && availableRides.length === 0 && (
-                    <div className="text-center py-4 text-muted-foreground">No available rides at the moment.</div>
-                  )}
+                  {isLoading
+                    ? Array(3)
+                        .fill(0)
+                        .map((_, i) => (
+                          <Card key={i} className="mb-4">
+                            <CardHeader>
+                              <Skeleton className="h-4 w-[250px]" />
+                              <Skeleton className="h-4 w-[200px]" />
+                            </CardHeader>
+                            <CardContent>
+                              <Skeleton className="h-4 w-[150px]" />
+                            </CardContent>
+                            <CardFooter>
+                              <Skeleton className="h-10 w-full" />
+                            </CardFooter>
+                          </Card>
+                        ))
+                    : availableRides.map((ride) => (
+                        <RideDetailsDialog key={`available-${ride.id}`} ride={ride} onAcceptRide={acceptRide} onAddNote={addNote} fetchNotes={fetchNotes} currentUser={currentUser}>
+                          <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-lg">
+                                {ride.from_location} to {ride.to_location}
+                              </CardTitle>
+                              <CardDescription>Requested by: {ride.rider_name}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="pb-2">
+                              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                                <Clock className="h-4 w-4" />
+                                <span>{new Date(ride.time).toLocaleString()}</span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </RideDetailsDialog>
+                      ))}
+                  {!isLoading && availableRides.length === 0 && <div className="text-center py-4 text-muted-foreground">No available rides at the moment.</div>}
                 </ScrollArea>
               </TabsContent>
               <TabsContent value="my-rides">
                 <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                  {isLoading ? (
-                    Array(3).fill(0).map((_, i) => (
-                      <Card key={i} className="mb-4">
-                        <CardHeader>
-                          <Skeleton className="h-4 w-[250px]" />
-                          <Skeleton className="h-4 w-[200px]" />
-                        </CardHeader>
-                        <CardContent>
-                          <Skeleton className="h-4 w-[150px]" />
-                        </CardContent>
-                        <CardFooter>
-                          <Skeleton className="h-10 w-full" />
-                        </CardFooter>
-                      </Card>
-                    ))
-                  ) : (
-                    myRides.map((ride) => (
-                      <RideDetailsDialog 
-                        key={`my-${ride.id}`} 
-                        ride={ride} 
-                        onCancelRequest={cancelRequest} 
-                        onAddNote={addNote} 
-                        fetchNotes={fetchNotes} 
-                        currentUser={currentUser}
-                      >
-                        <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-lg">
-                              {ride.from_location} to {ride.to_location}
-                            </CardTitle>
-                            <CardDescription>
-                              Status: {ride.status === "accepted" ? "Accepted" : ride.status}
-                              {ride.status === "accepted" && ` (Offered by: ${
-                                ride.accepter_id 
-                                  ? contacts.find(c => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user_name 
-                                  : "Unknown"
-                              })`}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="pb-2">
-                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              <span>{new Date(ride.time).toLocaleString()}</span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </RideDetailsDialog>
-                    ))
-                  )}
-                  {!isLoading && myRides.length === 0 && (
-                    <div className="text-center py-4 text-muted-foreground">You haven&apos;t requested any rides yet.</div>
-                  )}
+                  {isLoading
+                    ? Array(3)
+                        .fill(0)
+                        .map((_, i) => (
+                          <Card key={i} className="mb-4">
+                            <CardHeader>
+                              <Skeleton className="h-4 w-[250px]" />
+                              <Skeleton className="h-4 w-[200px]" />
+                            </CardHeader>
+                            <CardContent>
+                              <Skeleton className="h-4 w-[150px]" />
+                            </CardContent>
+                            <CardFooter>
+                              <Skeleton className="h-10 w-full" />
+                            </CardFooter>
+                          </Card>
+                        ))
+                    : myRides.map((ride) => (
+                        <RideDetailsDialog key={`my-${ride.id}`} ride={ride} onCancelRequest={cancelRequest} onAddNote={addNote} fetchNotes={fetchNotes} currentUser={currentUser}>
+                          <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-lg">
+                                {ride.from_location} to {ride.to_location}
+                              </CardTitle>
+                              <CardDescription>
+                                Status: {ride.status === "accepted" ? "Accepted" : ride.status}
+                                {ride.status === "accepted" && ` (Offered by: ${ride.accepter_id ? contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user_name : "Unknown"})`}
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pb-2">
+                              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                                <Clock className="h-4 w-4" />
+                                <span>{new Date(ride.time).toLocaleString()}</span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </RideDetailsDialog>
+                      ))}
+                  {!isLoading && myRides.length === 0 && <div className="text-center py-4 text-muted-foreground">You haven&apos;t requested any rides yet.</div>}
                 </ScrollArea>
               </TabsContent>
               <TabsContent value="offered-rides">
                 <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                  {isLoading ? (
-                    Array(3).fill(0).map((_, i) => (
-                      <Card key={i} className="mb-4">
-                        <CardHeader>
-                          <Skeleton className="h-4 w-[250px]" />
-                          <Skeleton className="h-4 w-[200px]" />
-                        </CardHeader>
-                        <CardContent>
-                          <Skeleton className="h-4 w-[150px]" />
-                        </CardContent>
-                        <CardFooter>
-                          <Skeleton className="h-10 w-full" />
-                        </CardFooter>
-                      </Card>
-                    ))
-                  ) : (
-                    offeredRides.map((ride) => (
-                      <RideDetailsDialog 
-                        key={`offered-${ride.id}`} 
-                        ride={ride} 
-                        onCancelOffer={cancelOffer} 
-                        onAddNote={addNote} 
-                        fetchNotes={fetchNotes} 
-                        currentUser={currentUser}
-                      >
-                        <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-lg">
-                              {ride.from_location} to {ride.to_location}
-                            </CardTitle>
-                            <CardDescription>
-                              Status: Offered
-                              {` (Requested by: ${ride.rider_name})`}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="pb-2">
-                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              <span>{new Date(ride.time).toLocaleString()}</span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </RideDetailsDialog>
-                    ))
-                  )}
-                  {!isLoading && offeredRides.length === 0 && (
-                    <div className="text-center py-4 text-muted-foreground">You haven&apos;t offered any rides yet.</div>
-                  )}
+                  {isLoading
+                    ? Array(3)
+                        .fill(0)
+                        .map((_, i) => (
+                          <Card key={i} className="mb-4">
+                            <CardHeader>
+                              <Skeleton className="h-4 w-[250px]" />
+                              <Skeleton className="h-4 w-[200px]" />
+                            </CardHeader>
+                            <CardContent>
+                              <Skeleton className="h-4 w-[150px]" />
+                            </CardContent>
+                            <CardFooter>
+                              <Skeleton className="h-10 w-full" />
+                            </CardFooter>
+                          </Card>
+                        ))
+                    : offeredRides.map((ride) => (
+                        <RideDetailsDialog key={`offered-${ride.id}`} ride={ride} onCancelOffer={cancelOffer} onAddNote={addNote} fetchNotes={fetchNotes} currentUser={currentUser}>
+                          <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-lg">
+                                {ride.from_location} to {ride.to_location}
+                              </CardTitle>
+                              <CardDescription>
+                                Status: Offered
+                                {` (Requested by: ${ride.rider_name})`}
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pb-2">
+                              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                                <Clock className="h-4 w-4" />
+                                <span>{new Date(ride.time).toLocaleString()}</span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </RideDetailsDialog>
+                      ))}
+                  {!isLoading && offeredRides.length === 0 && <div className="text-center py-4 text-muted-foreground">You haven&apos;t offered any rides yet.</div>}
                 </ScrollArea>
               </TabsContent>
             </Tabs>
@@ -1149,7 +1105,6 @@ export default function RideShareApp() {
       </div>
     );
   };
-
 
   const RideDetailsDialog = ({
     children,
@@ -1172,7 +1127,7 @@ export default function RideShareApp() {
   }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [notes, setNotes] = useState<Note[]>([]);
-    const [newNote, setNewNote] = useState("")
+    const [newNote, setNewNote] = useState("");
 
     const loadNotes = async () => {
       const fetchedNotes = await fetchNotes(ride.id);
@@ -1254,9 +1209,7 @@ export default function RideShareApp() {
                   {ride.accepter_id === currentUser?.id ? "Requested by" : "Accepted by"}
                 </Label>
                 <div id="other-party" className="col-span-3">
-                  {ride.accepter_id === currentUser?.id
-                    ? ride.rider_name
-                    : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user_name || "Unknown"}
+                  {ride.accepter_id === currentUser?.id ? ride.rider_name : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user_name || "Unknown"}
                 </div>
               </div>
             )}
@@ -1280,10 +1233,10 @@ export default function RideShareApp() {
                   </ScrollArea>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="new-note" className="text-right">
-                    New Message
-                  </Label>
                   <div className="col-span-3 flex space-x-2">
+                    <Label htmlFor="new-note" className="text-right">
+                      New Message
+                    </Label>
                     <Input id="new-note" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Type your message..." />
                     <Button onClick={handleAddNote} size="icon">
                       <Send className="h-4 w-4" />
@@ -1349,8 +1302,8 @@ export default function RideShareApp() {
                 <Input id="time" type="datetime-local" value={rideData.time} onChange={(e) => setRideData((prev) => ({ ...prev, time: e.target.value }))} required />
               </div>
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="rider_type">Rider</Label>
-                <Select value={riderType} onValueChange={setRiderType}>
+                <Select name="rider_type" value={riderType} onValueChange={setRiderType} aria-labelledby="rider_type_label">
+                  <Label id="rider_type_label">Rider</Label>
                   <SelectTrigger>
                     <SelectValue placeholder="Select rider" />
                   </SelectTrigger>
@@ -1429,12 +1382,8 @@ export default function RideShareApp() {
               </div>
             </div>
             <div className="flex space-x-4 mt-4">
-              <Button onClick={() => setIsEditProfileOpen(true)}>
-                Edit Profile
-              </Button>
-              <Button onClick={() => setIsChangePasswordOpen(true)}>
-                Change Password
-              </Button>
+              <Button onClick={() => setIsEditProfileOpen(true)}>Edit Profile</Button>
+              <Button onClick={() => setIsChangePasswordOpen(true)}>Change Password</Button>
             </div>
           </CardContent>
         </Card>
@@ -1475,18 +1424,16 @@ export default function RideShareApp() {
               return (
                 <div key={contact.id} className="flex flex-col space-y-2 p-3 bg-secondary rounded-lg">
                   <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                    {contactName.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="flex flex-row items-center gap-1">
-                    <p className="font-semibold">{contactName}</p>
-                    <p className="text-sm text-muted-foreground">({contact.status})</p>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">{contactName.charAt(0).toUpperCase()}</div>
+                      <div>
+                        <div className="flex flex-row items-center gap-1">
+                          <p className="font-semibold">{contactName}</p>
+                          <p className="text-sm text-muted-foreground">({contact.status})</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{contactPhone}</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">{contactPhone}</p>
-                  </div>
-                </div>
                     <div className="flex space-x-2">
                       {contact.status === "pending" && contact.contact_id === currentUser?.id && (
                         <Button onClick={() => acceptContact(contact.id)} size="sm">
@@ -1502,7 +1449,7 @@ export default function RideShareApp() {
               );
             })}
             <div className="flex space-x-2 mt-4">
-              <Input type="tel" placeholder="Enter contact's phone number" value={newContactPhone} onChange={(e) => setNewContactPhone(e.target.value)} />
+              <Input id="telephone-contact" type="tel" placeholder="Enter contact's phone number" value={newContactPhone} onChange={(e) => setNewContactPhone(e.target.value)} />
               <Button
                 onClick={() => {
                   if (newContactPhone.trim()) {
@@ -1528,37 +1475,21 @@ export default function RideShareApp() {
                   <span>
                     {person.name} ({person.relationship})
                   </span>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => deleteAssociatedPerson(person.id)}
-                  >
+                  <Button variant="destructive" size="sm" onClick={() => deleteAssociatedPerson(person.id)}>
                     Delete
                   </Button>
                 </div>
               ))}
             </div>
             <div className="mt-4 space-y-2">
-              <Input
-                placeholder="Name"
-                value={newAssociatedPerson.name}
-                onChange={(e) => setNewAssociatedPerson((prev) => ({ ...prev, name: e.target.value }))}
-              />
-              <Input
-                placeholder="Relationship"
-                value={newAssociatedPerson.relationship}
-                onChange={(e) => setNewAssociatedPerson((prev) => ({ ...prev, relationship: e.target.value }))}
-              />
-              <Button
-                onClick={() => addAssociatedPerson(newAssociatedPerson.name, newAssociatedPerson.relationship)}
-                className="w-full"
-              >
+              <Input id="name-ass" placeholder="Name" value={newAssociatedPerson.name} onChange={(e) => setNewAssociatedPerson((prev) => ({ ...prev, name: e.target.value }))} />
+              <Input id="rela-ass" placeholder="Relationship" value={newAssociatedPerson.relationship} onChange={(e) => setNewAssociatedPerson((prev) => ({ ...prev, relationship: e.target.value }))} />
+              <Button onClick={() => addAssociatedPerson(newAssociatedPerson.name, newAssociatedPerson.relationship)} className="w-full">
                 Add Associated Person
               </Button>
             </div>
           </CardContent>
         </Card>
-
 
         <Card>
           <CardHeader>
@@ -1622,30 +1553,15 @@ export default function RideShareApp() {
               <div className="grid w-full items-center gap-4">
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="edit-name">Name</Label>
-                  <Input
-                    id="edit-name"
-                    value={editedUser?.name || ""}
-                    onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, name: e.target.value } : null))}
-                    required
-                  />
+                  <Input id="edit-name" value={editedUser?.name || ""} onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, name: e.target.value } : null))} required />
                 </div>
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="edit-phone">Phone</Label>
-                  <Input
-                    id="edit-phone"
-                    value={editedUser?.phone || ""}
-                    onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, phone: e.target.value } : null))}
-                    required
-                  />
+                  <Input id="edit-phone" value={editedUser?.phone || ""} onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, phone: e.target.value } : null))} required />
                 </div>
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="edit-email">Email</Label>
-                  <Input
-                    id="edit-email"
-                    value={editedUser?.email || ""}
-                    onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, email: e.target.value } : null))}
-                    required
-                  />
+                  <Input id="edit-email" value={editedUser?.email || ""} onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, email: e.target.value } : null))} required />
                 </div>
               </div>
               <DialogFooter className="mt-4">
@@ -1666,9 +1582,9 @@ export default function RideShareApp() {
                 e.preventDefault();
                 if (newPassword !== confirmNewPassword) {
                   toast({
-                    title: 'Error',
-                    description: 'New passwords do not match',
-                    variant: 'destructive',
+                    title: "Error",
+                    description: "New passwords do not match",
+                    variant: "destructive",
                   });
                   return;
                 }
@@ -1678,30 +1594,15 @@ export default function RideShareApp() {
               <div className="grid w-full items-center gap-4">
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="current-password">Current Password</Label>
-                  <Input
-                    id="current-password"
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                  />
+                  <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
                 </div>
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="new-password">New Password</Label>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
+                  <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                 </div>
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="confirm-new-password">Confirm New Password</Label>
-                  <Input
-                    id="confirm-new-password"
-                    type="password"
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  />
+                  <Input id="confirm-new-password" type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} />
                 </div>
               </div>
               <DialogFooter className="mt-4">
@@ -1735,15 +1636,11 @@ export default function RideShareApp() {
                 { icon: Car, label: "Create Ride", page: "create-ride" },
                 { icon: Users, label: "Profile", page: "profile" },
               ].map((item) => (
-                <Button 
-                  key={item.page} 
-                  variant={currentPage === item.page ? "default" : "ghost"} 
-                  onClick={() => setCurrentPage(item.page)} 
-                  className={`rounded-full px-4 py-2 transition-colors duration-200 ${
-                    currentPage === item.page 
-                      ? `${theme === "dark" ? "bg-zinc-300" : "bg-primary text-primary-foreground"}` 
-                      : `${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"}`
-                  }`}
+                <Button
+                  key={item.page}
+                  variant={currentPage === item.page ? "default" : "ghost"}
+                  onClick={() => setCurrentPage(item.page)}
+                  className={`rounded-full px-4 py-2 transition-colors duration-200 ${currentPage === item.page ? `${theme === "dark" ? "bg-zinc-300" : "bg-primary text-primary-foreground"}` : `${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"}`}`}
                 >
                   <item.icon className="mr-2 h-4 w-4" /> {item.label}
                 </Button>
@@ -1752,17 +1649,9 @@ export default function RideShareApp() {
               {/* Notifications */}
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"} relative`} 
-                    onClick={handleOpenNotificationDialog}
-                  >
+                  <Button variant="ghost" className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"} relative`} onClick={handleOpenNotificationDialog}>
                     <Bell className="h-4 w-4" />
-                    {unreadNotificationsCount > 0 && (
-                      <span className="absolute top-0 right-0 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                        {unreadNotificationsCount}
-                      </span>
-                    )}
+                    {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className={`sm:max-w-[425px] ${theme === "dark" ? "bg-zinc-800 text-white" : ""}`}>
@@ -1809,7 +1698,6 @@ export default function RideShareApp() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className={`w-56 ${theme === "dark" ? "bg-zinc-800 text-white" : ""}`}>
-
                 <DropdownMenuLabel className="flex items-center">
                   <User className="mr-2 h-4 w-4" /> {currentUser.name}
                 </DropdownMenuLabel>
@@ -1854,7 +1742,6 @@ export default function RideShareApp() {
       </div>
     );
   };
-
 
   return (
     <>
