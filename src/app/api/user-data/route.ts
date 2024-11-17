@@ -1,65 +1,97 @@
-import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
-import crypto from 'crypto';
+// src/app/api/user-data/route.ts
+
+import { NextResponse } from "next/server";
+import { supabase, logError } from "@/lib/db";
+import crypto from "crypto";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const userId = searchParams.get('userId');
+  const userId = searchParams.get("userId");
 
   if (!userId) {
-    return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    return NextResponse.json({ error: "User ID is required" }, { status: 400 });
   }
 
-  const db = await getDb();
+  console.log("Received userId:", userId);
+
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId)) {
+    console.error("Invalid UUID format:", userId);
+    return NextResponse.json({ error: "Invalid User ID format" }, { status: 400 });
+  }
 
   try {
-    const [rides, contacts, notifications, associatedPeople, stats] = await Promise.all([
-      db.all(`
-        SELECT r.*, 
-               u_requester.name as rider_name, u_requester.phone as rider_phone
-        FROM rides r
-        LEFT JOIN users u_requester ON r.requester_id = u_requester.id
-        WHERE r.requester_id = ? OR r.accepter_id = ? OR r.requester_id IN (
-          SELECT CASE
-            WHEN c.user_id = ? THEN c.contact_id
-            WHEN c.contact_id = ? THEN c.user_id
-          END
-          FROM contacts c
-          WHERE (c.user_id = ? OR c.contact_id = ?) AND c.status = 'accepted'
-        )
-      `, [userId, userId, userId, userId, userId, userId]),
-      db.all(`
-        SELECT c.*, 
-               u1.name as user_name, u1.phone as user_phone,
-               u2.name as contact_name, u2.phone as contact_phone
-        FROM contacts c
-        JOIN users u1 ON c.user_id = u1.id
-        JOIN users u2 ON c.contact_id = u2.id
-        WHERE c.user_id = ? OR c.contact_id = ?
-      `, [userId, userId]),
-      db.all('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC', [userId]),
-      db.all('SELECT * FROM associated_people WHERE user_id = ?', [userId]),
-      db.get('SELECT * FROM user_stats WHERE user_id = ?', [userId])
-    ]);
+    // Fetch rides
+    const { data: rides, error: ridesError } = await supabase
+      .from("rides")
+      .select(`
+        *,
+        requester:users!rides_requester_id_fkey (name, phone)
+      `)
+      .or(`requester_id.eq.${userId},accepter_id.eq.${userId}`);
 
+    if (ridesError) throw ridesError;
+
+    // Fetch contacts
+    const { data: contacts, error: contactsError } = await supabase
+      .from("contacts")
+      .select(`
+        *,
+        user:users!contacts_user_id_fkey (name, phone),
+        contact:users!contacts_contact_id_fkey (name, phone)
+      `)
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
+
+    if (contactsError) throw contactsError;
+
+    // Fetch notifications
+    const { data: notifications, error: notificationsError } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (notificationsError) throw notificationsError;
+
+    // Fetch associated people
+    const { data: associatedPeople, error: associatedPeopleError } = await supabase
+      .from("associated_people")
+      .select("*")
+      .eq("user_id", userId);
+
+    if (associatedPeopleError) throw associatedPeopleError;
+
+    // Fetch user stats
+    const { data: stats, error: statsError } = await supabase
+      .from("user_stats")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    if (statsError) throw statsError;
+
+    // Prepare response data
     const data = { rides, contacts, notifications, associatedPeople, stats };
     const dataString = JSON.stringify(data);
-    const etag = crypto.createHash('md5').update(dataString).digest('hex');
+    const etag = crypto.createHash("md5").update(dataString).digest("hex");
 
-    const ifNoneMatch = request.headers.get('If-None-Match');
+    // Check if the client has a valid cached version
+    const ifNoneMatch = request.headers.get("If-None-Match");
     if (ifNoneMatch === etag) {
       return new Response(null, { status: 304 });
     }
 
+    // Return the full response with ETag
     return new Response(dataString, {
       headers: {
-        'Content-Type': 'application/json',
-        'ETag': etag,
-        'Cache-Control': 'no-cache'
-      }
+        "Content-Type": "application/json",
+        ETag: etag,
+        "Cache-Control": "no-cache",
+      },
     });
   } catch (error) {
-    console.error('Error fetching user data:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    logError('user data fetch', error);
+    return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 });
   }
 }

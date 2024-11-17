@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/db';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -9,13 +9,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
   }
 
-  const db = await getDb();
   try {
-    const associatedPeople = await db.all(
-      'SELECT * FROM associated_people WHERE user_id = ?',
-      [userId]
-    );
-    return NextResponse.json({ associatedPeople });
+    const { data, error } = await supabase
+      .from('associated_people')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    return NextResponse.json({ associatedPeople: data });
   } catch (error) {
     console.error('Fetch associated people error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -24,20 +26,17 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const { userId, name, relationship } = await request.json();
-  const db = await getDb();
 
   try {
-    const result = await db.run(
-      'INSERT INTO associated_people (user_id, name, relationship) VALUES (?, ?, ?)',
-      [userId, name, relationship]
-    );
+    const { data, error } = await supabase
+      .from('associated_people')
+      .insert({ user_id: userId, name, relationship })
+      .select()
+      .single();
 
-    const newAssociatedPerson = await db.get(
-      'SELECT * FROM associated_people WHERE id = ?',
-      [result.lastID]
-    );
+    if (error) throw error;
 
-    return NextResponse.json({ associatedPerson: newAssociatedPerson });
+    return NextResponse.json({ associatedPerson: data });
   } catch (error) {
     console.error('Add associated person error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -53,17 +52,14 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Associated person ID and User ID are required' }, { status: 400 });
   }
 
-  const db = await getDb();
-
   try {
-    const result = await db.run(
-      'DELETE FROM associated_people WHERE id = ? AND user_id = ?',
-      [id, userId]
-    );
+    const { error } = await supabase
+      .from('associated_people')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
 
-    if (result.changes === 0) {
-      return NextResponse.json({ error: 'Associated person not found or not authorized to delete' }, { status: 404 });
-    }
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

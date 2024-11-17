@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/db';
 
 // PUT Handler: Update User Information
 export async function PUT(request: Request) {
   const url = new URL(request.url);
   const userId = url.pathname.split('/').at(-1);
-
-  console.log(userId)
 
   const { name, phone, email } = await request.json();
 
@@ -14,30 +12,22 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const db = await getDb();
-
   try {
-    await db.run('BEGIN TRANSACTION');
+    const { data: updatedUser, error } = await supabase
+      .from('users')
+      .update({ name, phone, email })
+      .eq('id', userId)
+      .select('id, name, phone, email')
+      .single();
 
-    // Update user information
-    const result = await db.run(
-      'UPDATE users SET name = ?, phone = ?, email = ? WHERE id = ?',
-      [name, phone, email, userId]
-    );
+    if (error) throw error;
 
-    if (result.changes === 0) {
-      await db.run('ROLLBACK');
+    if (!updatedUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Fetch updated user data
-    const updatedUser = await db.get('SELECT id, name, phone, email FROM users WHERE id = ?', [userId]);
-
-    await db.run('COMMIT');
-
     return NextResponse.json(updatedUser, { status: 200 });
   } catch (error) {
-    await db.run('ROLLBACK');
     console.error('Update user error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -52,60 +42,79 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
   }
 
-  const db = await getDb();
-
   try {
-    await db.run('BEGIN TRANSACTION');
-
     // Get user's contacts
-    const contacts = await db.all('SELECT * FROM contacts WHERE user_id = ? OR contact_id = ?', [userId, userId]);
+    const { data: contacts, error: contactsError } = await supabase
+      .from('contacts')
+      .select('*')
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
+
+    if (contactsError) throw contactsError;
 
     // Delete user's contacts
-    await db.run('DELETE FROM contacts WHERE user_id = ? OR contact_id = ?', [userId, userId]);
+    const { error: deleteContactsError } = await supabase
+      .from('contacts')
+      .delete()
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
+
+    if (deleteContactsError) throw deleteContactsError;
 
     // Update rides where user is requester or accepter
-    await db.run('UPDATE rides SET status = "cancelled" WHERE requester_id = ? OR accepter_id = ?', [userId, userId]);
+    const { error: updateRidesError } = await supabase
+      .from('rides')
+      .update({ status: 'cancelled' })
+      .or(`requester_id.eq.${userId},accepter_id.eq.${userId}`);
+
+    if (updateRidesError) throw updateRidesError;
 
     // Get affected rides
-    const affectedRides = await db.all('SELECT * FROM rides WHERE requester_id = ? OR accepter_id = ?', [userId, userId]);
+    const { data: affectedRides, error: affectedRidesError } = await supabase
+      .from('rides')
+      .select('*')
+      .or(`requester_id.eq.${userId},accepter_id.eq.${userId}`);
+
+    if (affectedRidesError) throw affectedRidesError;
 
     // Delete user's notifications
-    await db.run('DELETE FROM notifications WHERE user_id = ?', [userId]);
+    const { error: deleteNotificationsError } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', userId);
+
+    if (deleteNotificationsError) throw deleteNotificationsError;
 
     // Notify contacts about account deletion
-    for (const contact of contacts) {
-      const otherUserId =
-        contact.user_id.toString() === userId ? contact.contact_id : contact.user_id;
-      await db.run(
-        'INSERT INTO notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)',
-        [otherUserId, 'A contact has deleted their account', 'contactDeleted', userId]
-      );
-    }
+    const contactNotifications = contacts.map(contact => ({
+      user_id: contact.user_id.toString() === userId ? contact.contact_id : contact.user_id,
+      message: 'A contact has deleted their account',
+      type: 'contactDeleted',
+      related_id: userId
+    }));
 
     // Notify users affected by ride cancellations
-    for (const ride of affectedRides) {
-      const notifyUserId =
-        ride.requester_id.toString() === userId ? ride.accepter_id : ride.requester_id;
-      if (notifyUserId) {
-        await db.run(
-          'INSERT INTO notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)',
-          [notifyUserId, 'A ride has been cancelled due to user account deletion', 'rideCancelled', ride.id]
-        );
-      }
-    }
+    const rideNotifications = affectedRides.map(ride => ({
+      user_id: ride.requester_id.toString() === userId ? ride.accepter_id : ride.requester_id,
+      message: 'A ride has been cancelled due to user account deletion',
+      type: 'rideCancelled',
+      related_id: ride.id
+    })).filter(notification => notification.user_id);
+
+    const { error: insertNotificationsError } = await supabase
+      .from('notifications')
+      .insert([...contactNotifications, ...rideNotifications]);
+
+    if (insertNotificationsError) throw insertNotificationsError;
 
     // Finally, delete the user
-    const result = await db.run('DELETE FROM users WHERE id = ?', [userId]);
+    const { error: deleteUserError } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userId);
 
-    await db.run('COMMIT');
-
-    if (result.changes === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    if (deleteUserError) throw deleteUserError;
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    await db.run('ROLLBACK');
     console.error('Delete user error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/db';
 import bcrypt from 'bcrypt';
 
 export async function POST(request: Request) {
-  const db = await getDb();
   const { phoneOrEmail, password } = await request.json();
 
   try {
-    const user = await db.get('SELECT * FROM users WHERE phone = ? OR email = ?', [phoneOrEmail, phoneOrEmail]);
-    if (!user) {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .or(`phone.eq.${phoneOrEmail},email.eq.${phoneOrEmail}`)
+      .single();
+
+    if (error || !user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 

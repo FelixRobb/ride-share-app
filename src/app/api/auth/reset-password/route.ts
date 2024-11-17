@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/db';
 import bcrypt from 'bcrypt';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
@@ -13,12 +13,16 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function POST(request: Request) {
-  const db = await getDb();
   const { email } = await request.json();
 
   try {
-    const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
-    if (!user) {
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (userError || !user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -26,10 +30,11 @@ export async function POST(request: Request) {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1); // Token expires in 1 hour
 
-    await db.run(
-      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
-      [user.id, token, expiresAt.toISOString()]
-    );
+    const { error: insertError } = await supabase
+      .from('password_reset_tokens')
+      .insert({ user_id: user.id, token, expires_at: expiresAt.toISOString() });
+
+    if (insertError) throw insertError;
 
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
 
@@ -52,23 +57,35 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const db = await getDb();
   const { token, newPassword } = await request.json();
 
   try {
-    const resetToken = await db.get(
-      'SELECT * FROM password_reset_tokens WHERE token = ? AND expires_at > datetime("now")',
-      [token]
-    );
+    const { data: resetToken, error: tokenError } = await supabase
+      .from('password_reset_tokens')
+      .select('*')
+      .eq('token', token)
+      .gt('expires_at', new Date().toISOString())
+      .single();
 
-    if (!resetToken) {
+    if (tokenError || !resetToken) {
       return NextResponse.json({ error: 'Invalid or expired token' }, { status: 400 });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, resetToken.user_id]);
-    await db.run('DELETE FROM password_reset_tokens WHERE id = ?', [resetToken.id]);
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ password: hashedPassword })
+      .eq('id', resetToken.user_id);
+
+    if (updateError) throw updateError;
+
+    const { error: deleteError } = await supabase
+      .from('password_reset_tokens')
+      .delete()
+      .eq('id', resetToken.id);
+
+    if (deleteError) throw deleteError;
 
     return NextResponse.json({ message: 'Password reset successful' });
   } catch (error) {

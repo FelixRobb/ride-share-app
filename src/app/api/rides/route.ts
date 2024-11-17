@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/db';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -9,49 +9,50 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
   }
 
-  const db = await getDb();
   try {
     // Fetch all rides related to the user
-    const userRides = await db.all(
-      `SELECT r.*, 
-              u_requester.name as requester_name, u_requester.phone as requester_phone,
-              u_accepter.name as accepter_name, u_accepter.phone as accepter_phone
-       FROM rides r
-       LEFT JOIN users u_requester ON r.requester_id = u_requester.id
-       LEFT JOIN users u_accepter ON r.accepter_id = u_accepter.id
-       WHERE r.requester_id = ? OR r.accepter_id = ?
-       ORDER BY r.created_at DESC`,
-      [userId, userId]
-    );
+    const { data: userRides, error: userRidesError } = await supabase
+      .from('rides')
+      .select(`
+        *,
+        requester:users!rides_requester_id_fkey (name, phone),
+        accepter:users!rides_accepter_id_fkey (name, phone)
+      `)
+      .or(`requester_id.eq.${userId},accepter_id.eq.${userId}`)
+      .order('created_at', { ascending: false });
+
+    if (userRidesError) throw userRidesError;
 
     // Fetch all contacts of the user
-    const userContacts = await db.all(
-      `SELECT contact_id FROM contacts 
-       WHERE user_id = ? AND status = 'accepted'
-       UNION
-       SELECT user_id FROM contacts
-       WHERE contact_id = ? AND status = 'accepted'`,
-      [userId, userId]
+    const { data: userContacts, error: userContactsError } = await supabase
+      .from('contacts')
+      .select('contact_id, user_id')
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`)
+      .eq('status', 'accepted');
+
+    if (userContactsError) throw userContactsError;
+
+    const contactIds = userContacts.map(contact => 
+      contact.contact_id === userId ? contact.user_id : contact.contact_id
     );
-    
-    const contactIds = userContacts.map((contact: { contact_id?: number; user_id?: number }) => contact.contact_id || contact.user_id);
-    
+
     // Fetch available rides from contacts
-    const availableRides = await db.all(
-      `SELECT r.*, 
-              u_requester.name as requester_name, u_requester.phone as requester_phone
-       FROM rides r
-       JOIN users u_requester ON r.requester_id = u_requester.id
-       WHERE r.status = 'pending'
-       AND r.requester_id IN (${contactIds.map(() => '?').join(',')})
-       AND r.requester_id != ?`,
-      [...contactIds, userId]
-    );
+    const { data: availableRides, error: availableRidesError } = await supabase
+      .from('rides')
+      .select(`
+        *,
+        requester:users!rides_requester_id_fkey (name, phone)
+      `)
+      .eq('status', 'pending')
+      .in('requester_id', contactIds)
+      .neq('requester_id', userId);
+
+    if (availableRidesError) throw availableRidesError;
 
     // Combine user rides and available rides
-    const allRides = [...userRides, ...availableRides];
+    const allRides = [...(userRides || []), ...(availableRides || [])];
 
-    // Remove duplicates (in case a user's ride is also in available rides)
+    // Remove duplicates
     const uniqueRides = allRides.filter((ride, index, self) =>
       index === self.findIndex((t) => t.id === ride.id)
     );
@@ -65,35 +66,49 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const { from_location, to_location, time, requester_id, rider_name, rider_phone, note } = await request.json();
-  const db = await getDb();
 
   try {
-    await db.run('BEGIN TRANSACTION');
+    const { data: newRide, error: insertError } = await supabase
+      .from('rides')
+      .insert({
+        from_location,
+        to_location,
+        time,
+        requester_id,
+        status: 'pending',
+        rider_name,
+        rider_phone,
+        note
+      })
+      .select()
+      .single();
 
-    const result = await db.run(
-      "INSERT INTO rides (from_location, to_location, time, requester_id, status, rider_name, rider_phone, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [from_location, to_location, time, requester_id, "pending", rider_name, rider_phone, note]
-    );
+    if (insertError) throw insertError;
 
-    if (result && result.lastID) {
-      const newRide = await db.get("SELECT * FROM rides WHERE id = ?", [result.lastID]);
+    // Notify contacts about the new ride
+    const { data: contacts, error: contactsError } = await supabase
+      .from('contacts')
+      .select('contact_id')
+      .eq('user_id', requester_id)
+      .eq('status', 'accepted');
 
-      // Notify contacts about the new ride
-      const contacts = await db.all('SELECT contact_id FROM contacts WHERE user_id = ? AND status = "accepted"', [requester_id]);
-      for (const contact of contacts) {
-        await db.run(
-          'INSERT INTO notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)',
-          [contact.contact_id, 'A new ride is available from your contact', 'newRide', result.lastID]
-        );
-      }
+    if (contactsError) throw contactsError;
 
-      await db.run('COMMIT');
-      return NextResponse.json({ ride: newRide });
-    } else {
-      throw new Error("Ride creation failed, no ID returned.");
-    }
+    const notifications = contacts.map(contact => ({
+      user_id: contact.contact_id,
+      message: 'A new ride is available from your contact',
+      type: 'newRide',
+      related_id: newRide.id
+    }));
+
+    const { error: notificationError } = await supabase
+      .from('notifications')
+      .insert(notifications);
+
+    if (notificationError) throw notificationError;
+
+    return NextResponse.json({ ride: newRide });
   } catch (error) {
-    await db.run('ROLLBACK');
     console.error("Create ride error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
