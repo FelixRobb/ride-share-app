@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { supabase } from "@/lib/db";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -9,12 +9,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "User ID is required" }, { status: 400 });
   }
 
-  const db = await getDb();
   try {
-    const notifications = await db.all(
-      "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at ASC",
-      [userId]
-    );
+    const { data: notifications, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
     return NextResponse.json({ notifications });
   } catch (error) {
     console.error("Fetch notifications error:", error);
@@ -29,21 +32,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request data" }, { status: 400 });
   }
 
-  const db = await getDb();
   try {
-    await db.run('BEGIN TRANSACTION');
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', userId)
+      .in('id', notificationIds);
 
-    for (const notificationId of notificationIds) {
-      await db.run(
-        'UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?',
-        [notificationId, userId]
-      );
-    }
+    if (error) throw error;
 
-    await db.run('COMMIT');
     return NextResponse.json({ success: true });
   } catch (error) {
-    await db.run('ROLLBACK');
     console.error("Mark notifications as read error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

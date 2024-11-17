@@ -1,19 +1,22 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/db';
 
 export async function DELETE(request: Request) {
-  // Extract the `id` param directly from the request URL
   const url = new URL(request.url);
-  const contactId = url.pathname.split('/').at(-1);  // Assuming [id] is in the URL structure
+  const contactId = url.pathname.split('/').at(-1);
 
-
-  const db = await getDb();
+  if (!contactId) {
+    return NextResponse.json({ error: 'Contact ID is required' }, { status: 400 });
+  }
 
   try {
-    const result = await db.run('DELETE FROM contacts WHERE id = ?', [contactId]);
-    if (result.changes === 0) {
-      return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
-    }
+    const { error } = await supabase
+      .from('contacts')
+      .delete()
+      .eq('id', contactId);
+
+    if (error) throw error;
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Delete contact error:', error);

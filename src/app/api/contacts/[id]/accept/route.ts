@@ -1,45 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   const url = new URL(request.url);
   const contactId = url.pathname.split('/').at(-2);
 
   const { userId } = await request.json();
-  const db = await getDb();
 
   try {
-    await db.run('BEGIN TRANSACTION');
+    const { data: contact, error: contactError } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('id', contactId)
+      .eq('contact_id', userId)
+      .single();
 
-    const contact = await db.get('SELECT * FROM contacts WHERE id = ? AND contact_id = ?', [contactId, userId]);
-    if (!contact) {
-      await db.run('ROLLBACK');
+    if (contactError || !contact) {
       return NextResponse.json({ error: 'Contact request not found' }, { status: 404 });
     }
 
-    await db.run('UPDATE contacts SET status = ? WHERE id = ?', ['accepted', contactId]);
+    const { error: updateError } = await supabase
+      .from('contacts')
+      .update({ status: 'accepted' })
+      .eq('id', contactId);
 
-    // Create notification for the user who sent the request
-    await db.run(
-      'INSERT INTO notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)',
-      [contact.user_id, 'Your contact request has been accepted', 'contactAccepted', contactId]
-    );
+    if (updateError) throw updateError;
 
-    const updatedContact = await db.get(
-      `SELECT c.*, 
-              u1.name as user_name, u1.phone as user_phone,
-              u2.name as contact_name, u2.phone as contact_phone
-       FROM contacts c
-       JOIN users u1 ON c.user_id = u1.id
-       JOIN users u2 ON c.contact_id = u2.id
-       WHERE c.id = ?`,
-      [contactId]
-    );
+    const { error: notificationError } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: contact.user_id,
+        message: 'Your contact request has been accepted',
+        type: 'contactAccepted',
+        related_id: contactId
+      });
 
-    await db.run('COMMIT');
+    if (notificationError) throw notificationError;
+
+    const { data: updatedContact, error: fetchError } = await supabase
+      .from('contacts')
+      .select(`
+        *,
+        user:users!contacts_user_id_fkey (name, phone),
+        contact:users!contacts_contact_id_fkey (name, phone)
+      `)
+      .eq('id', contactId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
     return NextResponse.json({ contact: updatedContact });
   } catch (error) {
-    await db.run('ROLLBACK');
     console.error('Accept contact error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

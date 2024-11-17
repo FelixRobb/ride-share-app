@@ -1,26 +1,37 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/db';
 import bcrypt from 'bcrypt';
 
 export async function POST(request: Request) {
-  const db = await getDb();
   const { name, phone, email, password } = await request.json();
 
   try {
-    const existingUser = await db.get('SELECT * FROM users WHERE phone = ? OR email = ?', [phone, email]);
+    const { data: existingUser, error: existingUserError } = await supabase
+      .from('users')
+      .select('*')
+      .or(`phone.eq.${phone},email.eq.${email}`)
+      .single();
+
     if (existingUser) {
       return NextResponse.json({ error: 'User already exists' }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await db.run(
-      'INSERT INTO users (name, phone, email, password) VALUES (?, ?, ?, ?)',
-      [name, phone, email, hashedPassword]
-    );
 
-    await db.run('INSERT INTO user_stats (user_id) VALUES (?)', [result.lastID]);
+    const { data: newUser, error: insertError } = await supabase
+      .from('users')
+      .insert({ name, phone, email, password: hashedPassword })
+      .select('id, name, phone, email')
+      .single();
 
-    const newUser = await db.get('SELECT id, name, phone, email FROM users WHERE id = ?', [result.lastID]);
+    if (insertError) throw insertError;
+
+    const { error: statsError } = await supabase
+      .from('user_stats')
+      .insert({ user_id: newUser.id });
+
+    if (statsError) throw statsError;
+
     return NextResponse.json({ user: newUser });
   } catch (error) {
     console.error('Registration error:', error);

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/db';
 import bcrypt from 'bcrypt';
 
 export async function POST(request: Request) {
@@ -11,13 +11,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const db = await getDb();
-
   try {
     // Fetch current user data
-    const user = await db.get('SELECT * FROM users WHERE id = ?', [userId]);
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
-    if (!user) {
+    if (userError || !user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -32,7 +34,12 @@ export async function POST(request: Request) {
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
     // Update password
-    await db.run('UPDATE users SET password = ? WHERE id = ?', [hashedNewPassword, userId]);
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ password: hashedNewPassword })
+      .eq('id', userId);
+
+    if (updateError) throw updateError;
 
     return NextResponse.json({ success: true });
   } catch (error) {
