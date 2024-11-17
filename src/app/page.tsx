@@ -1302,28 +1302,34 @@ export default function RideShareApp() {
                 <Input id="time" type="datetime-local" value={rideData.time} onChange={(e) => setRideData((prev) => ({ ...prev, time: e.target.value }))} required />
               </div>
               <div className="flex flex-col space-y-1.5">
-                <Select name="rider_type" value={riderType} onValueChange={setRiderType} aria-labelledby="rider_type_label">
-                  <Label id="rider_type_label">Rider</Label>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select rider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="self">Myself</SelectItem>
-                    {associatedPeople.map((person) => (
-                      <SelectItem key={person.id} value={`associated_${person.id}`}>
-                        {person.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+              <Label htmlFor="rider_type">Rider</Label>
+              <Select name="rider_type" value={riderType} onValueChange={setRiderType}>
+                <SelectTrigger id="rider_type">
+                  <SelectValue placeholder="Select rider" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="self">Myself</SelectItem>
+                  {associatedPeople.map((person) => (
+                    <SelectItem key={person.id} value={`associated_${person.id}`}>
+                      {person.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {riderType === "other" && (
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="rider_name">Rider Name</Label>
+                <Input
+                  id="rider_name"
+                  value={rideData.rider_name}
+                  onChange={(e) => setRideData((prev) => ({ ...prev, rider_name: e.target.value }))}
+                  placeholder="Enter rider's name"
+                  required
+                />
               </div>
-              {riderType === "other" && (
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="rider_name">Rider Name</Label>
-                  <Input id="rider_name" value={rideData.rider_name} onChange={(e) => setRideData((prev) => ({ ...prev, rider_name: e.target.value }))} placeholder="Enter rider's name" required />
-                </div>
-              )}
+            )}
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="rider_phone">Rider Phone (optional)</Label>
                 <Input id="rider_phone" value={rideData.rider_phone || ""} onChange={(e) => setRideData((prev) => ({ ...prev, rider_phone: e.target.value }))} placeholder="Enter rider's phone number" />
