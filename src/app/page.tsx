@@ -109,7 +109,7 @@ export default function RideShareApp() {
   const dataRef = useRef({
     rides: [],
     contacts: [],
-    notifications: [],
+    notifications: [] as Notification[], // Define the type of notifications
     associatedPeople: [],
     userStats: null,
   });
