@@ -1180,35 +1180,25 @@ export default function RideShareApp() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="rider" className="text-right">
-                Rider
-              </Label>
-              <div id="rider" className="col-span-3">
-                {ride.rider_name}
-              </div>
+              <div className="col-span-1">Rider</div>
+              <div className="col-span-3">{ride.rider_name}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="time" className="text-right">
-                Time
-              </Label>
-              <div id="time" className="col-span-3">
-                {new Date(ride.time).toLocaleString()}
-              </div>
+              <div className="col-span-1">Time</div>
+              <div className="col-span-3">{new Date(ride.time).toLocaleString()}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
-              </Label>
-              <div id="status" className={`col-span-3 font-semibold ${getStatusColor()}`}>
+              <div className="col-span-1">Status</div>
+              <div className={`col-span-3 font-semibold ${getStatusColor()}`}>
                 {getDisplayStatus()}
               </div>
             </div>
             {ride.status === "accepted" && (
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="other-party" className="text-right">
+                <div className="col-span-1">
                   {ride.accepter_id === currentUser?.id ? "Requested by" : "Accepted by"}
-                </Label>
-                <div id="other-party" className="col-span-3">
+                </div>
+                <div className="col-span-3">
                   {ride.accepter_id === currentUser?.id ? ride.rider_name : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user_name || "Unknown"}
                 </div>
               </div>
@@ -1216,10 +1206,8 @@ export default function RideShareApp() {
             {(ride.status === "accepted" || ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
               <>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="notes" className="text-right">
-                    Messages
-                  </Label>
-                  <ScrollArea className="h-[200px] w-[300px] rounded-md border p-4 col-span-3">
+                  <div className="col-span-1">Messages</div>
+                  <ScrollArea id="notes" className="h-[200px] w-[300px] rounded-md border p-4 col-span-3">
                     {notes.map((note) => (
                       <div key={note.id} className={`mb-4 ${note.user_id === currentUser?.id ? "text-right" : "text-left"}`}>
                         <div className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? "bg-primary text-primary-foreground" : "bg-muted"} rounded-lg p-2`}>
@@ -1234,9 +1222,7 @@ export default function RideShareApp() {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <div className="col-span-3 flex space-x-2">
-                    <Label htmlFor="new-note" className="text-right">
-                      New Message
-                    </Label>
+                    <div className="col-span-1">New Message</div>
                     <Input id="new-note" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Type your message..." />
                     <Button onClick={handleAddNote} size="icon">
                       <Send className="h-4 w-4" />
