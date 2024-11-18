@@ -136,7 +136,7 @@ export default function RideShareApp() {
           }
 
           const data = await response.json();
-          
+
           let hasChanges = false;
 
           if (JSON.stringify(data.rides) !== JSON.stringify(dataRef.current.rides)) {
@@ -148,15 +148,14 @@ export default function RideShareApp() {
           if (JSON.stringify(data.contacts) !== JSON.stringify(dataRef.current.contacts)) {
             setContacts(data.contacts);
             dataRef.current.contacts = data.contacts;
+            console.log(data.contacts)
             hasChanges = true;
           }
 
-          const newNotifications = data.notifications.filter((newNotif: Notification) => 
-            !dataRef.current.notifications.some((oldNotif) => oldNotif.id === newNotif.id)
-          );
+          const newNotifications = data.notifications.filter((newNotif: Notification) => !dataRef.current.notifications.some((oldNotif) => oldNotif.id === newNotif.id));
 
           if (newNotifications.length > 0) {
-            setNotifications(prev => [...prev, ...newNotifications]);
+            setNotifications((prev) => [...prev, ...newNotifications]);
             dataRef.current.notifications = [...dataRef.current.notifications, ...newNotifications];
             newNotifications.forEach((notification: Notification) => {
               toast({
@@ -223,7 +222,6 @@ export default function RideShareApp() {
       }
     };
   }, [currentUser, fetchUserData]);
-
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
@@ -1234,18 +1232,12 @@ export default function RideShareApp() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <div className="col-span-1">Status</div>
-              <div className={`col-span-3 font-semibold ${getStatusColor()}`}>
-                {getDisplayStatus()}
-              </div>
+              <div className={`col-span-3 font-semibold ${getStatusColor()}`}>{getDisplayStatus()}</div>
             </div>
             {ride.status === "accepted" && (
               <div className="grid grid-cols-4 items-center gap-4">
-                <div className="col-span-1">
-                  {ride.accepter_id === currentUser?.id ? "Requested by" : "Accepted by"}
-                </div>
-                <div className="col-span-3">
-                  {ride.accepter_id === currentUser?.id ? ride.rider_name : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user_name || "Unknown"}
-                </div>
+                <div className="col-span-1">{ride.accepter_id === currentUser?.id ? "Requested by" : "Accepted by"}</div>
+                <div className="col-span-3">{ride.accepter_id === currentUser?.id ? ride.rider_name : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user_name || "Unknown"}</div>
               </div>
             )}
             {(ride.status === "accepted" || ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
@@ -1333,34 +1325,28 @@ export default function RideShareApp() {
                 <Input id="time" type="datetime-local" value={rideData.time} onChange={(e) => setRideData((prev) => ({ ...prev, time: e.target.value }))} required />
               </div>
               <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="rider_type">Rider</Label>
-              <Select name="rider_type" value={riderType} onValueChange={setRiderType}>
-                <SelectTrigger id="rider_type">
-                  <SelectValue placeholder="Select rider" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="self">Myself</SelectItem>
-                  {associatedPeople.map((person) => (
-                    <SelectItem key={person.id} value={`associated_${person.id}`}>
-                      {person.name}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {riderType === "other" && (
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="rider_name">Rider Name</Label>
-                <Input
-                  id="rider_name"
-                  value={rideData.rider_name}
-                  onChange={(e) => setRideData((prev) => ({ ...prev, rider_name: e.target.value }))}
-                  placeholder="Enter rider's name"
-                  required
-                />
+                <Label htmlFor="rider_type">Rider</Label>
+                <Select name="rider_type" value={riderType} onValueChange={setRiderType}>
+                  <SelectTrigger id="rider_type">
+                    <SelectValue placeholder="Select rider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="self">Myself</SelectItem>
+                    {associatedPeople.map((person) => (
+                      <SelectItem key={person.id} value={`associated_${person.id}`}>
+                        {person.name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
+              {riderType === "other" && (
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="rider_name">Rider Name</Label>
+                  <Input id="rider_name" value={rideData.rider_name} onChange={(e) => setRideData((prev) => ({ ...prev, rider_name: e.target.value }))} placeholder="Enter rider's name" required />
+                </div>
+              )}
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="rider_phone">Rider Phone (optional)</Label>
                 <Input id="rider_phone" value={rideData.rider_phone || ""} onChange={(e) => setRideData((prev) => ({ ...prev, rider_phone: e.target.value }))} placeholder="Enter rider's phone number" />
@@ -1387,6 +1373,7 @@ export default function RideShareApp() {
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
 
     return (
       <div className="w-full max-w-4xl mx-auto">
@@ -1449,57 +1436,65 @@ export default function RideShareApp() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Contacts</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {contacts.map((contact) => {
-              const isCurrentUserRequester = contact.user_id === currentUser?.id;
-              const contactName = isCurrentUserRequester ? contact.contact_name : contact.user_name;
-              const contactPhone = isCurrentUserRequester ? contact.contact_phone : contact.user_phone;
+        <CardHeader>
+          <CardTitle className="text-2xl">Contacts</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {contacts.map((contact) => {
+            const isCurrentUserRequester = contact.user_id === currentUser?.id;
+            const contactName = isCurrentUserRequester ? contact.contact.name : contact.user.name;
+            const contactPhone = isCurrentUserRequester ? contact.contact.phone : contact.user.phone;
 
-              return (
-                <div key={contact.id} className="flex flex-col space-y-2 p-3 bg-secondary rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">{contactName.charAt(0).toUpperCase()}</div>
-                      <div>
-                        <div className="flex flex-row items-center gap-1">
-                          <p className="font-semibold">{contactName}</p>
-                          <p className="text-sm text-muted-foreground">({contact.status})</p>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{contactPhone}</p>
-                      </div>
+            return (
+              <div key={contact.id} className="flex flex-col space-y-2 p-3 bg-secondary rounded-lg">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+                      {contactName && contactName.charAt(0).toUpperCase()}
                     </div>
-                    <div className="flex space-x-2">
-                      {contact.status === "pending" && contact.contact_id === currentUser?.id && (
-                        <Button onClick={() => acceptContact(contact.id)} size="sm">
-                          Accept
-                        </Button>
-                      )}
-                      <Button onClick={() => deleteContact(contact.id)} variant="destructive" size="sm">
-                        Delete
-                      </Button>
+                    <div>
+                      <div className="flex flex-row items-center gap-1">
+                        <p className="font-semibold">{contactName || 'Unknown'}</p>
+                        <p className="text-sm text-muted-foreground">({contact.status})</p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{contactPhone || 'No phone number'}</p>
                     </div>
                   </div>
+                  <div className="flex space-x-2">
+                    {contact.status === "pending" && contact.contact_id === currentUser?.id && (
+                      <Button onClick={() => acceptContact(contact.id)} size="sm">
+                        Accept
+                      </Button>
+                    )}
+                    <Button onClick={() => deleteContact(contact.id)} variant="destructive" size="sm">
+                      Delete
+                    </Button>
+                  </div>
                 </div>
-              );
-            })}
-            <div className="flex space-x-2 mt-4">
-              <Input id="telephone-contact" type="tel" placeholder="Enter contact's phone number" value={newContactPhone} onChange={(e) => setNewContactPhone(e.target.value)} />
-              <Button
-                onClick={() => {
-                  if (newContactPhone.trim()) {
-                    addContact(newContactPhone);
-                    setNewContactPhone("");
-                  }
-                }}
-              >
-                Add Contact
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            );
+          })}
+          <div className="flex space-x-2 mt-4">
+            <Input 
+              id="telephone-contact" 
+              type="tel" 
+              placeholder="Enter contact's phone number" 
+              value={newContactPhone} 
+              onChange={(e) => setNewContactPhone(e.target.value)} 
+            />
+            <Button
+              onClick={() => {
+                if (newContactPhone.trim()) {
+                  addContact(newContactPhone);
+                  setNewContactPhone("");
+                }
+              }}
+            >
+              Add Contact
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
         <Card className="mb-8">
           <CardHeader>
