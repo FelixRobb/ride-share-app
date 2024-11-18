@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,9 +101,18 @@ export default function RideShareApp() {
   const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [activeTab, setActiveTab] = useState("available");
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [etag, setEtag] = useState<string | null>(null);
 
   const { toast } = useToast();
+
+  const dataRef = useRef({
+    rides: [],
+    contacts: [],
+    notifications: [],
+    associatedPeople: [],
+    userStats: null,
+  });
 
   const fetchUserData = useCallback(
     async (userId: number) => {
@@ -127,22 +136,54 @@ export default function RideShareApp() {
           }
 
           const data = await response.json();
-          const newNotifications = data.notifications.filter((newNotif: Notification) => !notifications.some((oldNotif) => oldNotif.id === newNotif.id));
+          
+          let hasChanges = false;
+
+          if (JSON.stringify(data.rides) !== JSON.stringify(dataRef.current.rides)) {
+            setRides(data.rides);
+            dataRef.current.rides = data.rides;
+            hasChanges = true;
+          }
+
+          if (JSON.stringify(data.contacts) !== JSON.stringify(dataRef.current.contacts)) {
+            setContacts(data.contacts);
+            dataRef.current.contacts = data.contacts;
+            hasChanges = true;
+          }
+
+          const newNotifications = data.notifications.filter((newNotif: Notification) => 
+            !dataRef.current.notifications.some((oldNotif) => oldNotif.id === newNotif.id)
+          );
 
           if (newNotifications.length > 0) {
+            setNotifications(prev => [...prev, ...newNotifications]);
+            dataRef.current.notifications = [...dataRef.current.notifications, ...newNotifications];
             newNotifications.forEach((notification: Notification) => {
               toast({
                 title: "New Notification",
                 description: notification.message,
               });
             });
+            hasChanges = true;
           }
 
-          setRides(data.rides);
-          setContacts(data.contacts);
-          setNotifications(data.notifications);
-          setAssociatedPeople(data.associatedPeople);
-          setUserStats(data.stats);
+          if (JSON.stringify(data.associatedPeople) !== JSON.stringify(dataRef.current.associatedPeople)) {
+            setAssociatedPeople(data.associatedPeople);
+            dataRef.current.associatedPeople = data.associatedPeople;
+            hasChanges = true;
+          }
+
+          if (JSON.stringify(data.stats) !== JSON.stringify(dataRef.current.userStats)) {
+            setUserStats(data.stats);
+            dataRef.current.userStats = data.stats;
+            hasChanges = true;
+          }
+
+          if (hasChanges) {
+            console.log("Data updated");
+          } else {
+            console.log("No changes in data");
+          }
         } else {
           console.error("Failed to fetch user data");
         }
@@ -150,7 +191,7 @@ export default function RideShareApp() {
         console.error("Error fetching user data:", error);
       }
     },
-    [etag, notifications, toast]
+    [etag, toast]
   );
 
   useEffect(() => {
@@ -166,18 +207,21 @@ export default function RideShareApp() {
       setTheme(savedTheme);
       document.documentElement.classList.toggle("dark", savedTheme === "dark");
     }
-    // Simulate loading delay
-    setTimeout(() => setIsLoading(false), 1000);
+    setIsLoading(false);
   }, [fetchUserData]);
 
   useEffect(() => {
+    let intervalId: NodeJS.Timeout;
     if (currentUser) {
-      const intervalId = setInterval(() => {
+      intervalId = setInterval(() => {
         void fetchUserData(currentUser.id);
       }, 10000); // Fetch every 10 seconds
-
-      return () => clearInterval(intervalId);
     }
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, [currentUser, fetchUserData]);
 
 
