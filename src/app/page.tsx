@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, LogOut, Home, Car, Users, Menu, Clock, User, Moon, Sun, Search, Mail, Phone, MapPin, Send } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Bell, LogOut, Home, Car, Users, Menu, Clock, User, Moon, Sun, Search, Mail, Phone, MapPin, MessageSquare, Send, AlertCircle, FileText } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -24,17 +25,18 @@ type User = {
 };
 
 type Ride = {
-  id: string; // Changed from number to string
+  id: string;
   from_location: string;
   to_location: string;
   time: string;
-  requester_id: string; // Changed from number to string
-  accepter_id: string | null; // Changed from number | null to string | null
+  requester_id: string;
+  accepter_id: string | null;
   status: "pending" | "accepted" | "cancelled";
   rider_name: string;
   rider_phone: string | null;
   note: string | null;
 };
+
 
 type Contact = {
   id: string;
@@ -1177,18 +1179,18 @@ export default function RideShareApp() {
     const [isOpen, setIsOpen] = useState(false);
     const [notes, setNotes] = useState<Note[]>([]);
     const [newNote, setNewNote] = useState("");
-
+  
     const loadNotes = async () => {
       const fetchedNotes = await fetchNotes(ride.id);
       setNotes(fetchedNotes);
     };
-
+  
     useEffect(() => {
       if (isOpen) {
         void loadNotes();
       }
     }, [isOpen]);
-
+  
     const handleAddNote = async () => {
       if (newNote.trim()) {
         const addedNote = await onAddNote(ride.id, newNote);
@@ -1198,14 +1200,14 @@ export default function RideShareApp() {
         }
       }
     };
-
+  
     const getDisplayStatus = () => {
       if (ride.status === "accepted" && ride.accepter_id === currentUser?.id) {
         return "Offered";
       }
       return ride.status.charAt(0).toUpperCase() + ride.status.slice(1);
     };
-
+  
     const getStatusColor = () => {
       switch (ride.status) {
         case "accepted":
@@ -1216,77 +1218,126 @@ export default function RideShareApp() {
           return "text-yellow-500";
       }
     };
-
+  
     return (
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>{children}</DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Ride Details</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-2xl font-bold">Ride Details</DialogTitle>
+            <DialogDescription className="text-lg">
               From {ride.from_location} to {ride.to_location}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <div className="col-span-1">Rider</div>
-              <div className="col-span-3">{ride.rider_name}</div>
+          <div className="grid gap-6 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  <Label className="font-semibold">From</Label>
+                </div>
+                <p className="ml-7">{ride.from_location}</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  <Label className="font-semibold">To</Label>
+                </div>
+                <p className="ml-7">{ride.to_location}</p>
+              </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <div className="col-span-1">Time</div>
-              <div className="col-span-3">{new Date(ride.time).toLocaleString()}</div>
+            <Separator />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <User className="w-5 h-5 text-primary" />
+                  <Label className="font-semibold">Requester</Label>
+                </div>
+                <p className="ml-7">{ride.rider_name}</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Phone className="w-5 h-5 text-primary" />
+                  <Label className="font-semibold">Contact Phone</Label>
+                </div>
+                <p className="ml-7">{ride.rider_phone || 'Not provided'}</p>
+              </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <div className="col-span-1">Status</div>
-              <div className={`col-span-3 font-semibold ${getStatusColor()}`}>{getDisplayStatus()}</div>
+            <Separator />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  <Label className="font-semibold">Date and Time</Label>
+                </div>
+                <p className="ml-7">{new Date(ride.time).toLocaleString()}</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <AlertCircle className="w-5 h-5 text-primary" />
+                  <Label className="font-semibold">Status</Label>
+                </div>
+                <p className={`ml-7 font-semibold ${getStatusColor()}`}>{getDisplayStatus()}</p>
+              </div>
             </div>
-            {ride.status === "accepted" && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <div className="col-span-1">{ride.accepter_id === currentUser?.id ? "Requested by" : "Accepted by"}</div>
-                <div className="col-span-3">{ride.accepter_id === currentUser?.id ? ride.rider_name : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user.name || "Unknown"}</div>
+            <Separator />
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <FileText className="w-5 h-5 text-primary" />
+                <Label className="font-semibold">Initial Notes</Label>
+              </div>
+              <p className="ml-7">{ride.note || 'No initial notes provided'}</p>
+            </div>
+            <Separator />
+            {(ride.status === "accepted" || ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <MessageSquare className="w-5 h-5 text-primary" />
+                  <Label className="font-semibold">Messages</Label>
+                </div>
+                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                  {notes.map((note) => (
+                    <div key={note.id} className={`mb-4 ${note.user_id === currentUser?.id ? "text-right" : "text-left"}`}>
+                      <div className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? "bg-primary text-primary-foreground" : "bg-muted"} rounded-lg p-2`}>
+                        <p className="text-sm">{note.note}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {note.user_name} - {new Date(note.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </ScrollArea>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    id="new-note"
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    placeholder="Type your message..."
+                    className="flex-grow"
+                  />
+                  <Button onClick={handleAddNote} size="icon">
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
-            {(ride.status === "accepted" || ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
-              <>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <div className="col-span-1">Messages</div>
-                  <ScrollArea id="notes" className="h-[200px] w-[300px] rounded-md border p-4 col-span-3">
-                    {notes.map((note) => (
-                      <div key={note.id} className={`mb-4 ${note.user_id === currentUser?.id ? "text-right" : "text-left"}`}>
-                        <div className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? "bg-primary text-primary-foreground" : "bg-muted"} rounded-lg p-2`}>
-                          <p className="text-sm">{note.note}</p>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {note.user_name} - {new Date(note.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                    ))}
-                  </ScrollArea>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <div className="col-span-3 flex space-x-2">
-                    <div className="col-span-1">New Message</div>
-                    <Input id="new-note" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Type your message..." />
-                    <Button onClick={handleAddNote} size="icon" className="w-16">
-                      <Send className="h-4 w-8" />
-                    </Button>
-                  </div>
-                </div>
-              </>
-            )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
             {ride.requester_id === currentUser?.id && ride.status !== "cancelled" && onCancelRequest && (
-              <Button variant="destructive" onClick={() => onCancelRequest(ride.id)}>
+              <Button variant="destructive" onClick={() => onCancelRequest(ride.id)} className="w-full sm:w-auto">
                 Cancel Request
               </Button>
             )}
             {ride.accepter_id === currentUser?.id && ride.status === "accepted" && onCancelOffer && (
-              <Button variant="destructive" onClick={() => onCancelOffer(ride.id)}>
+              <Button variant="destructive" onClick={() => onCancelOffer(ride.id)} className="w-full sm:w-auto">
                 Cancel Offer
               </Button>
             )}
-            {ride.status === "pending" && onAcceptRide && <Button onClick={() => onAcceptRide(ride.id)}>Offer Ride</Button>}
+            {ride.status === "pending" && onAcceptRide && (
+              <Button onClick={() => onAcceptRide(ride.id)} className="w-full sm:w-auto">
+                Offer Ride
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
