@@ -154,7 +154,6 @@ export default function RideShareApp() {
           if (JSON.stringify(data.contacts) !== JSON.stringify(dataRef.current.contacts)) {
             setContacts(data.contacts);
             dataRef.current.contacts = data.contacts;
-            console.log(data.contacts)
             hasChanges = true;
           }
 
@@ -187,7 +186,7 @@ export default function RideShareApp() {
           if (hasChanges) {
             console.log("Data updated");
           } else {
-            console.log("No changes in data");
+            console.log("No changes in data. All good!");
           }
         } else {
           console.error("Failed to fetch user data");
