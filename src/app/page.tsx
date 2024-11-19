@@ -17,19 +17,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 // Types
 type User = {
-  id: number;
+  id: string; // Changed from number to string
   name: string;
   phone: string;
   email: string;
 };
 
 type Ride = {
-  id: number;
+  id: string; // Changed from number to string
   from_location: string;
   to_location: string;
   time: string;
-  requester_id: number;
-  accepter_id: number | null;
+  requester_id: string; // Changed from number to string
+  accepter_id: string | null; // Changed from number | null to string | null
   status: "pending" | "accepted" | "cancelled";
   rider_name: string;
   rider_phone: string | null;
@@ -37,20 +37,24 @@ type Ride = {
 };
 
 type Contact = {
-  id: number;
-  user_id: number;
-  contact_id: number;
+  id: string;
+  user_id: string;
+  contact_id: string;
   status: "pending" | "accepted";
   created_at: string;
-  user_name: string;
-  user_phone: string;
-  contact_name: string;
-  contact_phone: string;
+  user: {
+    name: string;
+    phone: string;
+  };
+  contact: {
+    name: string;
+    phone: string;
+  };
 };
 
 type Notification = {
-  id: number;
-  user_id: number;
+  id: string;
+  user_id: string;
   message: string;
   type: "rideRequest" | "rideAccepted" | "contactRequest";
   is_read: boolean;
@@ -67,8 +71,8 @@ type RideData = {
 };
 
 type AssociatedPerson = {
-  id: number;
-  user_id: number;
+  id: string;
+  user_id: string;
   name: string;
   relationship: string;
 };
@@ -79,9 +83,9 @@ type UserStats = {
 };
 
 type Note = {
-  id: number;
-  ride_id: number;
-  user_id: number;
+  id: string;
+  ride_id: string;
+  user_id: string;
   note: string;
   created_at: string;
   user_name: string;
@@ -115,7 +119,7 @@ export default function RideShareApp() {
   });
 
   const fetchUserData = useCallback(
-    async (userId: number) => {
+    async (userId: string) => {
       try {
         const headers: HeadersInit = {};
         if (etag) {
@@ -330,7 +334,7 @@ export default function RideShareApp() {
     }
   };
 
-  const acceptRide = async (rideId: number) => {
+  const acceptRide = async (rideId: string) => {
     if (!currentUser) return;
     try {
       const response = await fetch(`/api/rides/${rideId}/accept`, {
@@ -366,7 +370,7 @@ export default function RideShareApp() {
     }
   };
 
-  const cancelRequest = async (rideId: number) => {
+  const cancelRequest = async (rideId: string) => {
     if (!currentUser) return;
     try {
       const response = await fetch(`/api/rides/${rideId}/cancelrequest`, {
@@ -402,7 +406,7 @@ export default function RideShareApp() {
     }
   };
 
-  const cancelOffer = async (rideId: number) => {
+  const cancelOffer = async (rideId: string) => {
     if (!currentUser) return;
     try {
       const response = await fetch(`/api/rides/${rideId}/canceloffer`, {
@@ -438,7 +442,7 @@ export default function RideShareApp() {
     }
   };
 
-  const addNote = async (rideId: number, note: string) => {
+  const addNote = async (rideId: string, note: string) => {
     if (!currentUser) return;
     try {
       const response = await fetch(`/api/rides/${rideId}/notes`, {
@@ -474,7 +478,7 @@ export default function RideShareApp() {
     }
   };
 
-  const fetchNotes = async (rideId: number) => {
+  const fetchNotes = async (rideId: string) => {
     try {
       const response = await fetch(`/api/rides/${rideId}/notes`);
       if (response.ok) {
@@ -526,7 +530,7 @@ export default function RideShareApp() {
     }
   };
 
-  const acceptContact = async (contactId: number) => {
+  const acceptContact = async (contactId: string) => {
     if (!currentUser) return;
     try {
       const response = await fetch(`/api/contacts/${contactId}/accept`, {
@@ -559,7 +563,7 @@ export default function RideShareApp() {
     }
   };
 
-  const deleteContact = async (contactId: number) => {
+  const deleteContact = async (contactId: string) => {
     if (!currentUser) return;
     try {
       const response = await fetch(`/api/contacts/${contactId}`, {
@@ -682,7 +686,7 @@ export default function RideShareApp() {
     }
   };
 
-  const deleteAssociatedPerson = async (personId: number) => {
+  const deleteAssociatedPerson = async (personId: string) => {
     if (!currentUser) return;
     try {
       const response = await fetch(`/api/associated-people?id=${personId}&userId=${currentUser.id}`, {
@@ -743,7 +747,7 @@ export default function RideShareApp() {
     }
   };
 
-  const markNotificationsAsRead = async (notificationIds: number[]) => {
+  const markNotificationsAsRead = async (notificationIds: string[]) => {
     if (!currentUser) return;
     try {
       const response = await fetch("/api/notifications", {
@@ -984,7 +988,9 @@ export default function RideShareApp() {
     const availableRides = filteredRides(
       safeRides.filter((ride) => {
         const isPendingAndNotOwn = ride.status === "pending" && ride.requester_id !== currentUser?.id;
-        const isConnectedUser = contacts.some((contact) => (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && contact.status === "accepted");
+        const isConnectedUser = contacts.some((contact) => 
+          (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && contact.status === "accepted"
+        );
         return isPendingAndNotOwn && isConnectedUser;
       })
     );
@@ -1084,7 +1090,7 @@ export default function RideShareApp() {
                               </CardTitle>
                               <CardDescription>
                                 Status: {ride.status === "accepted" ? "Accepted" : ride.status}
-                                {ride.status === "accepted" && ` (Offered by: ${ride.accepter_id ? contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user_name : "Unknown"})`}
+                                {ride.status === "accepted" && ` (Offered by: ${ride.accepter_id ? contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user.name : "Unknown"})`}
                               </CardDescription>
                             </CardHeader>
                             <CardContent className="pb-2">
@@ -1161,11 +1167,11 @@ export default function RideShareApp() {
   }: {
     children: React.ReactNode;
     ride: Ride;
-    onCancelRequest?: (rideId: number) => Promise<void>;
-    onCancelOffer?: (rideId: number) => Promise<void>;
-    onAcceptRide?: (rideId: number) => Promise<void>;
-    onAddNote: (rideId: number, note: string) => Promise<Note | undefined>;
-    fetchNotes: (rideId: number) => Promise<Note[]>;
+    onCancelRequest?: (rideId: string) => Promise<void>;
+    onCancelOffer?: (rideId: string) => Promise<void>;
+    onAcceptRide?: (rideId: string) => Promise<void>;
+    onAddNote: (rideId: string, note: string) => Promise<Note | undefined>;
+    fetchNotes: (rideId: string) => Promise<Note[]>;
     currentUser: User | null;
   }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -1237,7 +1243,7 @@ export default function RideShareApp() {
             {ride.status === "accepted" && (
               <div className="grid grid-cols-4 items-center gap-4">
                 <div className="col-span-1">{ride.accepter_id === currentUser?.id ? "Requested by" : "Accepted by"}</div>
-                <div className="col-span-3">{ride.accepter_id === currentUser?.id ? ride.rider_name : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user_name || "Unknown"}</div>
+                <div className="col-span-3">{ride.accepter_id === currentUser?.id ? ride.rider_name : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user.name || "Unknown"}</div>
               </div>
             )}
             {(ride.status === "accepted" || ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
@@ -1261,8 +1267,8 @@ export default function RideShareApp() {
                   <div className="col-span-3 flex space-x-2">
                     <div className="col-span-1">New Message</div>
                     <Input id="new-note" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Type your message..." />
-                    <Button onClick={handleAddNote} size="icon">
-                      <Send className="h-4 w-4" />
+                    <Button onClick={handleAddNote} size="icon" className="w-16">
+                      <Send className="h-4 w-8" />
                     </Button>
                   </div>
                 </div>
@@ -1441,23 +1447,31 @@ export default function RideShareApp() {
         </CardHeader>
         <CardContent className="space-y-4">
           {contacts.map((contact) => {
+            // Determine if the current user is the requester
             const isCurrentUserRequester = contact.user_id === currentUser?.id;
-            const contactName = isCurrentUserRequester ? contact.contact.name : contact.user.name;
-            const contactPhone = isCurrentUserRequester ? contact.contact.phone : contact.user.phone;
+
+            // Get the correct name and phone based on who is the requester
+            const contactName = isCurrentUserRequester 
+              ? contact.contact.name 
+              : contact.user.name;
+            
+            const contactPhone = isCurrentUserRequester 
+              ? contact.contact.phone 
+              : contact.user.phone;
 
             return (
               <div key={contact.id} className="flex flex-col space-y-2 p-3 bg-secondary rounded-lg">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                      {contactName && contactName.charAt(0).toUpperCase()}
+                      {contactName.charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <div className="flex flex-row items-center gap-1">
-                        <p className="font-semibold">{contactName || 'Unknown'}</p>
+                        <p className="font-semibold">{contactName}</p>
                         <p className="text-sm text-muted-foreground">({contact.status})</p>
                       </div>
-                      <p className="text-sm text-muted-foreground">{contactPhone || 'No phone number'}</p>
+                      <p className="text-sm text-muted-foreground">{contactPhone}</p>
                     </div>
                   </div>
                   <div className="flex space-x-2">
@@ -1495,6 +1509,8 @@ export default function RideShareApp() {
           </div>
         </CardContent>
       </Card>
+
+
 
         <Card className="mb-8">
           <CardHeader>
