@@ -508,7 +508,18 @@ export default function RideShareApp() {
       });
       const data = await response.json();
       if (response.ok && data.contact) {
-        setContacts((prevContacts) => [...prevContacts, data.contact]);
+        const newContact = {
+          ...data.contact,
+          contact: {
+            name: data.contact.contact_name || "Pending",
+            phone: data.contact.contact_phone || phone,
+          },
+          user: {
+            name: currentUser.name,
+            phone: currentUser.phone,
+          },
+        };
+        setContacts((prevContacts) => [...prevContacts, newContact]);
         toast({
           title: "Success",
           description: "Contact request sent successfully!",
@@ -1422,7 +1433,7 @@ export default function RideShareApp() {
   };
 
   const ProfilePage = () => {
-    const [newContactPhone, setNewContactPhone] = useState("");
+    const [newContactPhone, setNewContactPhone] = useState("")
     const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" });
     const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
     const [editedUser, setEditedUser] = useState<User | null>(currentUser);
@@ -1492,73 +1503,73 @@ export default function RideShareApp() {
         </Card>
 
         <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Contacts</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {contacts.map((contact) => {
-            // Determine if the current user is the requester
-            const isCurrentUserRequester = contact.user_id === currentUser?.id;
+      <CardHeader>
+        <CardTitle className="text-2xl">Contacts</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {contacts.map((contact) => {
+          // Determine if the current user is the requester
+          const isCurrentUserRequester = contact.user_id === currentUser?.id
 
-            // Get the correct name and phone based on who is the requester
-            const contactName = isCurrentUserRequester 
-              ? contact.contact.name 
-              : contact.user.name;
-            
-            const contactPhone = isCurrentUserRequester 
-              ? contact.contact.phone 
-              : contact.user.phone;
+          // Get the correct name and phone based on who is the requester
+          const contactName = isCurrentUserRequester 
+            ? contact.contact?.name ?? "Unknown name"
+            : contact.user?.name ?? "Unknown name"
+          
+          const contactPhone = isCurrentUserRequester 
+            ? contact.contact?.phone ?? "Unknown phone"
+            : contact.user?.phone ?? "Unknown phone"
 
-            return (
-              <div key={contact.id} className="flex flex-col space-y-2 p-3 bg-secondary rounded-lg">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                      {contactName.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="flex flex-row items-center gap-1">
-                        <p className="font-semibold">{contactName}</p>
-                        <p className="text-sm text-muted-foreground">({contact.status})</p>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{contactPhone}</p>
-                    </div>
+          return (
+            <div key={contact.id} className="flex flex-col space-y-2 p-3 bg-secondary rounded-lg">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+                    {contactName.charAt(0).toUpperCase()}
                   </div>
-                  <div className="flex space-x-2">
-                    {contact.status === "pending" && contact.contact_id === currentUser?.id && (
-                      <Button onClick={() => acceptContact(contact.id)} size="sm">
-                        Accept
-                      </Button>
-                    )}
-                    <Button onClick={() => deleteContact(contact.id)} variant="destructive" size="sm">
-                      Delete
-                    </Button>
+                  <div>
+                    <div className="flex flex-row items-center gap-1">
+                      <p className="font-semibold">{contactName}</p>
+                      <p className="text-sm text-muted-foreground">({contact.status})</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{contactPhone}</p>
                   </div>
                 </div>
+                <div className="flex space-x-2">
+                  {contact.status === "pending" && contact.contact_id === currentUser?.id && (
+                    <Button onClick={() => acceptContact(contact.id)} size="sm">
+                      Accept
+                    </Button>
+                  )}
+                  <Button onClick={() => deleteContact(contact.id)} variant="destructive" size="sm">
+                    Delete
+                  </Button>
+                </div>
               </div>
-            );
-          })}
-          <div className="flex space-x-2 mt-4">
-            <Input 
-              id="telephone-contact" 
-              type="tel" 
-              placeholder="Enter contact's phone number" 
-              value={newContactPhone} 
-              onChange={(e) => setNewContactPhone(e.target.value)} 
-            />
-            <Button
-              onClick={() => {
-                if (newContactPhone.trim()) {
-                  addContact(newContactPhone);
-                  setNewContactPhone("");
-                }
-              }}
-            >
-              Add Contact
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          )
+        })}
+        <div className="flex space-x-2 mt-4">
+          <Input 
+            id="telephone-contact" 
+            type="tel" 
+            placeholder="Enter contact's phone number" 
+            value={newContactPhone} 
+            onChange={(e) => setNewContactPhone(e.target.value)} 
+          />
+          <Button
+            onClick={() => {
+              if (newContactPhone.trim()) {
+                addContact(newContactPhone)
+                setNewContactPhone("")
+              }
+            }}
+          >
+            Add Contact
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
 
 
 
