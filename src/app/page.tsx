@@ -988,27 +988,33 @@ export default function RideShareApp() {
   const DashboardPage = () => {
     const safeRides = rides || [];
     const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
-
+  
     useEffect(() => {
       const timer = setTimeout(() => {
         setSearchTerm(localSearchTerm);
       }, 300);
-
+  
       return () => clearTimeout(timer);
     }, [localSearchTerm]);
-
+  
     const availableRides = filteredRides(
       safeRides.filter((ride) => {
         const isPendingAndNotOwn = ride.status === "pending" && ride.requester_id !== currentUser?.id;
+        console.log("ride", isPendingAndNotOwn, "userid", currentUser)
         const isConnectedUser = contacts.some((contact) => 
           (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && contact.status === "accepted"
         );
         return isPendingAndNotOwn && isConnectedUser;
       })
     );
-
+  
     const myRides = filteredRides(safeRides.filter((ride) => ride.requester_id === currentUser?.id));
     const offeredRides = filteredRides(safeRides.filter((ride) => ride.accepter_id === currentUser?.id && ride.status === "accepted"));
+  
+    console.log('All rides:', safeRides);
+    console.log('Available rides:', availableRides);
+    console.log('My rides:', myRides);
+    console.log('Offered rides:', offeredRides);
 
     return (
       <div className="w-full max-w-4xl mx-auto">

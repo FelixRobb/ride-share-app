@@ -22,28 +22,36 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Fetch contacts first to get the list of connected users
+    const { data: contacts, error: contactsError } = await supabase
+      .from("contacts")
+      .select(`
+        *,
+        user:users!contacts_user_id_fkey (id, name, phone),
+        contact:users!contacts_contact_id_fkey (id, name, phone)
+      `)
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`)
+      .eq('status', 'accepted');
+
+    if (contactsError) throw contactsError;
+
+    // Extract connected user IDs
+    const connectedUserIds = contacts.map(contact => 
+      contact.user_id === userId ? contact.contact_id : contact.user_id
+    );
+
     // Fetch rides
     const { data: rides, error: ridesError } = await supabase
       .from("rides")
       .select(`
         *,
-        requester:users!rides_requester_id_fkey (name, phone)
+        requester:users!rides_requester_id_fkey (id, name, phone),
+        accepter:users!rides_accepter_id_fkey (id, name, phone)
       `)
-      .or(`requester_id.eq.${userId},accepter_id.eq.${userId}`);
+      .or(`requester_id.eq.${userId},accepter_id.eq.${userId},requester_id.in.(${connectedUserIds.join(',')})`)
+      .order('created_at', { ascending: false });
 
     if (ridesError) throw ridesError;
-
-    // Fetch contacts
-    const { data: contacts, error: contactsError } = await supabase
-      .from("contacts")
-      .select(`
-        *,
-        user:users!contacts_user_id_fkey (name, phone),
-        contact:users!contacts_contact_id_fkey (name, phone)
-      `)
-      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
-
-    if (contactsError) throw contactsError;
 
     // Fetch notifications
     const { data: notifications, error: notificationsError } = await supabase
