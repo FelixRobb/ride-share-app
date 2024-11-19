@@ -781,13 +781,13 @@ export default function RideShareApp() {
     }
   };
 
-  const handleOpenNotificationDialog = () => {
+  const handleOpenNotificationDialog = useCallback(() => {
     setIsNotificationDialogOpen(true);
     const unreadNotifications = notifications.filter((n) => !n.is_read);
     if (unreadNotifications.length > 0) {
       void markNotificationsAsRead(unreadNotifications.map((n) => n.id));
     }
-  };
+  }, [notifications, markNotificationsAsRead]);
 
   // Components
   const WelcomePage = () => (
@@ -1755,12 +1755,20 @@ export default function RideShareApp() {
                 </Button>
               ))}
 
-              {/* Notifications */}
-              <Dialog>
+               {/* Notifications */}
+               <Dialog open={isNotificationDialogOpen} onOpenChange={setIsNotificationDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"} relative`} onClick={handleOpenNotificationDialog}>
+                  <Button
+                    variant="ghost"
+                    className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"} relative`}
+                    onClick={handleOpenNotificationDialog}
+                  >
                     <Bell className="h-4 w-4" />
-                    {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
+                    {unreadNotificationsCount > 0 && (
+                      <span className="absolute top-0 right-0 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                        {unreadNotificationsCount}
+                      </span>
+                    )}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className={`sm:max-w-[425px] ${theme === "dark" ? "bg-zinc-800 text-white" : ""}`}>
