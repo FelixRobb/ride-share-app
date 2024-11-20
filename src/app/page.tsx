@@ -237,7 +237,7 @@ export default function RideShareApp() {
   }, [currentUser, fetchUserData]);
 
   const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
+    const newTheme = theme === "light" ? "dark" : "dark";
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
     document.documentElement.classList.toggle("dark", newTheme === "dark");
