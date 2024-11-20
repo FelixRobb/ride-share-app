@@ -120,6 +120,8 @@ export default function RideShareApp() {
     userStats: null,
   });
 
+  const displayedNotificationIds = useRef<Set<string>>(new Set());
+
   const fetchUserData = useCallback(
     async (userId: string) => {
       try {
@@ -162,12 +164,18 @@ export default function RideShareApp() {
           if (newNotifications.length > 0) {
             setNotifications((prev) => [...prev, ...newNotifications]);
             dataRef.current.notifications = [...dataRef.current.notifications, ...newNotifications];
+            
+            // Show toast only for new, unread notifications that haven't been displayed before
             newNotifications.forEach((notification: Notification) => {
-              toast({
-                title: "New Notification",
-                description: notification.message,
-              });
+              if (!notification.is_read && !displayedNotificationIds.current.has(notification.id)) {
+                toast({
+                  title: "New Notification",
+                  description: notification.message,
+                });
+                displayedNotificationIds.current.add(notification.id);
+              }
             });
+            
             hasChanges = true;
           }
 
