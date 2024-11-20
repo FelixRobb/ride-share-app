@@ -1508,7 +1508,7 @@ export default function RideShareApp() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="mb-8">
       <CardHeader>
         <CardTitle className="text-2xl">Contacts</CardTitle>
       </CardHeader>
