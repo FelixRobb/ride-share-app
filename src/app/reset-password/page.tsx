@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { Button } from "@/components/ui/button"
@@ -12,9 +12,39 @@ import { toast } from "@/hooks/use-toast"
 function ResetPasswordForm() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isTokenValid, setIsTokenValid] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
+
+  useEffect(() => {
+    const checkToken = async () => {
+      if (!token) {
+        setIsLoading(false)
+        setErrorMessage('No reset token provided')
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/auth/check-reset-token?token=${token}`)
+        const data = await response.json()
+
+        if (data.valid) {
+          setIsTokenValid(true)
+        } else {
+          setErrorMessage(data.message || 'Invalid or expired token')
+        }
+      } catch (error) {
+        setErrorMessage('An error occurred while checking the token')
+      }
+
+      setIsLoading(false)
+    }
+
+    checkToken()
+  }, [token])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,6 +81,36 @@ function ResetPasswordForm() {
         variant: "destructive",
       })
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <Card className="w-full max-w-[350px]">
+          <CardContent className="flex items-center justify-center h-[200px]">
+            <p>Checking reset token...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!isTokenValid) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <Card className="w-full max-w-[350px]">
+          <CardHeader>
+            <CardTitle>Reset Password</CardTitle>
+            <CardDescription className="text-red-500">{errorMessage}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={() => router.push('/forgot-password')}>
+              Request New Reset Link
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -101,3 +161,4 @@ export default function ResetPassword() {
     </Suspense>
   )
 }
+
