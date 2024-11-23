@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // Types
 type User = {
@@ -36,7 +37,6 @@ type Ride = {
   rider_phone: string | null;
   note: string | null;
 };
-
 
 type Contact = {
   id: string;
@@ -155,6 +155,7 @@ export default function RideShareApp() {
 
           if (JSON.stringify(data.contacts) !== JSON.stringify(dataRef.current.contacts)) {
             setContacts(data.contacts);
+            console.log(data.contacts)
             dataRef.current.contacts = data.contacts;
             hasChanges = true;
           }
@@ -164,7 +165,7 @@ export default function RideShareApp() {
           if (newNotifications.length > 0) {
             setNotifications((prev) => [...prev, ...newNotifications]);
             dataRef.current.notifications = [...dataRef.current.notifications, ...newNotifications];
-            
+
             // Show toast only for new, unread notifications that haven't been displayed before
             newNotifications.forEach((notification: Notification) => {
               if (!notification.is_read && !displayedNotificationIds.current.has(notification.id)) {
@@ -175,7 +176,7 @@ export default function RideShareApp() {
                 displayedNotificationIds.current.add(notification.id);
               }
             });
-            
+
             hasChanges = true;
           }
 
@@ -996,25 +997,23 @@ export default function RideShareApp() {
   const DashboardPage = () => {
     const safeRides = rides || [];
     const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
-  
+
     useEffect(() => {
       const timer = setTimeout(() => {
         setSearchTerm(localSearchTerm);
       }, 300);
-  
+
       return () => clearTimeout(timer);
     }, [localSearchTerm]);
-  
+
     const availableRides = filteredRides(
       safeRides.filter((ride) => {
         const isPendingAndNotOwn = ride.status === "pending" && ride.requester_id !== currentUser?.id;
-        const isConnectedUser = contacts.some((contact) => 
-          (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && contact.status === "accepted"
-        );
+        const isConnectedUser = contacts.some((contact) => (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && contact.status === "accepted");
         return isPendingAndNotOwn && isConnectedUser;
       })
     );
-  
+
     const myRides = filteredRides(safeRides.filter((ride) => ride.requester_id === currentUser?.id));
     const offeredRides = filteredRides(safeRides.filter((ride) => ride.accepter_id === currentUser?.id && ride.status === "accepted"));
 
@@ -1197,18 +1196,18 @@ export default function RideShareApp() {
     const [isOpen, setIsOpen] = useState(false);
     const [notes, setNotes] = useState<Note[]>([]);
     const [newNote, setNewNote] = useState("");
-  
+
     const loadNotes = async () => {
       const fetchedNotes = await fetchNotes(ride.id);
       setNotes(fetchedNotes);
     };
-  
+
     useEffect(() => {
       if (isOpen) {
         void loadNotes();
       }
     }, [isOpen]);
-  
+
     const handleAddNote = async () => {
       if (newNote.trim()) {
         const addedNote = await onAddNote(ride.id, newNote);
@@ -1218,14 +1217,14 @@ export default function RideShareApp() {
         }
       }
     };
-  
+
     const getDisplayStatus = () => {
       if (ride.status === "accepted" && ride.accepter_id === currentUser?.id) {
         return "Offered";
       }
       return ride.status.charAt(0).toUpperCase() + ride.status.slice(1);
     };
-  
+
     const getStatusColor = () => {
       switch (ride.status) {
         case "accepted":
@@ -1236,7 +1235,7 @@ export default function RideShareApp() {
           return "text-yellow-500";
       }
     };
-  
+
     return (
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>{children}</DialogTrigger>
@@ -1278,7 +1277,7 @@ export default function RideShareApp() {
                   <Phone className="w-5 h-5 text-primary" />
                   <Label className="font-semibold">Contact Phone</Label>
                 </div>
-                <p className="ml-7">{ride.rider_phone || 'Not provided'}</p>
+                <p className="ml-7">{ride.rider_phone || "Not provided"}</p>
               </div>
             </div>
             <Separator />
@@ -1304,7 +1303,7 @@ export default function RideShareApp() {
                 <FileText className="w-5 h-5 text-primary" />
                 <Label className="font-semibold">Initial Notes</Label>
               </div>
-              <p className="ml-7">{ride.note || 'No initial notes provided'}</p>
+              <p className="ml-7">{ride.note || "No initial notes provided"}</p>
             </div>
             <Separator />
             {(ride.status === "accepted" || ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
@@ -1326,13 +1325,7 @@ export default function RideShareApp() {
                   ))}
                 </ScrollArea>
                 <div className="flex items-center space-x-2">
-                  <Input
-                    id="new-note"
-                    value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
-                    placeholder="Type your message..."
-                    className="flex-grow"
-                  />
+                  <Input id="new-note" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Type your message..." className="flex-grow" />
                   <Button onClick={handleAddNote} size="icon">
                     <Send className="h-4 w-4" />
                   </Button>
@@ -1441,7 +1434,7 @@ export default function RideShareApp() {
   };
 
   const ProfilePage = () => {
-    const [newContactPhone, setNewContactPhone] = useState("")
+    const [newContactPhone, setNewContactPhone] = useState("");
     const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" });
     const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
     const [editedUser, setEditedUser] = useState<User | null>(currentUser);
@@ -1449,6 +1442,35 @@ export default function RideShareApp() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
+    const [suggestedContacts, setSuggestedContacts] = useState<any[]>([]);
+    const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+
+    useEffect(() => {
+      const fetchSuggestedContacts = async () => {
+        if (!currentUser) return;
+        setIsFetchingSuggestions(true);
+        try {
+          const response = await fetch(`/api/suggested-contacts?userId=${currentUser.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setSuggestedContacts(data.suggestedContacts || []);
+          } else {
+            throw new Error("Failed to fetch suggested contacts");
+          }
+        } catch (error) {
+          console.error("Error fetching suggested contacts:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load suggested contacts. Please try again later.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsFetchingSuggestions(false);
+        }
+      };
+
+      fetchSuggestedContacts();
+    }, [currentUser, toast]);
 
     return (
       <div className="w-full max-w-4xl mx-auto">
@@ -1511,75 +1533,100 @@ export default function RideShareApp() {
         </Card>
 
         <Card className="mb-8">
-      <CardHeader>
-        <CardTitle className="text-2xl">Contacts</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {contacts.map((contact) => {
-          // Determine if the current user is the requester
-          const isCurrentUserRequester = contact.user_id === currentUser?.id
+          <CardHeader>
+            <CardTitle className="text-2xl">Contacts</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {contacts.map((contact) => {
+              // Determine if the current user is the requester
+              const isCurrentUserRequester = contact.user_id === currentUser?.id;
 
-          // Get the correct name and phone based on who is the requester
-          const contactName = isCurrentUserRequester 
-            ? contact.contact?.name ?? "Unknown name"
-            : contact.user?.name ?? "Unknown name"
-          
-          const contactPhone = isCurrentUserRequester 
-            ? contact.contact?.phone ?? "Unknown phone"
-            : contact.user?.phone ?? "Unknown phone"
+              // Get the correct name and phone based on who is the requester
+              const contactName = isCurrentUserRequester ? contact.contact?.name ?? "Unknown name" : contact.user?.name ?? "Unknown name";
 
-          return (
-            <div key={contact.id} className="flex flex-col space-y-2 p-3 bg-secondary rounded-lg">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                    {contactName.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="flex flex-row items-center gap-1">
-                      <p className="font-semibold">{contactName}</p>
-                      <p className="text-sm text-muted-foreground">({contact.status})</p>
+              const contactPhone = isCurrentUserRequester ? contact.contact?.phone ?? "Unknown phone" : contact.user?.phone ?? "Unknown phone";
+
+              return (
+                <div key={contact.id} className="flex flex-col space-y-2 p-3 bg-secondary rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">{contactName.charAt(0).toUpperCase()}</div>
+                      <div>
+                        <div className="flex flex-row items-center gap-1">
+                          <p className="font-semibold">{contactName}</p>
+                          <p className="text-sm text-muted-foreground">({contact.status})</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{contactPhone}</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">{contactPhone}</p>
+                    <div className="flex space-x-2">
+                      {contact.status === "pending" && contact.contact_id === currentUser?.id && (
+                        <Button onClick={() => acceptContact(contact.id)} size="sm">
+                          Accept
+                        </Button>
+                      )}
+                      <Button onClick={() => deleteContact(contact.id)} variant="destructive" size="sm">
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex space-x-2">
-                  {contact.status === "pending" && contact.contact_id === currentUser?.id && (
-                    <Button onClick={() => acceptContact(contact.id)} size="sm">
-                      Accept
-                    </Button>
-                  )}
-                  <Button onClick={() => deleteContact(contact.id)} variant="destructive" size="sm">
-                    Delete
-                  </Button>
-                </div>
-              </div>
+              );
+            })}
+            <div className="flex space-x-2 mt-4">
+              <Input id="telephone-contact" type="tel" placeholder="Enter contact's phone number" value={newContactPhone} onChange={(e) => setNewContactPhone(e.target.value)} />
+              <Button
+                onClick={() => {
+                  if (newContactPhone.trim()) {
+                    addContact(newContactPhone);
+                    setNewContactPhone("");
+                  }
+                }}
+              >
+                Add Contact
+              </Button>
             </div>
-          )
-        })}
-        <div className="flex space-x-2 mt-4">
-          <Input 
-            id="telephone-contact" 
-            type="tel" 
-            placeholder="Enter contact's phone number" 
-            value={newContactPhone} 
-            onChange={(e) => setNewContactPhone(e.target.value)} 
-          />
-          <Button
-            onClick={() => {
-              if (newContactPhone.trim()) {
-                addContact(newContactPhone)
-                setNewContactPhone("")
-              }
-            }}
-          >
-            Add Contact
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
 
-
+            {/* Suggested Contacts */}
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-2">Suggested Contacts</h3>
+              {isFetchingSuggestions ? (
+                <div className="flex space-x-4 overflow-x-auto p-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex flex-col items-center space-y-2 w-32">
+                      <Skeleton className="h-20 w-20 rounded-full" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-8 w-full" />
+                    </div>
+                  ))}
+                </div>
+              ) : suggestedContacts.length > 0 ? (
+                <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+                  <div className="flex w-max space-x-4 p-4">
+                    {suggestedContacts.map((contact) => (
+                      <div key={contact.id} className="flex flex-col items-center space-y-2 w-32">
+                        <Avatar className="h-20 w-20">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-2xl">{contact.name.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="text-center">
+                          <p className="font-medium text-sm">{contact.name}</p>
+                          <p className="text-xs text-muted-foreground">{contact.phone}</p>
+                        </div>
+                        <p className="text-xs text-center text-muted-foreground">{contact.common_rides > 0 ? `${contact.common_rides} common ride${contact.common_rides > 1 ? "s" : ""}` : contact.is_mutual_contact ? "Mutual contact" : "No common rides"}</p>
+                        <Button variant="outline" size="sm" className="w-full" onClick={() => addContact(contact.phone)}>
+                          Add Contact
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <p className="text-center text-muted-foreground py-4">No suggested contacts at the moment.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="mb-8">
           <CardHeader>
@@ -1763,20 +1810,12 @@ export default function RideShareApp() {
                 </Button>
               ))}
 
-               {/* Notifications */}
-               <Dialog open={isNotificationDialogOpen} onOpenChange={setIsNotificationDialogOpen}>
+              {/* Notifications */}
+              <Dialog open={isNotificationDialogOpen} onOpenChange={setIsNotificationDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"} relative`}
-                    onClick={handleOpenNotificationDialog}
-                  >
+                  <Button variant="ghost" className={`rounded-full px-4 py-2 ${theme === "dark" ? "hover:bg-zinc-600" : "hover:bg-primary/10"} relative`} onClick={handleOpenNotificationDialog}>
                     <Bell className="h-4 w-4" />
-                    {unreadNotificationsCount > 0 && (
-                      <span className="absolute top-0 right-0 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                        {unreadNotificationsCount}
-                      </span>
-                    )}
+                    {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className={`sm:max-w-[425px] ${theme === "dark" ? "bg-zinc-800 text-white" : ""}`}>
