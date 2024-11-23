@@ -1,5 +1,3 @@
-// src/app/api/user-data/route.ts
-
 import { NextResponse } from "next/server";
 import { supabase, logError } from "@/lib/db";
 import crypto from "crypto";
@@ -22,7 +20,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Fetch contacts first to get the list of connected users
+    // Fetch all contacts, regardless of status
     const { data: contacts, error: contactsError } = await supabase
       .from("contacts")
       .select(`
@@ -30,15 +28,16 @@ export async function GET(request: Request) {
         user:users!contacts_user_id_fkey (id, name, phone),
         contact:users!contacts_contact_id_fkey (id, name, phone)
       `)
-      .or(`user_id.eq.${userId},contact_id.eq.${userId}`)
-      .eq('status', 'accepted');
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
 
     if (contactsError) throw contactsError;
 
-    // Extract connected user IDs
-    const connectedUserIds = contacts.map(contact => 
-      contact.user_id === userId ? contact.contact_id : contact.user_id
-    );
+    // Extract connected user IDs (only for accepted contacts)
+    const connectedUserIds = contacts
+      .filter(contact => contact.status === 'accepted')
+      .map(contact => 
+        contact.user_id === userId ? contact.contact_id : contact.user_id
+      );
 
     // Fetch rides
     const { data: rides, error: ridesError } = await supabase
@@ -103,3 +102,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 });
   }
 }
+
