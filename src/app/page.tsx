@@ -155,7 +155,7 @@ export default function RideShareApp() {
 
           if (JSON.stringify(data.contacts) !== JSON.stringify(dataRef.current.contacts)) {
             setContacts(data.contacts);
-            console.log(data.contacts)
+            console.log(data.contacts);
             dataRef.current.contacts = data.contacts;
             hasChanges = true;
           }
@@ -800,16 +800,18 @@ export default function RideShareApp() {
 
   // Components
   const WelcomePage = () => (
-    <div className="flex flex-col items-center justify-center min-h-screen text-white px-4">
-      <h1 className="text-4xl md:text-5xl font-bold mb-6 text-center text-slate-950">Welcome to RideShare</h1>
-      <p className="text-lg md:text-xl mb-8 text-center max-w-md text-slate-900">Connect with friends, share rides, and travel together safely.</p>
-      <div className="space-y-4 w-full max-w-xs text-slate-950">
-        <Button onClick={() => setCurrentPage("login")} variant="secondary" size="lg" className="w-full">
-          Login
-        </Button>
-        <Button onClick={() => setCurrentPage("register")} variant="secondary" size="lg" className="w-full">
-          Register
-        </Button>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground px-4">
+      <div className="max-w-md w-full space-y-8 text-center">
+        <h1 className="text-4xl md:text-5xl font-bold mb-6">Welcome to RideShare</h1>
+        <p className="text-lg md:text-xl mb-8">Connect with friends, share rides, and travel together safely.</p>
+        <div className="space-y-4 p-4">
+          <Button onClick={() => setCurrentPage("login")} variant="default" size="lg" className="w-full">
+            Login
+          </Button>
+          <Button onClick={() => setCurrentPage("register")} variant="outline" size="lg" className="w-full">
+            Register
+          </Button>
+        </div>
       </div>
     </div>
   );
