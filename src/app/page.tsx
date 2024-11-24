@@ -105,7 +105,7 @@ export default function RideShareApp() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [activeTab, setActiveTab] = useState("available");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [etag, setEtag] = useState<string | null>(null);
@@ -218,10 +218,18 @@ export default function RideShareApp() {
     }
     if (savedTheme) {
       setTheme(savedTheme);
-      document.documentElement.classList.toggle("dark", savedTheme === "dark");
+    } else {
+      localStorage.setItem("theme", "dark"); // Set default theme in localStorage
     }
+    document.documentElement.classList.toggle("dark", theme === "dark");
     setIsLoading(false);
   }, [fetchUserData]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
