@@ -1,0 +1,1 @@
+npx shadcn@latest add avatar button card dialog dropdown-menu input label scroll-area select separator skeleton tabs toast
