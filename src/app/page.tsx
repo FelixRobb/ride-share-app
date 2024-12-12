@@ -1071,7 +1071,7 @@ export default function RideShareApp() {
                           </Card>
                         ))
                     : availableRides.map((ride) => (
-                        <RideDetailsDialog key={`available-${ride.id}`} ride={ride} onAcceptRide={acceptRide} onAddNote={addNote} fetchNotes={fetchNotes} currentUser={currentUser}>
+                        <RideDetailsDialog key={`available-${ride.id}`} ride={ride} onAcceptRide={acceptRide} onAddNote={addNote} fetchNotes={fetchNotes} currentUser={currentUser} contacts={contacts}>
                           <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
                             <CardHeader className="pb-2">
                               <CardTitle className="text-lg">
@@ -1111,7 +1111,7 @@ export default function RideShareApp() {
                           </Card>
                         ))
                     : myRides.map((ride) => (
-                        <RideDetailsDialog key={`my-${ride.id}`} ride={ride} onCancelRequest={cancelRequest} onAddNote={addNote} fetchNotes={fetchNotes} currentUser={currentUser}>
+                        <RideDetailsDialog key={`my-${ride.id}`} ride={ride} onCancelRequest={cancelRequest} onAddNote={addNote} fetchNotes={fetchNotes} currentUser={currentUser} contacts={contacts}>
                           <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
                             <CardHeader className="pb-2">
                               <CardTitle className="text-lg">
@@ -1154,7 +1154,7 @@ export default function RideShareApp() {
                           </Card>
                         ))
                     : offeredRides.map((ride) => (
-                        <RideDetailsDialog key={`offered-${ride.id}`} ride={ride} onCancelOffer={cancelOffer} onAddNote={addNote} fetchNotes={fetchNotes} currentUser={currentUser}>
+                        <RideDetailsDialog key={`offered-${ride.id}`} ride={ride} onCancelOffer={cancelOffer} onAddNote={addNote} fetchNotes={fetchNotes} currentUser={currentUser} contacts={contacts}>
                           <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
                             <CardHeader className="pb-2">
                               <CardTitle className="text-lg">
@@ -1193,6 +1193,7 @@ export default function RideShareApp() {
     onAddNote,
     fetchNotes,
     currentUser,
+    contacts,
   }: {
     children: React.ReactNode;
     ride: Ride;
@@ -1202,6 +1203,7 @@ export default function RideShareApp() {
     onAddNote: (rideId: string, note: string) => Promise<Note | undefined>;
     fetchNotes: (rideId: string) => Promise<Note[]>;
     currentUser: User | null;
+    contacts: Contact[];
   }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [notes, setNotes] = useState<Note[]>([]);
@@ -1230,7 +1232,7 @@ export default function RideShareApp() {
 
     const getDisplayStatus = () => {
       if (ride.status === "accepted" && ride.accepter_id === currentUser?.id) {
-        return "Offered";
+        return "Offered by me";
       }
       return ride.status.charAt(0).toUpperCase() + ride.status.slice(1);
     };
@@ -1315,6 +1317,17 @@ export default function RideShareApp() {
               </div>
               <p className="ml-7">{ride.note || "No initial notes provided"}</p>
             </div>
+            {ride.status === "accepted" && ride.accepter_id && (
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <User className="w-5 h-5 text-primary" />
+                  <Label className="font-semibold">Offered by</Label>
+                </div>
+                <p className="ml-7">
+                  {contacts.find(c => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user.name || "Unknown"}
+                </p>
+              </div>
+            )}
             <Separator />
             {(ride.status === "accepted" || ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
               <div className="space-y-4">
