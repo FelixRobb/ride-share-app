@@ -1119,7 +1119,11 @@ export default function RideShareApp() {
                               </CardTitle>
                               <CardDescription>
                                 Status: {ride.status === "accepted" ? "Accepted" : ride.status}
-                                {ride.status === "accepted" && ` (Offered by: ${ride.accepter_id ? contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user.name : "Unknown"})`}
+                                {ride.status === "accepted" && ride.accepter_id && ` (Offered by: ${
+                                  ride.accepter_id === currentUser?.id
+                                    ? "Me"
+                                    : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact?.name || "Unknown"
+                                })`}
                               </CardDescription>
                             </CardHeader>
                             <CardContent className="pb-2">
@@ -1232,7 +1236,7 @@ export default function RideShareApp() {
 
     const getDisplayStatus = () => {
       if (ride.status === "accepted" && ride.accepter_id === currentUser?.id) {
-        return "Offered by me";
+        return "Offered";
       }
       return ride.status.charAt(0).toUpperCase() + ride.status.slice(1);
     };
@@ -1324,7 +1328,9 @@ export default function RideShareApp() {
                   <Label className="font-semibold">Offered by</Label>
                 </div>
                 <p className="ml-7">
-                  {contacts.find(c => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.user.name || "Unknown"}
+                  {ride.accepter_id === currentUser?.id
+                    ? "Me"
+                    : contacts.find(c => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact?.name || "Unknown"}
                 </p>
               </div>
             )}
