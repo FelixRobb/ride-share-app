@@ -1,3 +1,4 @@
+// app/api/register/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 import bcrypt from 'bcrypt';
