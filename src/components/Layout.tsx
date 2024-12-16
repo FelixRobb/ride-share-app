@@ -1,15 +1,15 @@
 import { useState, useCallback, useEffect } from "react";
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, LogOut, Home, Car, Users, Menu, Moon, Sun } from 'lucide-react';
+import { Bell, LogOut, Home, Car, Users, Menu, Moon, Sun } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { User, Notification } from "../types";
 import { markNotificationsAsRead } from "../utils/api";
-import { useTheme } from "next-themes"
+import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
 
 interface LayoutProps {
@@ -19,16 +19,11 @@ interface LayoutProps {
   logout: () => void;
 }
 
-export default function Layout({
-  children,
-  currentUser,
-  notifications,
-  logout,
-}: LayoutProps) {
+export default function Layout({ children, currentUser, notifications, logout }: LayoutProps) {
   const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
-  const router = useRouter()
-  const { theme, setTheme } = useTheme()
+  const router = useRouter();
+  const { theme, setTheme } = useTheme();
   const { toast } = useToast();
 
   const unreadNotificationsCount = notifications.filter((n) => !n.is_read).length;
@@ -37,13 +32,16 @@ export default function Layout({
     setIsNotificationDialogOpen(true);
     const unreadNotifications = notifications.filter((n) => !n.is_read);
     if (unreadNotifications.length > 0) {
-      void markNotificationsAsRead(currentUser!.id, unreadNotifications.map((n) => n.id));
+      void markNotificationsAsRead(
+        currentUser!.id,
+        unreadNotifications.map((n) => n.id)
+      );
     }
   }, [notifications, currentUser]);
 
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark")
-  }
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   useEffect(() => {
     const handleOnline = () => {
@@ -61,12 +59,12 @@ export default function Layout({
       });
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, [toast]);
 
@@ -85,22 +83,19 @@ export default function Layout({
     <div className="flex flex-col min-h-screen bg-background">
       <header className="bg-background shadow-md border-b border-border">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex-shrink-0">
-            <Link href="/dashboard" className="text-2xl font-bold text-primary">RideShare</Link>
+          <div className="flex-shrink-0 mr-4">
+            <Link href="/dashboard" className="text-2xl font-bold text-primary">
+              RideShare
+            </Link>
           </div>
 
-          <nav className="hidden md:flex items-center space-x-2 bg-muted rounded-full p-1">
+          <nav className={`hidden md:flex items-center space-x-2 ${theme === "dark" ? "bg-zinc-700" : "bg-zinc-300"} rounded-full p-1`}>
             {[
               { icon: Home, label: "Dashboard", href: "/dashboard" },
               { icon: Car, label: "Create Ride", href: "/create-ride" },
               { icon: Users, label: "Profile", href: "/profile" },
             ].map((item) => (
-              <Button
-                key={item.href}
-                variant="ghost"
-                asChild
-                className="rounded-full px-4 py-2 transition-colors duration-200"
-              >
+              <Button key={item.href} variant="ghost" asChild className="rounded-full px-4 py-2 transition-colors duration-200">
                 <Link href={item.href}>
                   <item.icon className="mr-2 h-4 w-4" /> {item.label}
                 </Link>
@@ -108,19 +103,11 @@ export default function Layout({
             ))}
 
             <Dialog open={isNotificationDialogOpen} onOpenChange={setIsNotificationDialogOpen}>
-              <Button
-                variant="ghost"
-                className="rounded-full px-4 py-2 hover:bg-primary/10 relative"
-                onClick={handleOpenNotificationDialog}
-              >
+              <Button variant="ghost" className="rounded-full px-4 py-2 hover:bg-primary/10 relative" onClick={handleOpenNotificationDialog}>
                 <Bell className="h-4 w-4" />
-                {unreadNotificationsCount > 0 && (
-                  <span className="absolute top-0 right-0 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                    {unreadNotificationsCount}
-                  </span>
-                )}
+                {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
               </Button>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-[425px] rounded">
                 <DialogHeader>
                   <DialogTitle>Notifications</DialogTitle>
                   <DialogDescription>Your recent notifications</DialogDescription>
@@ -209,12 +196,12 @@ export default function Layout({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Logout</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to log out?
-            </DialogDescription>
+            <DialogDescription>Are you sure you want to log out?</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={confirmLogout}>Logout</Button>
           </DialogFooter>
         </DialogContent>
@@ -222,4 +209,3 @@ export default function Layout({
     </div>
   );
 }
-

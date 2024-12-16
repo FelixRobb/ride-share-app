@@ -65,10 +65,10 @@ export type UserStats = {
 };
 
 export type Note = {
-  id: string; // UUID
-  ride_id: string; // UUID
-  user_id: string; // UUID
+  id: string;
+  ride_id: string;
+  user_id: string;
   note: string;
-  created_at: string; // ISO 8601 date string
+  created_at: string;
 };
 
