@@ -1,3 +1,4 @@
+// app/api/users/[id]/change-password/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 import bcrypt from 'bcrypt';
