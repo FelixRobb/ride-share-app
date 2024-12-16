@@ -1,36 +1,52 @@
-// src/app/layout.tsx
+"use client"
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "next-themes";
+import { checkUser } from "@/utils/api";
+import { useToast } from "@/hooks/use-toast";
 
-import type { Metadata } from "next";
-import localFont from "next/font/local";
-import "./globals.css";
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const { toast } = useToast();
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+  useEffect(() => {
+    const checkCurrentUser = async () => {
+      const user = localStorage.getItem("currentUser");
+      if (user) {
+        const parsedUser = JSON.parse(user);
+        try {
+          const userExists = await checkUser(parsedUser.id);
+          if (!userExists) {
+            localStorage.removeItem("currentUser");
+            toast({
+              title: "Session Expired",
+              description: "Your session has expired. Please log in again.",
+              variant: "destructive",
+            });
+            router.push("/login");
+          }
+        } catch (error) {
+          console.error("Error checking user:", error);
+          toast({
+            title: "Error",
+            description: "An error occurred while checking your session. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }
+    };
 
-export const metadata: Metadata = {
-  title: "RideShare",
-  description: "RideShare App for sharing rides",
-};
+    checkCurrentUser();
+  }, [router, toast]);
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
