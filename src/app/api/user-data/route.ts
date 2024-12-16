@@ -1,4 +1,4 @@
-// app/api/user-data/route.ts
+// src/app/api/user-data/route.ts
 import { NextResponse } from "next/server";
 import { supabase, logError } from "@/lib/db";
 import crypto from "crypto";

@@ -1,4 +1,4 @@
-// app/api/rides/[id]/canceloffer/route.ts
+// src/app/api/rides/[id]/canceloffer/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 

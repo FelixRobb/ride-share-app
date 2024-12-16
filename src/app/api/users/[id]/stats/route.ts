@@ -1,4 +1,4 @@
-// app/api/users/[id]/stats/route.ts
+// src/app/api/users/[id]/stats/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 

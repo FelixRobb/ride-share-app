@@ -1,4 +1,4 @@
-// app/api/notifications/route.ts
+// src/app/api/notifications/route.ts
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/db";
 

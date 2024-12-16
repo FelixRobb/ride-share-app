@@ -1,4 +1,4 @@
-// app/api/auth/reset-password/route.ts
+// src/app/api/auth/reset-password/route.ts
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'

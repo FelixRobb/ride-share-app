@@ -1,4 +1,4 @@
-// app/api/login/route.ts
+// src/app/api/login/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 import bcrypt from 'bcrypt';
