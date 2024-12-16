@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import RideDetailsPage from '@/components/RideDetailsPage'
 import Layout from '@/components/Layout'
 import { useToast } from "@/hooks/use-toast"
+import { Loader } from 'lucide-react'
 import { User, Ride, Contact, Notification } from "@/types"
 import { fetchUserData, fetchRideDetails } from "@/utils/api"
 
@@ -81,10 +82,13 @@ export default function RideDetails() {
     router.push('/')
   }
 
-  if (isLoading) {
-    return <div>Loading...</div>
+   if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
   }
-
   return (
     <Layout currentUser={currentUser} notifications={notifications} logout={logout}>
       {ride && currentUser && (

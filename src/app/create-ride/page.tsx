@@ -6,6 +6,7 @@ import CreateRidePage from '@/components/CreateRidePage'
 import Layout from '@/components/Layout'
 import { useToast } from "@/hooks/use-toast"
 import { User, Notification, AssociatedPerson } from "@/types"
+import { Loader } from 'lucide-react'
 import { fetchUserData } from "@/utils/api"
 
 export default function CreateRide() {
@@ -55,10 +56,13 @@ export default function CreateRide() {
     router.push('/')
   }
 
-  if (isLoading) {
-    return <div>Loading...</div>
+   if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
   }
-
   return (
     <Layout currentUser={currentUser} notifications={notifications} logout={logout}>
       <CreateRidePage

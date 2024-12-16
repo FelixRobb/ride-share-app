@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardPage from '@/components/DashboardPage'
 import Layout from '@/components/Layout'
+import { Loader } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact, Notification } from "@/types"
 import { fetchUserData } from "@/utils/api"
@@ -58,10 +59,13 @@ export default function Dashboard() {
     router.push('/')
   }
 
-  if (isLoading) {
-    return <div>Loading...</div>
+   if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
   }
-
   return (
     <Layout currentUser={currentUser} notifications={notifications} logout={logout}>
       <DashboardPage
