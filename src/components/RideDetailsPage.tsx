@@ -1,13 +1,13 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { MapPin, User as LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send } from 'lucide-react';
+import { MapPin, User as LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact, Note } from "@/types"
 import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes } from "@/utils/api"
@@ -27,10 +27,15 @@ export default function RideDetailsPage({ ride, currentUser, contacts, fetchUser
   const [isCancelRequestDialogOpen, setIsCancelRequestDialogOpen] = useState(false);
   const [isCancelOfferDialogOpen, setIsCancelOfferDialogOpen] = useState(false);
 
+  useEffect(() => {
+    loadNotes();
+  }, []);
+
   const loadNotes = async () => {
     try {
       const fetchedNotes = await fetchNotes(ride.id)
-      setNotes(fetchedNotes)
+      console.log(fetchedNotes)
+      setNotes(Array.isArray(fetchedNotes) ? fetchedNotes : [])
     } catch (error) {
       console.error("Error fetching notes:", error)
       toast({
@@ -128,7 +133,6 @@ export default function RideDetailsPage({ ride, currentUser, contacts, fetchUser
     }
   }
 
-
   const getDisplayStatus = () => {
     if (ride.status === "accepted" && ride.accepter_id === currentUser?.id) {
       return "Offered"
@@ -145,6 +149,14 @@ export default function RideDetailsPage({ ride, currentUser, contacts, fetchUser
       default:
         return "text-yellow-500"
     }
+  }
+
+  const getUserName = (userId: string) => {
+    if (userId === currentUser.id) {
+      return currentUser.name;
+    }
+    const contact = contacts.find(c => c.user_id === userId || c.contact_id === userId);
+    return contact ? (contact.user_id === userId ? contact.user.name : contact.contact.name) : "Unknown User";
   }
 
   return (
@@ -235,13 +247,13 @@ export default function RideDetailsPage({ ride, currentUser, contacts, fetchUser
               <Label className="font-semibold">Messages</Label>
             </div>
             <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-              {notes.map((note) => (
+              {Array.isArray(notes) && notes.map((note) => (
                 <div key={note.id} className={`mb-4 ${note.user_id === currentUser?.id ? "text-right" : "text-left"}`}>
                   <div className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? "bg-primary text-primary-foreground" : "bg-muted"} rounded-lg p-2`}>
                     <p className="text-sm">{note.note}</p>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {note.user_name} - {new Date(note.created_at).toLocaleString()}
+                    {getUserName(note.user_id)} - {new Date(note.created_at).toLocaleString()}
                   </p>
                 </div>
               ))}
@@ -272,7 +284,7 @@ export default function RideDetailsPage({ ride, currentUser, contacts, fetchUser
             Cancel Offer
           </Button>
         )}
-        {ride.status === "pending" && (
+        {ride.status === "pending" && ride.requester_id != currentUser?.id && (
           <Button onClick={handleAcceptRide} className="w-full sm:w-auto">
             Offer Ride
           </Button>

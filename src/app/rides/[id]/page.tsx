@@ -27,11 +27,16 @@ export default function RideDetails() {
       const parsedUser = JSON.parse(user) as User
       setCurrentUser(parsedUser)
       void fetchUserDataCallback(parsedUser.id)
-      void fetchRideDetailsCallback(id as string)
     } else {
       router.push('/')
     }
-  }, [router, id])
+  }, [router])
+
+  useEffect(() => {
+    if (currentUser && id) {
+      void fetchRideDetailsCallback(id as string)
+    }
+  }, [currentUser, id])
 
   const fetchUserDataCallback = async (userId: string) => {
     try {
@@ -54,19 +59,22 @@ export default function RideDetails() {
 
   const fetchRideDetailsCallback = async (rideId: string) => {
     try {
-      const rideDetails = await fetchRideDetails(rideId)
-      setRide(rideDetails)
-      setIsLoading(false)
+      if (!currentUser) {
+        throw new Error("User not authenticated");
+      }
+      const rideDetails = await fetchRideDetails(currentUser.id, rideId);
+      setRide(rideDetails);
     } catch (error) {
-      console.error("Error fetching ride details:", error)
+      console.error("Error fetching ride details:", error);
       toast({
         title: "Error",
         description: "Failed to fetch ride details. Please try again.",
         variant: "destructive",
-      })
-      setIsLoading(false)
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
   const logout = () => {
     localStorage.removeItem("currentUser")
@@ -79,12 +87,12 @@ export default function RideDetails() {
 
   return (
     <Layout currentUser={currentUser} notifications={notifications} logout={logout}>
-      {ride && (
+      {ride && currentUser && (
         <RideDetailsPage
           ride={ride}
-          currentUser={currentUser!}
+          currentUser={currentUser}
           contacts={contacts}
-          fetchUserData={() => fetchUserDataCallback(currentUser!.id)}
+          fetchUserData={() => fetchUserDataCallback(currentUser.id)}
         />
       )}
     </Layout>

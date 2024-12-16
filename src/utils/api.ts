@@ -1,4 +1,4 @@
-import { User, Ride, RideData, Contact, AssociatedPerson } from '../types';
+import { User, RideData, Contact, AssociatedPerson, Ride } from '../types';
 
 export const login = async (phoneOrEmail: string, password: string): Promise<User> => {
   const response = await fetch("/api/login", {
@@ -250,10 +250,16 @@ export const fetchUserData = async (userId: string, etag: string | null) => {
   }
 };
 
-export const fetchRideDetails = async (rideId: string): Promise<Ride> => {
-  const response = await fetch(`/api/rides/${rideId}`);
+export const fetchRideDetails = async (userId: string, rideId: string): Promise<Ride> => {
+  console.log("logs", userId, rideId)
+  const response = await fetch(`/api/user-data?userId=${userId}`);
   if (response.ok) {
-    return await response.json();
+    const data = await response.json();
+    const ride = data.rides.find((r: Ride) => r.id === rideId);
+    if (ride) {
+      return ride;
+    }
+    throw new Error("Ride not found");
   } else {
     throw new Error("Failed to fetch ride details");
   }
