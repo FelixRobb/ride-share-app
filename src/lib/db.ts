@@ -22,7 +22,6 @@ export function getSupabaseClient(): SupabaseClient {
           detectSessionInUrl: true
         }
       });
-      console.log('Supabase client created successfully');
     } catch (error) {
       console.error('Error creating Supabase client:', error);
       throw new Error('Failed to create Supabase client');

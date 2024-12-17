@@ -1,4 +1,3 @@
-// src/app/api/rides/[id]/notes/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 
@@ -14,6 +13,7 @@ export async function GET(request: Request) {
         user:users (name)
       `)
       .eq('ride_id', rideId)
+      .eq('is_deleted', false)
       .order('created_at', { ascending: true });
 
     if (error) throw error;
@@ -36,30 +36,113 @@ export async function POST(request: Request) {
       .insert({ ride_id: rideId, user_id: userId, note })
       .select(`
         *,
-        user:users (name),
-        ride:rides (requester_id, accepter_id)
+        user:users (name)
       `)
       .single();
 
     if (insertError) throw insertError;
 
     // Create a notification for the other user involved in the ride
-    const otherUserId = userId === newNote.ride.requester_id ? newNote.ride.accepter_id : newNote.ride.requester_id;
-    if (otherUserId) {
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: otherUserId,
-          message: `New message from ${newNote.user.name} for ride ${rideId}`,
-          type: 'newNote'
-        });
+    const { data: ride } = await supabase
+      .from('rides')
+      .select('requester_id, accepter_id')
+      .eq('id', rideId)
+      .single();
 
-      if (notificationError) throw notificationError;
+    if (ride) {
+      const otherUserId = userId === ride.requester_id ? ride.accepter_id : ride.requester_id;
+      if (otherUserId) {
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: otherUserId,
+            message: `New message for ride ${rideId}`,
+            type: 'newNote',
+            related_id: rideId
+          });
+
+        if (notificationError) console.error('Error creating notification:', notificationError);
+      }
     }
 
     return NextResponse.json({ note: newNote });
   } catch (error) {
     console.error('Add ride note error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  const { noteId, userId, note } = await request.json();
+
+  try {
+    const { data: updatedNote, error: updateError } = await supabase
+      .from('ride_notes')
+      .update({ note, is_edited: true })
+      .eq('id', noteId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    return NextResponse.json({ note: updatedNote });
+  } catch (error) {
+    console.error('Update ride note error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  const { noteId, userId } = await request.json();
+
+  try {
+    const { data: deletedNote, error: deleteError } = await supabase
+      .from('ride_notes')
+      .update({ is_deleted: true })
+      .eq('id', noteId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (deleteError) throw deleteError;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete ride note error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  const { noteId, userId } = await request.json();
+
+  try {
+    const { data: note, error: fetchError } = await supabase
+      .from('ride_notes')
+      .select('seen_by')
+      .eq('id', noteId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const seenBy = note.seen_by || [];
+    if (!seenBy.includes(userId)) {
+      seenBy.push(userId);
+    }
+
+    const { data: updatedNote, error: updateError } = await supabase
+      .from('ride_notes')
+      .update({ seen_by: seenBy })
+      .eq('id', noteId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    return NextResponse.json({ note: updatedNote });
+  } catch (error) {
+    console.error('Mark note as seen error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
