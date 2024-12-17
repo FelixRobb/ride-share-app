@@ -42,7 +42,6 @@ export default function Profile() {
         setAssociatedPeople(data.associatedPeople)
         setUserStats(data.stats)
         setNotifications((prev) => [...prev, ...data.notifications])
-        // Handle other data updates as needed
       }
       setIsLoading(false)
     } catch (error) {

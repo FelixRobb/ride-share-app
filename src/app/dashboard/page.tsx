@@ -41,7 +41,6 @@ export default function Dashboard() {
         setRides(data.rides)
         setContacts(data.contacts)
         setNotifications((prev) => [...prev, ...data.notifications])
-        // Handle other data updates as needed
       }
       setIsLoading(false)
     } catch (error) {

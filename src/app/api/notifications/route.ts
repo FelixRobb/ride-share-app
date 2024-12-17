@@ -19,6 +19,8 @@ export async function GET(request: Request) {
 
     if (error) throw error;
 
+    console.log("notifs", notifications)
+
     return NextResponse.json({ notifications });
   } catch (error) {
     console.error("Fetch notifications error:", error);

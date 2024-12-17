@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send, Edit, Trash, ArrowBigLeft } from 'lucide-react'
+import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send, Edit, Trash, ArrowBigLeft, Loader } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact, Note } from "@/types"
 import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes, editNote, deleteNote, markNoteAsSeen, fetchRideDetails } from "@/utils/api"
@@ -25,6 +25,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   const [newNote, setNewNote] = useState("")
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [editedNoteContent, setEditedNoteContent] = useState("")
+  const [loading, setLoading] = useState(false);
   const router = useRouter()
   const { toast } = useToast()
   const [isCancelRequestDialogOpen, setIsCancelRequestDialogOpen] = useState(false);
@@ -77,6 +78,9 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
       setRide(updatedRide);
     } catch (error) {
       console.error("Error refreshing ride data:", error);
+    } finally {
+      // Stop the spinner after the data has been successfully updated
+      setLoading(false);
     }
   }, [currentUser.id, ride.id]);
 
@@ -167,24 +171,27 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   };
 
   const handleAcceptRide = async () => {
+    setLoading(true);
     try {
-      await acceptRide(ride.id, currentUser.id)
-      await fetchUserData()
-      router.refresh
-      console.log("rfrsh jgfkh k")
+      // Accept the ride
+      await acceptRide(ride.id, currentUser.id);
+      await fetchUserData(); 
+      await refreshRideData();
       toast({
         title: "Success",
         description: "Ride offered successfully.",
-      })
+      });
     } catch (error) {
-      console.error("Error offerering ride:", error)
+      console.error("Error offering ride:", error);
       toast({
         title: "Error",
         description: "Failed to accept ride. Please try again.",
         variant: "destructive",
-      })
-    }
-  }
+      });
+    } 
+  };
+  
+  
 
   const handleCancelRequest = () => {
     setIsCancelRequestDialogOpen(true);
@@ -412,22 +419,26 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
         )}
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row gap-2">
-        {ride.requester_id === currentUser?.id && ride.status !== "cancelled" && (
-          <Button variant="destructive" onClick={handleCancelRequest} className="w-full sm:w-auto">
-            Cancel Request
-          </Button>
-        )}
-        {ride.accepter_id === currentUser?.id && ride.status === "accepted" && (
-          <Button variant="destructive" onClick={handleCancelOffer} className="w-full sm:w-auto">
-            Cancel Offer
-          </Button>
-        )}
-        {ride.status === "pending" && ride.requester_id != currentUser?.id && (
-          <Button onClick={handleAcceptRide} className="w-full sm:w-auto">
-            Offer Ride
-          </Button>
-        )}
-      </CardFooter>
+            {ride.requester_id === currentUser?.id && ride.status !== "cancelled" && (
+              <Button variant="destructive" onClick={handleCancelRequest} className="w-full sm:w-auto">
+                Cancel Request
+              </Button>
+            )}
+            {ride.accepter_id === currentUser?.id && ride.status === "accepted" && (
+              <Button variant="destructive" onClick={handleCancelOffer} className="w-full sm:w-auto">
+                Cancel Offer
+              </Button>
+            )}
+            {ride.status === "pending" && ride.requester_id !== currentUser?.id && (
+              <Button 
+                onClick={handleAcceptRide} 
+                className="w-full sm:w-auto"
+                disabled={loading}  // Disable button while loading
+              >
+                {loading ? <Loader className="animate-spin h-5 w-5" /> : "Offer Ride"} {/* Show spinner or button text */}
+              </Button>
+            )}
+          </CardFooter>
 
       <Dialog open={isCancelRequestDialogOpen} onOpenChange={setIsCancelRequestDialogOpen}>
         <DialogContent>
