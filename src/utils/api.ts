@@ -111,7 +111,8 @@ export const addNote = async (rideId: string, userId: string, note: string) => {
 export const fetchNotes = async (rideId: string) => {
   const response = await fetch(`/api/rides/${rideId}/notes`);
   if (response.ok) {
-    return await response.json();
+    const data = await response.json();
+    return data.notes;
   } else {
     throw new Error("Failed to fetch notes");
   }

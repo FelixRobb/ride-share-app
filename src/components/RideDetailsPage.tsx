@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { MapPin, User as LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send } from 'lucide-react'
+import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact, Note } from "@/types"
 import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes } from "@/utils/api"
@@ -33,38 +33,37 @@ export default function RideDetailsPage({ ride, currentUser, contacts, fetchUser
 
   const loadNotes = async () => {
     try {
-      const fetchedNotes = await fetchNotes(ride.id)
-      console.log(fetchedNotes)
-      setNotes(Array.isArray(fetchedNotes) ? fetchedNotes : [])
+      const fetchedNotes = await fetchNotes(ride.id);
+      setNotes(fetchedNotes || []);
     } catch (error) {
-      console.error("Error fetching notes:", error)
+      console.error("Error fetching notes:", error);
       toast({
         title: "Error",
         description: "Failed to load notes. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handleAddNote = async () => {
     if (newNote.trim() && currentUser) {
       try {
-        const addedNote = await addNote(ride.id, currentUser.id, newNote)
+        const addedNote = await addNote(ride.id, currentUser.id, newNote);
         if (addedNote) {
-          setNotes((prevNotes) => [...prevNotes, addedNote])
-          setNewNote("")
-          await fetchUserData()
+          setNotes((prevNotes) => [...prevNotes, addedNote]);
+          setNewNote("");
+          await fetchUserData();
         }
       } catch (error) {
-        console.error("Error adding note:", error)
+        console.error("Error adding note:", error);
         toast({
           title: "Error",
           description: "Failed to add note. Please try again.",
           variant: "destructive",
-        })
+        });
       }
     }
-  }
+  };
 
   const handleAcceptRide = async () => {
     try {
@@ -247,7 +246,7 @@ export default function RideDetailsPage({ ride, currentUser, contacts, fetchUser
               <Label className="font-semibold">Messages</Label>
             </div>
             <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-              {Array.isArray(notes) && notes.map((note) => (
+              {notes.map((note) => (
                 <div key={note.id} className={`mb-4 ${note.user_id === currentUser?.id ? "text-right" : "text-left"}`}>
                   <div className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? "bg-primary text-primary-foreground" : "bg-muted"} rounded-lg p-2`}>
                     <p className="text-sm">{note.note}</p>
