@@ -70,5 +70,11 @@ export type Note = {
   user_id: string;
   note: string;
   created_at: string;
+  is_edited: boolean;
+  is_deleted: boolean;
+  seen_by: string[];
+  user?: {
+    name: string;
+  };
 };
 

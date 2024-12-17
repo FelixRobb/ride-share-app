@@ -303,8 +303,8 @@ export default function ProfilePage({
                     </div>
                     <div>
                       <div className="flex flex-row items-center gap-1">
-                        <p className="font-semibold">{contactName}</p>
-                        <p className="text-sm text-muted-foreground">({contact.status})</p>
+                        <p className="font-semibold overflow-hidden text-nowrap">{contactName}</p>
+                        <p className="text-sm text-muted-foreground overflow-hidden text-nowrap">({contact.status})</p>
                       </div>
                       <p className="text-sm text-muted-foreground">{contactPhone}</p>
                     </div>

@@ -1,4 +1,4 @@
-import { User, RideData, Contact, AssociatedPerson, Ride } from '../types';
+import { User, RideData, Contact, AssociatedPerson, Ride, Note } from '../types';
 
 export const login = async (phoneOrEmail: string, password: string): Promise<User> => {
   const response = await fetch("/api/login", {
@@ -92,7 +92,7 @@ export const cancelOffer = async (rideId: string, userId: string) => {
   }
 };
 
-export const addNote = async (rideId: string, userId: string, note: string) => {
+export const addNote = async (rideId: string, userId: string, note: string): Promise<Note> => {
   const response = await fetch(`/api/rides/${rideId}/notes`, {
     method: "POST",
     headers: {
@@ -101,20 +101,66 @@ export const addNote = async (rideId: string, userId: string, note: string) => {
     body: JSON.stringify({ userId, note }),
   });
   if (response.ok) {
-    return await response.json();
+    const data = await response.json();
+    return data.note;
   } else {
     const errorData = await response.json();
     throw new Error(errorData.error || "Failed to add note. Please try again.");
   }
 };
 
-export const fetchNotes = async (rideId: string) => {
+export const fetchNotes = async (rideId: string): Promise<Note[]> => {
   const response = await fetch(`/api/rides/${rideId}/notes`);
   if (response.ok) {
     const data = await response.json();
     return data.notes;
   } else {
     throw new Error("Failed to fetch notes");
+  }
+};
+
+export const editNote = async (noteId: string, userId: string, note: string): Promise<Note> => {
+  const response = await fetch(`/api/rides/${noteId}/notes`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ noteId, userId, note }),
+  });
+  if (response.ok) {
+    const data = await response.json();
+    return data.note;
+  } else {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to edit note. Please try again.");
+  }
+};
+
+export const deleteNote = async (noteId: string, userId: string): Promise<void> => {
+  const response = await fetch(`/api/rides/${noteId}/notes`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ noteId, userId }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to delete note. Please try again.");
+  }
+};
+
+export const markNoteAsSeen = async (noteId: string, userId: string): Promise<void> => {
+  const response = await fetch(`/api/rides/${noteId}/notes`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ noteId, userId }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to mark note as seen. Please try again.");
   }
 };
 
@@ -252,15 +298,10 @@ export const fetchUserData = async (userId: string, etag: string | null) => {
 };
 
 export const fetchRideDetails = async (userId: string, rideId: string): Promise<Ride> => {
-  console.log("logs", userId, rideId)
-  const response = await fetch(`/api/user-data?userId=${userId}`);
+  const response = await fetch(`/api/rides/${rideId}?userId=${userId}`);
   if (response.ok) {
     const data = await response.json();
-    const ride = data.rides.find((r: Ride) => r.id === rideId);
-    if (ride) {
-      return ride;
-    }
-    throw new Error("Ride not found");
+    return data.ride;
   } else {
     throw new Error("Failed to fetch ride details");
   }

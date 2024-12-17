@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, LogOut, Home, Car, Users, Menu, Moon, Sun } from "lucide-react";
+import { Bell, LogOut, Home, Car, Users, Menu, Moon, Sun } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { User, Notification } from "../types";
 import { markNotificationsAsRead } from "../utils/api";
@@ -22,22 +22,43 @@ interface LayoutProps {
 export default function Layout({ children, currentUser, notifications, logout }: LayoutProps) {
   const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const [localNotifications, setLocalNotifications] = useState(notifications);
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
 
-  const unreadNotificationsCount = notifications.filter((n) => !n.is_read).length;
+  useEffect(() => {
+    setLocalNotifications(notifications);
+  }, [notifications]);
+
+  const unreadNotificationsCount = localNotifications.filter((n) => !n.is_read).length;
 
   const handleOpenNotificationDialog = useCallback(() => {
     setIsNotificationDialogOpen(true);
-    const unreadNotifications = notifications.filter((n) => !n.is_read);
+  }, []);
+
+  const handleCloseNotificationDialog = useCallback(async () => {
+    const unreadNotifications = localNotifications.filter((n) => !n.is_read);
     if (unreadNotifications.length > 0) {
-      void markNotificationsAsRead(
-        currentUser!.id,
-        unreadNotifications.map((n) => n.id)
-      );
+      try {
+        await markNotificationsAsRead(
+          currentUser!.id,
+          unreadNotifications.map((n) => n.id)
+        );
+        setLocalNotifications(prevNotifications =>
+          prevNotifications.map(n => ({ ...n, is_read: true }))
+        );
+      } catch (error) {
+        console.error("Error marking notifications as read:", error);
+        toast({
+          title: "Error",
+          description: "Failed to mark notifications as read.",
+          variant: "destructive",
+        });
+      }
     }
-  }, [notifications, currentUser]);
+    setIsNotificationDialogOpen(false);
+  }, [currentUser, localNotifications, toast]);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -89,7 +110,7 @@ export default function Layout({ children, currentUser, notifications, logout }:
             </Link>
           </div>
 
-          <nav className={`hidden md:flex items-center space-x-2 ${theme === "dark" ? "bg-zinc-700" : "bg-zinc-300"} rounded-full p-1`}>
+          <nav className={`hidden md:flex items-center space-x-2 border rounded-full p-1`}>
             {[
               { icon: Home, label: "Dashboard", href: "/dashboard" },
               { icon: Car, label: "Create Ride", href: "/create-ride" },
@@ -102,7 +123,7 @@ export default function Layout({ children, currentUser, notifications, logout }:
               </Button>
             ))}
 
-            <Dialog open={isNotificationDialogOpen} onOpenChange={setIsNotificationDialogOpen}>
+            <Dialog open={isNotificationDialogOpen} onOpenChange={handleCloseNotificationDialog}>
               <Button variant="ghost" className="rounded-full px-4 py-2 hover:bg-primary/10 relative" onClick={handleOpenNotificationDialog}>
                 <Bell className="h-4 w-4" />
                 {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
@@ -113,10 +134,10 @@ export default function Layout({ children, currentUser, notifications, logout }:
                   <DialogDescription>Your recent notifications</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-[300px] w-full pr-4">
-                  {notifications.length === 0 ? (
+                  {localNotifications.length === 0 ? (
                     <p className="text-center text-muted-foreground py-4">No notifications</p>
                   ) : (
-                    notifications.map((notification) => (
+                    localNotifications.map((notification) => (
                       <Card key={notification.id} className={`mb-4 ${notification.is_read ? "opacity-60" : ""}`}>
                         <CardHeader className="p-4">
                           <CardTitle className="text-sm font-medium">{notification.type}</CardTitle>
@@ -209,3 +230,4 @@ export default function Layout({ children, currentUser, notifications, logout }:
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,10 +7,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { MapPin, User as LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send } from 'lucide-react'
+import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send, Edit, Trash } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact, Note } from "@/types"
-import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes } from "@/utils/api"
+import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes, editNote, deleteNote, markNoteAsSeen, fetchRideDetails } from "@/utils/api"
 
 interface RideDetailsPageProps {
   ride: Ride
@@ -19,49 +19,150 @@ interface RideDetailsPageProps {
   fetchUserData: () => Promise<void>
 }
 
-export default function RideDetailsPage({ ride, currentUser, contacts, fetchUserData }: RideDetailsPageProps) {
+export default function RideDetailsPage({ ride: initialRide, currentUser, contacts, fetchUserData }: RideDetailsPageProps) {
+  const [ride, setRide] = useState<Ride>(initialRide)
   const [notes, setNotes] = useState<Note[]>([])
   const [newNote, setNewNote] = useState("")
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editedNoteContent, setEditedNoteContent] = useState("")
   const router = useRouter()
   const { toast } = useToast()
   const [isCancelRequestDialogOpen, setIsCancelRequestDialogOpen] = useState(false);
   const [isCancelOfferDialogOpen, setIsCancelOfferDialogOpen] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    loadNotes();
-  }, []);
-
-  const loadNotes = async () => {
-    try {
-      const fetchedNotes = await fetchNotes(ride.id);
-      setNotes(fetchedNotes || []);
-    } catch (error) {
-      console.error("Error fetching notes:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load notes. Please try again.",
-        variant: "destructive",
-      });
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
     }
   };
 
-  const handleAddNote = async () => {
+  const loadNotes = useCallback(async () => {
+    if (ride.status === "accepted" || ride.status === "cancelled") {
+      try {
+        const fetchedNotes = await fetchNotes(ride.id);
+        setNotes(fetchedNotes || []);
+        
+        // Automatically mark new notes as seen
+        const unseenNotes = fetchedNotes.filter(note => 
+          note.user_id !== currentUser.id && 
+          (!note.seen_by || !note.seen_by.includes(currentUser.id))
+        );
+        
+        if (unseenNotes.length > 0) {
+          await Promise.all(unseenNotes.map(note => markNoteAsSeen(note.id, currentUser.id)));
+        }
+
+        // Scroll to bottom only on initial load
+        if (notes.length === 0 && fetchedNotes.length > 0) {
+          scrollToBottom();
+        }
+      } catch (error) {
+        console.error("Error fetching notes:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load notes. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [ride.id, ride.status, currentUser.id, toast, notes.length]);
+
+  const refreshRideData = useCallback(async () => {
+    try {
+      const updatedRide = await fetchRideDetails(currentUser.id, ride.id);
+      setRide(updatedRide);
+    } catch (error) {
+      console.error("Error refreshing ride data:", error);
+    }
+  }, [currentUser.id, ride.id]);
+
+  useEffect(() => {
+    loadNotes();
+    scrollToBottom();
+    const notesInterval = setInterval(loadNotes, 5000);
+    const rideInterval = setInterval(refreshRideData, 10000);
+
+    return () => {
+      clearInterval(notesInterval);
+      clearInterval(rideInterval);
+    };
+  }, [loadNotes, refreshRideData]);
+
+
+  const handleAddNote = async (e?: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e && e.key !== 'Enter') return;
     if (newNote.trim() && currentUser) {
       try {
         const addedNote = await addNote(ride.id, currentUser.id, newNote);
         if (addedNote) {
           setNotes((prevNotes) => [...prevNotes, addedNote]);
           setNewNote("");
-          await fetchUserData();
+          scrollToBottom();
+          toast({
+            title: "Success",
+            description: "Message sent successfully.",
+          });
         }
       } catch (error) {
         console.error("Error adding note:", error);
         toast({
           title: "Error",
-          description: "Failed to add note. Please try again.",
+          description: "Failed to send message. Please try again.",
           variant: "destructive",
         });
       }
+    }
+  };
+
+  const handleEditNote = async (noteId: string) => {
+    const noteToEdit = notes.find(note => note.id === noteId);
+    if (noteToEdit) {
+      setEditingNoteId(noteId);
+      setEditedNoteContent(noteToEdit.note);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (editingNoteId && editedNoteContent.trim()) {
+      try {
+        const updatedNote = await editNote(editingNoteId, currentUser.id, editedNoteContent);
+        setNotes(prevNotes => prevNotes.map(note => note.id === editingNoteId ? updatedNote : note));
+        setEditingNoteId(null);
+        setEditedNoteContent("");
+        toast({
+          title: "Success",
+          description: "Message edited successfully.",
+        });
+      } catch (error) {
+        console.error("Error editing note:", error);
+        toast({
+          title: "Error",
+          description: "Failed to edit message. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      await deleteNote(noteId, currentUser.id);
+      setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+      toast({
+        title: "Success",
+        description: "Message deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete message. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -239,21 +340,51 @@ export default function RideDetailsPage({ ride, currentUser, contacts, fetchUser
           </div>
         )}
         <Separator />
-        {(ride.status === "accepted" || ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
+        {(ride.status === "accepted" || ride.status === "cancelled") && (
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <MessageSquare className="w-5 h-5 text-primary" />
               <Label className="font-semibold">Messages</Label>
             </div>
-            <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+            <ScrollArea className="h-[300px] w-full rounded-md border p-4" ref={scrollAreaRef}>
               {notes.map((note) => (
                 <div key={note.id} className={`mb-4 ${note.user_id === currentUser?.id ? "text-right" : "text-left"}`}>
-                  <div className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? "bg-primary text-primary-foreground" : "bg-muted"} rounded-lg p-2`}>
-                    <p className="text-sm">{note.note}</p>
+                  <div className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? "bg-primary text-primary-foreground" : "bg-muted"} rounded-lg p-3`}>
+                    {editingNoteId === note.id ? (
+                      <div>
+                        <Input
+                          value={editedNoteContent}
+                          onChange={(e) => setEditedNoteContent(e.target.value)}
+                          className="mb-2"
+                        />
+                        <Button onClick={handleSaveEdit} size="sm" className="mr-2">
+                          Save
+                        </Button>
+                        <Button onClick={() => setEditingNoteId(null)} size="sm" variant="outline">
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm mb-1 break-words">{note.note}</p>
+                        <div className="flex justify-between items-center text-xs text-muted-foreground mt-2">
+                          <span>{getUserName(note.user_id)}</span>
+                          <span>{new Date(note.created_at).toLocaleString()}</span>
+                        </div>
+                        {note.is_edited && <span className="text-xs text-muted-foreground">(edited)</span>}
+                      </>
+                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {getUserName(note.user_id)} - {new Date(note.created_at).toLocaleString()}
-                  </p>
+                  {note.user_id === currentUser?.id && !editingNoteId && (
+                    <div className="mt-1">
+                      <Button onClick={() => handleEditNote(note.id)} size="sm" variant="ghost" className="p-1">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button onClick={() => handleDeleteNote(note.id)} size="sm" variant="ghost" className="p-1">
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
             </ScrollArea>
@@ -262,10 +393,11 @@ export default function RideDetailsPage({ ride, currentUser, contacts, fetchUser
                 id="new-note"
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
+                onKeyPress={(e) => handleAddNote(e)}
                 placeholder="Type your message..."
                 className="flex-grow"
               />
-              <Button onClick={handleAddNote} size="icon">
+              <Button onClick={() => handleAddNote()} size="icon">
                 <Send className="h-4 w-4" />
               </Button>
             </div>
