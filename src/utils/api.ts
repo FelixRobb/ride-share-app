@@ -303,7 +303,7 @@ export const fetchRideDetails = async (userId: string, rideId: string): Promise<
     const data = await response.json();
     return data.ride;
   } else {
-    throw new Error("Failed to fetch ride details");
+    throw new Error("Failed to fetch ride details, or you don't have permission to see this ride. Please go back.");
   }
 };
 

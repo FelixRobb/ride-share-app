@@ -69,7 +69,7 @@ export default function RideDetails() {
       console.error("Error fetching ride details:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch ride details. Please try again.",
+        description: "Failed to fetch ride details, or you don't have permission to see this ride. Please go back.",
         variant: "destructive",
       });
     } finally {
