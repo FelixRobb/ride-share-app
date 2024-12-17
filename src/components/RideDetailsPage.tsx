@@ -83,8 +83,8 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   useEffect(() => {
     loadNotes();
     scrollToBottom();
-    const notesInterval = setInterval(loadNotes, 5000);
-    const rideInterval = setInterval(refreshRideData, 10000);
+    const notesInterval = setInterval(loadNotes, 10000);
+    const rideInterval = setInterval(refreshRideData, 20000);
 
     return () => {
       clearInterval(notesInterval);
