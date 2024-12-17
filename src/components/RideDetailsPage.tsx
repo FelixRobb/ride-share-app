@@ -170,13 +170,14 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
     try {
       await acceptRide(ride.id, currentUser.id)
       await fetchUserData()
+      router.refresh
+      console.log("rfrsh jgfkh k")
       toast({
         title: "Success",
-        description: "Ride accepted successfully.",
+        description: "Ride offered successfully.",
       })
-      router.push('/dashboard')
     } catch (error) {
-      console.error("Error accepting ride:", error)
+      console.error("Error offerering ride:", error)
       toast({
         title: "Error",
         description: "Failed to accept ride. Please try again.",
