@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send } from 'lucide-react'
+import { MapPin, User as LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact, Note } from "@/types"
 import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes } from "@/utils/api"
