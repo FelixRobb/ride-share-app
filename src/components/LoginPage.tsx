@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { toast } from "@/hooks/use-toast"
 import { User } from "../types"
 
 interface LoginPageProps {
@@ -18,9 +19,21 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
 
-  const handleResetPassword = async () => {
-    // Implement password reset logic here
-  }
+
+  const handleResetPassword = async (
+  ) => {
+    try {
+      const response = await fetch("/api/auth/reset-password",
+        {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: resetEmail }),
+        }); if (
+        response.ok) {
+        toast({ title: "Success", description: "Password reset email sent. Please check your inbox.", }); setIsResetPasswordOpen(false);
+      } else { const data = await response.json(); throw new Error(data.error || "Failed to send reset email"); }
+    } catch (
+    error
+    ) { toast({ title: "Error", description: error instanceof Error ? error.message : "An unexpected error occurred", variant: "destructive", }); }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
