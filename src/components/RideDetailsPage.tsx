@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send, Edit, Trash } from 'lucide-react'
+import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send, Edit, Trash, ArrowBigLeft } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact, Note } from "@/types"
 import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes, editNote, deleteNote, markNoteAsSeen, fetchRideDetails } from "@/utils/api"
@@ -261,6 +261,11 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   }
 
   return (
+    <div>
+    <div className="mb-4">
+      <Button type="button" variant="ghost" onClick={() => router.push('/dashboard')}><ArrowBigLeft />Go Back to Dashboard</Button>
+    </div>
+    
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
         <CardTitle className="text-2xl font-bold">Ride Details</CardTitle>
@@ -454,6 +459,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
         </DialogContent>
       </Dialog>
     </Card>
+    </div>
   )
 }
 
