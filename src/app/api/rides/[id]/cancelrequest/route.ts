@@ -1,6 +1,6 @@
-// src/app/api/rides/[id]/cancelrequest/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
+import { sendImmediateNotification } from '@/lib/pushNotificationService';
 
 export async function POST(request: Request) {
   const { userId } = await request.json();
@@ -30,16 +30,17 @@ export async function POST(request: Request) {
     if (updateError) throw updateError;
 
     if (ride.accepter_id) {
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: ride.accepter_id,
-          message: 'A ride you accepted has been cancelled by the requester',
-          type: 'rideCancelled',
-          related_id: rideId
-        });
-
-      if (notificationError) throw notificationError;
+      await sendImmediateNotification(
+        ride.accepter_id,
+        'Ride Cancelled',
+        'A ride you accepted has been cancelled by the requester'
+      );
+      await supabase.from('notifications').insert({
+        user_id: ride.accepter_id,
+        message: 'A ride you accepted has been cancelled by the requester',
+        type: 'rideCancelled',
+        related_id: rideId
+      });
     }
 
     return NextResponse.json({ ride: updatedRide });
@@ -48,3 +49,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

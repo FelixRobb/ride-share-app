@@ -1,6 +1,6 @@
-// src/app/api/rides/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
+import { sendImmediateNotification } from '@/lib/pushNotificationService';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -95,18 +95,20 @@ export async function POST(request: Request) {
 
     if (contactsError) throw contactsError;
 
-    const notifications = contacts.map(contact => ({
-      user_id: contact.contact_id,
-      message: 'A new ride is available from your contact',
-      type: 'newRide',
-      related_id: newRide.id
-    }));
+    for (const contact of contacts) {
+      await sendImmediateNotification(
+        contact.contact_id,
+        'New Ride Available',
+        'A new ride is available from your contact'
+      );
+      await supabase.from('notifications').insert({
+        user_id: contact.contact_id,
+        message: 'A new ride is available from your contact',
+        type: 'newRide',
+        related_id: newRide.id
+      });
+    }
 
-    const { error: notificationError } = await supabase
-      .from('notifications')
-      .insert(notifications);
-
-    if (notificationError) throw notificationError;
 
     return NextResponse.json({ ride: newRide });
   } catch (error) {
@@ -114,3 +116,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+

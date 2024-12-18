@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Clock } from 'lucide-react';
 import { User, Ride, Contact } from "../types";
-import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes } from "../utils/api";
 import Link from 'next/link'
 
 interface DashboardPageProps {
@@ -31,57 +30,76 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
     return () => clearTimeout(timer);
   }, [localSearchTerm, setSearchTerm]);
 
-  const filteredRides = useCallback(
-    (rides: Ride[]) => {
-      if (!searchTerm.trim()) return rides;
-      return rides.filter((ride) => ride.from_location.toLowerCase().includes(searchTerm.toLowerCase()) || ride.to_location.toLowerCase().includes(searchTerm.toLowerCase()));
-    },
-    [searchTerm]
-  );
+  const getOfferedByText = (ride: Ride) => {
+    if (ride.accepter_id === currentUser.id) {
+      return "Me";
+    }
 
-  const availableRides = filteredRides(
-    rides.filter((ride) => {
-      const isPendingAndNotOwn = ride.status === "pending" && ride.requester_id !== currentUser?.id;
-      const isConnectedUser = contacts.some((contact) => (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && contact.status === "accepted");
-      return isPendingAndNotOwn && isConnectedUser;
-    })
-  );
+    const offeringContact = contacts.find((c) =>
+      (c.user_id === ride.accepter_id && c.contact_id === currentUser.id) ||
+      (c.contact_id === ride.accepter_id && c.user_id === currentUser.id)
+    );
 
-  const myRides = filteredRides(rides.filter((ride) => ride.requester_id === currentUser?.id));
-  const offeredRides = filteredRides(rides.filter((ride) => ride.accepter_id === currentUser?.id && ride.status === "accepted"));
+    if (offeringContact) {
+      if (offeringContact.user_id === ride.accepter_id) {
+        return offeringContact.user.name;
+      } else {
+        return offeringContact.contact.name;
+      }
+    }
+  }
 
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
+    const filteredRides = useCallback(
+      (rides: Ride[]) => {
+        if (!searchTerm.trim()) return rides;
+        return rides.filter((ride) => ride.from_location.toLowerCase().includes(searchTerm.toLowerCase()) || ride.to_location.toLowerCase().includes(searchTerm.toLowerCase()));
+      },
+      [searchTerm]
+    );
 
-  return (
-    <div className="w-full max-w-4xl mx-auto">
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-xl md:text-2xl">Dashboard</CardTitle>
-          <CardDescription>Manage your rides and connections</CardDescription>
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-zinc-400" />
-            <Input id="search" type="text" placeholder="Search rides..." value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 w-full" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="available" className="text-xs md:text-sm">
-                Available Rides
-              </TabsTrigger>
-              <TabsTrigger value="my-rides" className="text-xs md:text-sm">
-                My Rides
-              </TabsTrigger>
-              <TabsTrigger value="offered-rides" className="text-xs md:text-sm">
-                Offered Rides
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="available">
-              <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                {isLoading
-                  ? Array(3)
+    const availableRides = filteredRides(
+      rides.filter((ride) => {
+        const isPendingAndNotOwn = ride.status === "pending" && ride.requester_id !== currentUser?.id;
+        const isConnectedUser = contacts.some((contact) => (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && contact.status === "accepted");
+        return isPendingAndNotOwn && isConnectedUser;
+      })
+    );
+
+    const myRides = filteredRides(rides.filter((ride) => ride.requester_id === currentUser?.id));
+    const offeredRides = filteredRides(rides.filter((ride) => ride.accepter_id === currentUser?.id && ride.status === "accepted"));
+
+    useEffect(() => {
+      setIsLoading(false);
+    }, []);
+
+    return (
+      <div className="w-full max-w-4xl mx-auto">
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl md:text-2xl">Dashboard</CardTitle>
+            <CardDescription>Manage your rides and connections</CardDescription>
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-zinc-400" />
+              <Input id="search" type="text" placeholder="Search rides..." value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 w-full" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="available" className="text-xs md:text-sm">
+                  Available Rides
+                </TabsTrigger>
+                <TabsTrigger value="my-rides" className="text-xs md:text-sm">
+                  My Rides
+                </TabsTrigger>
+                <TabsTrigger value="offered-rides" className="text-xs md:text-sm">
+                  Offered Rides
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="available">
+                <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                  {isLoading
+                    ? Array(3)
                       .fill(0)
                       .map((_, i) => (
                         <Card key={i} className="mb-4">
@@ -94,7 +112,7 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
                           </CardContent>
                         </Card>
                       ))
-                  : availableRides.map((ride) => (
+                    : availableRides.map((ride) => (
                       <Link href={`/rides/${ride.id}`} key={`available-${ride.id}`}>
                         <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
                           <CardHeader className="pb-2">
@@ -112,13 +130,13 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
                         </Card>
                       </Link>
                     ))}
-                {!isLoading && availableRides.length === 0 && <div className="text-center py-4 text-muted-foreground">No available rides at the moment.</div>}
-              </ScrollArea>
-            </TabsContent>
-            <TabsContent value="my-rides">
-              <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                {isLoading
-                  ? Array(3)
+                  {!isLoading && availableRides.length === 0 && <div className="text-center py-4 text-muted-foreground">No available rides at the moment.</div>}
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value="my-rides">
+                <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                  {isLoading
+                    ? Array(3)
                       .fill(0)
                       .map((_, i) => (
                         <Card key={i} className="mb-4">
@@ -131,7 +149,7 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
                           </CardContent>
                         </Card>
                       ))
-                  : myRides.map((ride) => (
+                    : myRides.map((ride) => (
                       <Link href={`/rides/${ride.id}`} key={`my-${ride.id}`}>
                         <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
                           <CardHeader className="pb-2">
@@ -140,11 +158,7 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
                             </CardTitle>
                             <CardDescription>
                               Status: {ride.status === "accepted" ? "Accepted" : ride.status}
-                              {ride.status === "accepted" && ride.accepter_id && ` (Offered by: ${
-                                ride.accepter_id === currentUser?.id
-                                  ? "Me"
-                                  : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact?.name || "Unknown"
-                              })`}
+                              {ride.status === "accepted" && ride.accepter_id && ` (Offered by: ${getOfferedByText(ride)})`}
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="pb-2">
@@ -156,13 +170,13 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
                         </Card>
                       </Link>
                     ))}
-                {!isLoading && myRides.length === 0 && <div className="text-center py-4 text-muted-foreground">You haven&apos;t requested any rides yet.</div>}
-              </ScrollArea>
-            </TabsContent>
-            <TabsContent value="offered-rides">
-              <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                {isLoading
-                  ? Array(3)
+                  {!isLoading && myRides.length === 0 && <div className="text-center py-4 text-muted-foreground">You haven&apos;t requested any rides yet.</div>}
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value="offered-rides">
+                <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                  {isLoading
+                    ? Array(3)
                       .fill(0)
                       .map((_, i) => (
                         <Card key={i} className="mb-4">
@@ -175,7 +189,7 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
                           </CardContent>
                         </Card>
                       ))
-                  : offeredRides.map((ride) => (
+                    : offeredRides.map((ride) => (
                       <Link href={`/rides/${ride.id}`} key={`offered-${ride.id}`}>
                         <Card className="mb-4 overflow-hidden cursor-pointer hover:bg-secondary transition-colors">
                           <CardHeader className="pb-2">
@@ -196,13 +210,13 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
                         </Card>
                       </Link>
                     ))}
-                {!isLoading && offeredRides.length === 0 && <div className="text-center py-4 text-muted-foreground">You haven&apos;t offered any rides yet.</div>}
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+                  {!isLoading && offeredRides.length === 0 && <div className="text-center py-4 text-muted-foreground">You haven&apos;t offered any rides yet.</div>}
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 

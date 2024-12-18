@@ -267,6 +267,25 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
     return contact ? (contact.user_id === userId ? contact.user.name : contact.contact.name) : "Unknown User";
   }
 
+  const getOfferedByText = (ride: Ride) => {
+    if (ride.accepter_id === currentUser.id) {
+      return "Me";
+    }
+
+    const offeringContact = contacts.find((c) =>
+      (c.user_id === ride.accepter_id && c.contact_id === currentUser.id) ||
+      (c.contact_id === ride.accepter_id && c.user_id === currentUser.id)
+    );
+
+    if (offeringContact) {
+      if (offeringContact.user_id === ride.accepter_id) {
+        return offeringContact.user.name;
+      } else {
+        return offeringContact.contact.name;
+      }
+    }
+  }
+
   return (
     <div>
     <div className="mb-4">
@@ -346,9 +365,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
               <Label className="font-semibold">Offered by</Label>
             </div>
             <p className="ml-7">
-              {ride.accepter_id === currentUser?.id
-                ? "Me"
-                : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact?.name || "Unknown"}
+            {ride.status === "accepted" && ride.accepter_id && `${getOfferedByText(ride)}`}
             </p>
           </div>
         )}

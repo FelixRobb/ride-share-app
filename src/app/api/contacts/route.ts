@@ -1,6 +1,6 @@
-// src/app/api/contacts/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
+import { sendImmediateNotification } from '@/lib/pushNotificationService';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -61,6 +61,12 @@ export async function POST(request: Request) {
 
     if (insertError) throw insertError;
 
+    await sendImmediateNotification(
+      contactUser.id,
+      'New Contact Request',
+      'You have a new contact request'
+    );
+
     const { error: notificationError } = await supabase
       .from('notifications')
       .insert({
@@ -78,3 +84,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

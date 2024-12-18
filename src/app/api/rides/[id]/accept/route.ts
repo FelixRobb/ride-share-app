@@ -1,6 +1,6 @@
-// src/app/api/rides/[id]/accept/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
+import { sendImmediateNotification } from '@/lib/pushNotificationService';
 
 export async function POST(request: Request) {
   const { userId } = await request.json();
@@ -32,16 +32,18 @@ export async function POST(request: Request) {
 
     if (updateError) throw updateError;
 
-    const { error: notificationError } = await supabase
-      .from('notifications')
-      .insert({
-        user_id: ride.requester_id,
-        message: 'Your ride request has been accepted',
-        type: 'rideAccepted',
-        related_id: rideId
-      });
+    await sendImmediateNotification(
+      ride.requester_id,
+      'Ride Accepted',
+      'Your ride request has been accepted'
+    );
+    await supabase.from('notifications').insert({
+      user_id: ride.requester_id,
+      message: 'Your ride request has been accepted',
+      type: 'rideAccepted',
+      related_id: rideId
+    });
 
-    if (notificationError) throw notificationError;
 
     return NextResponse.json({ ride: updatedRide });
   } catch (error) {
@@ -49,3 +51,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

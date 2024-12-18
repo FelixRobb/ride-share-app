@@ -1,6 +1,6 @@
-// src/app/api/notifications/route.ts
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/db";
+import { sendPushNotification } from "@/lib/pushNotificationService";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -15,11 +15,30 @@ export async function GET(request: Request) {
       .from('notifications')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    console.log("notifs", notifications)
+    // Fetch user's push subscription
+    const { data: subscriptionData, error: subscriptionError } = await supabase
+      .from('push_subscriptions')
+      .select('subscription')
+      .eq('user_id', userId)
+      .single();
+
+    if (subscriptionError && subscriptionError.code !== 'PGRST116') {
+      throw subscriptionError;
+    }
+
+    // If there's a subscription and new notifications, send a push notification
+    if (subscriptionData && notifications.some(n => !n.is_read)) {
+      const subscription = JSON.parse(subscriptionData.subscription);
+      const payload = JSON.stringify({
+        title: 'New Notifications',
+        body: 'You have new notifications in RideShare app.',
+      });
+      await sendPushNotification(subscription, payload);
+    }
 
     return NextResponse.json({ notifications });
   } catch (error) {
@@ -50,3 +69,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import ProfilePage from '@/components/ProfilePage'
 import Layout from '@/components/Layout'
@@ -21,18 +21,7 @@ export default function Profile() {
   const router = useRouter()
   const { toast } = useToast()
 
-  useEffect(() => {
-    const user = localStorage.getItem("currentUser")
-    if (user) {
-      const parsedUser = JSON.parse(user) as User
-      setCurrentUser(parsedUser)
-      void fetchUserDataCallback(parsedUser.id)
-    } else {
-      router.push('/')
-    }
-  }, [router])
-
-  const fetchUserDataCallback = async (userId: string) => {
+  const fetchUserDataCallback = useCallback(async (userId: string) => {
     try {
       const result = await fetchUserData(userId, etag)
       if (result) {
@@ -52,20 +41,41 @@ export default function Profile() {
         variant: "destructive",
       })
     }
-  }
+  }, [etag, toast])
+
+  useEffect(() => {
+    const user = localStorage.getItem("currentUser")
+    if (user) {
+      const parsedUser = JSON.parse(user) as User
+      setCurrentUser(parsedUser)
+      void fetchUserDataCallback(parsedUser.id)
+    } else {
+      router.push('/')
+    }
+  }, [router, fetchUserDataCallback])
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (currentUser) {
+        void fetchUserDataCallback(currentUser.id)
+      }
+    }, 10000)
+    return () => clearInterval(intervalId)
+  }, [currentUser, fetchUserDataCallback])
 
   const logout = () => {
     localStorage.removeItem("currentUser")
     router.push('/')
   }
 
-   if (isLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
   }
+
   return (
     <Layout currentUser={currentUser} notifications={notifications} logout={logout}>
       <ProfilePage
@@ -74,9 +84,8 @@ export default function Profile() {
         contacts={contacts}
         associatedPeople={associatedPeople}
         userStats={userStats}
-        fetchUserData={() => fetchUserDataCallback(currentUser!.id)}
+        fetchUserData={fetchUserDataCallback}
       />
     </Layout>
   )
 }
-
