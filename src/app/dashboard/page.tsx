@@ -13,7 +13,6 @@ export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [rides, setRides] = useState<Ride[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [etag, setEtag] = useState<string | null>(null)
@@ -50,7 +49,6 @@ export default function Dashboard() {
           setEtag(newEtag)
           setRides(data.rides)
           setContacts(data.contacts)
-          setNotifications((prev) => [...prev, ...data.notifications])
         }
       }
       setIsLoading(false)
@@ -77,7 +75,7 @@ export default function Dashboard() {
     )
   }
   return (
-    <Layout currentUser={currentUser} notifications={notifications} logout={logout}>
+    <Layout currentUser={currentUser} logout={logout}>
       <DashboardPage
         currentUser={currentUser!}
         rides={rides}

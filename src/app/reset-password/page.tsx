@@ -86,7 +86,7 @@ function ResetPasswordForm() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="flex items-center justify-center min-h-screen bg-primary">
         <Card className="w-full max-w-[350px]">
           <CardContent className="flex items-center justify-center h-[200px]">
             <p>Checking reset token...</p>

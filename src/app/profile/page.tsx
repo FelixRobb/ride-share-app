@@ -14,7 +14,6 @@ export default function Profile() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([])
   const [userStats, setUserStats] = useState<UserStats | null>(null)
-  const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [etag, setEtag] = useState<string | null>(null)
 
@@ -30,7 +29,6 @@ export default function Profile() {
         setContacts(data.contacts)
         setAssociatedPeople(data.associatedPeople)
         setUserStats(data.stats)
-        setNotifications((prev) => [...prev, ...data.notifications])
       }
       setIsLoading(false)
     } catch (error) {
@@ -77,7 +75,7 @@ export default function Profile() {
   }
 
   return (
-    <Layout currentUser={currentUser} notifications={notifications} logout={logout}>
+    <Layout currentUser={currentUser} logout={logout}>
       <ProfilePage
         currentUser={currentUser!}
         setCurrentUser={setCurrentUser}
