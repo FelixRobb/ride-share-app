@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
+import { sendImmediateNotification } from '@/lib/pushNotificationService';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -52,16 +53,17 @@ export async function POST(request: Request) {
     if (ride) {
       const otherUserId = userId === ride.requester_id ? ride.accepter_id : ride.requester_id;
       if (otherUserId) {
-        const { error: notificationError } = await supabase
-          .from('notifications')
-          .insert({
-            user_id: otherUserId,
-            message: `New message for ride ${rideId}`,
-            type: 'newNote',
-            related_id: rideId
-          });
-
-        if (notificationError) console.error('Error creating notification:', notificationError);
+        await sendImmediateNotification(
+          otherUserId,
+          'New Ride Message',
+          `New message for ride ${rideId}`
+        );
+        await supabase.from('notifications').insert({
+          user_id: otherUserId,
+          message: `New message for ride ${rideId}`,
+          type: 'newNote',
+          related_id: rideId
+        });
       }
     }
 
@@ -146,3 +148,4 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

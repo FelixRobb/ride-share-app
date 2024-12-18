@@ -1,6 +1,6 @@
-// src/app/api/users/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
+import { sendImmediateNotification } from '@/lib/pushNotificationService';
 
 // PUT Handler: Update User Information
 export async function PUT(request: Request) {
@@ -100,11 +100,15 @@ export async function DELETE(request: Request) {
       related_id: ride.id
     })).filter(notification => notification.user_id);
 
-    const { error: insertNotificationsError } = await supabase
-      .from('notifications')
-      .insert([...contactNotifications, ...rideNotifications]);
+    for (const notification of [...contactNotifications, ...rideNotifications]) {
+      await sendImmediateNotification(
+        notification.user_id,
+        'Account Deletion Notification',
+        notification.message
+      );
+      await supabase.from('notifications').insert(notification);
+    }
 
-    if (insertNotificationsError) throw insertNotificationsError;
 
     // Finally, delete the user
     const { error: deleteUserError } = await supabase
@@ -120,3 +124,4 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

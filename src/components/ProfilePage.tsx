@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User as LucideUser, Mail, Phone, Car, MapPin } from 'lucide-react';
+import { LucideUser, Mail, Phone, Car, MapPin } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { User, Contact, AssociatedPerson, UserStats } from "../types";
 import {
@@ -20,6 +20,7 @@ import {
   deleteAssociatedPerson,
   deleteUser,
 } from "../utils/api";
+import { Switch } from "@/components/ui/switch";
 
 interface ProfilePageProps {
   currentUser: User;
@@ -50,6 +51,7 @@ export default function ProfilePage({
   const [suggestedContacts, setSuggestedContacts] = useState<any[]>([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false);
+  const [isPushEnabled, setIsPushEnabled] = useState(false);
 
   const { toast } = useToast();
 
@@ -79,6 +81,22 @@ export default function ProfilePage({
 
     fetchSuggestedContacts();
   }, [currentUser, toast]);
+
+  useEffect(() => {
+    const fetchPushPreference = async () => {
+      try {
+        const response = await fetch(`/api/users/${currentUser.id}/push-preference`);
+        if (response.ok) {
+          const data = await response.json();
+          setIsPushEnabled(data.enabled);
+        }
+      } catch (error) {
+        console.error('Error fetching push notification preference:', error);
+      }
+    };
+    fetchPushPreference();
+  }, [currentUser.id]);
+
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,6 +241,32 @@ export default function ProfilePage({
     }
   };
 
+  const handlePushToggle = async (checked: boolean) => {
+    setIsPushEnabled(checked);
+    try {
+      const response = await fetch(`/api/users/${currentUser.id}/push-preference`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: checked }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update push notification preference');
+      }
+      toast({
+        title: checked ? "Push notifications enabled" : "Push notifications disabled",
+        description: checked ? "You will now receive push notifications" : "You will no longer receive push notifications",
+      });
+    } catch (error) {
+      console.error('Error updating push notification preference:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update push notification preference. Please try again.",
+        variant: "destructive",
+      });
+      setIsPushEnabled(!checked); // Revert the switch if the API call fails
+    }
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto">
       <Card className="mb-8">
@@ -286,6 +330,24 @@ export default function ProfilePage({
 
       <Card className="mb-8">
         <CardHeader>
+          <CardTitle className="text-2xl">Notifications</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Push Notifications</p>
+              <p className="text-sm text-muted-foreground">Receive notifications even when the app is closed</p>
+            </div>
+            <Switch
+              checked={isPushEnabled}
+              onCheckedChange={handlePushToggle}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-8">
+        <CardHeader>
           <CardTitle className="text-2xl">Contacts</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -303,8 +365,8 @@ export default function ProfilePage({
                     </div>
                     <div>
                       <div className="flex flex-row items-center gap-1">
-                        <p className="font-semibold overflow-hidden text-nowrap">{contactName}</p>
-                        <p className="text-sm text-muted-foreground overflow-hidden text-nowrap">({contact.status})</p>
+                        <p className="font-semibold">{contactName}</p>
+                        <p className="text-sm text-muted-foreground">({contact.status})</p>
                       </div>
                       <p className="text-sm text-muted-foreground">{contactPhone}</p>
                     </div>

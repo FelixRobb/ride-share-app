@@ -11,6 +11,7 @@ import { User, Notification } from "../types";
 import { markNotificationsAsRead } from "../utils/api";
 import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
+import PushNotificationHandler from './PushNotificationHandler';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -102,6 +103,7 @@ export default function Layout({ children, currentUser, notifications, logout }:
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
+      <PushNotificationHandler userId={currentUser.id} />
       <header className="bg-background shadow-md border-b border-border">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex-shrink-0 mr-4">
