@@ -1,4 +1,4 @@
-import { User, RideData, Contact, AssociatedPerson, Ride, Note } from '../types';
+import { User, RideData, Contact, AssociatedPerson, Notification, Ride, Note } from '../types';
 
 export const login = async (phoneOrEmail: string, password: string): Promise<User> => {
   const response = await fetch("/api/login", {
@@ -294,6 +294,16 @@ export const fetchUserData = async (userId: string, etag: string | null) => {
     return { data, newEtag };
   } else {
     throw new Error("Failed to fetch user data");
+  }
+};
+
+export const fetchNotifications = async (userId: string): Promise<Notification[]> => {
+  const response = await fetch(`/api/notifications?userId=${userId}`);
+  if (response.ok) {
+    const data = await response.json();
+    return data.notifications as Notification[];
+  } else {
+    throw new Error("Failed to fetch notifications");
   }
 };
 

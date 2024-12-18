@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     console.log(ride.accepter_id, ride.requester_id, userId, ride.status);
 
     // Check if the user is authorized to view this ride
-    if (!(ride.status === "pending" || (ride.status === "accepted" && (ride.requester_id === userId || ride.accepter_id === userId)))) {
+    if (!(ride.status === "pending" || (ride.status === "accepted" && (ride.requester_id === userId || ride.accepter_id === userId)) || (ride.status === "cancelled" && ride.requester_id === userId))) {
       // If not authorized, check for additional contact permission
       const { data: contact, error: contactError } = await supabase.from("contacts").select("*").or(`user_id.eq.${userId},contact_id.eq.${userId}`).eq("status", "accepted").single();
 

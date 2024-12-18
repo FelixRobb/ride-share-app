@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,32 +55,32 @@ export default function ProfilePage({
 
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchSuggestedContacts = async () => {
-      if (!currentUser) return;
-      setIsFetchingSuggestions(true);
-      try {
-        const response = await fetch(`/api/suggested-contacts?userId=${currentUser.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setSuggestedContacts(data.suggestedContacts || []);
-        } else {
-          throw new Error("Failed to fetch suggested contacts");
-        }
-      } catch (error) {
-        console.error("Error fetching suggested contacts:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load suggested contacts. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsFetchingSuggestions(false);
+  const fetchSuggestedContacts = useCallback(async () => {
+    if (!currentUser) return;
+    setIsFetchingSuggestions(true);
+    try {
+      const response = await fetch(`/api/suggested-contacts?userId=${currentUser.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSuggestedContacts(data.suggestedContacts || []);
+      } else {
+        throw new Error("Failed to fetch suggested contacts");
       }
-    };
-
-    fetchSuggestedContacts();
+    } catch (error) {
+      console.error("Error fetching suggested contacts:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load suggested contacts. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFetchingSuggestions(false);
+    }
   }, [currentUser, toast]);
+
+  useEffect(() => {
+    fetchSuggestedContacts();
+  }, [fetchSuggestedContacts]);
 
   useEffect(() => {
     const fetchPushPreference = async () => {
@@ -152,7 +152,8 @@ export default function ProfilePage({
       try {
         await addContact(currentUser.id, newContactPhone);
         setNewContactPhone("");
-        void fetchUserData(currentUser.id);
+        await fetchUserData(currentUser.id);
+        await fetchSuggestedContacts();
       } catch (error) {
         toast({
           title: "Error",
@@ -166,7 +167,8 @@ export default function ProfilePage({
   const handleAcceptContact = async (contactId: string) => {
     try {
       await acceptContact(contactId, currentUser.id);
-      void fetchUserData(currentUser.id);
+      await fetchUserData(currentUser.id);
+      await fetchSuggestedContacts();
     } catch (error) {
       toast({
         title: "Error",
@@ -179,7 +181,8 @@ export default function ProfilePage({
   const handleDeleteContact = async (contactId: string) => {
     try {
       await deleteContact(contactId, currentUser.id);
-      void fetchUserData(currentUser.id);
+      await fetchUserData(currentUser.id);
+      await fetchSuggestedContacts();
     } catch (error) {
       toast({
         title: "Error",

@@ -34,14 +34,14 @@ export type Contact = {
   };
 };
 
-export type Notification = {
+export interface Notification {
   id: string;
   user_id: string;
   message: string;
-  type: "rideRequest" | "rideAccepted" | "contactRequest";
+  type: string;
   is_read: boolean;
   created_at: string;
-};
+}
 
 export type RideData = {
   from_location: string;

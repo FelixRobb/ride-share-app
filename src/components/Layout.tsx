@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Bell, LogOut, Home, Car, Users, Menu, Moon, Sun } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { User, Notification } from "../types";
-import { markNotificationsAsRead } from "../utils/api";
+import { markNotificationsAsRead, fetchNotifications } from "../utils/api";
 import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
 import PushNotificationHandler from './PushNotificationHandler';
@@ -16,37 +16,56 @@ import PushNotificationHandler from './PushNotificationHandler';
 interface LayoutProps {
   children: React.ReactNode;
   currentUser: User | null;
-  notifications: Notification[];
   logout: () => void;
 }
 
-export default function Layout({ children, currentUser, notifications, logout }: LayoutProps) {
+
+
+export default function Layout({ children, currentUser, logout }: LayoutProps) {
   const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
-  const [localNotifications, setLocalNotifications] = useState(notifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
 
-  useEffect(() => {
-    setLocalNotifications(notifications);
-  }, [notifications]);
+  const fetchUserNotifications = useCallback(async () => {
+    if (currentUser) {
+      try {
+        const fetchedNotifications = await fetchNotifications(currentUser.id);
+        setNotifications(fetchedNotifications);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch notifications.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [currentUser, toast]);
 
-  const unreadNotificationsCount = localNotifications.filter((n) => !n.is_read).length;
+  useEffect(() => {
+    fetchUserNotifications();
+    const intervalId = setInterval(fetchUserNotifications, 60000);
+    return () => clearInterval(intervalId);
+  }, [fetchUserNotifications]);
+
+  const unreadNotificationsCount = notifications.filter((n) => !n.is_read).length;
 
   const handleOpenNotificationDialog = useCallback(() => {
     setIsNotificationDialogOpen(true);
   }, []);
 
   const handleCloseNotificationDialog = useCallback(async () => {
-    const unreadNotifications = localNotifications.filter((n) => !n.is_read);
-    if (unreadNotifications.length > 0) {
+    const unreadNotifications = notifications.filter((n) => !n.is_read);
+    if (unreadNotifications.length > 0 && currentUser) {
       try {
         await markNotificationsAsRead(
-          currentUser!.id,
+          currentUser.id,
           unreadNotifications.map((n) => n.id)
         );
-        setLocalNotifications(prevNotifications =>
+        setNotifications(prevNotifications =>
           prevNotifications.map(n => ({ ...n, is_read: true }))
         );
       } catch (error) {
@@ -59,7 +78,7 @@ export default function Layout({ children, currentUser, notifications, logout }:
       }
     }
     setIsNotificationDialogOpen(false);
-  }, [currentUser, localNotifications, toast]);
+  }, [currentUser, notifications, toast]);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -136,10 +155,10 @@ export default function Layout({ children, currentUser, notifications, logout }:
                   <DialogDescription>Your recent notifications</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-[300px] w-full pr-4">
-                  {localNotifications.length === 0 ? (
+                  {notifications.length === 0 ? (
                     <p className="text-center text-muted-foreground py-4">No notifications</p>
                   ) : (
-                    localNotifications.map((notification) => (
+                    notifications.map((notification) => (
                       <Card key={notification.id} className={`mb-4 ${notification.is_read ? "opacity-60" : ""}`}>
                         <CardHeader className="p-4">
                           <CardTitle className="text-sm font-medium">{notification.type}</CardTitle>

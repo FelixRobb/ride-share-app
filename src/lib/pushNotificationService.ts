@@ -30,11 +30,22 @@ export async function sendImmediateNotification(userId: string, title: string, b
     if (subscriptionError) throw subscriptionError;
 
     if (subscriptionData && subscriptionData.length > 0) {
-      const payload = JSON.stringify({ title, body });
-      await Promise.all(subscriptionData.map(async (sub) => {
-        const subscription = JSON.parse(sub.subscription);
-        await sendPushNotification(subscription, payload);
-      }));
+      const { data: pushPreferenceData, error: pushPreferenceError } = await supabase
+        .from('users')
+        .select('push_enabled')
+        .eq('id', userId);
+
+      if (pushPreferenceError) throw pushPreferenceError;
+
+      if (pushPreferenceData && pushPreferenceData[0].push_enabled) {
+        const payload = JSON.stringify({ title, body });
+        await Promise.all(subscriptionData.map(async (sub) => {
+          const subscription = JSON.parse(sub.subscription);
+          await sendPushNotification(subscription, payload);
+        }));
+      } else {
+        console.log('Push notifications are not enabled for user', userId);
+      }
     }
   } catch (error) {
     console.error('Error sending immediate notification:', error);

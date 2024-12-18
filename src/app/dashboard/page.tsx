@@ -32,15 +32,26 @@ export default function Dashboard() {
     }
   }, [router])
 
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (currentUser && etag) {
+        void fetchUserDataCallback(currentUser.id)
+      }
+    }, 10000)
+    return () => clearInterval(intervalId)
+  }, [currentUser, etag])
+
   const fetchUserDataCallback = async (userId: string) => {
     try {
       const result = await fetchUserData(userId, etag)
       if (result) {
         const { data, newEtag } = result
-        setEtag(newEtag)
-        setRides(data.rides)
-        setContacts(data.contacts)
-        setNotifications((prev) => [...prev, ...data.notifications])
+        if (newEtag !== etag) {
+          setEtag(newEtag)
+          setRides(data.rides)
+          setContacts(data.contacts)
+          setNotifications((prev) => [...prev, ...data.notifications])
+        }
       }
       setIsLoading(false)
     } catch (error) {
