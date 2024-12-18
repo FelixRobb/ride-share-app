@@ -14,7 +14,6 @@ export default function RideDetails() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [ride, setRide] = useState<Ride | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [etag, setEtag] = useState<string | null>(null)
 
@@ -46,7 +45,6 @@ export default function RideDetails() {
         const { data, newEtag } = result
         setEtag(newEtag)
         setContacts(data.contacts)
-        setNotifications((prev) => [...prev, ...data.notifications])
       }
     } catch (error) {
       console.error("Error fetching user data:", error)
@@ -90,7 +88,7 @@ export default function RideDetails() {
     )
   }
   return (
-    <Layout currentUser={currentUser} notifications={notifications} logout={logout}>
+    <Layout currentUser={currentUser} logout={logout}>
       {ride && currentUser && (
         <RideDetailsPage
           ride={ride}

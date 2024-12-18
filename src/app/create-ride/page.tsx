@@ -11,7 +11,6 @@ import { fetchUserData } from "@/utils/api"
 
 export default function CreateRide() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [notifications, setNotifications] = useState<Notification[]>([])
   const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [etag, setEtag] = useState<string | null>(null)
@@ -36,7 +35,6 @@ export default function CreateRide() {
       if (result) {
         const { data, newEtag } = result
         setEtag(newEtag)
-        setNotifications((prev) => [...prev, ...data.notifications])
         setAssociatedPeople(data.associatedPeople)
         // Handle other data updates as needed
       }
@@ -64,7 +62,7 @@ export default function CreateRide() {
     )
   }
   return (
-    <Layout currentUser={currentUser} notifications={notifications} logout={logout}>
+    <Layout currentUser={currentUser} logout={logout}>
       <CreateRidePage
         currentUser={currentUser!}
         fetchUserData={() => fetchUserDataCallback(currentUser!.id)}
