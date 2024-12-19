@@ -291,6 +291,7 @@ export const fetchUserData = async (userId: string, etag: string | null) => {
   if (response.ok) {
     const newEtag = response.headers.get("ETag");
     const data = await response.json();
+    console.log(data)
     return { data, newEtag };
   } else {
     throw new Error("Failed to fetch user data");
