@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "next-themes"
 import { checkUser } from "@/utils/api"
 import { useToast } from "@/hooks/use-toast"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function RootLayout({
   children,
@@ -58,6 +59,7 @@ export default function RootLayout({
           {children}
           <Toaster />
         </ThemeProvider>
+        <SpeedInsights/>
       </body>
     </html>
   )

@@ -53,6 +53,8 @@ export async function GET(request: Request) {
 
     if (ridesError) throw ridesError;
 
+    console.log("Received rides:", rides);
+    
     // Fetch associated people
     const { data: associatedPeople, error: associatedPeopleError } = await supabase
       .from("associated_people")
