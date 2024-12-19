@@ -6,7 +6,7 @@ import DashboardPage from '@/components/DashboardPage'
 import Layout from '@/components/Layout'
 import { Loader } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
-import { User, Ride, Contact, Notification } from "@/types"
+import { User, Ride, Contact } from "@/types"
 import { fetchUserData } from "@/utils/api"
 
 export default function Dashboard() {
@@ -25,19 +25,24 @@ export default function Dashboard() {
     if (user) {
       const parsedUser = JSON.parse(user) as User
       setCurrentUser(parsedUser)
-      void fetchUserDataCallback(parsedUser.id)
     } else {
       router.push('/')
     }
   }, [router])
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (currentUser && etag) {
+    if (currentUser) {
+      void fetchUserDataCallback(currentUser.id)
+    }
+  }, [currentUser])
+
+  useEffect(() => {
+    if (currentUser && etag) {
+      const intervalId = setInterval(() => {
         void fetchUserDataCallback(currentUser.id)
-      }
-    }, 10000)
-    return () => clearInterval(intervalId)
+      }, 10000)
+      return () => clearInterval(intervalId)
+    }
   }, [currentUser, etag])
 
   const fetchUserDataCallback = async (userId: string) => {
@@ -67,7 +72,7 @@ export default function Dashboard() {
     router.push('/')
   }
 
-   if (isLoading) {
+  if (isLoading || !currentUser) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader className="w-8 h-8 animate-spin text-primary" />
@@ -78,14 +83,13 @@ export default function Dashboard() {
   return (
     <Layout currentUser={currentUser} logout={logout}>
       <DashboardPage
-        currentUser={currentUser!}
+        currentUser={currentUser}
         rides={rides}
         contacts={contacts}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        fetchUserData={() => fetchUserDataCallback(currentUser!.id)}
+        fetchUserData={() => fetchUserDataCallback(currentUser.id)}
       />
     </Layout>
   )
 }
-
