@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardPage from '@/components/DashboardPage'
 import Layout from '@/components/Layout'
@@ -20,63 +20,95 @@ export default function Dashboard() {
   const router = useRouter()
   const { toast } = useToast()
 
-  useEffect(() => {
-    const user = localStorage.getItem("currentUser")
-    if (user) {
-      const parsedUser = JSON.parse(user) as User
-      setCurrentUser(parsedUser)
-    } else {
-      router.push('/')
-    }
-  }, [router])
-
-  console.log("useratcurrent", currentUser)
-
-  useEffect(() => {
-    if (currentUser) {
-      void fetchUserDataCallback(currentUser.id)
-    }
-  }, [currentUser])
-
-  useEffect(() => {
-    if (currentUser && etag) {
-      const intervalId = setInterval(() => {
-        void fetchUserDataCallback(currentUser.id)
-      }, 10000)
-      return () => clearInterval(intervalId)
-    }
-  }, [currentUser, etag])
-
-  const fetchUserDataCallback = async (userId: string) => {
+  const fetchUserDataCallback = useCallback(async (userId: string) => {
+    console.log(`[fetchUserDataCallback] Starting for user ${userId}, current etag: ${etag}`)
     try {
       const result = await fetchUserData(userId, etag)
+      console.log(`[fetchUserDataCallback] Received result:`, result)
       if (result) {
         const { data, newEtag } = result
         if (newEtag !== etag) {
+          console.log(`[fetchUserDataCallback] New etag received: ${newEtag}`)
           setEtag(newEtag)
-          setRides(data.rides)
-          setContacts(data.contacts)
+          if (data.rides) {
+            console.log(`[fetchUserDataCallback] Setting rides:`, data.rides)
+            setRides(data.rides)
+          }
+          if (data.contacts) {
+            console.log(`[fetchUserDataCallback] Setting contacts:`, data.contacts)
+            setContacts(data.contacts)
+          }
+        } else {
+          console.log(`[fetchUserDataCallback] Etag unchanged, no updates needed`)
         }
+      } else {
+        console.log(`[fetchUserDataCallback] No result received from fetchUserData, keeping existing data`)
       }
-      setIsLoading(false)
     } catch (error) {
-      console.error("Error fetching user data:", error)
+      console.error("[fetchUserDataCallback] Error fetching user data:", error)
       toast({
         title: "Error",
         description: "Failed to fetch user data. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
-  }
+  }, [etag, toast])
 
-  console.log("ridedataatfetchuserdata", rides, contacts)
+  useEffect(() => {
+    console.log("[useEffect] Checking for user in localStorage")
+    const user = localStorage.getItem("currentUser")
+    if (user) {
+      console.log("[useEffect] User found in localStorage")
+      const parsedUser = JSON.parse(user) as User
+      console.log("[useEffect] Parsed user:", parsedUser)
+      setCurrentUser(parsedUser)
+    } else {
+      console.log("[useEffect] No user found in localStorage, redirecting to home")
+      router.push('/')
+    }
+  }, [router])
+
+  useEffect(() => {
+    if (currentUser) {
+      console.log(`[useEffect] Current user set, fetching data for user ${currentUser.id}`)
+      fetchUserDataCallback(currentUser.id)
+    } else {
+      console.log("[useEffect] No current user set")
+    }
+  }, [currentUser, fetchUserDataCallback])
+
+  useEffect(() => {
+    if (currentUser) {
+      console.log(`[useEffect] Setting up interval for user ${currentUser.id}`)
+      const intervalId = setInterval(() => {
+        console.log(`[Interval] Fetching data for user ${currentUser.id}`)
+        fetchUserDataCallback(currentUser.id)
+      }, 10000)
+      return () => {
+        console.log("[useEffect] Clearing interval")
+        clearInterval(intervalId)
+      }
+    }
+  }, [currentUser, fetchUserDataCallback])
 
   const logout = () => {
+    console.log("[logout] Logging out user")
     localStorage.removeItem("currentUser")
     router.push('/')
   }
 
+  console.log("[render] Current state:", { 
+    currentUser: currentUser ? `User ${currentUser.id}` : 'No user', 
+    isLoading, 
+    ridesCount: rides.length, 
+    contactsCount: contacts.length,
+    etag
+  })
+
   if (isLoading || !currentUser) {
+    console.log("[render] Showing loading state")
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader className="w-8 h-8 animate-spin text-primary" />
@@ -84,6 +116,7 @@ export default function Dashboard() {
     )
   }
 
+  console.log("[render] Rendering dashboard")
   return (
     <Layout currentUser={currentUser} logout={logout}>
       <DashboardPage
@@ -92,8 +125,12 @@ export default function Dashboard() {
         contacts={contacts}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        fetchUserData={() => fetchUserDataCallback(currentUser.id)}
+        fetchUserData={() => {
+          console.log("[fetchUserData] Manual fetch triggered")
+          return fetchUserDataCallback(currentUser.id)
+        }}
       />
     </Layout>
   )
 }
+
