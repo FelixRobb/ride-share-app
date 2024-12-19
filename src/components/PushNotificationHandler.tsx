@@ -12,16 +12,13 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
       if ('serviceWorker' in navigator && 'PushManager' in window) {
         try {
           const registration = await navigator.serviceWorker.ready;
-          console.log('Service Worker is ready');
 
           // Request notification permission
           const permission = await Notification.requestPermission();
-          console.log('Notification permission status:', permission);
 
           if (permission === 'granted') {
             const response = await fetch(`/api/users/${userId}/push-preference`);
             const { enabled } = await response.json();
-            console.log('Push notifications enabled:', enabled);
 
             if (enabled) {
               let subscription = await registration.pushManager.getSubscription();
@@ -36,15 +33,11 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
                   userVisibleOnly: true,
                   applicationServerKey: publicKey,
                 });
-                console.log('New subscription created:', subscription);
                 await saveSubscription(subscription);
-              } else {
-                console.log('Existing subscription found:', subscription);
-              }
+              } 
 
               setSubscription(subscription);
             } else if (!enabled && subscription) {
-              console.log('Unsubscribing from push notifications');
               await subscription.unsubscribe();
               await deleteSubscription();
               setSubscription(null);

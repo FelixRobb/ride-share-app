@@ -17,12 +17,10 @@ interface DashboardPageProps {
   fetchUserData: (userId: string) => Promise<void>;
 }
 
-export default function DashboardPage({ currentUser, rides, contacts, searchTerm, setSearchTerm, fetchUserData }: DashboardPageProps) {
+export default function DashboardPage({ currentUser, rides, contacts, searchTerm, setSearchTerm }: DashboardPageProps) {
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
   const [activeTab, setActiveTab] = useState("available");
   const [isLoading, setIsLoading] = useState(true);
-
-console.log(rides)
 
   useEffect(() => {
     const timer = setTimeout(() => {

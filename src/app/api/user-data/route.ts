@@ -53,15 +53,6 @@ export async function GET(request: Request) {
 
     if (ridesError) throw ridesError;
 
-    // Fetch notifications
-    const { data: notifications, error: notificationsError } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    if (notificationsError) throw notificationsError;
-
     // Fetch associated people
     const { data: associatedPeople, error: associatedPeopleError } = await supabase
       .from("associated_people")
@@ -80,7 +71,7 @@ export async function GET(request: Request) {
     if (statsError) throw statsError;
 
     // Prepare response data
-    const data = { rides, contacts, notifications, associatedPeople, stats };
+    const data = { rides, contacts, associatedPeople, stats };
     const dataString = JSON.stringify(data);
     const etag = crypto.createHash("md5").update(dataString).digest("hex");
 

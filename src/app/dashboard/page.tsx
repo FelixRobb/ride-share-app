@@ -74,6 +74,7 @@ export default function Dashboard() {
       </div>
     )
   }
+
   return (
     <Layout currentUser={currentUser} logout={logout}>
       <DashboardPage
