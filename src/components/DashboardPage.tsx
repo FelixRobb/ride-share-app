@@ -22,13 +22,6 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
   const [activeTab, setActiveTab] = useState("available");
   const [isLoading, setIsLoading] = useState(true);
 
-  console.log("[DashboardPage] Rendering with props:", { 
-    currentUser: currentUser ? `User ${currentUser?.id ?? 'unknown'}` : 'No user', 
-    ridesCount: rides.length, 
-    contactsCount: contacts.length,
-    searchTerm
-  });
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchTerm(localSearchTerm);
