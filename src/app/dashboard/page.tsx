@@ -30,6 +30,8 @@ export default function Dashboard() {
     }
   }, [router])
 
+  console.log("useratcurrent", currentUser)
+
   useEffect(() => {
     if (currentUser) {
       void fetchUserDataCallback(currentUser.id)
@@ -66,6 +68,8 @@ export default function Dashboard() {
       })
     }
   }
+
+  console.log("ridedataatfetchuserdata", rides, contacts)
 
   const logout = () => {
     localStorage.removeItem("currentUser")

@@ -50,8 +50,6 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false });
 
     if (ridesError) throw ridesError;
-
-    console.log("Received rides:", rides);
     
     // Fetch associated people
     const { data: associatedPeople, error: associatedPeopleError } = await supabase
