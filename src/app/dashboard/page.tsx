@@ -27,16 +27,21 @@ export default function Dashboard() {
       console.log(`[fetchUserDataCallback] Received result:`, result)
       if (result) {
         const { data, newEtag } = result
+        console.log(`[fetchUserDataCallback] Data received:`, data)
         if (newEtag !== etag) {
           console.log(`[fetchUserDataCallback] New etag received: ${newEtag}`)
           setEtag(newEtag)
           if (data.rides) {
             console.log(`[fetchUserDataCallback] Setting rides:`, data.rides)
             setRides(data.rides)
+          } else {
+            console.log(`[fetchUserDataCallback] No rides data in the response`)
           }
           if (data.contacts) {
             console.log(`[fetchUserDataCallback] Setting contacts:`, data.contacts)
             setContacts(data.contacts)
+          } else {
+            console.log(`[fetchUserDataCallback] No contacts data in the response`)
           }
         } else {
           console.log(`[fetchUserDataCallback] Etag unchanged, no updates needed`)
