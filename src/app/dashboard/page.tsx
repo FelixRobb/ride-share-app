@@ -61,9 +61,15 @@ export default function Dashboard() {
     const user = localStorage.getItem("currentUser")
     if (user) {
       console.log("[useEffect] User found in localStorage")
-      const parsedUser = JSON.parse(user) as User
-      console.log("[useEffect] Parsed user:", parsedUser)
-      setCurrentUser(parsedUser)
+      try {
+        const parsedUser = JSON.parse(user) as User
+        console.log("[useEffect] Parsed user:", parsedUser)
+        setCurrentUser(parsedUser)
+      } catch (error) {
+        console.error("[useEffect] Error parsing user from localStorage:", error)
+        localStorage.removeItem("currentUser")
+        router.push('/')
+      }
     } else {
       console.log("[useEffect] No user found in localStorage, redirecting to home")
       router.push('/')
@@ -73,31 +79,40 @@ export default function Dashboard() {
   useEffect(() => {
     if (currentUser) {
       console.log(`[useEffect] Current user set, fetching data for user ${currentUser.id}`)
+      setIsLoading(true)
       fetchUserDataCallback(currentUser.id)
     } else {
       console.log("[useEffect] No current user set")
+      setIsLoading(false)
     }
   }, [currentUser, fetchUserDataCallback])
 
   useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null
     if (currentUser) {
       console.log(`[useEffect] Setting up interval for user ${currentUser.id}`)
-      const intervalId = setInterval(() => {
+      intervalId = setInterval(() => {
         console.log(`[Interval] Fetching data for user ${currentUser.id}`)
         fetchUserDataCallback(currentUser.id)
       }, 10000)
-      return () => {
+    }
+    return () => {
+      if (intervalId) {
         console.log("[useEffect] Clearing interval")
         clearInterval(intervalId)
       }
     }
   }, [currentUser, fetchUserDataCallback])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     console.log("[logout] Logging out user")
     localStorage.removeItem("currentUser")
+    setCurrentUser(null)
+    setRides([])
+    setContacts([])
+    setEtag(null)
     router.push('/')
-  }
+  }, [router])
 
   console.log("[render] Current state:", { 
     currentUser: currentUser ? `User ${currentUser.id}` : 'No user', 
