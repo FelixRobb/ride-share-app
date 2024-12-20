@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
+import { Separator } from '@/components/ui/separator'
 import { Car, Users, Shield, Zap, ChevronDown, Star } from 'lucide-react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
@@ -44,7 +45,7 @@ export default function WelcomePage() {
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
       <motion.header 
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-black/80 backdrop-blur-sm' : 'bg-transparent'}`}
+        className={`fixed top-4 left-0 right-0 z-50 transition-all duration-300 border rounded-full w-11/12 m-auto shadow-inner ${scrolled ? 'bg-black/80 backdrop-blur-sm' : 'bg-transparent'}`}
         initial={{ y: -100 }}
         animate={{ y: scrolled ? 0 : -100 }}
         transition={{ duration: 0.3 }}
@@ -52,7 +53,7 @@ export default function WelcomePage() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-orange-500">RideShare</h1>
           <nav>
-            <Button asChild variant="ghost" className="text-orange-500 hover:text-orange-400">
+            <Button asChild variant="outline" className="text-orange-500 hover:text-orange-400">
               <Link href="/login">Login</Link>
             </Button>
           </nav>
@@ -69,7 +70,7 @@ export default function WelcomePage() {
           RideShare
         </motion.h1>
         <motion.p 
-          className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto mb-12"
+          className="text-xl md:text-2xl text-zinc-300 max-w-2xl mx-auto mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -81,14 +82,16 @@ export default function WelcomePage() {
         </motion.div>
       </section>
 
-      <section className="py-20 bg-gradient-to-b from-black to-gray-900">
+      <section className='h-8 bg-gradient-to-b from-black to-zinc-900'></section>
+
+      <section className="py-20 bg-gradient-to-b from-zinc-900 to-black">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center text-orange-500">Our Features</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                className="bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-orange-500/20 transition-shadow duration-300"
+                className="bg-zinc-800 rounded-lg p-6 shadow-lg hover:shadow-orange-500/20 transition-shadow duration-300"
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -96,21 +99,21 @@ export default function WelcomePage() {
               >
                 <feature.icon className="w-12 h-12 text-orange-500 mb-4" />
                 <h3 className="text-xl font-semibold mb-2 text-orange-400">{feature.title}</h3>
-                <p className="text-gray-400">{feature.description}</p>
+                <p className="text-zinc-400">{feature.description}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-20 bg-black">
+      <section className="py-20 bg-gradient-to-b from-black to-zinc-900">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center text-orange-500">Why Choose RideShare?</h2>
           <div className="space-y-6 max-w-2xl mx-auto">
             {whyChooseRideShare.map((benefit, index) => (
               <motion.div
                 key={index}
-                className="flex items-center space-x-4 bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors duration-300"
+                className="flex items-center space-x-4 bg-zinc-900 rounded-lg p-4 hover:bg-zinc-800 transition-colors duration-300"
                 initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -126,14 +129,14 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      <section className="py-20 bg-gradient-to-b from-gray-900 to-black">
+      <section className="py-20 bg-gradient-to-b from-zinc-900 to-black">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center text-orange-500">What Our Users Say</h2>
           <div className="flex flex-wrap justify-center gap-6">
             {reviews.map((review, index) => (
               <motion.div
                 key={index}
-                className="bg-gray-800 rounded-lg p-6 shadow-lg flex-shrink-0 w-full md:w-80 hover:shadow-orange-500/20 transition-shadow duration-300"
+                className="bg-zinc-800 rounded-lg p-6 shadow-lg flex-shrink-0 w-full md:w-80 hover:shadow-orange-500/20 transition-shadow duration-300"
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -144,7 +147,7 @@ export default function WelcomePage() {
                     <Star key={i} className="w-5 h-5 text-orange-500 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-300 mb-4">{review.comment}</p>
+                <p className="text-zinc-300 mb-4">{review.comment}</p>
                 <p className="text-orange-400 font-semibold">{review.name}</p>
               </motion.div>
             ))}
@@ -155,7 +158,7 @@ export default function WelcomePage() {
       <section className="py-20 bg-black">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-8 text-orange-500">Start Sharing Rides Today</h2>
-          <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-12">
+          <p className="text-lg text-zinc-300 max-w-2xl mx-auto mb-12">
             Join our community of ride-sharers and experience a new way of traveling. 
             Best of all, RideShare is completely free to use!
           </p>
@@ -170,7 +173,7 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      <footer className="bg-gray-900 py-8 text-center text-sm text-gray-500">
+      <footer className="bg-zinc-900 py-8 text-center text-sm text-zinc-500">
         <p>&copy; {new Date().getFullYear()} RideShare. All rights reserved.</p>
         <div className="mt-2 space-x-4">
           <Link href="/privacy-policy" className="hover:text-orange-500 transition-colors duration-300">Privacy Policy</Link>
