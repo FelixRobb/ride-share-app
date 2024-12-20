@@ -59,20 +59,9 @@ export default function WelcomePage() {
         </div>
       </motion.header>
 
-      <section className="h-screen flex flex-col justify-center items-center text-center px-4 relative overflow-hidden">
-        <motion.div 
-          className="absolute inset-0 z-0"
-          animate={{ 
-            backgroundImage: [
-              'radial-gradient(circle, #ff4500 0%, #000000 70%)',
-              'radial-gradient(circle, #ff6000 10%, #000000 80%)',
-              'radial-gradient(circle, #ff4500 0%, #000000 70%)',
-            ]
-          }}
-          transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
-        />
+      <section className="h-screen flex flex-col justify-center items-center text-center px-4">
         <motion.h1 
-          className="text-5xl md:text-7xl font-bold mb-6 relative z-10"
+          className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-foreground"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -80,15 +69,15 @@ export default function WelcomePage() {
           RideShare
         </motion.h1>
         <motion.p 
-          className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto mb-12 relative z-10"
+          className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           Connect with friends, share rides, and travel together safely.
         </motion.p>
-        <motion.div style={{ opacity, y: arrowY }} className="relative z-10">
-          <ChevronDown className="w-12 h-12 text-orange-500 animate-bounce" />
+        <motion.div style={{ opacity, y: arrowY }}>
+          <ChevronDown className="w-12 h-12 text-primary animate-bounce" />
         </motion.div>
       </section>
 
