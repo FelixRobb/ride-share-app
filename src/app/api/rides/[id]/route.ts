@@ -29,8 +29,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Ride not found" }, { status: 404 });
     }
 
-    console.log(ride.accepter_id, ride.requester_id, userId, ride.status);
-
     // Check if the user is authorized to view this ride
     if (!(ride.status === "pending" || (ride.status === "accepted" && (ride.requester_id === userId || ride.accepter_id === userId)) || (ride.status === "cancelled" && ride.requester_id === userId))) {
       // If not authorized, check for additional contact permission

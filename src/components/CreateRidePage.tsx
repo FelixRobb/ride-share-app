@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { User, RideData, AssociatedPerson } from "../types";
 import { createRide } from "../utils/api";
+import LocationSearch from "./LocationSearch";
+import MapDialog from "./MapDialog";
 
 interface CreateRidePageProps {
   currentUser: User;
@@ -19,16 +21,30 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
   const [rideData, setRideData] = useState<RideData>({
     from_location: "",
     to_location: "",
+    from_lat: 0,
+    from_lon: 0,
+    to_lat: 0,
+    to_lon: 0,
     time: "",
     rider_name: currentUser?.name || "",
     rider_phone: currentUser?.phone || null,
     note: null,
   });
   const [riderType, setRiderType] = useState("self");
+  const [isFromMapOpen, setIsFromMapOpen] = useState(false);
+  const [isToMapOpen, setIsToMapOpen] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (rideData.from_lat === 0 || rideData.from_lon === 0 || rideData.to_lat === 0 || rideData.to_lon === 0) {
+      toast({
+        title: "Error",
+        description: "Please select both 'From' and 'To' locations.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       await createRide(rideData, currentUser.id);
       toast({
@@ -46,6 +62,24 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
     }
   };
 
+  const handleLocationSelect = (type: 'from' | 'to') => (location: { lat: number; lon: number; display_name: string } | null) => {
+    if (location) {
+      setRideData(prev => ({
+        ...prev,
+        [`${type}_location`]: location.display_name,
+        [`${type}_lat`]: location.lat,
+        [`${type}_lon`]: location.lon,
+      }));
+    } else {
+      setRideData(prev => ({
+        ...prev,
+        [`${type}_location`]: "",
+        [`${type}_lat`]: 0,
+        [`${type}_lon`]: 0,
+      }));
+    }
+  };
+
   return (
     <Card className="w-full max-w-[350px] mx-auto">
       <CardHeader>
@@ -57,22 +91,18 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="from_location">From</Label>
-              <Input
-                id="from_location"
-                value={rideData.from_location}
-                onChange={(e) => setRideData((prev) => ({ ...prev, from_location: e.target.value }))}
-                placeholder="Enter starting location"
-                required
+              <LocationSearch
+                onLocationSelect={handleLocationSelect('from')}
+                label="From Location"
+                onOpenMap={() => setIsFromMapOpen(true)}
               />
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="to_location">To</Label>
-              <Input
-                id="to_location"
-                value={rideData.to_location}
-                onChange={(e) => setRideData((prev) => ({ ...prev, to_location: e.target.value }))}
-                placeholder="Enter destination"
-                required
+              <LocationSearch
+                onLocationSelect={handleLocationSelect('to')}
+                label="To Location"
+                onOpenMap={() => setIsToMapOpen(true)}
               />
             </div>
             <div className="flex flex-col space-y-1.5">
@@ -138,6 +168,18 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
           </Button>
         </form>
       </CardContent>
+      <MapDialog
+        isOpen={isFromMapOpen}
+        onClose={() => setIsFromMapOpen(false)}
+        onSelectLocation={handleLocationSelect('from')}
+        initialLocation={rideData.from_lat !== 0 ? { lat: rideData.from_lat, lon: rideData.from_lon } : undefined}
+      />
+      <MapDialog
+        isOpen={isToMapOpen}
+        onClose={() => setIsToMapOpen(false)}
+        onSelectLocation={handleLocationSelect('to')}
+        initialLocation={rideData.to_lat !== 0 ? { lat: rideData.to_lat, lon: rideData.to_lon } : undefined}
+      />
     </Card>
   );
 }

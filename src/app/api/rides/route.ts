@@ -66,7 +66,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { from_location, to_location, time, requester_id, rider_name, rider_phone, note } = await request.json();
+  const { from_location, to_location, from_lat, from_lon, to_lat, to_lon, time, requester_id, rider_name, rider_phone, note } = await request.json();
 
   try {
     const { data: newRide, error: insertError } = await supabase
@@ -74,6 +74,10 @@ export async function POST(request: Request) {
       .insert({
         from_location,
         to_location,
+        from_lat,
+        from_lon,
+        to_lat,
+        to_lon,
         time,
         requester_id,
         status: 'pending',
@@ -109,11 +113,9 @@ export async function POST(request: Request) {
       });
     }
 
-
     return NextResponse.json({ ride: newRide });
   } catch (error) {
     console.error("Create ride error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-
