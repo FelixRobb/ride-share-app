@@ -67,23 +67,17 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Optional: Hide scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Optional: Hide scrollbar for Firefox */
+* {
+  scrollbar-width: none;
+}
+
 body {
   @apply bg-black text-white;
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-gray-900;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-primary rounded-full;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-primary/80;
 }
 

@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Car, Users, Shield, Zap, ChevronDown, Star } from 'lucide-react'
-import { motion, useScroll, useTransform } from 'framer-motion'
-import { useInView } from 'react-intersection-observer'
+import { motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion'
 
 export default function WelcomePage() {
   const [scrolled, setScrolled] = useState(false)
@@ -11,9 +10,16 @@ export default function WelcomePage() {
   const opacity = useTransform(scrollY, [0, 100], [1, 0])
   const arrowY = useTransform(scrollY, [0, 100], [0, 20])
 
-  const [ref, inView] = useInView({
-    triggerOnce: true,
-    threshold: 0.1,
+  const parallaxRef = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: parallaxRef,
+    offset: ["start start", "end start"]
+  })
+
+  const springScrollYProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
   })
 
   useEffect(() => {
@@ -30,6 +36,14 @@ export default function WelcomePage() {
     { icon: Users, title: "Connect with Friends", description: "Build your network of trusted contacts" },
     { icon: Shield, title: "Safe & Secure", description: "Travel with people you know and trust" },
     { icon: Zap, title: "Real-time Updates", description: "Get instant notifications about your rides" },
+  ]
+
+  const whyChooseRideShare = [
+    "Connect with friends and build your trusted network",
+    "Easily create or join rides within your community",
+    "Real-time notifications keep you updated",
+    "Secure and user-friendly interface",
+    "Reduce your carbon footprint by sharing rides",
   ]
 
   const reviews = [
@@ -79,14 +93,15 @@ export default function WelcomePage() {
         </motion.div>
       </section>
 
-      <section ref={ref} className="min-h-screen flex flex-col justify-center items-center py-20">
+      <section className="min-h-screen flex flex-col justify-center items-center py-20">
         <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8">
           {features.map((feature, index) => (
             <motion.div
               key={index}
               className="bg-gray-900 rounded-lg p-6 shadow-lg"
               initial={{ opacity: 0, y: 50 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <feature.icon className="w-12 h-12 text-primary mb-4" />
@@ -97,29 +112,29 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      <section className="py-20 bg-gray-900">
-        <div className="container mx-auto px-4">
+      <section ref={parallaxRef} className="h-screen flex items-center justify-center bg-gray-900 overflow-hidden">
+        <div className="container mx-auto px-4 relative">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Why Choose RideShare?</h2>
-          <ul className="space-y-6 max-w-2xl mx-auto">
-            {[
-              "Connect with friends and build your trusted network",
-              "Easily create or join rides within your community",
-              "Real-time notifications keep you updated",
-              "Secure and user-friendly interface",
-              "Reduce your carbon footprint by sharing rides",
-            ].map((benefit, index) => (
-              <motion.li
-                key={index}
-                className="flex items-center"
-                initial={{ opacity: 0, x: -20 }}
-                animate={inView ? { opacity: 1, x: 0 } : {}}
-                transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-              >
-                <ChevronDown className="w-5 h-5 text-primary mr-2" />
-                <span>{benefit}</span>
-              </motion.li>
-            ))}
-          </ul>
+          {whyChooseRideShare.map((benefit, index) => (
+            <motion.div
+              key={index}
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-sm rounded-lg p-6 shadow-lg w-full max-w-lg"
+              style={{
+                opacity: useTransform(
+                  springScrollYProgress,
+                  [index / whyChooseRideShare.length, (index + 1) / whyChooseRideShare.length],
+                  [1, 0]
+                ),
+                scale: useTransform(
+                  springScrollYProgress,
+                  [index / whyChooseRideShare.length, (index + 1) / whyChooseRideShare.length],
+                  [1, 0.8]
+                ),
+              }}
+            >
+              <p className="text-xl text-center">{benefit}</p>
+            </motion.div>
+          ))}
         </div>
       </section>
 
@@ -132,7 +147,8 @@ export default function WelcomePage() {
                 key={index}
                 className="bg-gray-900 rounded-lg p-6 shadow-lg flex-shrink-0 w-80"
                 initial={{ opacity: 0, x: 50 }}
-                animate={inView ? { opacity: 1, x: 0 } : {}}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
                 <div className="flex items-center mb-4">
