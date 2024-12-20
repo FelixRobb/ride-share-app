@@ -4,23 +4,31 @@ import { Button } from "@/components/ui/button"
 import { Car, Users, Shield, Zap, ChevronDown, Star } from 'lucide-react'
 import { motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion'
 
+const ParallaxSection = ({ children }: { children: React.ReactNode }) => {
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"]
+  })
+
+  return (
+    <motion.div
+      ref={ref}
+      style={{
+        y: useTransform(scrollYProgress, [0, 1], ["0%", "100%"]),
+        opacity: useTransform(scrollYProgress, [0, 0.5, 1], [1, 1, 0])
+      }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
 export default function WelcomePage() {
   const [scrolled, setScrolled] = useState(false)
   const { scrollY } = useScroll()
   const opacity = useTransform(scrollY, [0, 100], [1, 0])
   const arrowY = useTransform(scrollY, [0, 100], [0, 20])
-
-  const parallaxRef = useRef(null)
-  const { scrollYProgress } = useScroll({
-    target: parallaxRef,
-    offset: ["start start", "end start"]
-  })
-
-  const springScrollYProgress = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.001
-  })
 
   useEffect(() => {
     const handleScroll = () => {
@@ -93,48 +101,44 @@ export default function WelcomePage() {
         </motion.div>
       </section>
 
-      <section className="min-h-screen flex flex-col justify-center items-center py-20">
+      <section className="py-20">
         <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8">
           {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              className="bg-gray-900 rounded-lg p-6 shadow-lg"
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <feature.icon className="w-12 h-12 text-primary mb-4" />
-              <h2 className="text-xl font-semibold mb-2">{feature.title}</h2>
-              <p className="text-gray-400">{feature.description}</p>
-            </motion.div>
+            <ParallaxSection key={index}>
+              <motion.div
+                className="bg-gray-900 rounded-lg p-6 shadow-lg"
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <feature.icon className="w-12 h-12 text-primary mb-4" />
+                <h2 className="text-xl font-semibold mb-2">{feature.title}</h2>
+                <p className="text-gray-400">{feature.description}</p>
+              </motion.div>
+            </ParallaxSection>
           ))}
         </div>
       </section>
 
-      <section ref={parallaxRef} className="h-screen flex items-center justify-center bg-gray-900 overflow-hidden">
-        <div className="container mx-auto px-4 relative">
+      <section className="py-20 bg-gray-900">
+        <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Why Choose RideShare?</h2>
-          {whyChooseRideShare.map((benefit, index) => (
-            <motion.div
-              key={index}
-              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-sm rounded-lg p-6 shadow-lg w-full max-w-lg"
-              style={{
-                opacity: useTransform(
-                  springScrollYProgress,
-                  [index / whyChooseRideShare.length, (index + 1) / whyChooseRideShare.length],
-                  [1, 0]
-                ),
-                scale: useTransform(
-                  springScrollYProgress,
-                  [index / whyChooseRideShare.length, (index + 1) / whyChooseRideShare.length],
-                  [1, 0.8]
-                ),
-              }}
-            >
-              <p className="text-xl text-center">{benefit}</p>
-            </motion.div>
-          ))}
+          <div className="space-y-12">
+            {whyChooseRideShare.map((benefit, index) => (
+              <ParallaxSection key={index}>
+                <motion.div
+                  className="bg-black/80 backdrop-blur-sm rounded-lg p-6 shadow-lg"
+                  initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <p className="text-xl text-center">{benefit}</p>
+                </motion.div>
+              </ParallaxSection>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -192,4 +196,3 @@ export default function WelcomePage() {
     </div>
   )
 }
-
