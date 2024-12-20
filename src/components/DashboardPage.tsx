@@ -1,15 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Clock, MapPin } from 'lucide-react';
-import { User, Ride, Contact } from "../types";
+import { Search, Clock, MapPin, User } from 'lucide-react';
+import { User as UserType, Ride, Contact } from "../types";
 import Link from 'next/link';
 
 interface DashboardPageProps {
-  currentUser: User;
+  currentUser: UserType;
   rides: Ride[];
   contacts: Contact[];
   searchTerm: string;
@@ -72,94 +72,57 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
     setIsLoading(false);
   }, []);
 
-  const LocationText = ({ text }: { text: string }) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const textRef = useRef<HTMLParagraphElement>(null);
-    const [isOverflowing, setIsOverflowing] = useState(false);
-
-    useEffect(() => {
-      const checkOverflow = () => {
-        if (containerRef.current && textRef.current) {
-          setIsOverflowing(textRef.current.scrollWidth > containerRef.current.clientWidth);
-        }
-      };
-
-      checkOverflow();
-      window.addEventListener('resize', checkOverflow);
-      return () => window.removeEventListener('resize', checkOverflow);
-    }, [text]);
-
-    return (
-      <div ref={containerRef} className="relative w-full overflow-hidden">
-        {isOverflowing && (
-          <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent" />
-        )}
-        <p ref={textRef} className="truncate">{text}</p>
-      </div>
-    );
-  };
-
-  const RideCard = ({ ride, type }: { ride: Ride; type: 'available' | 'my' | 'offered' }) => {
-    const cardRef = useRef<HTMLDivElement>(null);
-    const [locationWidth, setLocationWidth] = useState('100%');
-
-    useEffect(() => {
-      const updateWidth = () => {
-        if (cardRef.current) {
-          const cardWidth = cardRef.current.offsetWidth;
-          const iconWidth = 16; // 4 * 4px (w-4)
-          const iconMargin = 8; // 2 * 4px (space-x-2)
-          const newWidth = cardWidth - iconWidth - iconMargin;
-          setLocationWidth(`${newWidth}px`);
-        }
-      };
-
-      updateWidth();
-      window.addEventListener('resize', updateWidth);
-      return () => window.removeEventListener('resize', updateWidth);
-    }, []);
-
-    return (
-      <Link href={`/rides/${ride.id}`}>
-        <Card className="mb-4 hover:bg-secondary transition-colors cursor-pointer">
-          <CardContent className="p-4" ref={cardRef}>
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center space-x-2">
-                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                <div style={{ width: locationWidth }}>
-                  <LocationText text={ride.from_location} />
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                <div style={{ width: locationWidth }}>
-                  <LocationText text={ride.to_location} />
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm text-muted-foreground gap-2">
+  const RideCard = ({ ride, type }: { ride: Ride; type: 'available' | 'my' | 'offered' }) => (
+    <Link href={`/rides/${ride.id}`}>
+      <Card className="mb-4 hover:bg-secondary transition-colors cursor-pointer">
+        <CardHeader className="p-4">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1.5">
+              <CardTitle className="text-base font-semibold">
                 <div className="flex items-center space-x-1">
-                  <Clock className="w-4 h-4 flex-shrink-0" />
-                  <span className="whitespace-nowrap">{new Date(ride.time).toLocaleString()}</span>
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span className="truncate max-w-[150px]">{ride.from_location}</span>
                 </div>
-                <div className="truncate max-w-full">
-                  {type === 'available' && `Requested by: ${ride.rider_name}`}
-                  {type === 'my' && `Status: ${ride.status}`}
-                  {type === 'offered' && `Requested by: ${ride.rider_name}`}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                <div className="flex items-center space-x-1">
+                  <MapPin className="w-4 h-4" />
+                  <span className="truncate max-w-[150px]">{ride.to_location}</span>
                 </div>
-              </div>
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      </Link>
-    );
-  };
+            <div className="text-right text-sm">
+              <p className="font-medium">
+                {type === 'available' && 'Requested by:'}
+                {type === 'my' && 'Status:'}
+                {type === 'offered' && 'Requested by:'}
+              </p>
+              <p className="text-muted-foreground">
+                {type === 'available' && ride.rider_name}
+                {type === 'my' && (ride.status === "accepted" ? `Accepted by ${getOfferedByText(ride)}` : ride.status)}
+                {type === 'offered' && ride.rider_name}
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          <div className="flex justify-between items-center text-sm text-muted-foreground">
+            <div className="flex items-center space-x-1">
+              <Clock className="w-4 h-4" />
+              <span>{new Date(ride.time).toLocaleString()}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4">
+    <div className="w-full max-w-4xl mx-auto">
       <Card className="shadow-lg">
-        <CardContent className="p-6">
-          <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
-          <div className="relative mb-6">
+        <CardHeader>
+          <CardTitle className="text-xl md:text-2xl">Dashboard</CardTitle>
+          <div className="relative mt-2">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-zinc-400" />
             <Input 
               id="search" 
@@ -170,16 +133,18 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
               className="pl-10 pr-4 py-2 w-full"
             />
           </div>
+        </CardHeader>
+        <CardContent>
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="available" className="text-xs sm:text-sm">
-                Available
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="available" className="text-xs md:text-sm">
+                Available Rides
               </TabsTrigger>
-              <TabsTrigger value="my-rides" className="text-xs sm:text-sm">
+              <TabsTrigger value="my-rides" className="text-xs md:text-sm">
                 My Rides
               </TabsTrigger>
-              <TabsTrigger value="offered-rides" className="text-xs sm:text-sm">
-                Offered
+              <TabsTrigger value="offered-rides" className="text-xs md:text-sm">
+                Offered Rides
               </TabsTrigger>
             </TabsList>
             <TabsContent value="available">
@@ -187,10 +152,12 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
                 {isLoading
                   ? Array(3).fill(0).map((_, i) => (
                       <Card key={i} className="mb-4">
-                        <CardContent className="p-4">
-                          <Skeleton className="h-4 w-full mb-2" />
-                          <Skeleton className="h-4 w-full mb-2" />
-                          <Skeleton className="h-4 w-3/4" />
+                        <CardHeader className="p-4">
+                          <Skeleton className="h-4 w-[200px]" />
+                          <Skeleton className="h-4 w-[150px] mt-2" />
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <Skeleton className="h-4 w-[100px]" />
                         </CardContent>
                       </Card>
                     ))
@@ -207,10 +174,12 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
                 {isLoading
                   ? Array(3).fill(0).map((_, i) => (
                       <Card key={i} className="mb-4">
-                        <CardContent className="p-4">
-                          <Skeleton className="h-4 w-full mb-2" />
-                          <Skeleton className="h-4 w-full mb-2" />
-                          <Skeleton className="h-4 w-3/4" />
+                        <CardHeader className="p-4">
+                          <Skeleton className="h-4 w-[200px]" />
+                          <Skeleton className="h-4 w-[150px] mt-2" />
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <Skeleton className="h-4 w-[100px]" />
                         </CardContent>
                       </Card>
                     ))
@@ -227,10 +196,12 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
                 {isLoading
                   ? Array(3).fill(0).map((_, i) => (
                       <Card key={i} className="mb-4">
-                        <CardContent className="p-4">
-                          <Skeleton className="h-4 w-full mb-2" />
-                          <Skeleton className="h-4 w-full mb-2" />
-                          <Skeleton className="h-4 w-3/4" />
+                        <CardHeader className="p-4">
+                          <Skeleton className="h-4 w-[200px]" />
+                          <Skeleton className="h-4 w-[150px] mt-2" />
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <Skeleton className="h-4 w-[100px]" />
                         </CardContent>
                       </Card>
                     ))
