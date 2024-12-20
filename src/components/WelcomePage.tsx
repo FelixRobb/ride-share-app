@@ -56,7 +56,7 @@ export default function WelcomePage() {
             <Button asChild variant="ghost" className="text-orange-500 hover:text-orange-400">
               <Link href="/login">Login</Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="text-orange-500 hover:text-orange-400">
+            <Button asChild variant="outline" size="lg" className="text-orange-500 hover:text-orange-400 px-2 py-1.5">
               <Link href="/register">Register</Link>
             </Button>
           </nav>
