@@ -79,17 +79,32 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
           <div className="flex justify-between items-start">
             <div className="space-y-1.5">
               <CardTitle className="text-base font-semibold">
-                <div className="flex items-center space-x-1">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span className="truncate max-w-[150px]">{ride.from_location}</span>
+                <div className="flex flex-col items-start space-x-1 mb-3">
+                  <div className="flex items-start space-x-1">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <p className="text-primary">From</p>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-wrap text-sm ml-2">
+                      {ride.from_location.length > 150
+                        ? `${ride.from_location.slice(0, 100)}...`
+                        : ride.from_location}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col items-start space-x-1">
+                  <div className="flex items-start space-x-1">
+                    <MapPin className="h-4 w-4" />
+                    <p className="text-primary">To</p></div>
+                  <div className="flex items-center">
+                    <span className="text-wrap text-sm ml-2">
+                      {ride.to_location.length > 150
+                        ? `${ride.from_location.slice(0, 100)}...`
+                        : ride.to_location}
+                    </span>
+                  </div>
                 </div>
               </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                <div className="flex items-center space-x-1">
-                  <MapPin className="w-4 h-4" />
-                  <span className="truncate max-w-[150px]">{ride.to_location}</span>
-                </div>
-              </p>
             </div>
             <div className="text-right text-sm">
               <p className="font-medium">
@@ -124,12 +139,12 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
           <CardTitle className="text-xl md:text-2xl">Dashboard</CardTitle>
           <div className="relative mt-2">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-zinc-400" />
-            <Input 
-              id="search" 
-              type="text" 
-              placeholder="Search rides..." 
-              value={localSearchTerm} 
-              onChange={(e) => setLocalSearchTerm(e.target.value)} 
+            <Input
+              id="search"
+              type="text"
+              placeholder="Search rides..."
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 w-full"
             />
           </div>
@@ -151,19 +166,19 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
               <ScrollArea className="h-[400px] w-full rounded-md border p-4">
                 {isLoading
                   ? Array(3).fill(0).map((_, i) => (
-                      <Card key={i} className="mb-4">
-                        <CardHeader className="p-4">
-                          <Skeleton className="h-4 w-[200px]" />
-                          <Skeleton className="h-4 w-[150px] mt-2" />
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0">
-                          <Skeleton className="h-4 w-[100px]" />
-                        </CardContent>
-                      </Card>
-                    ))
+                    <Card key={i} className="mb-4">
+                      <CardHeader className="p-4">
+                        <Skeleton className="h-4 w-[200px]" />
+                        <Skeleton className="h-4 w-[150px] mt-2" />
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <Skeleton className="h-4 w-[100px]" />
+                      </CardContent>
+                    </Card>
+                  ))
                   : availableRides.map((ride) => (
-                      <RideCard key={`available-${ride.id}`} ride={ride} type="available" />
-                    ))}
+                    <RideCard key={`available-${ride.id}`} ride={ride} type="available" />
+                  ))}
                 {!isLoading && availableRides.length === 0 && (
                   <div className="text-center py-4 text-muted-foreground">No available rides at the moment.</div>
                 )}
@@ -173,19 +188,19 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
               <ScrollArea className="h-[400px] w-full rounded-md border p-4">
                 {isLoading
                   ? Array(3).fill(0).map((_, i) => (
-                      <Card key={i} className="mb-4">
-                        <CardHeader className="p-4">
-                          <Skeleton className="h-4 w-[200px]" />
-                          <Skeleton className="h-4 w-[150px] mt-2" />
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0">
-                          <Skeleton className="h-4 w-[100px]" />
-                        </CardContent>
-                      </Card>
-                    ))
+                    <Card key={i} className="mb-4">
+                      <CardHeader className="p-4">
+                        <Skeleton className="h-4 w-[200px]" />
+                        <Skeleton className="h-4 w-[150px] mt-2" />
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <Skeleton className="h-4 w-[100px]" />
+                      </CardContent>
+                    </Card>
+                  ))
                   : myRides.map((ride) => (
-                      <RideCard key={`my-${ride.id}`} ride={ride} type="my" />
-                    ))}
+                    <RideCard key={`my-${ride.id}`} ride={ride} type="my" />
+                  ))}
                 {!isLoading && myRides.length === 0 && (
                   <div className="text-center py-4 text-muted-foreground">You haven&apos;t requested any rides yet.</div>
                 )}
@@ -195,19 +210,19 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
               <ScrollArea className="h-[400px] w-full rounded-md border p-4">
                 {isLoading
                   ? Array(3).fill(0).map((_, i) => (
-                      <Card key={i} className="mb-4">
-                        <CardHeader className="p-4">
-                          <Skeleton className="h-4 w-[200px]" />
-                          <Skeleton className="h-4 w-[150px] mt-2" />
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0">
-                          <Skeleton className="h-4 w-[100px]" />
-                        </CardContent>
-                      </Card>
-                    ))
+                    <Card key={i} className="mb-4">
+                      <CardHeader className="p-4">
+                        <Skeleton className="h-4 w-[200px]" />
+                        <Skeleton className="h-4 w-[150px] mt-2" />
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <Skeleton className="h-4 w-[100px]" />
+                      </CardContent>
+                    </Card>
+                  ))
                   : offeredRides.map((ride) => (
-                      <RideCard key={`offered-${ride.id}`} ride={ride} type="offered" />
-                    ))}
+                    <RideCard key={`offered-${ride.id}`} ride={ride} type="offered" />
+                  ))}
                 {!isLoading && offeredRides.length === 0 && (
                   <div className="text-center py-4 text-muted-foreground">You haven&apos;t offered any rides yet.</div>
                 )}
