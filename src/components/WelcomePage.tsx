@@ -53,8 +53,11 @@ export default function WelcomePage() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-orange-500">RideShare</h1>
           <nav>
-            <Button asChild variant="outline" className="text-orange-500 hover:text-orange-400">
+            <Button asChild variant="ghost" className="text-orange-500 hover:text-orange-400">
               <Link href="/login">Login</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="text-orange-500 hover:text-orange-400">
+              <Link href="/register">Register</Link>
             </Button>
           </nav>
         </div>
