@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   const { name, phone, email, password } = await request.json();
 
   try {
-    const { data: existingUser, error: existingUserError } = await supabase
+    const { data: existingUser } = await supabase
       .from('users')
       .select('*')
       .or(`phone.eq.${phone},email.eq.${email}`)
@@ -19,9 +19,11 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const lowerCaseEmail = email.toLowerCase();
+
     const { data: newUser, error: insertError } = await supabase
       .from('users')
-      .insert({ name, phone, email, password: hashedPassword })
+      .insert({ name, phone, email: lowerCaseEmail, password: hashedPassword })
       .select('id, name, phone, email')
       .single();
 

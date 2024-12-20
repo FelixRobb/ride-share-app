@@ -18,11 +18,13 @@ const transporter = nodemailer.createTransport({
 export async function POST(request: Request) {
   const { email } = await request.json();
 
+  const emaillower = email.toLowerCase();
+
   try {
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
-      .eq('email', email)
+      .eq('email', emaillower)
       .single();
 
     if (userError || !user) {

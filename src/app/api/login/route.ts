@@ -6,11 +6,13 @@ import bcrypt from 'bcrypt';
 export async function POST(request: Request) {
   const { phoneOrEmail, password } = await request.json();
 
+  const phoneOrEmaillower = phoneOrEmail.toLowerCase();
+  
   try {
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
-      .or(`phone.eq.${phoneOrEmail},email.eq.${phoneOrEmail}`)
+      .or(`phone.eq.${phoneOrEmaillower},email.eq.${phoneOrEmaillower}`)
       .single();
 
     if (error || !user) {

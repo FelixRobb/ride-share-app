@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import { Loader } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -86,10 +87,13 @@ function ResetPasswordForm() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-primary">
+      <div className="flex items-center justify-center min-h-screen bg-black">
         <Card className="w-full max-w-[350px]">
           <CardContent className="flex items-center justify-center h-[200px]">
             <p>Checking reset token...</p>
+            <div>
+              <Loader className="w-8 h-8 animate-spin text-primary" />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -98,16 +102,14 @@ function ResetPasswordForm() {
 
   if (!isTokenValid) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="flex items-center justify-center min-h-screen bg-black">
         <Card className="w-full max-w-[350px]">
           <CardHeader>
             <CardTitle>Reset Password</CardTitle>
             <CardDescription className="text-red-500">{errorMessage}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" onClick={() => router.push('/forgot-password')}>
-              Request New Reset Link
-            </Button>
+            <p>Please request another password reset.</p>
           </CardContent>
         </Card>
       </div>
@@ -115,7 +117,7 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-black">
       <Card className="w-full max-w-[350px]">
         <CardHeader>
           <CardTitle>Reset Password</CardTitle>
