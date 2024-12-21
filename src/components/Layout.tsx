@@ -186,7 +186,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
+                <Menu className="h-5 w-5 text-primary" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -230,8 +230,13 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
 
       <main className="flex-grow container mx-auto px-4 py-8">{children}</main>
 
-      <footer className="bg-background border-t border-border py-4">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">© {new Date().getFullYear()} RideShare. All rights reserved.</div>
+      <footer className="bg-background py-8 text-center text-sm text-zinc-500">
+        <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
+        <div className="mt-2 space-x-4">
+          <Link href="/privacy-policy" className="hover:text-orange-500 transition-colors duration-300">Privacy Policy</Link>
+          <Link href="/terms-of-service" className="hover:text-orange-500 transition-colors duration-300">Terms of Service</Link>
+          <Link href="/https://github.com/FelixRobb/ride-share-app" className="hover:text-orange-500 transition-colors duration-300">Source code on github</Link>
+        </div>
       </footer>
 
       <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>

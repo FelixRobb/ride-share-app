@@ -17,6 +17,7 @@ export default function Login() {
     try {
       const user = await login(phoneOrEmail, password)
       localStorage.setItem("currentUser", JSON.stringify(user))
+      localStorage.setItem("theme", "dark")
       await fetchUserData(user.id, null)
       router.push('/dashboard')
     } catch (error) {

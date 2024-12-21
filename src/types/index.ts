@@ -9,6 +9,10 @@ export type Ride = {
   id: string;
   from_location: string;
   to_location: string;
+  from_lat: number;
+  from_lon: number;
+  to_lat: number;
+  to_lon: number;
   time: string;
   requester_id: string;
   accepter_id: string | null;
@@ -46,6 +50,10 @@ export interface Notification {
 export type RideData = {
   from_location: string;
   to_location: string;
+  from_lat: number;
+  from_lon: number;
+  to_lat: number;
+  to_lon: number;
   time: string;
   rider_name: string;
   rider_phone: string | null;

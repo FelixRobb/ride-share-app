@@ -7,10 +7,19 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send, Edit, Trash, ArrowBigLeft, Loader } from 'lucide-react'
+import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send, Edit, Trash, ArrowBigLeft, Loader, Map } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact, Note } from "@/types"
 import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes, editNote, deleteNote, markNoteAsSeen, fetchRideDetails } from "@/utils/api"
+import 'leaflet/dist/leaflet.css'
+import { Icon } from 'leaflet'
+import dynamic from 'next/dynamic';
+
+const MapContainer = dynamic(() => import('react-leaflet').then((mod) => mod.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import('react-leaflet').then((mod) => mod.TileLayer), { ssr: false });
+const Marker = dynamic(() => import('react-leaflet').then((mod) => mod.Marker), { ssr: false });
+const Popup = dynamic(() => import('react-leaflet').then((mod) => mod.Popup), { ssr: false });
+
 
 interface RideDetailsPageProps {
   ride: Ride
@@ -26,20 +35,27 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [editedNoteContent, setEditedNoteContent] = useState("")
   const [loading, setLoading] = useState(false);
+  const [isMapDialogOpen, setIsMapDialogOpen] = useState(false);
   const router = useRouter()
   const { toast } = useToast()
   const [isCancelRequestDialogOpen, setIsCancelRequestDialogOpen] = useState(false);
   const [isCancelOfferDialogOpen, setIsCancelOfferDialogOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
+  const customIcon = new Icon({
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
+  })
+
+  const scrollToBottom = useCallback(() => {
+    if (typeof window !== 'undefined' && scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     }
-  };
+  }, []);
 
   const loadNotes = useCallback(async () => {
     if (ride.status === "accepted" || ride.status === "cancelled") {
@@ -79,7 +95,6 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
     } catch (error) {
       console.error("Error refreshing ride data:", error);
     } finally {
-      // Stop the spinner after the data has been successfully updated
       setLoading(false);
     }
   }, [currentUser.id, ride.id]);
@@ -95,7 +110,6 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
       clearInterval(rideInterval);
     };
   }, [loadNotes, refreshRideData]);
-
 
   const handleAddNote = async (e?: React.KeyboardEvent<HTMLInputElement>) => {
     if (e && e.key !== 'Enter') return;
@@ -173,7 +187,6 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   const handleAcceptRide = async () => {
     setLoading(true);
     try {
-      // Accept the ride
       await acceptRide(ride.id, currentUser.id);
       await fetchUserData(); 
       await refreshRideData();
@@ -190,8 +203,6 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
       });
     } 
   };
-  
-  
 
   const handleCancelRequest = () => {
     setIsCancelRequestDialogOpen(true);
@@ -267,175 +278,199 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
     return contact ? (contact.user_id === userId ? contact.user.name : contact.contact.name) : "Unknown User";
   }
 
-  const getOfferedByText = (ride: Ride) => {
-    if (ride.accepter_id === currentUser.id) {
-      return "Me";
+  const copyToClipboard = (text: string) => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(text).then(() => {
+        toast({
+          title: "Copied to clipboard",
+          description: "The address has been copied to your clipboard.",
+        });
+      }, (err) => {
+        console.error('Could not copy text: ', err);
+      });
     }
+  };
 
-    const offeringContact = contacts.find((c) =>
-      (c.user_id === ride.accepter_id && c.contact_id === currentUser.id) ||
-      (c.contact_id === ride.accepter_id && c.user_id === currentUser.id)
-    );
-
-    if (offeringContact) {
-      if (offeringContact.user_id === ride.accepter_id) {
-        return offeringContact.user.name;
-      } else {
-        return offeringContact.contact.name;
-      }
+  const openInGoogleMaps = (lat: number, lon: number) => {
+    if (typeof window !== 'undefined') {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
     }
-  }
+  };
 
   return (
     <div>
-    <div className="mb-4">
-      <Button type="button" variant="ghost" onClick={() => router.push('/dashboard')}><ArrowBigLeft />Go Back to Dashboard</Button>
-    </div>
-    
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">Ride Details</CardTitle>
-        <CardDescription className="text-lg">
-          From {ride.from_location} to {ride.to_location}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="mb-4">
+        <Button type="button" variant="ghost" onClick={() => router.push('/dashboard')}><ArrowBigLeft />Go Back to Dashboard</Button>
+      </div>
+      
+      <Card className="w-full max-w-3xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Ride Details</CardTitle>
+          <CardDescription className="text-lg">
+            From {ride.from_location} to {ride.to_location}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-5 h-5 text-primary" />
+                <Label className="font-semibold">From</Label>
+              </div>
+              <p className="ml-7">{ride.from_location}</p>
+              <div className="ml-7 space-x-2">
+                <Button size="sm" variant="outline" onClick={() => copyToClipboard(ride.from_location)}>
+                  Copy
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => openInGoogleMaps(ride.from_lat, ride.from_lon)}>
+                  Google Maps
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-5 h-5 text-primary" />
+                <Label className="font-semibold">To</Label>
+              </div>
+              <p className="ml-7">{ride.to_location}</p>
+              <div className="ml-7 space-x-2">
+                <Button size="sm" variant="outline" onClick={() => copyToClipboard(ride.to_location)}>
+                  Copy
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => openInGoogleMaps(ride.to_lat, ride.to_lon)}>
+                  Google Maps
+                </Button>
+              </div>
+            </div>
+          </div>
+          <Separator />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <LucideUser className="w-5 h-5 text-primary" />
+                <Label className="font-semibold">Requester</Label>
+              </div>
+              <p className="ml-7">{ride.rider_name}</p>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Phone className="w-5 h-5 text-primary" />
+                <Label className="font-semibold">Contact Phone</Label>
+              </div>
+              <p className="ml-7">{ride.rider_phone || "Not provided"}</p>
+            </div>
+          </div>
+          <Separator />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-5 h-5 text-primary" />
+                <Label className="font-semibold">Date and Time</Label>
+              </div>
+              <p className="ml-7">{new Date(ride.time).toLocaleString()}</p>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-5 h-5 text-primary" />
+                <Label className="font-semibold">Status</Label>
+              </div>
+              <p className={`ml-7 font-semibold ${getStatusColor()}`}>{getDisplayStatus()}</p>
+            </div>
+          </div>
+          <Separator />
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              <Label className="font-semibold">From</Label>
+              <FileText className="w-5 h-5 text-primary" />
+              <Label className="font-semibold">Initial Notes</Label>
             </div>
-            <p className="ml-7">{ride.from_location}</p>
+            <p className="ml-7">{ride.note || "No initial notes provided"}</p>
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              <Label className="font-semibold">To</Label>
+          {ride.status === "accepted" && ride.accepter_id && (
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <LucideUser className="w-5 h-5 text-primary" />
+                <Label className="font-semibold">Offered by</Label>
+              </div>
+              <p className="ml-7">
+                {ride.accepter_id === currentUser?.id
+                  ? "Me"
+                  : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact?.name || "Unknown"}
+              </p>
             </div>
-            <p className="ml-7">{ride.to_location}</p>
+          )}
+          <Separator />
+          <div className="flex justify-center">
+            <Button onClick={() => setIsMapDialogOpen(true)}>
+              <Map className="mr-2 h-4 w-4" />
+              View on Map
+            </Button>
           </div>
-        </div>
-        <Separator />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <LucideUser className="w-5 h-5 text-primary" />
-              <Label className="font-semibold">Requester</Label>
-            </div>
-            <p className="ml-7">{ride.rider_name}</p>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Phone className="w-5 h-5 text-primary" />
-              <Label className="font-semibold">Contact Phone</Label>
-            </div>
-            <p className="ml-7">{ride.rider_phone || "Not provided"}</p>
-          </div>
-        </div>
-        <Separator />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Clock className="w-5 h-5 text-primary" />
-              <Label className="font-semibold">Date and Time</Label>
-            </div>
-            <p className="ml-7">{new Date(ride.time).toLocaleString()}</p>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 text-primary" />
-              <Label className="font-semibold">Status</Label>
-            </div>
-            <p className={`ml-7 font-semibold ${getStatusColor()}`}>{getDisplayStatus()}</p>
-          </div>
-        </div>
-        <Separator />
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <FileText className="w-5 h-5 text-primary" />
-            <Label className="font-semibold">Initial Notes</Label>
-          </div>
-          <p className="ml-7">{ride.note || "No initial notes provided"}</p>
-        </div>
-        {ride.status === "accepted" && ride.accepter_id && (
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <LucideUser className="w-5 h-5 text-primary" />
-              <Label className="font-semibold">Offered by</Label>
-            </div>
-            <p className="ml-7">
-            {ride.status === "accepted" && ride.accepter_id && `${getOfferedByText(ride)}`}
-            </p>
-          </div>
-        )}
-        <Separator />
-        {(ride.status === "accepted" || ride.status === "cancelled") && (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <MessageSquare className="w-5 h-5 text-primary" />
-              <Label className="font-semibold">Messages</Label>
-            </div>
-            <ScrollArea className="h-[300px] w-full rounded-md border p-4" ref={scrollAreaRef}>
-              {notes.map((note) => (
-                <div key={note.id} className={`mb-4 ${note.user_id === currentUser?.id ? "text-right" : "text-left"}`}>
-                  <div className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? "bg-primary text-primary-foreground" : "bg-muted"} rounded-lg p-3`}>
-                    {editingNoteId === note.id ? (
-                      <div>
-                        <Input
-                          value={editedNoteContent}
-                          onChange={(e) => setEditedNoteContent(e.target.value)}
-                          className="mb-2"
-                        />
-                        <Button onClick={handleSaveEdit} size="sm" className="mr-2">
-                          Save
+          {(ride.status === "accepted" || ride.status === "cancelled") && (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <MessageSquare className="w-5 h-5 text-primary" />
+                <Label className="font-semibold">Messages</Label>
+              </div>
+              <ScrollArea className="h-[300px] w-full rounded-md border p-4" ref={scrollAreaRef}>
+                {notes.map((note) => (
+                  <div key={note.id} className={`mb-4 ${note.user_id === currentUser?.id ? "text-right" : "text-left"}`}>
+                    <div className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? "bg-primary text-primary-foreground" : "bg-muted"} rounded-lg p-3`}>
+                      {editingNoteId === note.id ? (
+                        <div>
+                          <Input
+                            value={editedNoteContent}
+                            onChange={(e) => setEditedNoteContent(e.target.value)}
+                            className="mb-2"
+                          />
+                          <Button onClick={handleSaveEdit} size="sm" className="mr-2">
+                            Save
+                          </Button>
+                          <Button onClick={() => setEditingNoteId(null)} size="sm" variant="outline">
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm mb-1 break-words">{note.note}</p>
+                          <div className="flex justify-between items-center text-xs text-muted-foreground mt-2">
+                            <span>{getUserName(note.user_id)}</span>
+                            <span>&nbsp;-&nbsp;</span>
+                            <span>{new Date(note.created_at).toLocaleString()}</span>
+                          </div>
+                          {note.is_edited && <span className="text-xs text-muted-foreground">(edited)</span>}
+                        </>
+                      )}
+                    </div>
+                    {note.user_id === currentUser?.id && !editingNoteId && (
+                      <div className="mt-1">
+                        <Button onClick={() => handleEditNote(note.id)} size="sm" variant="ghost" className="p-1">
+                          <Edit className="h-4 w-4" />
                         </Button>
-                        <Button onClick={() => setEditingNoteId(null)} size="sm" variant="outline">
-                          Cancel
+                        <Button onClick={() => handleDeleteNote(note.id)} size="sm" variant="ghost" className="p-1">
+                          <Trash className="h-4 w-4" />
                         </Button>
                       </div>
-                    ) : (
-                      <>
-                        <p className="text-sm mb-1 break-words">{note.note}</p>
-                        <div className="flex justify-between items-center text-xs text-muted-foreground mt-2">
-                          <span>{getUserName(note.user_id)}</span>
-                          <span>&nbsp;-&nbsp;</span>
-                          <span>{new Date(note.created_at).toLocaleString()}</span>
-                        </div>
-                        {note.is_edited && <span className="text-xs text-muted-foreground">(edited)</span>}
-                      </>
                     )}
                   </div>
-                  {note.user_id === currentUser?.id && !editingNoteId && (
-                    <div className="mt-1">
-                      <Button onClick={() => handleEditNote(note.id)} size="sm" variant="ghost" className="p-1">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button onClick={() => handleDeleteNote(note.id)} size="sm" variant="ghost" className="p-1">
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </ScrollArea>
-            <div className="flex items-center space-x-2">
-              <Input
-                id="new-note"
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                onKeyPress={(e) => handleAddNote(e)}
-                placeholder="Type your message..."
-                className="flex-grow"
-              />
-              <Button onClick={() => handleAddNote()} size="icon">
-                <Send className="h-4 w-4" />
-              </Button>
+                ))}
+              </ScrollArea>
+              <div className="flex items-center space-x-2">
+                <Input
+                  id="new-note"
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  onKeyPress={(e) => handleAddNote(e)}
+                  placeholder="Type your message..."
+                  className="flex-grow"
+                />
+                <Button onClick={() => handleAddNote()} size="icon">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row gap-2">
+          )}
+        </CardContent>
+        <CardFooter className="flex flex-col sm:flex-row gap-2">
             {ride.requester_id === currentUser?.id && ride.status !== "cancelled" && (
               <Button variant="destructive" onClick={handleCancelRequest} className="w-full sm:w-auto">
                 Cancel Request
@@ -450,43 +485,68 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
               <Button 
                 onClick={handleAcceptRide} 
                 className="w-full sm:w-auto"
-                disabled={loading}  // Disable button while loading
+                disabled={loading}
               >
-                {loading ? <Loader className="animate-spin h-5 w-5" /> : "Offer Ride"} {/* Show spinner or button text */}
+                {loading ? <Loader className="animate-spin h-5 w-5" /> : "Offer Ride"}
               </Button>
             )}
           </CardFooter>
 
-      <Dialog open={isCancelRequestDialogOpen} onOpenChange={setIsCancelRequestDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Cancel Request</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to cancel this ride request?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCancelRequestDialogOpen(false)}>No, Keep Request</Button>
-            <Button variant="destructive" onClick={confirmCancelRequest}>Yes, Cancel Request</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={isCancelRequestDialogOpen} onOpenChange={setIsCancelRequestDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Cancel Request</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to cancel this ride request?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCancelRequestDialogOpen(false)}>No, Keep Request</Button>
+              <Button variant="destructive" onClick={confirmCancelRequest}>Yes, Cancel Request</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      <Dialog open={isCancelOfferDialogOpen} onOpenChange={setIsCancelOfferDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Cancel Offer</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to cancel this ride offer?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCancelOfferDialogOpen(false)}>No, Keep Offer</Button>
-            <Button variant="destructive" onClick={confirmCancelOffer}>Yes, Cancel Offer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
+        <Dialog open={isCancelOfferDialogOpen} onOpenChange={setIsCancelOfferDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Cancel Offer</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to cancel this ride offer?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCancelOfferDialogOpen(false)}>No, Keep Offer</Button>
+              <Button variant="destructive" onClick={confirmCancelOffer}>Yes, Cancel Offer</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Ride Map</DialogTitle>
+            </DialogHeader>
+            <div style={{ height: '400px', width: '100%' }}>
+              <MapContainer
+                bounds={[
+                  [ride.from_lat, ride.from_lon],
+                  [ride.to_lat, ride.to_lon]
+                ]}
+                style={{ height: '400px', width: '100%' }}
+              >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <Marker position={[ride.from_lat, ride.from_lon]} icon={customIcon}>
+                  <Popup>From: {ride.from_location}</Popup>
+                </Marker>
+                <Marker position={[ride.to_lat, ride.to_lon]} icon={customIcon}>
+                  <Popup>To: {ride.to_location}</Popup>
+                </Marker>
+              </MapContainer>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </Card>
     </div>
   )
 }

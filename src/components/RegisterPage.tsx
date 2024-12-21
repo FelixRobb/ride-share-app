@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { User } from "../types"
 
 interface RegisterPageProps {
@@ -14,6 +15,7 @@ interface RegisterPageProps {
 
 export default function RegisterPage({ setCurrentUser, handleRegister, isLoading }: RegisterPageProps) {
   const [error, setError] = useState<string | null>(null)
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -85,8 +87,18 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
                   <Input id="confirmPassword" type="password" placeholder="Confirm your password" required />
                 </div>
               </div>
+              <div className="flex items-center space-x-2 mt-4">
+                <Checkbox
+                  id="terms"
+                  checked={agreedToTerms}
+                  onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                />
+                <Label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  I agree to the <Link className="underline text-orange-500" href="/privacy-policy">Privacy Policy</Link> and <Link className="underline text-orange-500" href="/terms-of-service">Terms of Service</Link>.
+                </Label>
+              </div>
               {error && <p className="text-destructive mt-2">{error}</p>}
-              <Button className="w-full mt-4" type="submit" disabled={isLoading}>
+              <Button className="w-full mt-4" type="submit" disabled={isLoading || !agreedToTerms}>
                 {isLoading ? "Registering..." : "Register"}
               </Button>
             </form>

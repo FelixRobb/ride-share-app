@@ -64,6 +64,7 @@ export default function Dashboard() {
 
   const logout = () => {
     localStorage.removeItem("currentUser")
+    localStorage.removeItem("theme")
     router.push('/')
   }
 
