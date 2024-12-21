@@ -62,22 +62,13 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
     }
   };
 
-  const handleLocationSelect = (type: 'from' | 'to') => (location: { lat: number; lon: number; display_name: string } | null) => {
-    if (location) {
-      setRideData(prev => ({
-        ...prev,
-        [`${type}_location`]: location.display_name,
-        [`${type}_lat`]: location.lat,
-        [`${type}_lon`]: location.lon,
-      }));
-    } else {
-      setRideData(prev => ({
-        ...prev,
-        [`${type}_location`]: "",
-        [`${type}_lat`]: 0,
-        [`${type}_lon`]: 0,
-      }));
-    }
+  const handleLocationSelect = (type: 'from' | 'to') => (location: { lat: number; lon: number; display_name: string }) => {
+    setRideData(prev => ({
+      ...prev,
+      [`${type}_location`]: location.display_name,
+      [`${type}_lat`]: location.lat,
+      [`${type}_lon`]: location.lon,
+    }));
   };
 
   return (
@@ -92,7 +83,7 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="from_location">From</Label>
               <LocationSearch
-                onLocationSelect={handleLocationSelect('from')}
+                selectedLocation={rideData.from_location ? { lat: rideData.from_lat, lon: rideData.from_lon, display_name: rideData.from_location } : null}
                 label="From Location"
                 onOpenMap={() => setIsFromMapOpen(true)}
               />
@@ -100,7 +91,7 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="to_location">To</Label>
               <LocationSearch
-                onLocationSelect={handleLocationSelect('to')}
+                selectedLocation={rideData.to_location ? { lat: rideData.to_lat, lon: rideData.to_lon, display_name: rideData.to_location } : null}
                 label="To Location"
                 onOpenMap={() => setIsToMapOpen(true)}
               />

@@ -48,6 +48,7 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
       }
     }
   }
+  
 
   const filteredRides = useCallback(
     (rides: Ride[]) => {
@@ -80,26 +81,26 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
             <div className="space-y-1.5">
               <CardTitle className="text-base font-semibold">
                 <div className="flex flex-col items-start space-x-1 mb-3">
-                  <div className="flex items-start space-x-1">
+                  <div className="flex items-center space-x-1">
                     <MapPin className="h-4 w-4 text-primary" />
-                    <p className="text-primary">From</p>
+                    <p className="text-primary">From:</p>
                   </div>
-                  <div className="flex items-center">
-                    <span className="text-wrap text-sm ml-2">
-                      {ride.from_location.length > 150
+                  <div className="flex items-center w-11/12">
+                    <span className="text-wrap text-sm ml-4">
+                      {ride.from_location.length > 100
                         ? `${ride.from_location.slice(0, 100)}...`
                         : ride.from_location}
                     </span>
                   </div>
                 </div>
                 <div className="flex flex-col items-start space-x-1">
-                  <div className="flex items-start space-x-1">
+                  <div className="flex items-center space-x-1">
                     <MapPin className="h-4 w-4" />
-                    <p className="text-primary">To</p></div>
-                  <div className="flex items-center">
-                    <span className="text-wrap text-sm ml-2">
-                      {ride.to_location.length > 150
-                        ? `${ride.from_location.slice(0, 100)}...`
+                    <p>To:</p></div>
+                  <div className="flex items-center w-11/12">
+                    <span className="text-wrap text-sm ml-4">
+                      {ride.to_location.length > 100
+                        ? `${ride.to_location.slice(0, 100)}...`
                         : ride.to_location}
                     </span>
                   </div>

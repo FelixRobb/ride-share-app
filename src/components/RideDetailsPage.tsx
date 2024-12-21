@@ -272,6 +272,21 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
     return contact ? (contact.user_id === userId ? contact.user.name : contact.contact.name) : "Unknown User";
   }
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "Copied to clipboard",
+        description: "The address has been copied to your clipboard.",
+      });
+    }, (err) => {
+      console.error('Could not copy text: ', err);
+    });
+  };
+
+  const openInGoogleMaps = (lat: number, lon: number) => {
+    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+  };
+
   return (
     <div>
       <div className="mb-4">
@@ -281,6 +296,9 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
       <Card className="w-full max-w-3xl mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Ride Details</CardTitle>
+          <CardDescription className="text-lg">
+            From {ride.from_location} to {ride.to_location}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -290,6 +308,14 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                 <Label className="font-semibold">From</Label>
               </div>
               <p className="ml-7">{ride.from_location}</p>
+              <div className="ml-7 space-x-2">
+                <Button size="sm" variant="outline" onClick={() => copyToClipboard(ride.from_location)}>
+                  Copy
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => openInGoogleMaps(ride.from_lat, ride.from_lon)}>
+                  Google Maps
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
@@ -297,6 +323,14 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                 <Label className="font-semibold">To</Label>
               </div>
               <p className="ml-7">{ride.to_location}</p>
+              <div className="ml-7 space-x-2">
+                <Button size="sm" variant="outline" onClick={() => copyToClipboard(ride.to_location)}>
+                  Copy
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => openInGoogleMaps(ride.to_lat, ride.to_lon)}>
+                  Google Maps
+                </Button>
+              </div>
             </div>
           </div>
           <Separator />
@@ -485,9 +519,11 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
             </DialogHeader>
             <div style={{ height: '400px', width: '100%' }}>
               <MapContainer
-                center={[(ride.from_lat + ride.to_lat) / 2, (ride.from_lon + ride.to_lon) / 2]}
-                zoom={13}
-                style={{ height: '100%', width: '100%' }}
+                bounds={[
+                  [ride.from_lat, ride.from_lon],
+                  [ride.to_lat, ride.to_lon]
+                ]}
+                style={{ height: '400px', width: '100%' }}
               >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 <Marker position={[ride.from_lat, ride.from_lon]} icon={customIcon}>

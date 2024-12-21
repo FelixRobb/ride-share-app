@@ -6,6 +6,7 @@ import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-lea
 import { Icon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Search, MapPin, Crosshair } from 'lucide-react'
+import { toast } from "@/hooks/use-toast"
 
 interface MapDialogProps {
   isOpen: boolean
@@ -17,7 +18,7 @@ interface MapDialogProps {
 const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation, initialLocation }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
-  const [selectedLocation, setSelectedLocation] = useState(initialLocation || { lat: 0, lon: 0 })
+  const [selectedLocation, setSelectedLocation] = useState(initialLocation || { lat: 38.707624, lon: -9.136645 })
   const [address, setAddress] = useState('')
   const mapRef = useRef<L.Map | null>(null)
 
@@ -43,6 +44,12 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
       console.error('Error searching for location:', error)
     }
   }
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   const handleSelectSearchResult = (result: any) => {
     setSelectedLocation({ lat: parseFloat(result.lat), lon: parseFloat(result.lon) })
@@ -98,73 +105,103 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     }
   }
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "Copied to clipboard",
+        description: "The address has been copied to your clipboard.",
+      });
+    }, (err) => {
+      console.error('Could not copy text: ', err);
+    });
+  };
+
+  const openInGoogleMaps = (lat: number, lon: number) => {
+    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Select Location</DialogTitle>
         </DialogHeader>
-        <div className="flex space-x-2 mb-4">
-          <div className="relative flex-grow">
-            <Input
-              placeholder="Search for a location"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-10"
-            />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <div className="flex flex-col space-y-4">
+          <div className="flex space-x-2 mb-4">
+            <div className="relative flex-grow">
+              <Input
+                placeholder="Search for a location"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="pr-10"
+              />
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            </div>
+            <Button onClick={handleSearch}>Search</Button>
+            <Button onClick={handleUseCurrentLocation} variant="outline">
+              <Crosshair className="w-4 h-4 mr-2" />
+              Current
+            </Button>
           </div>
-          <Button onClick={handleSearch}>Search</Button>
-          <Button onClick={handleUseCurrentLocation} variant="outline">
-            <Crosshair className="w-4 h-4 mr-2" />
-            Current
-          </Button>
-        </div>
-        {searchResults.length > 0 && (
-          <ul className="mb-4 max-h-40 overflow-y-auto bg-white border rounded-md shadow-sm">
-            {searchResults.map((result) => (
-              <li
-                key={result.place_id}
-                className="cursor-pointer hover:bg-gray-100 p-2 flex items-center"
-                onClick={() => handleSelectSearchResult(result)}
-              >
-                <MapPin className="w-4 h-4 mr-2 text-primary" />
-                <span className="text-sm">{result.display_name}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <MapContainer
-          center={[selectedLocation.lat || 0, selectedLocation.lon || 0]}
-          zoom={13}
-          style={{ height: '400px', width: '100%' }}
-        >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <Marker
-            position={[selectedLocation.lat, selectedLocation.lon]}
-            icon={customIcon}
-          />
-          <MapEvents />
-        </MapContainer>
-        <div className="mt-4">
-          <p className="text-sm font-medium">Selected Location:</p>
-          <p className="text-sm text-gray-500">{address}</p>
-        </div>
-        <div className="mt-4 flex justify-end space-x-2">
-          <Button onClick={onClose} variant="outline">
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              onSelectLocation({
-                ...selectedLocation,
-                display_name: address
-              })
-              onClose()
-            }}
-          >
-            Confirm Location
-          </Button>
+          {searchResults.length > 0 && (
+            <ul className="mb-4 max-h-40 overflow-y-auto bg-secondary border rounded-md shadow-sm">
+              {searchResults.map((result) => (
+                <li
+                  key={result.place_id}
+                  className="cursor-pointer p-2 flex items-center"
+                  onClick={() => handleSelectSearchResult(result)}
+                >
+                  <MapPin className="w-4 h-4 mr-2 text-primary" />
+                  <span className="text-sm text-white hover:text-primary">{result.display_name}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="h-[400px] w-full">
+            <MapContainer
+              center={[selectedLocation.lat || 0, selectedLocation.lon || 0]}
+              zoom={13}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <Marker
+                position={[selectedLocation.lat, selectedLocation.lon]}
+                icon={customIcon}
+              />
+              <MapEvents />
+            </MapContainer>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Selected Location:</p>
+              <p className="text-sm text-gray-500">{address}</p>
+            </div>
+            <div className="flex space-x-2 flex-col items-center gap-1">
+              <Button size="sm" variant="outline" onClick={() => copyToClipboard(address)}>
+                Copy
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => openInGoogleMaps(selectedLocation.lat, selectedLocation.lon)}>
+                Google Maps
+              </Button>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button onClick={onClose} variant="outline">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                onSelectLocation({
+                  ...selectedLocation,
+                  display_name: address
+                })
+                onClose()
+              }}
+            >
+              Confirm Location
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

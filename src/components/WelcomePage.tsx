@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { Separator } from '@/components/ui/separator'
 import { Car, Users, Shield, Zap, ChevronDown, Star } from 'lucide-react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
 export default function WelcomePage() {
   const [scrolled, setScrolled] = useState(false)
+  const [showCookieNotice, setShowCookieNotice] = useState(false)
   const { scrollY } = useScroll()
   const opacity = useTransform(scrollY, [0, 100], [1, 0])
   const arrowY = useTransform(scrollY, [0, 100], [0, 20])
@@ -14,11 +14,19 @@ export default function WelcomePage() {
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50)
+      if (window.scrollY > 200 && !localStorage.getItem('cookiePreferences')) {
+        setShowCookieNotice(true)
+      }
     }
 
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  const handleAcceptCookies = () => {
+    localStorage.setItem('cookiePreferences', 'accepted')
+    setShowCookieNotice(false)
+  }
 
   const features = [
     { icon: Car, title: "Easy Ride Sharing", description: "Create or join rides with just a few taps" },
@@ -53,7 +61,7 @@ export default function WelcomePage() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-orange-500">RideShare</h1>
           <nav>
-            <Button asChild variant="ghost" className="text-orange-500 hover:text-orange-400">
+            <Button asChild variant="ghost" className="text-orange-500 hover:text-orange-400 mr-1">
               <Link href="/login">Login</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="text-orange-500 hover:text-orange-400 px-2 py-1.5">
@@ -177,12 +185,24 @@ export default function WelcomePage() {
       </section>
 
       <footer className="bg-zinc-900 py-8 text-center text-sm text-zinc-500">
-        <p>&copy; {new Date().getFullYear()} RideShare. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
         <div className="mt-2 space-x-4">
           <Link href="/privacy-policy" className="hover:text-orange-500 transition-colors duration-300">Privacy Policy</Link>
           <Link href="/terms-of-service" className="hover:text-orange-500 transition-colors duration-300">Terms of Service</Link>
+          <Link href="/https://github.com/FelixRobb/ride-share-app" className="hover:text-orange-500 transition-colors duration-300">Source code on github</Link>
         </div>
       </footer>
+
+      {showCookieNotice && (
+        <div className="fixed bottom-4 right-4 bg-zinc-800 border border-zinc-700 rounded-lg p-4 shadow-lg max-w-xs">
+          <p className="text-sm text-zinc-300 mb-3">
+            This website uses cookies to enhance your experience. By continuing to browse, you agree to our use of cookies.
+          </p>
+          <Button onClick={handleAcceptCookies} size="sm" className="w-full bg-orange-500 hover:bg-orange-600 text-black">
+            Accept
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
