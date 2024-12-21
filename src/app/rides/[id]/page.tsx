@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
-import RideDetailsPage from '@/components/RideDetailsPage'
 import Layout from '@/components/Layout'
 import { useToast } from "@/hooks/use-toast"
 import { Loader } from 'lucide-react'
 import { User, Ride, Contact, Notification } from "@/types"
 import { fetchUserData, fetchRideDetails } from "@/utils/api"
+import dynamic from 'next/dynamic';
+
+const RideDetailsPage = dynamic(() => import('@/components/RideDetailsPage'), { ssr: false });
 
 export default function RideDetails() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -21,16 +23,19 @@ export default function RideDetails() {
   const { id } = useParams()
   const { toast } = useToast()
 
+  // Fetch user data from localStorage
   useEffect(() => {
-    const user = localStorage.getItem("currentUser")
-    if (user) {
-      const parsedUser = JSON.parse(user) as User
-      setCurrentUser(parsedUser)
-      void fetchUserDataCallback(parsedUser.id)
-    } else {
-      router.push('/')
+    if (typeof window !== 'undefined') {
+      const user = localStorage.getItem('currentUser');
+      if (user) {
+        const parsedUser = JSON.parse(user) as User;
+        setCurrentUser(parsedUser);
+        void fetchUserDataCallback(parsedUser.id);
+      } else {
+        router.push('/');
+      }
     }
-  }, [router])
+  }, [router]);
 
   useEffect(() => {
     if (currentUser && id) {

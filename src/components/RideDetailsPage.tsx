@@ -11,9 +11,15 @@ import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare,
 import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact, Note } from "@/types"
 import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes, editNote, deleteNote, markNoteAsSeen, fetchRideDetails } from "@/utils/api"
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Icon } from 'leaflet'
+import dynamic from 'next/dynamic';
+
+const MapContainer = dynamic(() => import('react-leaflet').then((mod) => mod.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import('react-leaflet').then((mod) => mod.TileLayer), { ssr: false });
+const Marker = dynamic(() => import('react-leaflet').then((mod) => mod.Marker), { ssr: false });
+const Popup = dynamic(() => import('react-leaflet').then((mod) => mod.Popup), { ssr: false });
+
 
 interface RideDetailsPageProps {
   ride: Ride
@@ -42,14 +48,14 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
     iconAnchor: [12, 41]
   })
 
-  const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
+  const scrollToBottom = useCallback(() => {
+    if (typeof window !== 'undefined' && scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     }
-  };
+  }, []);
 
   const loadNotes = useCallback(async () => {
     if (ride.status === "accepted" || ride.status === "cancelled") {
@@ -273,18 +279,22 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   }
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      toast({
-        title: "Copied to clipboard",
-        description: "The address has been copied to your clipboard.",
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(text).then(() => {
+        toast({
+          title: "Copied to clipboard",
+          description: "The address has been copied to your clipboard.",
+        });
+      }, (err) => {
+        console.error('Could not copy text: ', err);
       });
-    }, (err) => {
-      console.error('Could not copy text: ', err);
-    });
+    }
   };
 
   const openInGoogleMaps = (lat: number, lon: number) => {
-    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+    if (typeof window !== 'undefined') {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+    }
   };
 
   return (

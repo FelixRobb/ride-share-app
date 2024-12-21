@@ -28,6 +28,8 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     iconAnchor: [12, 41]
   })
 
+  const isClient = typeof window !== 'undefined';
+
   useEffect(() => {
     if (initialLocation) {
       setSelectedLocation(initialLocation)
@@ -89,21 +91,24 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   }
 
   const handleUseCurrentLocation = () => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const { latitude, longitude } = position.coords
-        setSelectedLocation({ lat: latitude, lon: longitude })
-        reverseGeocode(latitude, longitude)
-        if (mapRef.current) {
-          mapRef.current.setView([latitude, longitude], 13)
-        }
-      }, (error) => {
-        console.error('Error getting current location:', error)
-      })
-    } else {
-      console.error('Geolocation is not supported by this browser.')
+    if (!isClient || !('geolocation' in navigator)) {
+      console.error('Geolocation is not supported by this browser.');
+      return;
     }
-  }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setSelectedLocation({ lat: latitude, lon: longitude });
+        reverseGeocode(latitude, longitude);
+        if (mapRef.current) {
+          mapRef.current.setView([latitude, longitude], 13);
+        }
+      },
+      (error) => {
+        console.error('Error getting current location:', error);
+      }
+    );
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -117,7 +122,9 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   };
 
   const openInGoogleMaps = (lat: number, lon: number) => {
-    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+    if (isClient) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+    }
   };
 
   return (
