@@ -18,7 +18,7 @@ export default function LocationSearch({ selectedLocation, label, onOpenMap }: L
   return (
     <div className="space-y-4">
       <div className="flex space-x-2">
-        <Button onClick={onOpenMap} variant="outline" className="w-full">
+        <Button type="button" onClick={onOpenMap} variant="outline" className="w-full">
           <MapPin className="mr-2 h-4 w-4" />
           {selectedLocation ? 'Change Location' : `Select ${label}`}
         </Button>
