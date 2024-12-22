@@ -7,10 +7,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send, Edit, Trash, ArrowBigLeft, Loader, Map } from 'lucide-react'
+import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send, Edit, Trash, ArrowBigLeft, Loader, Map, CheckCircle } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact, Note } from "@/types"
-import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes, editNote, deleteNote, markNoteAsSeen, fetchRideDetails } from "@/utils/api"
+import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes, editNote, deleteNote, markNoteAsSeen, fetchRideDetails, finishRide } from "@/utils/api"
 import 'leaflet/dist/leaflet.css'
 import { Icon } from 'leaflet'
 import dynamic from 'next/dynamic';
@@ -40,6 +40,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   const { toast } = useToast()
   const [isCancelRequestDialogOpen, setIsCancelRequestDialogOpen] = useState(false);
   const [isCancelOfferDialogOpen, setIsCancelOfferDialogOpen] = useState(false);
+  const [isFinishRideDialogOpen, setIsFinishRideDialogOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const customIcon = new Icon({
@@ -252,6 +253,28 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
     }
   }
 
+  const handleFinishRide = async () => {
+    setLoading(true);
+    try {
+      await finishRide(ride.id, currentUser.id);
+      toast({
+        title: "Success",
+        description: "Ride marked as completed.",
+      });
+      setIsFinishRideDialogOpen(false);
+      router.push('/dashboard');
+    } catch (error) {
+      console.error("Error finishing ride:", error);
+      toast({
+        title: "Error",
+        description: "Failed to finish ride. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getDisplayStatus = () => {
     if (ride.status === "accepted" && ride.accepter_id === currentUser?.id) {
       return "Offered"
@@ -265,6 +288,8 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
         return "text-green-500"
       case "cancelled":
         return "text-red-500"
+      case "completed":
+        return "text-blue-500"
       default:
         return "text-yellow-500"
     }
@@ -405,7 +430,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
               View on Map
             </Button>
           </div>
-          {(ride.status === "accepted" || ride.status === "cancelled") && (
+          {(ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") && (
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <MessageSquare className="w-5 h-5 text-primary" />
@@ -454,6 +479,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                   </div>
                 ))}
               </ScrollArea>
+              {
               <div className="flex items-center space-x-2">
                 <Input
                   id="new-note"
@@ -467,11 +493,12 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
+}
             </div>
           )}
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row gap-2">
-            {ride.requester_id === currentUser?.id && ride.status !== "cancelled" && (
+            {ride.requester_id === currentUser?.id && ride.status !== "cancelled" && ride.status !== "completed" && (
               <Button variant="destructive" onClick={handleCancelRequest} className="w-full sm:w-auto">
                 Cancel Request
               </Button>
@@ -488,6 +515,15 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                 disabled={loading}
               >
                 {loading ? <Loader className="animate-spin h-5 w-5" /> : "Offer Ride"}
+              </Button>
+            )}
+            {ride.status === "accepted" && (ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
+              <Button 
+                onClick={() => setIsFinishRideDialogOpen(true)} 
+                className="w-full sm:w-auto"
+                disabled={loading}
+              >
+                {loading ? <Loader className="animate-spin h-5 w-5" /> : "Finish Ride"}
               </Button>
             )}
           </CardFooter>
@@ -546,8 +582,21 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
             </div>
           </DialogContent>
         </Dialog>
+        <Dialog open={isFinishRideDialogOpen} onOpenChange={setIsFinishRideDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Finish Ride</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to mark this ride as completed?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsFinishRideDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleFinishRide}>Yes, Finish Ride</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Card>
     </div>
   )
 }
-

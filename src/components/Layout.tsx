@@ -235,7 +235,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
         <div className="mt-2 space-x-4">
           <Link href="/privacy-policy" className="hover:text-orange-500 transition-colors duration-300">Privacy Policy</Link>
           <Link href="/terms-of-service" className="hover:text-orange-500 transition-colors duration-300">Terms of Service</Link>
-          <Link href="/https://github.com/FelixRobb/ride-share-app" className="hover:text-orange-500 transition-colors duration-300">Source code on github</Link>
+          <Link href="https://github.com/FelixRobb/ride-share-app" className="hover:text-orange-500 transition-colors duration-300">Source code on github</Link>
         </div>
       </footer>
 
