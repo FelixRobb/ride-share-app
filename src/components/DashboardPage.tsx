@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Search, Clock, MapPin, User2, Calendar, ArrowRight } from 'lucide-react';
+import { Search, Clock, MapPin, User2, Calendar, ArrowRight, CheckCircle } from 'lucide-react';
 import { User, Ride, Contact } from "../types";
 import Link from 'next/link';
 
@@ -73,7 +73,7 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
   );
 
   const myRides = filteredRides(rides.filter((ride) => ride.requester_id === currentUser?.id));
-  const offeredRides = filteredRides(rides.filter((ride) => ride.accepter_id === currentUser?.id && ride.status === "accepted"));
+  const offeredRides = filteredRides(rides.filter((ride) => ride.accepter_id === currentUser?.id));
 
   useEffect(() => {
     setIsLoading(false);
@@ -87,6 +87,8 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
         return <Badge variant="default" className="bg-green-500">Accepted</Badge>;
       case "cancelled":
         return <Badge variant="destructive">Cancelled</Badge>;
+      case "completed":
+        return <Badge variant="default" className="bg-blue-500">Completed</Badge>;
       default:
         return null;
     }
@@ -148,7 +150,11 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
                     </div>
                   </div>
                 </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                {ride.status === "completed" ? (
+                  <CheckCircle className="w-5 h-5 text-blue-500" />
+                ) : (
+                  <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                )}
               </div>
 
               {ride.status === "accepted" && ride.accepter_id && (
@@ -263,4 +269,3 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
     </div>
   );
 }
-

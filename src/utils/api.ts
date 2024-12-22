@@ -327,3 +327,19 @@ export const checkUser = async (userId: string): Promise<boolean> => {
   }
 };
 
+export const finishRide = async (rideId: string, userId: string) => {
+  const response = await fetch(`/api/rides/${rideId}/finish`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ userId }),
+  });
+  if (response.ok) {
+    return await response.json();
+  } else {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to finish ride. Please try again.");
+  }
+};
+

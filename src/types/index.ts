@@ -16,7 +16,7 @@ export type Ride = {
   time: string;
   requester_id: string;
   accepter_id: string | null;
-  status: "pending" | "accepted" | "cancelled";
+  status: "pending" | "accepted" | "cancelled" | "completed";
   rider_name: string;
   rider_phone: string | null;
   note: string | null;
