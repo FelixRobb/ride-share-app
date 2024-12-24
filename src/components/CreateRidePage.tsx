@@ -176,23 +176,23 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
           </form>
         )}
       </CardContent>
-      {isClient && (
+      {isMounted && (
         <>
           <MapDialog
             isOpen={isFromMapOpen}
             onClose={() => setIsFromMapOpen(false)}
             onSelectLocation={handleLocationSelect('from')}
-            initialLocation={rideData.from_lat !== 0 ? { lat: rideData.from_lat, lon: rideData.from_lon } : undefined}
+            initialLocation={rideData.from_lat && rideData.from_lon ? { lat: rideData.from_lat, lon: rideData.from_lon } : undefined}
           />
           <MapDialog
             isOpen={isToMapOpen}
             onClose={() => setIsToMapOpen(false)}
             onSelectLocation={handleLocationSelect('to')}
-            initialLocation={rideData.to_lat !== 0 ? { lat: rideData.to_lat, lon: rideData.to_lon } : undefined}
+            initialLocation={rideData.to_lat && rideData.to_lon ? { lat: rideData.to_lat, lon: rideData.to_lon } : undefined}
           />
+
         </>
       )}
     </Card>
   );
 }
-

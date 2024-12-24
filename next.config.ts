@@ -14,6 +14,9 @@ eslint: {
     }
     return config;
   },
+  images: {
+    domains: ['api.tomtom.com'],
+  },
 }
 
 module.exports = nextConfig

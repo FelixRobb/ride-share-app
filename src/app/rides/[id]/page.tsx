@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useParams } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { useToast } from "@/hooks/use-toast"
@@ -9,6 +9,8 @@ import { Loader } from 'lucide-react'
 import { User, Ride, Contact, Notification } from "@/types"
 import { fetchUserData, fetchRideDetails } from "@/utils/api"
 import dynamic from 'next/dynamic';
+import { Button } from "@/components/ui/button";
+import { ArrowBigLeft } from 'lucide-react';
 
 const RideDetailsPage = dynamic(() => import('@/components/RideDetailsPage'), { ssr: false });
 
@@ -22,6 +24,8 @@ export default function RideDetails() {
   const router = useRouter()
   const { id } = useParams()
   const { toast } = useToast()
+  const searchParams = useSearchParams()
+  const fromTab = searchParams.get('from') || 'available'
 
   // Fetch user data from localStorage
   useEffect(() => {
@@ -94,6 +98,7 @@ export default function RideDetails() {
   }
   return (
     <Layout currentUser={currentUser} logout={logout}>
+      <Button type="button" variant="ghost" onClick={() => router.push(`/dashboard?tab=${fromTab}`)}><ArrowBigLeft />Go Back to Dashboard</Button>
       {ride && currentUser && (
         <RideDetailsPage
           ride={ride}

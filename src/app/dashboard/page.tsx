@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import DashboardPage from '@/components/DashboardPage'
 import Layout from '@/components/Layout'
 import { Loader } from 'lucide-react'
@@ -16,6 +16,8 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [etag, setEtag] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'available')
 
   const router = useRouter()
   const { toast } = useToast()
@@ -64,7 +66,6 @@ export default function Dashboard() {
 
   const logout = () => {
     localStorage.removeItem("currentUser")
-    localStorage.removeItem("theme")
     router.push('/')
   }
 
@@ -84,7 +85,10 @@ export default function Dashboard() {
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         fetchUserData={() => fetchUserDataCallback(currentUser!.id)}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
       />
     </Layout>
   )
 }
+
