@@ -6,7 +6,7 @@ import DashboardPage from '@/components/DashboardPage'
 import Layout from '@/components/Layout'
 import { Loader } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
-import { User, Ride, Contact, Notification } from "@/types"
+import { User, Ride, Contact } from "@/types"
 import { fetchUserData } from "@/utils/api"
 
 export default function Dashboard() {
@@ -16,11 +16,21 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [etag, setEtag] = useState<string | null>(null)
-  const searchParams = useSearchParams()
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'available')
+  const [activeTab, setActiveTab] = useState('available') // default tab
 
   const router = useRouter()
   const { toast } = useToast()
+
+  // Declare the searchParams variable inside a useEffect to ensure it is only accessed on the client
+  const [searchParams, setSearchParamsState] = useState<URLSearchParams | null>(null)
+
+  useEffect(() => {
+    const search = new URLSearchParams(window.location.search)
+    setSearchParamsState(search)
+    if (search) {
+      setActiveTab(search.get('tab') || 'available')
+    }
+  }, [])
 
   useEffect(() => {
     const user = localStorage.getItem("currentUser")
@@ -69,13 +79,14 @@ export default function Dashboard() {
     router.push('/')
   }
 
-   if (isLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
   }
+
   return (
     <Layout currentUser={currentUser} logout={logout}>
       <DashboardPage
@@ -91,4 +102,3 @@ export default function Dashboard() {
     </Layout>
   )
 }
-
