@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, MutableRefObject } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,37 +20,50 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedLocation, setSelectedLocation] = useState({ lat: 38.7223, lon: -9.1393 });
   const [address, setAddress] = useState('');
-  const mapRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null) as MutableRefObject<HTMLDivElement>;
   const [map, setMap] = useState<tt.Map | null>(null);
   const [marker, setMarker] = useState<tt.Marker | null>(null);
+  const [isMapContainerReady, setIsMapContainerReady] = useState(false);
+
+  const handleMapClick = (e: { lngLat: { lng: number; lat: number } }) => {
+    const { lng, lat } = e.lngLat;
+    setSelectedLocation({ lat, lon: lng });
+    updateMarker(lat, lng);
+    reverseGeocode(lat, lng);
+  };
 
   useEffect(() => {
     const initializeMap = async () => {
-      if (!isOpen || !mapRef.current) return;
+      if (!isOpen || !mapRef.current || !isMapContainerReady) return;
 
       try {
         const tt = await import('@tomtom-international/web-sdk-maps');
-        const ttmap = tt.map({
-          key: process.env.NEXT_PUBLIC_TOMTOM_API_KEY || '',
-          container: mapRef.current,
-          center: [selectedLocation.lon, selectedLocation.lat],
-          zoom: 13,
-        });
+        if (!map) {
+          const ttmap = tt.map({
+            key: process.env.NEXT_PUBLIC_TOMTOM_API_KEY || '',
+            container: mapRef.current,
+            center: [selectedLocation.lon, selectedLocation.lat],
+            zoom: 13,
+          });
 
-        setMap(ttmap);
-        const newMarker = new tt.Marker().setLngLat([selectedLocation.lon, selectedLocation.lat]).addTo(ttmap);
-        setMarker(newMarker);
+          setMap(ttmap);
 
-        ttmap.on('load', () => {
-          console.log("Map loaded successfully.");
-          if (initialLocation) {
-            updateMarker(initialLocation.lat, initialLocation.lon);
-            console.log("updated marker")
-            reverseGeocode(initialLocation.lat, initialLocation.lon);
-          }
-        });
+          ttmap.on('load', () => {
+            console.log("Map loaded successfully.");
+            updateMarker(selectedLocation.lat, selectedLocation.lon);
+            if (initialLocation) {
+              updateMarker(initialLocation.lat, initialLocation.lon);
+              reverseGeocode(initialLocation.lat, initialLocation.lon);
+            }
+          });
 
-        console.log("Map initialized successfully.");
+          ttmap.on('click', handleMapClick);
+
+          console.log("Map initialized successfully.");
+        } else {
+          map.resize();
+          updateMarker(selectedLocation.lat, selectedLocation.lon);
+        }
       } catch (error) {
         console.error("Error initializing map:", error);
       }
@@ -78,26 +91,18 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
         setMarker(null);
       }
     };
-  }, [isOpen, selectedLocation, initialLocation]);
-
-
-  useEffect(() => {
-    if (isOpen && map) {
-      setTimeout(() => {
-        map.resize();
-      }, 100);
-    }
-  }, [isOpen, map]);
+  }, [isOpen, selectedLocation, initialLocation, isMapContainerReady, map]);
 
 
   const updateMarker = (lat: number, lon: number) => {
     if (map) {
       if (marker) {
-        marker.remove();
+        marker.setLngLat([lon, lat]);
+      } else {
+        const tt = require('@tomtom-international/web-sdk-maps');
+        const newMarker = new tt.Marker().setLngLat([lon, lat]).addTo(map);
+        setMarker(newMarker);
       }
-      const tt = require('@tomtom-international/web-sdk-maps');
-      const newMarker = new tt.Marker().setLngLat([lon, lat]).addTo(map);
-      setMarker(newMarker);
       map.setCenter([lon, lat]);
       map.setZoom(13);
     }
@@ -217,7 +222,15 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
               ))}
             </ul>
           )}
-          <div ref={mapRef} className="h-[400px] w-full" />
+          <div
+            ref={(el) => {
+              if (el && !mapRef.current) {
+                mapRef.current = el;
+                setIsMapContainerReady(true);
+              }
+            }}
+            className="h-[400px] w-full"
+          />
           <div className="flex justify-between">
             <p className="text-sm font-medium">Selected Location: {address}</p>
             <div className="space-x-2">
@@ -247,3 +260,4 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
 };
 
 export default MapDialog;
+
