@@ -9,8 +9,6 @@ import { User, AssociatedPerson } from "@/types";
 import { Loader } from 'lucide-react';
 import { fetchUserData } from "@/utils/api";
 
-export const dynamic = 'force-dynamic';
-
 export default function CreateRide() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([]);

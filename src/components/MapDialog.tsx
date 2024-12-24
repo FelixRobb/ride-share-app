@@ -1,130 +1,185 @@
-import { useState, useEffect, useRef } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
-import { Icon } from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import { Search, MapPin, Crosshair } from 'lucide-react'
-import { toast } from "@/hooks/use-toast"
+"use client";
+
+import { useState, useEffect, useRef } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, MapPin, Crosshair } from 'lucide-react';
+import { toast } from "@/hooks/use-toast";
+import '@tomtom-international/web-sdk-maps/dist/maps.css';
 
 interface MapDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onSelectLocation: (location: { lat: number; lon: number; display_name: string }) => void
-  initialLocation?: { lat: number; lon: number }
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectLocation: (location: { lat: number; lon: number; display_name: string }) => void;
+  initialLocation?: { lat: number; lon: number };
 }
 
 const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation, initialLocation }) => {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  const [selectedLocation, setSelectedLocation] = useState(initialLocation || { lat: 38.707624, lon: -9.136645 })
-  const [address, setAddress] = useState('')
-  const mapRef = useRef<L.Map | null>(null)
-
-  const customIcon = new Icon({
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
-  })
-
-  const isClient = typeof window !== 'undefined';
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState({ lat: 38.7223, lon: -9.1393 });
+  const [address, setAddress] = useState('');
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [map, setMap] = useState<tt.Map | null>(null);
+  const [marker, setMarker] = useState<tt.Marker | null>(null);
 
   useEffect(() => {
-    if (initialLocation) {
-      setSelectedLocation(initialLocation)
-      reverseGeocode(initialLocation.lat, initialLocation.lon)
+    const initializeMap = async () => {
+      if (!isOpen || !mapRef.current) return;
+
+      try {
+        const tt = await import('@tomtom-international/web-sdk-maps');
+        const ttmap = tt.map({
+          key: process.env.NEXT_PUBLIC_TOMTOM_API_KEY || '',
+          container: mapRef.current,
+          center: [selectedLocation.lon, selectedLocation.lat],
+          zoom: 13,
+        });
+
+        setMap(ttmap);
+        const newMarker = new tt.Marker().setLngLat([selectedLocation.lon, selectedLocation.lat]).addTo(ttmap);
+        setMarker(newMarker);
+
+        ttmap.on('load', () => {
+          console.log("Map loaded successfully.");
+          if (initialLocation) {
+            updateMarker(initialLocation.lat, initialLocation.lon);
+            console.log("updated marker")
+            reverseGeocode(initialLocation.lat, initialLocation.lon);
+          }
+        });
+
+        console.log("Map initialized successfully.");
+      } catch (error) {
+        console.error("Error initializing map:", error);
+      }
+    };
+
+    initializeMap();
+
+    return () => {
+      if (map) {
+        if (marker) {
+          try {
+            marker.remove();
+          } catch (error) {
+            console.warn("Error removing marker:", error);
+          }
+        }
+  
+        try {
+          map.remove();
+        } catch (error) {
+          console.warn("Error removing map:", error);
+        }
+  
+        setMap(null);
+        setMarker(null);
+      }
+    };
+  }, [isOpen, selectedLocation, initialLocation]);
+
+
+  useEffect(() => {
+    if (isOpen && map) {
+      setTimeout(() => {
+        map.resize();
+      }, 100);
     }
-  }, [initialLocation])
+  }, [isOpen, map]);
+
+
+  const updateMarker = (lat: number, lon: number) => {
+    if (map) {
+      if (marker) {
+        marker.remove();
+      }
+      const tt = require('@tomtom-international/web-sdk-maps');
+      const newMarker = new tt.Marker().setLngLat([lon, lat]).addTo(map);
+      setMarker(newMarker);
+      map.setCenter([lon, lat]);
+      map.setZoom(13);
+    }
+  };
 
   const handleSearch = async () => {
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`)
-      const data = await response.json()
-      setSearchResults(data)
+      const response = await fetch(
+        `https://api.tomtom.com/search/2/search/${encodeURIComponent(searchQuery)}.json?key=${process.env.NEXT_PUBLIC_TOMTOM_API_KEY}&limit=5`
+      );
+      const data = await response.json();
+      setSearchResults(data.results || []);
     } catch (error) {
-      console.error('Error searching for location:', error)
+      console.error("Error searching for location:", error);
     }
-  }
+  };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
+  const reverseGeocode = async (lat: number, lon: number) => {
+    try {
+      const response = await fetch(
+        `https://api.tomtom.com/search/2/reverseGeocode/${lat},${lon}.json?key=${process.env.NEXT_PUBLIC_TOMTOM_API_KEY}`
+      );
+      const data = await response.json();
+      if (data?.addresses?.[0]?.address?.freeformAddress) {
+        setAddress(data.addresses[0].address.freeformAddress);
+      }
+    } catch (error) {
+      console.error("Error reverse geocoding:", error);
     }
   };
 
   const handleSelectSearchResult = (result: any) => {
-    setSelectedLocation({ lat: parseFloat(result.lat), lon: parseFloat(result.lon) })
-    setAddress(result.display_name)
-    setSearchResults([])
-    if (mapRef.current) {
-      mapRef.current.setView([parseFloat(result.lat), parseFloat(result.lon)], 13)
+    const { lat, lon } = result.position;
+    setSelectedLocation({ lat, lon });
+    setAddress(result.address.freeformAddress);
+    setSearchResults([]);
+    updateMarker(lat, lon);
+    if (map) {
+      map.setCenter([lon, lat]);
+      map.setZoom(13);
     }
-  }
-
-  const reverseGeocode = async (lat: number, lon: number) => {
-    try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-      const data = await response.json()
-      setAddress(data.display_name)
-    } catch (error) {
-      console.error('Error reverse geocoding:', error)
-    }
-  }
-
-  const MapEvents = () => {
-    const map = useMap()
-    useEffect(() => {
-      if (map) {
-        mapRef.current = map
-      }
-    }, [map])
-
-    useMapEvents({
-      click(e) {
-        setSelectedLocation({ lat: e.latlng.lat, lon: e.latlng.lng })
-        reverseGeocode(e.latlng.lat, e.latlng.lng)
-      },
-    })
-
-    return null
-  }
+  };
 
   const handleUseCurrentLocation = () => {
-    if (!isClient || !('geolocation' in navigator)) {
-      console.error('Geolocation is not supported by this browser.');
+    if (!navigator.geolocation) {
+      console.error("Geolocation is not supported by this browser.");
       return;
     }
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
+      ({ coords }) => {
+        const { latitude, longitude } = coords;
         setSelectedLocation({ lat: latitude, lon: longitude });
+        updateMarker(latitude, longitude);
         reverseGeocode(latitude, longitude);
-        if (mapRef.current) {
-          mapRef.current.setView([latitude, longitude], 13);
+        if (map) {
+          map.setCenter([longitude, latitude]);
+          map.setZoom(13);
         }
       },
       (error) => {
-        console.error('Error getting current location:', error);
+        console.error("Error getting current location:", error);
       }
     );
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      toast({
-        title: "Copied to clipboard",
-        description: "The address has been copied to your clipboard.",
-      });
-    }, (err) => {
-      console.error('Could not copy text: ', err);
-    });
+    navigator.clipboard.writeText(text).then(
+      () => {
+        toast({
+          title: "Copied to clipboard",
+          description: "The address has been copied to your clipboard.",
+        });
+      },
+      (error) => {
+        console.error("Could not copy text to clipboard:", error);
+      }
+    );
   };
 
   const openInGoogleMaps = (lat: number, lon: number) => {
-    if (isClient) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
-    }
+    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, "_blank");
   };
 
   return (
@@ -134,57 +189,38 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
           <DialogTitle>Select Location</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col space-y-4">
-          <div className="flex space-x-2 mb-4">
-            <div className="relative flex-grow">
-              <Input
-                placeholder="Search for a location"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="pr-10"
-              />
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            </div>
+          <div className="flex space-x-2">
+            <Input
+              placeholder="Search for a location"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+              className="flex-grow"
+            />
             <Button onClick={handleSearch}>Search</Button>
-            <Button onClick={handleUseCurrentLocation} variant="outline">
+            <Button variant="outline" onClick={handleUseCurrentLocation}>
               <Crosshair className="w-4 h-4 mr-2" />
               Current
             </Button>
           </div>
           {searchResults.length > 0 && (
-            <ul className="mb-4 max-h-40 overflow-y-auto bg-secondary border rounded-md shadow-sm">
+            <ul className="max-h-40 overflow-y-auto bg-secondary border rounded-md shadow-sm">
               {searchResults.map((result) => (
                 <li
-                  key={result.place_id}
+                  key={result.id}
                   className="cursor-pointer p-2 flex items-center"
                   onClick={() => handleSelectSearchResult(result)}
                 >
                   <MapPin className="w-4 h-4 mr-2 text-primary" />
-                  <span className="text-sm text-white hover:text-primary">{result.display_name}</span>
+                  <span className="text-sm">{result.address.freeformAddress}</span>
                 </li>
               ))}
             </ul>
           )}
-          <div className="h-[400px] w-full">
-            <MapContainer
-              center={[selectedLocation.lat || 0, selectedLocation.lon || 0]}
-              zoom={13}
-              style={{ height: '100%', width: '100%' }}
-            >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <Marker
-                position={[selectedLocation.lat, selectedLocation.lon]}
-                icon={customIcon}
-              />
-              <MapEvents />
-            </MapContainer>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Selected Location:</p>
-              <p className="text-sm text-gray-500">{address}</p>
-            </div>
-            <div className="flex space-x-2 flex-col items-center gap-1">
+          <div ref={mapRef} className="h-[400px] w-full" />
+          <div className="flex justify-between">
+            <p className="text-sm font-medium">Selected Location: {address}</p>
+            <div className="space-x-2">
               <Button size="sm" variant="outline" onClick={() => copyToClipboard(address)}>
                 Copy
               </Button>
@@ -194,26 +230,20 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
             </div>
           </div>
           <div className="flex justify-end space-x-2">
-            <Button onClick={onClose} variant="outline">
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button
               onClick={() => {
-                onSelectLocation({
-                  ...selectedLocation,
-                  display_name: address
-                })
-                onClose()
+                onSelectLocation({ ...selectedLocation, display_name: address });
+                onClose();
               }}
             >
-              Confirm Location
+              Confirm
             </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-export default MapDialog
-
+export default MapDialog;

@@ -1,25 +1,17 @@
-import { useState, useEffect, useCallback, useRef } from "react"
-import { useRouter } from 'next/navigation'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send, Edit, Trash, ArrowBigLeft, Loader, Map, CheckCircle } from 'lucide-react'
-import { useToast } from "@/hooks/use-toast"
-import { User, Ride, Contact, Note } from "@/types"
-import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes, editNote, deleteNote, markNoteAsSeen, fetchRideDetails, finishRide } from "@/utils/api"
-import 'leaflet/dist/leaflet.css'
-import { Icon } from 'leaflet'
-import dynamic from 'next/dynamic';
-
-const MapContainer = dynamic(() => import('react-leaflet').then((mod) => mod.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import('react-leaflet').then((mod) => mod.TileLayer), { ssr: false });
-const Marker = dynamic(() => import('react-leaflet').then((mod) => mod.Marker), { ssr: false });
-const Popup = dynamic(() => import('react-leaflet').then((mod) => mod.Popup), { ssr: false });
-
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send, Edit, Trash, ArrowBigLeft, Loader, CheckCircle } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import { User, Ride, Contact, Note } from "@/types";
+import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes, editNote, deleteNote, markNoteAsSeen, fetchRideDetails, finishRide } from "@/utils/api";
+import '@tomtom-international/web-sdk-maps/dist/maps.css'
 
 interface RideDetailsPageProps {
   ride: Ride
@@ -35,19 +27,17 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [editedNoteContent, setEditedNoteContent] = useState("")
   const [loading, setLoading] = useState(false);
-  const [isMapDialogOpen, setIsMapDialogOpen] = useState(false);
   const router = useRouter()
   const { toast } = useToast()
   const [isCancelRequestDialogOpen, setIsCancelRequestDialogOpen] = useState(false);
   const [isCancelOfferDialogOpen, setIsCancelOfferDialogOpen] = useState(false);
   const [isFinishRideDialogOpen, setIsFinishRideDialogOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-
-  const customIcon = new Icon({
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
-  })
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const [map, setMap] = useState<tt.Map | null>(null);
+  const [isLoadingMap, setIsLoadingMap] = useState(true);
+  const searchParams = useSearchParams()
+  const fromTab = searchParams.get('from') || 'available'
 
   const scrollToBottom = useCallback(() => {
     if (typeof window !== 'undefined' && scrollAreaRef.current) {
@@ -63,13 +53,13 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
       try {
         const fetchedNotes = await fetchNotes(ride.id);
         setNotes(fetchedNotes || []);
-        
+
         // Automatically mark new notes as seen
-        const unseenNotes = fetchedNotes.filter(note => 
-          note.user_id !== currentUser.id && 
+        const unseenNotes = fetchedNotes.filter(note =>
+          note.user_id !== currentUser.id &&
           (!note.seen_by || !note.seen_by.includes(currentUser.id))
         );
-        
+
         if (unseenNotes.length > 0) {
           await Promise.all(unseenNotes.map(note => markNoteAsSeen(note.id, currentUser.id)));
         }
@@ -111,6 +101,92 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
       clearInterval(rideInterval);
     };
   }, [loadNotes, refreshRideData]);
+
+  useEffect(() => {
+    const buildMap = async (tt: any) => {
+      if (mapRef.current && !map) {
+        setIsLoadingMap(true);
+        try {
+          const mapContainer = mapRef.current;
+          if (!mapContainer) {
+            throw new Error("Map container is null");
+          }
+  
+          // Calculate center coordinates
+          const center = [
+            (ride?.from_lon + ride?.to_lon) / 2 || 0,
+            (ride?.from_lat + ride?.to_lat) / 2 || 0,
+          ];
+  
+          // Initialize the map
+          const ttmap = tt.map({
+            key: process.env.NEXT_PUBLIC_TOMTOM_API_KEY || '',
+            container: mapContainer,
+            center,
+            zoom: 10,
+          });
+  
+          setMap(ttmap);
+  
+          ttmap.on('load', () => {
+            if (ride) {
+              try {
+                // Add markers for the starting and ending points
+                new tt.Marker().setLngLat([ride.from_lon, ride.from_lat]).addTo(ttmap);
+                new tt.Marker().setLngLat([ride.to_lon, ride.to_lat]).addTo(ttmap);
+  
+                // Fit map bounds to markers
+                ttmap.fitBounds(
+                  [
+                    [ride.from_lon, ride.from_lat],
+                    [ride.to_lon, ride.to_lat],
+                  ],
+                  { padding: 50 }
+                );
+              } catch (markerError) {
+                console.error("Error adding markers or fitting bounds:", markerError);
+              }
+            }
+            setIsLoadingMap(false);
+          });
+        } catch (error) {
+          console.error("Error initializing map:", error);
+          setIsLoadingMap(false); // Ensure loading state is reset
+        }
+      }
+    };
+  
+    const initTomTom = async () => {
+      try {
+        const tt = await import('@tomtom-international/web-sdk-maps');
+        await buildMap(tt);
+      } catch (importError) {
+        console.error("Error importing TomTom SDK:", importError);
+      }
+    };
+  
+    // Check preconditions before initializing the map
+    if (
+      ride &&
+      ride.from_lon != null &&
+      ride.from_lat != null &&
+      ride.to_lon != null &&
+      ride.to_lat != null &&
+      mapRef.current
+    ) {
+      initTomTom();
+    }
+  
+    // Cleanup function to remove the map instance
+    return () => {
+      if (map) {
+        map.remove();
+        setMap(null);
+      }
+    };
+  }, [ride, map, mapRef]);
+  
+
 
   const handleAddNote = async (e?: React.KeyboardEvent<HTMLInputElement>) => {
     if (e && e.key !== 'Enter') return;
@@ -189,7 +265,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
     setLoading(true);
     try {
       await acceptRide(ride.id, currentUser.id);
-      await fetchUserData(); 
+      await fetchUserData();
       await refreshRideData();
       toast({
         title: "Success",
@@ -202,7 +278,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
         description: "Failed to accept ride. Please try again.",
         variant: "destructive",
       });
-    } 
+    }
   };
 
   const handleCancelRequest = () => {
@@ -323,11 +399,6 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   };
 
   return (
-    <div>
-      <div className="mb-4">
-        <Button type="button" variant="ghost" onClick={() => router.push('/dashboard')}><ArrowBigLeft />Go Back to Dashboard</Button>
-      </div>
-      
       <Card className="w-full max-w-3xl mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Ride Details</CardTitle>
@@ -336,6 +407,11 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="h-[300px] w-full relative" ref={mapRef} style={{ width: '100%', height: '300px' }}>
+            {isLoadingMap && <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+              <Loader className="w-8 h-8 animate-spin text-white" />
+            </div>}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
@@ -424,13 +500,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
             </div>
           )}
           <Separator />
-          <div className="flex justify-center">
-            <Button onClick={() => setIsMapDialogOpen(true)}>
-              <Map className="mr-2 h-4 w-4" />
-              View on Map
-            </Button>
-          </div>
-          {(ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") && (
+          {(ride.status === "accepted" || ride.status === "cancelled") && (
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <MessageSquare className="w-5 h-5 text-primary" />
@@ -479,7 +549,6 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                   </div>
                 ))}
               </ScrollArea>
-              {
               <div className="flex items-center space-x-2">
                 <Input
                   id="new-note"
@@ -493,40 +562,39 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
-}
             </div>
           )}
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row gap-2">
-            {ride.requester_id === currentUser?.id && ride.status !== "cancelled" && ride.status !== "completed" && (
-              <Button variant="destructive" onClick={handleCancelRequest} className="w-full sm:w-auto">
-                Cancel Request
-              </Button>
-            )}
-            {ride.accepter_id === currentUser?.id && ride.status === "accepted" && (
-              <Button variant="destructive" onClick={handleCancelOffer} className="w-full sm:w-auto">
-                Cancel Offer
-              </Button>
-            )}
-            {ride.status === "pending" && ride.requester_id !== currentUser?.id && (
-              <Button 
-                onClick={handleAcceptRide} 
-                className="w-full sm:w-auto"
-                disabled={loading}
-              >
-                {loading ? <Loader className="animate-spin h-5 w-5" /> : "Offer Ride"}
-              </Button>
-            )}
-            {ride.status === "accepted" && (ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
-              <Button 
-                onClick={() => setIsFinishRideDialogOpen(true)} 
-                className="w-full sm:w-auto"
-                disabled={loading}
-              >
-                {loading ? <Loader className="animate-spin h-5 w-5" /> : "Finish Ride"}
-              </Button>
-            )}
-          </CardFooter>
+          {ride.requester_id === currentUser?.id && ride.status !== "cancelled" && ride.status !== "completed" && (
+            <Button variant="destructive" onClick={handleCancelRequest} className="w-full sm:w-auto">
+              Cancel Request
+            </Button>
+          )}
+          {ride.accepter_id === currentUser?.id && ride.status === "accepted" && (
+            <Button variant="destructive" onClick={handleCancelOffer} className="w-full sm:w-auto">
+              Cancel Offer
+            </Button>
+          )}
+          {ride.status === "pending" && ride.requester_id !== currentUser?.id && (
+            <Button
+              onClick={handleAcceptRide}
+              className="w-full sm:w-auto"
+              disabled={loading}
+            >
+              {loading ? <Loader className="animate-spin h-5 w-5" /> : "Offer Ride"}
+            </Button>
+          )}
+          {ride.status === "accepted" && (ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
+            <Button
+              onClick={() => setIsFinishRideDialogOpen(true)}
+              className="w-full sm:w-auto"
+              disabled={loading}
+            >
+              {loading ? <Loader className="animate-spin h-5 w-5" /> : "Finish Ride"}
+            </Button>
+          )}
+        </CardFooter>
 
         <Dialog open={isCancelRequestDialogOpen} onOpenChange={setIsCancelRequestDialogOpen}>
           <DialogContent>
@@ -558,30 +626,6 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
           </DialogContent>
         </Dialog>
 
-        <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Ride Map</DialogTitle>
-            </DialogHeader>
-            <div style={{ height: '400px', width: '100%' }}>
-              <MapContainer
-                bounds={[
-                  [ride.from_lat, ride.from_lon],
-                  [ride.to_lat, ride.to_lon]
-                ]}
-                style={{ height: '400px', width: '100%' }}
-              >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <Marker position={[ride.from_lat, ride.from_lon]} icon={customIcon}>
-                  <Popup>From: {ride.from_location}</Popup>
-                </Marker>
-                <Marker position={[ride.to_lat, ride.to_lon]} icon={customIcon}>
-                  <Popup>To: {ride.to_location}</Popup>
-                </Marker>
-              </MapContainer>
-            </div>
-          </DialogContent>
-        </Dialog>
         <Dialog open={isFinishRideDialogOpen} onOpenChange={setIsFinishRideDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -597,6 +641,6 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
           </DialogContent>
         </Dialog>
       </Card>
-    </div>
   )
 }
+
