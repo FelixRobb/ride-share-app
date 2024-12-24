@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "NODE_OPTIONS='--inspect' next dev --experimental-https",
+    "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -23,6 +23,7 @@
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-toast": "^1.2.3",
     "@supabase/supabase-js": "^2.46.1",
+    "@tomtom-international/web-sdk-maps": "^6.25.0",
     "@types/nodemailer": "^6.4.16",
     "@vercel/speed-insights": "^1.1.0",
     "bcrypt": "^5.1.1",

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,69 +16,72 @@ interface DashboardPageProps {
   contacts: Contact[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  fetchUserData: (userId: string) => Promise<void>;
+  fetchUserData: () => Promise<void>;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
 }
 
-export default function DashboardPage({ currentUser, rides, contacts, searchTerm, setSearchTerm }: DashboardPageProps) {
+export default function DashboardPage({ 
+  currentUser, 
+  rides, 
+  contacts, 
+  searchTerm, 
+  setSearchTerm, 
+  fetchUserData,
+  activeTab,
+  setActiveTab
+}: DashboardPageProps) {
+  const router = useRouter();
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
-  const [activeTab, setActiveTab] = useState("available");
   const [isLoading, setIsLoading] = useState(true);
+  const [availableRides, setAvailableRides] = useState<Ride[]>([]);
+  const [myRides, setMyRides] = useState<Ride[]>([]);
+  const [offeredRides, setOfferedRides] = useState<Ride[]>([]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchTerm(localSearchTerm);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [localSearchTerm, setSearchTerm]);
+  const formatDateTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+    const formattedDate = date.toLocaleDateString(undefined, options);
+    const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return { date: formattedDate, time: formattedTime };
+  };
 
   const getOfferedByText = (ride: Ride) => {
-    if (ride.accepter_id === currentUser.id) {
-      return "Me";
-    }
-
-    const offeringContact = contacts.find((c) =>
-      (c.user_id === ride.accepter_id && c.contact_id === currentUser.id) ||
-      (c.contact_id === ride.accepter_id && c.user_id === currentUser.id)
-    );
-
-    if (offeringContact) {
-      if (offeringContact.user_id === ride.accepter_id) {
-        return offeringContact.user.name;
-      } else {
-        return offeringContact.contact.name;
-      }
-    }
-  }
-
-  const filteredRides = useCallback(
-    (rides: Ride[]) => {
-      if (!searchTerm.trim()) return rides;
-      return rides.filter((ride) => 
-        ride.from_location.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        ride.to_location.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    },
-    [searchTerm]
-  );
-
-  const availableRides = filteredRides(
-    rides.filter((ride) => {
-      const isPendingAndNotOwn = ride.status === "pending" && ride.requester_id !== currentUser?.id;
-      const isConnectedUser = contacts.some((contact) => 
-        (contact.user_id === ride.requester_id || contact.contact_id === ride.requester_id) && 
-        contact.status === "accepted"
-      );
-      return isPendingAndNotOwn && isConnectedUser;
-    })
-  );
-
-  const myRides = filteredRides(rides.filter((ride) => ride.requester_id === currentUser?.id));
-  const offeredRides = filteredRides(rides.filter((ride) => ride.accepter_id === currentUser?.id));
+    if (ride.accepter_id === currentUser.id) return "Me";
+    const contact = contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id);
+    return contact ? (contact.user_id === ride.accepter_id ? contact.user.name : contact.contact.name) : "Unknown";
+  };
 
   useEffect(() => {
-    setIsLoading(false);
-  }, []);
+    const fetchRides = async () => {
+      setIsLoading(true);
+      await fetchUserData();
+      setIsLoading(false);
+    };
+    fetchRides();
+  }, [fetchUserData]);
+
+  useEffect(() => {
+    const filteredRides = rides.filter((ride) =>
+      ride.from_location.toLowerCase().includes(localSearchTerm.toLowerCase()) ||
+      ride.to_location.toLowerCase().includes(localSearchTerm.toLowerCase()) ||
+      ride.rider_name.toLowerCase().includes(localSearchTerm.toLowerCase())
+    );
+
+    setAvailableRides(filteredRides.filter((ride) => 
+      ride.status === "pending" && ride.requester_id !== currentUser.id
+    ));
+    setMyRides(filteredRides.filter((ride) => 
+      ride.requester_id === currentUser.id
+    ));
+    setOfferedRides(filteredRides.filter((ride) => 
+      ride.accepter_id === currentUser.id
+    ));
+  }, [rides, localSearchTerm, currentUser.id]);
+
+  useEffect(() => {
+    setSearchTerm(localSearchTerm);
+  }, [localSearchTerm, setSearchTerm]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -94,26 +98,11 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
     }
   };
 
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric' 
-      }),
-      time: date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit'
-      })
-    };
-  };
-
   const RideCard = ({ ride }: { ride: Ride }) => {
     const { date, time } = formatDateTime(ride.time);
     
     return (
-      <Link href={`/rides/${ride.id}`}>
+      <Link href={`/rides/${ride.id}?from=${activeTab}`}>
         <Card className="mb-4 hover:bg-accent transition-colors duration-200 group">
           <CardContent className="p-6">
             <div className="flex flex-col space-y-4">
@@ -193,7 +182,10 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs defaultValue={activeTab} onValueChange={(value) => {
+            setActiveTab(value);
+            router.push(`/dashboard?tab=${value}`, { scroll: false });
+          }} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="available" className="text-sm">
                 Available ({availableRides.length})
@@ -269,3 +261,4 @@ export default function DashboardPage({ currentUser, rides, contacts, searchTerm
     </div>
   );
 }
+
