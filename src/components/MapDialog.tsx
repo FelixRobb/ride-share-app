@@ -20,10 +20,9 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedLocation, setSelectedLocation] = useState({ lat: 38.7223, lon: -9.1393 });
   const [address, setAddress] = useState('');
-  const mapRef = useRef<HTMLDivElement>(null) as MutableRefObject<HTMLDivElement>;
-  const [map, setMap] = useState<tt.Map | null>(null);
-  const [marker, setMarker] = useState<tt.Marker | null>(null);
-  const [isMapContainerReady, setIsMapContainerReady] = useState(false);
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
 
   const handleMapClick = (e: { lngLat: { lng: number; lat: number } }) => {
     const { lng, lat } = e.lngLat;
@@ -33,79 +32,95 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   };
 
   useEffect(() => {
+    if (initialLocation) {
+      setSelectedLocation(initialLocation);
+    }
+  }, [initialLocation]);
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const initializeMap = async () => {
-      if (!isOpen || !mapRef.current || !isMapContainerReady) return;
+      if (!isOpen || !mapRef.current) return;
 
       try {
-        const tt = await import('@tomtom-international/web-sdk-maps');
-        if (!map) {
-          const ttmap = tt.map({
-            key: process.env.NEXT_PUBLIC_TOMTOM_API_KEY || '',
-            container: mapRef.current,
-            center: [selectedLocation.lon, selectedLocation.lat],
-            zoom: 13,
-          });
-
-          setMap(ttmap);
-
-          ttmap.on('load', () => {
-            console.log("Map loaded successfully.");
-            updateMarker(selectedLocation.lat, selectedLocation.lon);
-            if (initialLocation) {
-              updateMarker(initialLocation.lat, initialLocation.lon);
-              reverseGeocode(initialLocation.lat, initialLocation.lon);
+        // Clean up existing map instance
+        if (mapInstanceRef.current) {
+          try {
+            if (markerRef.current) {
+              markerRef.current.remove();
+              markerRef.current = null;
             }
-          });
-
-          ttmap.on('click', handleMapClick);
-
-          console.log("Map initialized successfully.");
-        } else {
-          map.resize();
-          updateMarker(selectedLocation.lat, selectedLocation.lon);
+            mapInstanceRef.current.remove();
+            mapInstanceRef.current = null;
+          } catch (e) {
+            console.error('Error cleaning up map:', e);
+          }
         }
+
+        const tt = await import('@tomtom-international/web-sdk-maps');
+        
+        const lat = initialLocation?.lat || selectedLocation.lat;
+        const lon = initialLocation?.lon || selectedLocation.lon;
+
+        const newMap = tt.map({
+          key: process.env.NEXT_PUBLIC_TOMTOM_API_KEY || '',
+          container: mapRef.current,
+          center: [lon, lat],
+          zoom: 13,
+        });
+
+        newMap.on('load', () => {
+          const newMarker = new tt.Marker()
+            .setLngLat([lon, lat])
+            .addTo(newMap);
+          
+          markerRef.current = newMarker;
+          reverseGeocode(lat, lon);
+        });
+
+        newMap.on('click', handleMapClick);
+        mapInstanceRef.current = newMap;
+
       } catch (error) {
         console.error("Error initializing map:", error);
       }
     };
 
-    initializeMap();
+    if (isOpen) {
+      timeoutId = setTimeout(initializeMap, 100);
+    }
 
     return () => {
-      if (map) {
-        if (marker) {
-          try {
-            marker.remove();
-          } catch (error) {
-            console.warn("Error removing marker:", error);
-          }
-        }
-  
+      clearTimeout(timeoutId);
+      if (mapInstanceRef.current) {
         try {
-          map.remove();
-        } catch (error) {
-          console.warn("Error removing map:", error);
+          if (markerRef.current) {
+            markerRef.current.remove();
+            markerRef.current = null;
+          }
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+        } catch (e) {
+          console.error('Error cleaning up map:', e);
         }
-  
-        setMap(null);
-        setMarker(null);
       }
     };
-  }, [isOpen, selectedLocation, initialLocation, isMapContainerReady, map]);
-
+  }, [isOpen, initialLocation]);
 
   const updateMarker = (lat: number, lon: number) => {
-    if (map) {
-      if (marker) {
-        marker.setLngLat([lon, lat]);
-      } else {
-        const tt = require('@tomtom-international/web-sdk-maps');
-        const newMarker = new tt.Marker().setLngLat([lon, lat]).addTo(map);
-        setMarker(newMarker);
-      }
-      map.setCenter([lon, lat]);
-      map.setZoom(13);
+    if (!mapInstanceRef.current) return;
+    
+    if (markerRef.current) {
+      markerRef.current.setLngLat([lon, lat]);
+    } else {
+      const tt = require('@tomtom-international/web-sdk-maps');
+      const newMarker = new tt.Marker()
+        .setLngLat([lon, lat])
+        .addTo(mapInstanceRef.current);
+      markerRef.current = newMarker;
     }
+    mapInstanceRef.current.setCenter([lon, lat]);
   };
 
   const handleSearch = async () => {
@@ -140,10 +155,6 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     setAddress(result.address.freeformAddress);
     setSearchResults([]);
     updateMarker(lat, lon);
-    if (map) {
-      map.setCenter([lon, lat]);
-      map.setZoom(13);
-    }
   };
 
   const handleUseCurrentLocation = () => {
@@ -158,10 +169,6 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
         setSelectedLocation({ lat: latitude, lon: longitude });
         updateMarker(latitude, longitude);
         reverseGeocode(latitude, longitude);
-        if (map) {
-          map.setCenter([longitude, latitude]);
-          map.setZoom(13);
-        }
       },
       (error) => {
         console.error("Error getting current location:", error);
@@ -213,7 +220,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
               {searchResults.map((result) => (
                 <li
                   key={result.id}
-                  className="cursor-pointer p-2 flex items-center"
+                  className="cursor-pointer p-2 flex items-center hover:bg-accent"
                   onClick={() => handleSelectSearchResult(result)}
                 >
                   <MapPin className="w-4 h-4 mr-2 text-primary" />
@@ -223,13 +230,8 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
             </ul>
           )}
           <div
-            ref={(el) => {
-              if (el && !mapRef.current) {
-                mapRef.current = el;
-                setIsMapContainerReady(true);
-              }
-            }}
-            className="h-[400px] w-full"
+            ref={mapRef}
+            className="h-[400px] w-full rounded-md"
           />
           <div className="flex justify-between">
             <p className="text-sm font-medium">Selected Location: {address}</p>
@@ -260,4 +262,3 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
 };
 
 export default MapDialog;
-
