@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { SearchIcon, MapPin, Crosshair, Loader } from 'lucide-react';
+import { SearchIcon, MapPin, Crosshair, Loader, Copy, ExternalLink } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -19,7 +19,7 @@ interface MapDialogProps {
 const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation, initialLocation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState({ lat: 38.7223, lon: -9.1393 });
+  const [selectedLocation, setSelectedLocation] = useState({ lat: 38.707490, lon: -9.136398 });
   const [address, setAddress] = useState('');
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
@@ -181,63 +181,104 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-0">
-        <div className="p-4 border-b">
-          <DialogTitle>Select Location</DialogTitle>
-        </div>
-        <div className="flex flex-col space-y-4 p-4">
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-            <Input
-              placeholder="Search for a location"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="flex-grow"
-            />
-            <Button onClick={handleSearch}>Search</Button>
-            <Button variant="outline" onClick={handleUseCurrentLocation}>
-              <Crosshair className="w-4 h-4 mr-2" />
-              Current
-            </Button>
-          </div>
-          {searchResults.length > 0 && (
-            <ul className="max-h-40 overflow-y-auto bg-secondary border rounded-md shadow-sm">
-              {searchResults.map((result) => (
-                <li
-                  key={result.id}
-                  className="cursor-pointer p-2 flex items-center hover:bg-accent"
-                  onClick={() => handleSelectSearchResult(result)}
-                >
-                  <MapPin className="w-4 h-4 mr-2 text-primary" />
-                  <span className="text-sm">{result.place_name}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="relative">
-            <div
-              ref={mapRef}
-              className="h-[400px] w-full rounded-md"
-              style={{ width: '100%', height: '400px' }}
-            />
-            {isLoading && (
-              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-                <Loader className="w-8 h-8 animate-spin text-white" />
+      <DialogContent className="sm:max-w-[90vw] md:max-w-[800px] lg:max-w-[1000px] rounded-lg h-[90vh] max-h-[80vh] p-0 overflow-scroll">
+        <div className="flex flex-col h-full">
+          <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
+            <DialogTitle className="text-xl font-semibold">Select Location</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 flex-1 min-h-0">
+            {/* Search Panel */}
+            <div className="p-4 lg:border-r flex flex-col">
+              <div className="relative flex-shrink-0">
+                <Input
+                  placeholder="Search for a location"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  className="pl-10"
+                />
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               </div>
-            )}
-          </div>
-          <div className="flex justify-between border-t pt-4">
-            <p className="text-sm font-medium">Selected Location: {address}</p>
-            <div className="space-x-2">
-              <Button size="sm" variant="outline" onClick={() => copyToClipboard(address)}>
-                Copy
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => openInGoogleMaps(selectedLocation.lat, selectedLocation.lon)}>
-                Google Maps
-              </Button>
+              
+              <div className="flex gap-2 mt-4 flex-shrink-0">
+                <Button onClick={handleSearch} className="flex-1">
+                  <SearchIcon className="w-4 h-4 mr-2" />
+                  Search
+                </Button>
+                <Button variant="outline" onClick={handleUseCurrentLocation} className="flex-1">
+                  <Crosshair className="w-4 h-4 mr-2" />
+                  Current
+                </Button>
+              </div>
+
+              {searchResults.length > 0 && (
+                <div className="absolute left-4 right-4 top-32 z-10">
+                  <div className="bg-card border rounded-lg shadow-lg">
+                    <div className="p-2">
+                      <h3 className="text-sm font-medium px-2">Search Results</h3>
+                      <ul className="mt-2 max-h-[40vh] overflow-y-auto">
+                        {searchResults.map((result) => (
+                          <li
+                            key={result.id}
+                            onClick={() => handleSelectSearchResult(result)}
+                            className="p-2 hover:bg-accent cursor-pointer transition-colors rounded-sm"
+                          >
+                            <div className="flex items-start gap-2">
+                              <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
+                              <span className="text-sm">{result.place_name}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {address && (
+                <div className="mt-4 p-4 rounded-lg border bg-card flex-shrink-0">
+                  <h3 className="text-sm font-medium mb-2">Selected Location</h3>
+                  <p className="text-sm mb-3 break-words">{address}</p>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => copyToClipboard(address)}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => openInGoogleMaps(selectedLocation.lat, selectedLocation.lon)}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Maps
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Map Panel */}
+            <div className="relative p-4 lg:col-span-2 min-h-[400px] lg:min-h-0">
+              <div ref={mapRef} className="rounded-lg absolute inset-0 w-full h-full" />
+              {isLoading && (
+                <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-10">
+                  <div className="bg-background p-4 rounded-lg shadow-lg flex items-center gap-2">
+                    <Loader className="w-5 h-5 animate-spin" />
+                    <span className="text-sm font-medium">Loading map...</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          <DialogFooter>
+
+          <DialogFooter className="flex gap-2 p-4 border-t mt-auto flex-shrink-0">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button
               onClick={() => {
@@ -245,7 +286,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
                 onClose();
               }}
             >
-              Confirm
+              Confirm Location
             </Button>
           </DialogFooter>
         </div>

@@ -98,7 +98,7 @@ export default function RideDetails() {
   }
   return (
     <Layout currentUser={currentUser} logout={logout}>
-      <Button type="button" variant="ghost" onClick={() => router.push(`/dashboard?tab=${fromTab}`)}><ArrowBigLeft />Go Back to Dashboard</Button>
+      <Button type="button" variant="ghost" onClick={() => router.push(`/dashboard?tab=${fromTab}`)} className='mb-2'><ArrowBigLeft />Go Back to Dashboard</Button>
       {ride && currentUser && (
         <RideDetailsPage
           ride={ride}

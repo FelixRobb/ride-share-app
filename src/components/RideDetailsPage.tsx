@@ -11,7 +11,8 @@ import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare,
 import { useToast } from "@/hooks/use-toast";
 import { User, Ride, Contact, Note } from "@/types";
 import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes, editNote, deleteNote, markNoteAsSeen, fetchRideDetails, finishRide } from "@/utils/api";
-import '@tomtom-international/web-sdk-maps/dist/maps.css'
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 interface RideDetailsPageProps {
   ride: Ride
@@ -34,7 +35,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   const [isFinishRideDialogOpen, setIsFinishRideDialogOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement | null>(null);
-  const [map, setMap] = useState<tt.Map | null>(null);
+  const [map, setMap] = useState<maplibregl.Map | null>(null);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const searchParams = useSearchParams()
   const fromTab = searchParams.get('from') || 'available'
@@ -103,7 +104,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   }, [loadNotes, refreshRideData]);
 
   useEffect(() => {
-    const buildMap = async (tt: any) => {
+    const buildMap = async () => {
       if (mapRef.current && !map) {
         setIsLoadingMap(true);
         try {
@@ -111,32 +112,32 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
           if (!mapContainer) {
             throw new Error("Map container is null");
           }
-  
+
           // Calculate center coordinates
           const center = [
             (ride?.from_lon + ride?.to_lon) / 2 || 0,
             (ride?.from_lat + ride?.to_lat) / 2 || 0,
           ];
-  
+
           // Initialize the map
-          const ttmap = tt.map({
-            key: process.env.NEXT_PUBLIC_TOMTOM_API_KEY || '',
+          const newMap = new maplibregl.Map({
             container: mapContainer,
-            center,
+            style: `https://api.maptiler.com/maps/streets/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
+            center: center as [number, number],
             zoom: 10,
           });
-  
-          setMap(ttmap);
-  
-          ttmap.on('load', () => {
+
+          setMap(newMap);
+
+          newMap.on('load', () => {
             if (ride) {
               try {
                 // Add markers for the starting and ending points
-                new tt.Marker().setLngLat([ride.from_lon, ride.from_lat]).addTo(ttmap);
-                new tt.Marker().setLngLat([ride.to_lon, ride.to_lat]).addTo(ttmap);
-  
+                new maplibregl.Marker().setLngLat([ride.from_lon, ride.from_lat]).addTo(newMap);
+                new maplibregl.Marker().setLngLat([ride.to_lon, ride.to_lat]).addTo(newMap);
+
                 // Fit map bounds to markers
-                ttmap.fitBounds(
+                newMap.fitBounds(
                   [
                     [ride.from_lon, ride.from_lat],
                     [ride.to_lon, ride.to_lat],
@@ -151,41 +152,15 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
           });
         } catch (error) {
           console.error("Error initializing map:", error);
-          setIsLoadingMap(false); // Ensure loading state is reset
+          setIsLoadingMap(false);
         }
       }
     };
-  
-    const initTomTom = async () => {
-      try {
-        const tt = await import('@tomtom-international/web-sdk-maps');
-        await buildMap(tt);
-      } catch (importError) {
-        console.error("Error importing TomTom SDK:", importError);
-      }
-    };
-  
-    // Check preconditions before initializing the map
-    if (
-      ride &&
-      ride.from_lon != null &&
-      ride.from_lat != null &&
-      ride.to_lon != null &&
-      ride.to_lat != null &&
-      mapRef.current
-    ) {
-      initTomTom();
-    }
-  
-    // Cleanup function to remove the map instance
-    return () => {
-      if (map) {
-        map.remove();
-        setMap(null);
-      }
-    };
+
+    buildMap();
+    
   }, [ride, map, mapRef]);
-  
+
 
 
   const handleAddNote = async (e?: React.KeyboardEvent<HTMLInputElement>) => {
@@ -407,7 +382,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="h-[300px] w-full relative" ref={mapRef} style={{ width: '100%', height: '300px' }}>
+          <div className="h-[300px] w-full relative border rounded" ref={mapRef} style={{ width: '100%', height: '300px' }}>
             {isLoadingMap && <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
               <Loader className="w-8 h-8 animate-spin text-white" />
             </div>}
