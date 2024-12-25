@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Loader } from 'lucide-react'
 import { toast } from "@/hooks/use-toast"
 import { User } from "../types"
 
@@ -12,27 +13,42 @@ interface LoginPageProps {
   setCurrentUser: (user: User) => void
   handleLogin: (phoneOrEmail: string, password: string) => Promise<void>
   isLoading: boolean
+  setIsLoading: (isLoading: boolean) => void
 }
 
-export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: LoginPageProps) {
+export default function LoginPage({ setCurrentUser, handleLogin, isLoading, setIsLoading }: LoginPageProps) {
   const [error, setError] = useState<string | null>(null)
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
 
 
-  const handleResetPassword = async (
-  ) => {
+  const handleResetPassword = async () => {
     try {
-      const response = await fetch("/api/auth/reset-password",
-        {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: resetEmail }),
-        }); if (
-        response.ok) {
-        toast({ title: "Success", description: "Password reset email sent. Please check your inbox.", }); setIsResetPasswordOpen(false);
-      } else { const data = await response.json(); throw new Error(data.error || "Failed to send reset email"); }
-    } catch (
-    error
-    ) { toast({ title: "Error", description: error instanceof Error ? error.message : "An unexpected error occurred", variant: "destructive", }); }
+      setIsLoading(true);
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Password reset email sent. Please check your inbox.",
+        });
+        setIsResetPasswordOpen(false);
+      } else {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to send reset email");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,8 +79,8 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
                 const phoneOrEmail = (e.currentTarget.elements.namedItem("phoneOrEmail") as HTMLInputElement).value
                 const password = (e.currentTarget.elements.namedItem("password") as HTMLInputElement).value
                 try {
-                  await handleLogin(phoneOrEmail, password)
                   setError(null)
+                  await handleLogin(phoneOrEmail, password)
                 } catch (error) {
                   setError("Invalid phone number/email or password. Please try again.")
                 }
@@ -82,6 +98,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
               </div>
               {error && <p className="text-destructive mt-2">{error}</p>}
               <Button className="w-full mt-4" type="submit" disabled={isLoading}>
+                {isLoading ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
             </form>
@@ -96,7 +113,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
           </CardFooter>
 
           <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
-            <DialogContent className="rounded-lg">
+          <DialogContent className="rounded-lg w-11/12">
               <DialogHeader>
                 <DialogTitle>Reset Password</DialogTitle>
                 <DialogDescription>Enter your email to receive a password reset link.</DialogDescription>
@@ -110,7 +127,10 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleResetPassword}>Send Reset Link</Button>
+                <Button onClick={handleResetPassword} disabled={isLoading}>
+                  {isLoading ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
+                  Send Reset Link
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
