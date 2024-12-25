@@ -18,11 +18,13 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
   const [error, setError] = useState<string | null>(null)
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
+  const [isResetLoading, setIsResetLoading] = useState(false);
 
 
   const handleResetPassword = async (
   ) => {
     try {
+      setIsResetLoading(true);
       const response = await fetch("/api/auth/reset-password",
         {
           method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: resetEmail }),
@@ -33,6 +35,9 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
     } catch (
     error
     ) { toast({ title: "Error", description: error instanceof Error ? error.message : "An unexpected error occurred", variant: "destructive", }); }
+    finally {
+      setIsResetLoading(false);
+    }
   };
 
   return (
@@ -96,7 +101,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
           </CardFooter>
 
           <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
-            <DialogContent className="rounded-lg">
+            <DialogContent className="rounded-lg w-11/12">
               <DialogHeader>
                 <DialogTitle>Reset Password</DialogTitle>
                 <DialogDescription>Enter your email to receive a password reset link.</DialogDescription>
@@ -110,7 +115,9 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleResetPassword}>Send Reset Link</Button>
+                <Button onClick={handleResetPassword} disabled={isResetLoading}>
+                  {isResetLoading ? "Sending..." : "Send Reset Link"}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

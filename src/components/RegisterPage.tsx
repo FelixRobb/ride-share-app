@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { User } from "../types"
+import { Loader } from 'lucide-react'
 
 interface RegisterPageProps {
   setCurrentUser: (user: User) => void
@@ -87,18 +88,24 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
                   <Input id="confirmPassword" type="password" placeholder="Confirm your password" required />
                 </div>
               </div>
-              <div className="flex items-center space-x-2 mt-4">
-                <Checkbox
-                  id="terms"
-                  checked={agreedToTerms}
-                  onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                />
-                <Label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  I agree to the <Link className="underline text-orange-500" href="/privacy-policy">Privacy Policy</Link> and <Link className="underline text-orange-500" href="/terms-of-service">Terms of Service</Link>.
-                </Label>
+              <div className="mt-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="terms"
+                    checked={agreedToTerms}
+                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                  />
+                  <Label
+                    htmlFor="terms"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    I agree to the <Link className="underline text-orange-500" href="/privacy-policy">Privacy Policy</Link> and <Link className="underline text-orange-500" href="/terms-of-service">Terms of Service</Link>
+                  </Label>
+                </div>
               </div>
               {error && <p className="text-destructive mt-2">{error}</p>}
               <Button className="w-full mt-4" type="submit" disabled={isLoading || !agreedToTerms}>
+                {isLoading ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
                 {isLoading ? "Registering..." : "Register"}
               </Button>
             </form>

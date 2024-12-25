@@ -149,7 +149,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
                 <Bell className="h-4 w-4" />
                 {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
               </Button>
-              <DialogContent className="sm:max-w-[425px] rounded">
+              <DialogContent className="sm:max-w-[425px] rounded w-11/12">
                 <DialogHeader>
                   <DialogTitle>Notifications</DialogTitle>
                   <DialogDescription>Your recent notifications</DialogDescription>
@@ -240,13 +240,13 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
       </footer>
 
       <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-        <DialogContent className="rounded-lg">
+        <DialogContent className="rounded-lg w-11/12">
           <DialogHeader>
             <DialogTitle>Confirm Logout</DialogTitle>
             <DialogDescription>Are you sure you want to log out?</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button  variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
+            <Button className="mb-4" variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
               Cancel
             </Button>
             <Button className="mb-4" onClick={confirmLogout}>Logout</Button>

@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { User, RideData, AssociatedPerson } from "../types";
 import { createRide } from "../utils/api";
 import dynamic from 'next/dynamic';
+import { Loader } from 'lucide-react'
 
 const LocationSearch = dynamic(() => import('./LocationSearch'), { ssr: false });
 const MapDialog = dynamic(() => import('./MapDialog'), { ssr: false });
@@ -38,6 +39,7 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
   const [isToMapOpen, setIsToMapOpen] = useState(false);
   const { toast } = useToast();
   const [isMounted, setIsMounted] = useState(false); // Add state for mounted check
+  const [isSubmitting, setIsSubmitting] = useState(false); // Added loading state
 
   useEffect(() => {
     setIsMounted(true); // Set mounted to true when component mounts
@@ -46,9 +48,9 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isMounted) return; // Check if component is mounted before proceeding
+    if (!isMounted) return;
     if (rideData.from_lat === 0 || rideData.from_lon === 0 || rideData.to_lat === 0 || rideData.to_lon === 0) {
-      if (!isMounted) return; // Check if component is mounted before showing toast
+      if (!isMounted) return;
       toast({
         title: "Error",
         description: "Please select both 'From' and 'To' locations.",
@@ -57,8 +59,9 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
       return;
     }
     try {
+      setIsSubmitting(true);
       await createRide(rideData, currentUser.id);
-      if (!isMounted) return; // Check if component is mounted before showing toast and updating state
+      if (!isMounted) return;
       toast({
         title: "Ride Created",
         description: "Your ride request has been created successfully.",
@@ -66,12 +69,14 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
       setCurrentPage("dashboard");
       void fetchUserData(currentUser.id);
     } catch (error) {
-      if (!isMounted) return; // Check if component is mounted before showing toast
+      if (!isMounted) return;
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -170,8 +175,9 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
                 />
               </div>
             </div>
-            <Button className="w-full mt-4" type="submit">
-              Create Ride
+            <Button className="w-full mt-4" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
+              {isSubmitting ? "Creating..." : "Create Ride"}
             </Button>
           </form>
         )}
@@ -196,3 +202,4 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
     </Card>
   );
 }
+
