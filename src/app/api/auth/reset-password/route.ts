@@ -1,9 +1,9 @@
-// src/app/api/auth/reset-password/route.ts
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 import bcrypt from 'bcrypt'
 import crypto from 'crypto'
+import { sendEmail, getResetPasswordEmailContent } from '@/lib/emailService';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -18,13 +18,11 @@ const transporter = nodemailer.createTransport({
 export async function POST(request: Request) {
   const { email } = await request.json();
 
-  const emaillower = email.toLowerCase();
-
   try {
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
-      .eq('email', emaillower)
+      .eq('email', email)
       .single();
 
     if (userError || !user) {
@@ -47,16 +45,8 @@ export async function POST(request: Request) {
 
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
 
-    await transporter.sendMail({
-      from: process.env.GMAIL_USER,
-      to: email,
-      subject: 'Reset your password',
-      html: `
-        <p>You requested a password reset. Click the link below to reset your password:</p>
-        <a href="${resetUrl}">${resetUrl}</a>
-        <p>This link will expire in 1 hour.</p>
-      `,
-    });
+    const resetEmailContent = getResetPasswordEmailContent(resetUrl);
+    await sendEmail(email, 'Reset your password', resetEmailContent);
 
     return NextResponse.json({ message: 'Password reset email sent' });
   } catch (error) {

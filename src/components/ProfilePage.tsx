@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LucideUser, Mail, Phone, Car, MapPin } from 'lucide-react';
+import { LucideUser, Mail, Phone, Car, MapPin, Loader } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { User, Contact, AssociatedPerson, UserStats } from "../types";
 import {
@@ -52,6 +52,13 @@ export default function ProfilePage({
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false);
   const [isPushEnabled, setIsPushEnabled] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isAddingContact, setIsAddingContact] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isDeleteContactDialogOpen, setIsDeleteContactDialogOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<string | null>(null);
+
 
   const { toast } = useToast();
 
@@ -102,6 +109,7 @@ export default function ProfilePage({
     e.preventDefault();
     if (editedUser) {
       try {
+        setIsUpdatingProfile(true);
         await updateProfile(currentUser.id, editedUser);
         setCurrentUser(editedUser);
         localStorage.setItem("currentUser", JSON.stringify(editedUser));
@@ -117,6 +125,8 @@ export default function ProfilePage({
           description: error instanceof Error ? error.message : "An unexpected error occurred",
           variant: "destructive",
         });
+      } finally {
+        setIsUpdatingProfile(false);
       }
     }
   };
@@ -132,6 +142,7 @@ export default function ProfilePage({
       return;
     }
     try {
+      setIsChangingPassword(true);
       await changePassword(currentUser.id, currentPassword, newPassword);
       toast({
         title: "Success",
@@ -144,12 +155,15 @@ export default function ProfilePage({
         description: error instanceof Error ? error.message : "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
   const handleAddContact = async () => {
     if (newContactPhone.trim()) {
       try {
+        setIsAddingContact(true);
         await addContact(currentUser.id, newContactPhone);
         setNewContactPhone("");
         await fetchUserData(currentUser.id);
@@ -160,6 +174,8 @@ export default function ProfilePage({
           description: error instanceof Error ? error.message : "An unexpected error occurred",
           variant: "destructive",
         });
+      } finally {
+        setIsAddingContact(false);
       }
     }
   };
@@ -178,17 +194,30 @@ export default function ProfilePage({
     }
   };
 
-  const handleDeleteContact = async (contactId: string) => {
-    try {
-      await deleteContact(contactId, currentUser.id);
-      await fetchUserData(currentUser.id);
-      await fetchSuggestedContacts();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
+  const handleDeleteContact = (contactId: string) => {
+    setContactToDelete(contactId);
+    setIsDeleteContactDialogOpen(true);
+  };
+
+  const confirmDeleteContact = async () => {
+    if (contactToDelete) {
+      try {
+        await deleteContact(contactToDelete, currentUser.id);
+        await fetchUserData(currentUser.id);
+        await fetchSuggestedContacts();
+        setIsDeleteContactDialogOpen(false);
+        setContactToDelete(null);
+        toast({
+          title: "Contact Deleted",
+          description: "The contact has been successfully deleted.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "An unexpected error occurred",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -227,6 +256,7 @@ export default function ProfilePage({
 
   const confirmDeleteUser = async () => {
     try {
+      setIsDeletingAccount(true);
       await deleteUser(currentUser.id);
       setCurrentUser(null);
       localStorage.removeItem("currentUser");
@@ -241,6 +271,8 @@ export default function ProfilePage({
         description: error instanceof Error ? error.message : "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -396,7 +428,10 @@ export default function ProfilePage({
               value={newContactPhone}
               onChange={(e) => setNewContactPhone(e.target.value)}
             />
-            <Button onClick={handleAddContact}>Add Contact</Button>
+            <Button onClick={handleAddContact} disabled={isAddingContact}>
+              {isAddingContact ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
+              {isAddingContact ? "Adding..." : "Add Contact"}
+            </Button>
           </div>
 
           <div className="mt-6">
@@ -430,8 +465,8 @@ export default function ProfilePage({
                         {contact.common_rides > 0
                           ? `${contact.common_rides} common ride${contact.common_rides > 1 ? "s" : ""}`
                           : contact.is_mutual_contact
-                            ? "Mutual contact"
-                            : "No common rides"}
+                          ? "Mutual contact"
+                          : "No common rides"}
                       </p>
                       <Button variant="outline" size="sm" className="w-full" onClick={() => addContact(currentUser.id, contact.phone)}>
                         Add Contact
@@ -489,14 +524,15 @@ export default function ProfilePage({
           <CardTitle className="text-2xl text-destructive">Danger Zone</CardTitle>
         </CardHeader>
         <CardContent>
-          <Button variant="destructive" onClick={handleDeleteUser}>
-            Delete Account
+          <Button variant="destructive" onClick={handleDeleteUser} disabled={isDeletingAccount}>
+            {isDeletingAccount ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
+            {isDeletingAccount ? "Deleting..." : "Delete Account"}
           </Button>
         </CardContent>
       </Card>
 
       <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
-        <DialogContent className="rounded-lg">
+        <DialogContent className="rounded-lg w-11/12">
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
             <DialogDescription>Update your personal information</DialogDescription>
@@ -532,14 +568,17 @@ export default function ProfilePage({
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit" disabled={isUpdatingProfile}>
+                {isUpdatingProfile ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
+                {isUpdatingProfile ? "Updating..." : "Save Changes"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
-        <DialogContent className="rounded-lg">
+      <DialogContent className="rounded-lg w-11/12">
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
             <DialogDescription>Enter your current password and a new password</DialogDescription>
@@ -578,14 +617,17 @@ export default function ProfilePage({
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button type="submit">Change Password</Button>
+              <Button type="submit" disabled={isChangingPassword}>
+                {isChangingPassword ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
+                {isChangingPassword ? "Changing..." : "Change Password"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isDeleteAccountDialogOpen} onOpenChange={setIsDeleteAccountDialogOpen}>
-        <DialogContent className="rounded-lg">
+      <DialogContent className="rounded-lg w-11/12">
           <DialogHeader>
             <DialogTitle>Confirm Account Deletion</DialogTitle>
             <DialogDescription>
@@ -593,8 +635,23 @@ export default function ProfilePage({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={confirmDeleteUser}>Delete Account</Button>
+            <Button className="mb-2" variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)}>Cancel</Button>
+            <Button className="mb-2" variant="destructive" onClick={confirmDeleteUser}>Delete Account</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteContactDialogOpen} onOpenChange={setIsDeleteContactDialogOpen}>
+      <DialogContent className="rounded-lg w-11/12">
+          <DialogHeader>
+            <DialogTitle>Confirm Delete Contact</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this contact? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button className="mb-2" variant="outline" onClick={() => setIsDeleteContactDialogOpen(false)}>Cancel</Button>
+            <Button className="mb-2" variant="destructive" onClick={confirmDeleteContact}>Delete Contact</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
