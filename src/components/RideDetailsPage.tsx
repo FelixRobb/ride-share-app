@@ -481,7 +481,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
           </div>
         )}
         <Separator />
-        {(ride.status === "accepted" || ride.status === "cancelled") && (
+        {(ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") && (
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <MessageSquare className="w-5 h-5 text-primary" />
@@ -530,19 +530,21 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                 </div>
               ))}
             </ScrollArea>
-            <div className="flex items-center space-x-2">
-              <Input
-                id="new-note"
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                onKeyPress={(e) => handleAddNote(e)}
-                placeholder="Type your message..."
-                className="flex-grow"
-              />
-              <Button onClick={() => handleAddNote()} size="icon">
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
+            {(ride.status === "accepted" || ride.status === "completed") && (
+              <div className="flex items-center space-x-2">
+                <Input
+                  id="new-note"
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  onKeyPress={(e) => handleAddNote(e)}
+                  placeholder="Type your message..."
+                  className="flex-grow"
+                />
+                <Button onClick={() => handleAddNote()} size="icon">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -586,7 +588,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="mb-2"  variant="outline" onClick={() => setIsCancelRequestDialogOpen(false)}>No, Keep Request</Button>
+            <Button className="mb-2" variant="outline" onClick={() => setIsCancelRequestDialogOpen(false)}>No, Keep Request</Button>
             <Button className="mb-2" variant="destructive" onClick={confirmCancelRequest}>Yes, Cancel Request</Button>
           </DialogFooter>
         </DialogContent>
@@ -616,7 +618,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="mb-2"  variant="outline" onClick={() => setIsFinishRideDialogOpen(false)}>Cancel</Button>
+            <Button className="mb-2" variant="outline" onClick={() => setIsFinishRideDialogOpen(false)}>Cancel</Button>
             <Button className="mb-2" onClick={handleFinishRide}>Yes, Finish Ride</Button>
           </DialogFooter>
         </DialogContent>
