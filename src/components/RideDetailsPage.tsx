@@ -572,7 +572,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
         </CardFooter>
 
         <Dialog open={isCancelRequestDialogOpen} onOpenChange={setIsCancelRequestDialogOpen}>
-          <DialogContent>
+        <DialogContent className="rounded-lg">
             <DialogHeader>
               <DialogTitle>Confirm Cancel Request</DialogTitle>
               <DialogDescription>
@@ -587,7 +587,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
         </Dialog>
 
         <Dialog open={isCancelOfferDialogOpen} onOpenChange={setIsCancelOfferDialogOpen}>
-          <DialogContent>
+        <DialogContent className="rounded-lg">
             <DialogHeader>
               <DialogTitle>Confirm Cancel Offer</DialogTitle>
               <DialogDescription>
@@ -602,7 +602,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
         </Dialog>
 
         <Dialog open={isFinishRideDialogOpen} onOpenChange={setIsFinishRideDialogOpen}>
-          <DialogContent>
+        <DialogContent className="rounded-lg">
             <DialogHeader>
               <DialogTitle>Confirm Finish Ride</DialogTitle>
               <DialogDescription>

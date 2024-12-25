@@ -430,8 +430,8 @@ export default function ProfilePage({
                         {contact.common_rides > 0
                           ? `${contact.common_rides} common ride${contact.common_rides > 1 ? "s" : ""}`
                           : contact.is_mutual_contact
-                          ? "Mutual contact"
-                          : "No common rides"}
+                            ? "Mutual contact"
+                            : "No common rides"}
                       </p>
                       <Button variant="outline" size="sm" className="w-full" onClick={() => addContact(currentUser.id, contact.phone)}>
                         Add Contact
@@ -496,7 +496,7 @@ export default function ProfilePage({
       </Card>
 
       <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-lg">
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
             <DialogDescription>Update your personal information</DialogDescription>
@@ -539,7 +539,7 @@ export default function ProfilePage({
       </Dialog>
 
       <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-lg">
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
             <DialogDescription>Enter your current password and a new password</DialogDescription>
@@ -585,7 +585,7 @@ export default function ProfilePage({
       </Dialog>
 
       <Dialog open={isDeleteAccountDialogOpen} onOpenChange={setIsDeleteAccountDialogOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-lg">
           <DialogHeader>
             <DialogTitle>Confirm Account Deletion</DialogTitle>
             <DialogDescription>

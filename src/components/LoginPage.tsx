@@ -96,7 +96,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
           </CardFooter>
 
           <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
-            <DialogContent>
+            <DialogContent className="rounded-lg">
               <DialogHeader>
                 <DialogTitle>Reset Password</DialogTitle>
                 <DialogDescription>Enter your email to receive a password reset link.</DialogDescription>

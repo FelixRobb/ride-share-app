@@ -240,16 +240,16 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
       </footer>
 
       <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-lg">
           <DialogHeader>
             <DialogTitle>Confirm Logout</DialogTitle>
             <DialogDescription>Are you sure you want to log out?</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
+            <Button  variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={confirmLogout}>Logout</Button>
+            <Button className="mb-4" onClick={confirmLogout}>Logout</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
