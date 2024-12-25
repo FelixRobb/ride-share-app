@@ -16,19 +16,21 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [etag, setEtag] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState('active')
+  const [activeTab, setActiveTab] = useState('active') // default tab
 
   const router = useRouter()
   const { toast } = useToast()
 
-  const searchParams = useSearchParams()
+  // Declare the searchParams variable inside a useEffect to ensure it is only accessed on the client
+  const [searchParams, setSearchParamsState] = useState<URLSearchParams | null>(null)
 
   useEffect(() => {
-    const tab = searchParams.get('tab')
-    if (tab) {
-      setActiveTab(tab)
+    const search = new URLSearchParams(window.location.search)
+    setSearchParamsState(search)
+    if (search) {
+      setActiveTab(search.get('tab') || 'available')
     }
-  }, [searchParams])
+  }, [])
 
   useEffect(() => {
     const user = localStorage.getItem("currentUser")
