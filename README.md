@@ -21,7 +21,7 @@ This is a simplified ride-sharing app designed specifically for parents to coord
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/FelixRobb/ride-share-app >
+   git clone https://github.com/FelixRobb/ride-share-app
    cd ride-sharing-app
    ```
 
