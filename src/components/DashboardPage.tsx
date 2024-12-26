@@ -291,7 +291,7 @@ export default function DashboardPage({
 
   return (
     <div className="w-full max-w-4xl mx-auto px-1 sm:px-4 lg:px-8">
-      <Card className="shadow-lg">
+      <Card className="shadow-lg min-h-min">
         <CardHeader className="space-y-6">
           <div>
             <CardTitle className="text-2xl font-bold">Dashboard</CardTitle>
@@ -340,7 +340,7 @@ export default function DashboardPage({
             <div>
               {["active", "available", "history"].map((tab) => (
                 <TabsContent key={tab} value={tab}>
-                  <ScrollArea className="h-[calc(100vh-300px)] sm:h-[600px] pr-3">
+                  <ScrollArea className="h-[calc(100vh-300px)] pr-3">
                     {isLoading ? (
                       Array(3).fill(0).map((_, i) => (
                         <RideCardSkeleton key={i} />
