@@ -230,7 +230,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
 
       <main className="flex-grow container mx-auto px-4 py-8">{children}</main>
 
-      <footer className="bg-background border-t border-border py-4 text-muted-foreground">
+      <footer className="bg-background py-8 text-center text-sm text-zinc-500">
         <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
         <div className="mt-2 space-x-4">
           <Link href="/privacy-policy" className="hover:text-orange-500 transition-colors duration-300">Privacy Policy</Link>

@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     const notifications = users.map((user) => ({
       user_id: user.id,
       message: `${title}: ${body}`, // Combine title and body into the message
-      type: 'admin_notification',
+      type: 'Admin Notifications',
     }))
 
     const { error: notificationsError } = await supabase

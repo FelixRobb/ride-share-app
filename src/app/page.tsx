@@ -14,7 +14,6 @@ export default function Home() {
     const checkUser = () => {
       const currentUser = localStorage.getItem('currentUser')
       if (currentUser) {
-        console.log(currentUser)
         router.push('/dashboard')
       } else {
         console.log("No user found")

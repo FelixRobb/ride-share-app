@@ -26,7 +26,7 @@ export async function sendPushNotification(subscription: webpush.PushSubscriptio
   }
 }
 
-export async function sendImmediateNotification(userId: string, title: string, body: string) {
+export async function sendImmediateNotification(userId: string, title: string, body: string, addToDatabase: boolean = true) {
   try {
     const { data: subscriptionData, error: subscriptionError } = await supabase
       .from('push_subscriptions')
@@ -68,16 +68,18 @@ export async function sendImmediateNotification(userId: string, title: string, b
         }
 
         // Add notification to the database
-        const { error: notificationError } = await supabase
-          .from('notifications')
-          .insert({
-            user_id: userId,
-            message: `${title}: ${body}`,
-            type: 'push_notification',
-          });
+        if (addToDatabase) {
+          const { error: notificationError } = await supabase
+            .from('notifications')
+            .insert({
+              user_id: userId,
+              message: `${title}: ${body}`,
+              type: 'push_notification',
+            });
 
-        if (notificationError) {
-          console.error('Error inserting notification:', notificationError);
+          if (notificationError) {
+            console.error('Error inserting notification:', notificationError);
+          }
         }
       } else {
         console.log('Push notifications are not enabled for user', userId);
