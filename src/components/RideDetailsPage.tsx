@@ -50,8 +50,16 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
     }
   }, []);
 
+  const getRequesterName = (ride: Ride) => {
+    if (ride.requester_id === currentUser.id) {
+      return currentUser.name;
+    }
+    const contact = contacts.find(c => c.user_id === ride.requester_id || c.contact_id === ride.requester_id);
+    return contact ? (contact.user_id === ride.requester_id ? contact.user.name : contact.contact.name) : "Unknown User";
+  };
+
   const loadNotes = useCallback(async () => {
-    if (ride.status === "accepted" || ride.status === "cancelled") {
+    if (ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") {
       try {
         const fetchedNotes = await fetchNotes(ride.id);
         setNotes(fetchedNotes || []);
@@ -432,7 +440,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
               <LucideUser className="w-5 h-5 text-primary" />
               <Label className="font-semibold">Requester</Label>
             </div>
-            <p className="ml-7">{ride.rider_name}</p>
+            <p className="ml-7">{getRequesterName(ride)}</p> {/* Use getRequesterName here */}
           </div>
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
@@ -508,7 +516,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                     ) : (
                       <>
                         <p className="text-sm mb-1 break-words">{note.note}</p>
-                        <div className="flex justify-between items-center text-xs text-muted-foreground mt-2">
+                        <div className="flex justify-between items-center text-xs mt-2">
                           <span>{getUserName(note.user_id)}</span>
                           <span>&nbsp;-&nbsp;</span>
                           <span>{new Date(note.created_at).toLocaleString()}</span>

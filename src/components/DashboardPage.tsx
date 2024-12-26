@@ -112,6 +112,12 @@ export default function DashboardPage({
     return contact ? (contact.user_id === ride.accepter_id ? contact.user.name : contact.contact.name) : "Unknown";
   };
 
+  const getRequesterName = (ride: Ride) => {
+    if (ride.requester_id === currentUser.id) return "Me"; // Or currentUser.name
+    const contact = contacts.find((c) => c.user_id === ride.requester_id || c.contact_id === ride.requester_id);
+    return contact ? (contact.user_id === ride.requester_id ? contact.user.name : contact.contact.name) : "Unknown";
+  };
+
   useEffect(() => {
     const fetchRides = async () => {
       setIsLoading(true);
@@ -187,7 +193,7 @@ export default function DashboardPage({
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
                     <User2 className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{ride.rider_name}</span>
+                    <span className="text-sm text-muted-foreground">{getRequesterName(ride)}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <CalendarIcon className="w-4 h-4 text-muted-foreground" />

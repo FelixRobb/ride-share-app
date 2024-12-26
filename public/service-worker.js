@@ -16,7 +16,7 @@ self.addEventListener('push', function(event) {
     event.waitUntil(
       self.registration.showNotification(data.title, {
         body: data.body,
-        icon: '/icon.png' // Make sure to add an icon file
+        icon: '/icon.png' // Ensure you have an icon.png in your public folder
       })
     );
   }
@@ -26,7 +26,7 @@ self.addEventListener('notificationclick', function(event) {
   console.log('Service Worker: Notification click event');
   event.notification.close();
   event.waitUntil(
-    clients.openWindow(process.env.NEXT_PUBLIC_APP_URL)
+    clients.openWindow('/dashboard')
   );
 });
 
