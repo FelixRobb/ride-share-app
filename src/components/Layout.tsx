@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, LogOut, Home, Car, Users, Menu, Moon, Sun } from 'lucide-react';
+import { Bell, LogOut, Home, Car, Users, Menu, Moon, Sun, Monitor } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { User, Notification } from "../types";
 import { markNotificationsAsRead, fetchNotifications } from "../utils/api";
@@ -26,7 +26,8 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, systemTheme } = useTheme();
+  const [currentMode, setCurrentMode] = useState("system");
   const { toast } = useToast();
 
   const fetchUserNotifications = useCallback(async () => {
@@ -80,9 +81,23 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
     setIsNotificationDialogOpen(false);
   }, [currentUser, notifications, toast]);
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
+// Sync the theme state with the current mode
+useEffect(() => {
+  if (currentMode === "system") {
+    setTheme(systemTheme || "dark"); // Default to "dark" if systemTheme is undefined
+  } else {
+    setTheme(currentMode);
+  }
+}, [currentMode, setTheme, systemTheme]);
+
+// Toggle between "system", "dark", and "light"
+const toggleTheme = () => {
+  setCurrentMode((prevMode) => {
+    if (prevMode === "system") return "dark";
+    if (prevMode === "dark") return "light";
+    return "system";
+  });
+};
 
   useEffect(() => {
     const handleOnline = () => {
@@ -174,9 +189,15 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
               </DialogContent>
             </Dialog>
 
-            <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full hover:bg-accent">
-              {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            </Button>
+            <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-accent">
+            {currentMode === "system" ? (
+              <Monitor className="h-4 w-4" />
+            ) : currentMode === "dark" ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+          </button>
 
             <Button variant="ghost" onClick={handleLogout} className="rounded-full px-4 py-2 hover:bg-destructive hover:text-destructive-foreground">
               <LogOut className="mr-2 h-4 w-4" /> Logout

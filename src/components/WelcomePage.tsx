@@ -58,7 +58,7 @@ export default function WelcomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden dark">
       <motion.header
         className={`fixed top-4 left-0 right-0 z-50 transition-all duration-300 border rounded-full w-11/12 m-auto shadow-inner ${scrolled ? 'bg-background/80 backdrop-blur-sm' : 'bg-transparent'}`}
         initial={{ y: -100 }}
@@ -80,7 +80,7 @@ export default function WelcomePage() {
 
       <section className="h-screen flex flex-col justify-center items-center text-center px-4">
       <motion.h1 
-          className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-foreground"
+          className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary-foreground"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}

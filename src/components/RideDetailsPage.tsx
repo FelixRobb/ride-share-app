@@ -28,7 +28,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [editedNoteContent, setEditedNoteContent] = useState("")
   const [loading, setLoading] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Added isLoading state
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter()
   const { toast } = useToast()
   const [isCancelRequestDialogOpen, setIsCancelRequestDialogOpen] = useState(false);
@@ -396,7 +396,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="h-[300px] w-full relative border rounded" ref={mapRef} style={{ width: '100%', height: '300px' }}>
+        <div className="h-[300px] w-full relative border rounded-lg" ref={mapRef} style={{ width: '100%', height: '300px' }}>
           {isLoadingMap && <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
             <Loader className="w-8 h-8 animate-spin text-white" />
           </div>}
