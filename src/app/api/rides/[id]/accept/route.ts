@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     await supabase.from('notifications').insert({
       user_id: ride.requester_id,
       message: 'Your ride request has been accepted',
-      type: 'rideAccepted',
+      type: 'Ride Accepted',
       related_id: rideId
     });
 

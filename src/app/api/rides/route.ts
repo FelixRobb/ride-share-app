@@ -108,7 +108,7 @@ export async function POST(request: Request) {
       await supabase.from('notifications').insert({
         user_id: contact.contact_id,
         message: 'A new ride is available from your contact',
-        type: 'newRide',
+        type: 'New Ride',
         related_id: newRide.id
       });
     }

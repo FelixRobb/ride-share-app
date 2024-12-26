@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     await supabase.from('notifications').insert({
       user_id: otherUserId,
       message: 'Your ride has been marked as completed',
-      type: 'rideCompleted',
+      type: 'Ride completed',
       related_id: rideId
     });
 

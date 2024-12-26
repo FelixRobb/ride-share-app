@@ -61,7 +61,7 @@ export async function POST(request: Request) {
         await supabase.from('notifications').insert({
           user_id: otherUserId,
           message: `New message for ride ${rideId}`,
-          type: 'newNote',
+          type: 'New Message',
           related_id: rideId
         });
       }

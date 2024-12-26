@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       await supabase.from('notifications').insert({
         user_id: ride.accepter_id,
         message: 'A ride you accepted has been cancelled by the requester',
-        type: 'rideCancelled',
+        type: 'Ride Cancelled',
         related_id: rideId
       });
     }
