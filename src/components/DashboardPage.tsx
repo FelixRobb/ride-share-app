@@ -13,7 +13,63 @@ import { Calendar } from "@/components/ui/calendar";
 import { Search, Clock, MapPin, User2, CalendarIcon, ArrowRight, CheckCircle, Filter } from 'lucide-react';
 import { User, Ride, Contact } from "../types";
 import Link from 'next/link';
-import { format } from "date-fns";
+
+interface FilterPopoverProps {
+  statusFilter: string | null;
+  setStatusFilter: (status: string | null) => void;
+  dateFilter: Date | null;
+  setDateFilter: (date: Date | null) => void;
+}
+
+const FilterPopover: React.FC<FilterPopoverProps> = ({ statusFilter, setStatusFilter, dateFilter, setDateFilter }) => {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="h-10 w-full">
+          <Filter className="mr-2 h-4 w-4" />
+          Filters
+          {(statusFilter || dateFilter) && (
+            <span className="ml-2 h-2 w-2 rounded-full bg-primary" />
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80">
+        <div className="grid gap-4">
+          <div className="space-y-2">
+            <h4 className="font-medium leading-none">Status</h4>
+            <Select value={statusFilter || "all"} onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="accepted">Accepted</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-medium leading-none">Date</h4>
+            <Calendar
+              mode="single"
+              selected={dateFilter !== null ? dateFilter : undefined}
+              onSelect={(day) => setDateFilter(day ?? null)}
+              initialFocus
+            />
+          </div>
+          <Button className="w-full" onClick={() => { }}>Apply Filters</Button>
+          {(statusFilter || dateFilter) && (
+                <Button variant="ghost" onClick={() => { setStatusFilter(null); setDateFilter(null); }} className="h-10">
+                  Clear Filters
+                </Button>
+              )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 interface DashboardPageProps {
   currentUser: User;
@@ -219,22 +275,16 @@ export default function DashboardPage({
     }
 
     return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold">Important Rides</CardTitle>
-          <CardDescription>Your upcoming rides that need attention</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {renderRides(upcomingRides)}
-        </CardContent>
-      </Card>
+      <div className="mb-6 bg-primary/5 rounded-lg p-4 border border-primary/8">
+        <h2 className="text-xl font-bold mb-2">Important Rides</h2>
+        <p className="text-sm text-muted-foreground mb-4">Your upcoming rides that need attention</p>
+        {renderRides(upcomingRides)}
+      </div>
     );
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <ImportantRides />
-
+    <div className="w-full max-w-4xl mx-auto px-1 sm:px-4 lg:px-8">
       <Card className="shadow-lg">
         <CardHeader className="space-y-6">
           <div>
@@ -250,67 +300,41 @@ export default function DashboardPage({
                 placeholder="Search rides..."
                 value={localSearchTerm}
                 onChange={(e) => setLocalSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full"
+                className="pl-10 pr-4 py-2 w-full h-10"
               />
             </div>
             <div className="flex gap-2">
-              <Select onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="accepted">Accepted</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-[120px]">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateFilter ? format(dateFilter, "PPP") : "Date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dateFilter !== null ? dateFilter : undefined}
-                    onSelect={(day) => setDateFilter(day ?? null)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              {(statusFilter || dateFilter) && (
-                <Button variant="ghost" onClick={() => { setStatusFilter(null); setDateFilter(null); }}>
-                  Clear Filters
-                </Button>
-              )}
+              <FilterPopover
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                dateFilter={dateFilter}
+                setDateFilter={setDateFilter}
+              />
             </div>
           </div>
         </CardHeader>
         <CardContent>
+          <ImportantRides />
           <Tabs defaultValue={activeTab} onValueChange={(value) => {
             setActiveTab(value);
             router.push(`/dashboard?tab=${value}`, { scroll: false });
           }} className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="active" className="text-sm">
-                Active Rides ({activeRides.length})
+              <TabsTrigger value="active" className="text-xs">
+                Active
               </TabsTrigger>
               <TabsTrigger value="available" className="text-sm">
-                Available ({availableRides.length})
+                Available
               </TabsTrigger>
               <TabsTrigger value="history" className="text-sm">
-                History ({historyRides.length})
+                History
               </TabsTrigger>
             </TabsList>
 
             <div>
               {["active", "available", "history"].map((tab) => (
                 <TabsContent key={tab} value={tab}>
-                  <ScrollArea className="h-[calc(100vh-300px)] sm:h-[600px] pr-4">
+                  <ScrollArea className="h-[calc(100vh-300px)] sm:h-[600px]">
                     {isLoading ? (
                       Array(3).fill(0).map((_, i) => (
                         <RideCardSkeleton key={i} />

@@ -23,6 +23,7 @@
     "@radix-ui/react-switch": "^1.1.2",
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-toast": "^1.2.3",
+    "@stitches/react": "^1.2.8",
     "@supabase/supabase-js": "^2.46.1",
     "@tomtom-international/web-sdk-maps": "^6.25.0",
     "@types/nodemailer": "^6.4.16",
