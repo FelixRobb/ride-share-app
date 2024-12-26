@@ -12,9 +12,8 @@ This is a simplified ride-sharing app designed specifically for parents to coord
 
 ## Technology Stack
 
-- **Frontend**: React
-- **Backend**: Express.js
-- **Database**: SQLite
+- **Framework**: Next.js
+- **Database**: Supabase Postgressql
 - **Styling**: Shadcn/UI
 - **Compatibility**: Uses an older version of Next.js for improved compatibility with existing codebase
 
@@ -67,4 +66,4 @@ This project is licensed under the MIT License. See the `LICENSE` file for more 
 
 ## Contact
 
-For any questions or support, please reach out to [Your Name or Support Email].
+For any questions or support, please reach out to Félix Robb (felix.nunes.robb@gmail.com).
