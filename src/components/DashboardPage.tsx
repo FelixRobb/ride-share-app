@@ -231,7 +231,7 @@ export default function DashboardPage({
                 )}
               </div>
 
-              {ride.status === "accepted" && ride.accepter_id && (
+              {(ride.status === "accepted" || ride.status === "completed" ) && ride.accepter_id && (
                 <div className="flex items-center space-x-2 pt-2 border-t">
                   <User2 className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">

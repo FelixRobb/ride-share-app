@@ -8,6 +8,10 @@ export async function POST(request: Request) {
   const url = new URL(request.url);
   const rideId = url.pathname.split('/').at(-2);
 
+  if (!userId || !rideId) {
+    return NextResponse.json({ error: 'Missing required data' }, { status: 400 });
+  }
+
   try {
     const { data: ride, error: rideError } = await supabase
       .from('rides')
@@ -29,21 +33,36 @@ export async function POST(request: Request) {
 
     if (updateError) throw updateError;
 
-    await sendImmediateNotification(
-      ride.requester_id,
-      'Ride Offer Cancelled',
-      'The accepted offer for your ride has been cancelled'
-    );
-    await supabase.from('notifications').insert({
-      user_id: ride.requester_id,
-      message: 'The accepted offer for your ride has been cancelled',
-      type: 'Ride cancelled',
-      related_id: rideId
-    });
+    // Soft delete associated notes (consistent with other routes)
+    const { error: deleteNotesError } = await supabase
+      .from('ride_notes')
+      .update({ is_deleted: true })
+      .eq('ride_id', rideId);
 
+    if (deleteNotesError) throw deleteNotesError;
+
+
+    if (ride.requester_id) {
+      await sendImmediateNotification(
+        ride.requester_id,
+        'Ride Offer Cancelled',
+        'The accepted offer for your ride has been cancelled'
+      );
+
+      await supabase.from('notifications').insert({
+        user_id: ride.requester_id,
+        message: 'The accepted offer for your ride has been cancelled',
+        type: 'Ride Offer Cancelled',
+        related_id: rideId,
+      });
+    }
 
     return NextResponse.json({ ride: updatedRide });
   } catch (error) {
+    if (error instanceof Error) {
+      console.error('Cancel ride offer error:', error.message);
+      return NextResponse.json({ error: error.message }, { status: 400 }); // Correct status code for client errors
+    }
     console.error('Cancel ride offer error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

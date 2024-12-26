@@ -58,7 +58,7 @@ export default function ProfilePage({
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isDeleteContactDialogOpen, setIsDeleteContactDialogOpen] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<string | null>(null);
-
+  const [isPushLoading, setIsPushLoading] = useState(true);
 
   const { toast } = useToast();
 
@@ -91,6 +91,7 @@ export default function ProfilePage({
 
   useEffect(() => {
     const fetchPushPreference = async () => {
+      setIsPushLoading(true); // Set loading to true before fetching
       try {
         const response = await fetch(`/api/users/${currentUser.id}/push-preference`);
         if (response.ok) {
@@ -99,10 +100,15 @@ export default function ProfilePage({
         }
       } catch (error) {
         console.error('Error fetching push notification preference:', error);
+      } finally {
+        setIsPushLoading(false); // Set loading to false after fetching, regardless of success/failure
       }
     };
-    fetchPushPreference();
-  }, [currentUser.id]);
+
+    if (currentUser) {
+      void fetchPushPreference();
+    }
+  }, [currentUser]);
 
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -373,10 +379,14 @@ export default function ProfilePage({
               <p className="font-medium">Push Notifications</p>
               <p className="text-sm text-muted-foreground">Receive notifications even when the app is closed</p>
             </div>
-            <Switch
-              checked={isPushEnabled}
-              onCheckedChange={handlePushToggle}
-            />
+            {isPushLoading ? ( // Conditionally render loader or switch
+              <Loader className="animate-spin h-5 w-5" />
+            ) : (
+              <Switch
+                checked={isPushEnabled}
+                onCheckedChange={handlePushToggle}
+              />
+            )}
           </div>
         </CardContent>
       </Card>
@@ -658,4 +668,3 @@ export default function ProfilePage({
     </div>
   );
 }
-

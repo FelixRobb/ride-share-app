@@ -121,8 +121,8 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
   if (!currentUser) return children;
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <PushNotificationHandler userId={currentUser.id} />
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+      <PushNotificationHandler userId={currentUser!.id} />
       <header className="bg-background shadow-md border-b border-border">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex-shrink-0 mr-4">
@@ -131,7 +131,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
             </Link>
           </div>
 
-          <nav className={`hidden md:flex items-center space-x-2 border rounded-full p-1`}>
+          <nav className={`hidden md:flex items-center space-x-2 rounded-full p-1 border`}>
             {[
               { icon: Home, label: "Dashboard", href: "/dashboard" },
               { icon: Car, label: "Create Ride", href: "/create-ride" },
@@ -145,11 +145,11 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
             ))}
 
             <Dialog open={isNotificationDialogOpen} onOpenChange={handleCloseNotificationDialog}>
-              <Button variant="ghost" className="rounded-full px-4 py-2 hover:bg-primary/10 relative" onClick={handleOpenNotificationDialog}>
+              <Button variant="ghost" size="icon" className="rounded-full px-4 py-2 relative hover:bg-accent" onClick={handleOpenNotificationDialog}>
                 <Bell className="h-4 w-4" />
                 {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
               </Button>
-              <DialogContent className="sm:max-w-[425px] rounded w-11/12">
+              <DialogContent className="sm:max-w-[425px] rounded w-11/12 bg-background text-foreground">
                 <DialogHeader>
                   <DialogTitle>Notifications</DialogTitle>
                   <DialogDescription>Your recent notifications</DialogDescription>
@@ -174,11 +174,11 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
               </DialogContent>
             </Dialog>
 
-            <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full hover:bg-primary/10">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full hover:bg-accent">
               {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </Button>
 
-            <Button variant="ghost" onClick={handleLogout} className="rounded-full px-4 py-2 hover:bg-destructive/10 hover:text-destructive">
+            <Button variant="ghost" onClick={handleLogout} className="rounded-full px-4 py-2 hover:bg-destructive hover:text-destructive-foreground">
               <LogOut className="mr-2 h-4 w-4" /> Logout
             </Button>
           </nav>
@@ -189,7 +189,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
                 <Menu className="h-5 w-5 text-primary" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 bg-background text-foreground">
               <DropdownMenuLabel className="flex items-center">
                 <Users className="mr-2 h-4 w-4" /> {currentUser.name}
               </DropdownMenuLabel>
@@ -220,7 +220,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
                 {theme === "light" ? "Dark Mode" : "Light Mode"}
               </DropdownMenuItem>
 
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/10">
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive hover:text-destructive-foreground focus:bg-destructive/10">
                 <LogOut className="mr-2 h-4 w-4" /> Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -230,7 +230,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
 
       <main className="flex-grow container mx-auto px-4 py-8">{children}</main>
 
-      <footer className="bg-background py-8 text-center text-sm text-zinc-500">
+      <footer className="bg-background border-t border-border py-4 text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
         <div className="mt-2 space-x-4">
           <Link href="/privacy-policy" className="hover:text-orange-500 transition-colors duration-300">Privacy Policy</Link>
