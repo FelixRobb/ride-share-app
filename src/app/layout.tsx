@@ -8,6 +8,35 @@ import { ThemeProvider } from "next-themes"
 import { checkUser } from "@/utils/api"
 import { useToast } from "@/hooks/use-toast"
 
+
+export const metadata = {
+  title: 'Ride Sharing App for Parents',
+  description: 'A simple and intuitive ride-sharing app for parents to coordinate and share rides for their children.',
+  openGraph: {
+    title: 'Ride Sharing App for Parents',
+    description: 'Simplified ride-sharing for parents to manage lifts, notifications, and connections.',
+    url: 'https://rideshareappweb.netlify.app',
+    siteName: 'Ride Sharing App for Parents',
+    images: [
+      {
+        url: 'https://rideshareappweb.netlify.app/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Illustration of ride-sharing for parents.',
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Ride Sharing App for Parents',
+    description: 'Coordinate and share rides for children with ease using our app.',
+    images: ['https://rideshareappweb.netlify.app/twitter-image.jpg'],
+  },
+  metadataBase: new URL('https://rideshareappweb.netlify.app'),
+};
+
+
 export default function RootLayout({
   children,
 }: {
