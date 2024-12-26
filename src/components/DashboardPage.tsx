@@ -340,7 +340,7 @@ export default function DashboardPage({
             <div>
               {["active", "available", "history"].map((tab) => (
                 <TabsContent key={tab} value={tab}>
-                  <ScrollArea className="h-[calc(100vh-300px)] sm:h-[600px]">
+                  <ScrollArea className="h-[calc(100vh-300px)] sm:h-[600px] pr-3">
                     {isLoading ? (
                       Array(3).fill(0).map((_, i) => (
                         <RideCardSkeleton key={i} />
