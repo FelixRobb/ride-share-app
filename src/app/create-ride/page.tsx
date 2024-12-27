@@ -14,6 +14,7 @@ export default function CreateRide() {
   const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [etag, setEtag] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -29,6 +30,22 @@ export default function CreateRide() {
         router.push('/');
       }
     }
+
+    const handleOnline = () => {
+      setIsOnline(true);
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
   }, [router]);
 
   const fetchUserDataCallback = async (userId: string) => {
@@ -66,13 +83,15 @@ export default function CreateRide() {
   }
 
   return (
-    <Layout currentUser={currentUser} logout={logout}>
+    <Layout currentUser={currentUser} logout={logout} isOnline={isOnline}>
       <CreateRidePage
         currentUser={currentUser!}
         fetchUserData={() => fetchUserDataCallback(currentUser!.id)}
         setCurrentPage={(page) => router.push(`/${page}`)}
         associatedPeople={associatedPeople}
+        isOnline={isOnline} // Pass isOnline prop
       />
     </Layout>
   );
 }
+

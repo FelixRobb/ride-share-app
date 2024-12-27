@@ -20,6 +20,7 @@ export default function RideDetails() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [etag, setEtag] = useState<string | null>(null)
+  const [isOnline, setIsOnline] = useState(true);
 
   const router = useRouter()
   const { id } = useParams()
@@ -46,6 +47,29 @@ export default function RideDetails() {
       void fetchRideDetailsCallback(id as string)
     }
   }, [currentUser, id])
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Refetch data when online
+      void fetchUserDataCallback(currentUser!.id);
+      if (currentUser && id) {
+        void fetchRideDetailsCallback(id as string);
+      }
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [currentUser, id, router]);
 
   const fetchUserDataCallback = async (userId: string) => {
     try {
@@ -97,7 +121,7 @@ export default function RideDetails() {
     )
   }
   return (
-    <Layout currentUser={currentUser} logout={logout}>
+    <Layout currentUser={currentUser} logout={logout} isOnline={isOnline}>
       <Button type="button" variant="ghost" onClick={() => router.push(`/dashboard?tab=${fromTab}`)} className='mb-2'><ArrowBigLeft />Go Back to Dashboard</Button>
       {ride && currentUser && (
         <RideDetailsPage
@@ -105,6 +129,7 @@ export default function RideDetails() {
           currentUser={currentUser}
           contacts={contacts}
           fetchUserData={() => fetchUserDataCallback(currentUser.id)}
+          isOnline={isOnline} // Pass isOnline to RideDetailsPage
         />
       )}
     </Layout>

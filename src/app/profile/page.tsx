@@ -16,6 +16,7 @@ export default function Profile() {
   const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [etag, setEtag] = useState<string | null>(null)
+  const [isOnline, setIsOnline] = useState(true);
 
   const router = useRouter()
   const { toast } = useToast()
@@ -61,6 +62,27 @@ export default function Profile() {
     return () => clearInterval(intervalId)
   }, [currentUser, fetchUserDataCallback])
 
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Refetch data when online
+      void fetchUserDataCallback(currentUser!.id);
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [currentUser, fetchUserDataCallback]);
+
+
   const logout = () => {
     localStorage.removeItem("currentUser")
     router.push('/')
@@ -75,7 +97,7 @@ export default function Profile() {
   }
 
   return (
-    <Layout currentUser={currentUser} logout={logout}>
+    <Layout currentUser={currentUser} logout={logout} isOnline={isOnline}>
       <ProfilePage
         currentUser={currentUser!}
         setCurrentUser={setCurrentUser}
@@ -83,7 +105,9 @@ export default function Profile() {
         associatedPeople={associatedPeople}
         userStats={userStats}
         fetchUserData={fetchUserDataCallback}
+        isOnline={isOnline} // Pass isOnline prop
       />
     </Layout>
   )
 }
+

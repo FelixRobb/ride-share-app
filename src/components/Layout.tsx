@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, LogOut, Home, Car, Users, Menu, Moon, Sun, Monitor } from 'lucide-react';
+import { Bell, LogOut, Home, Car, Users, Menu, Moon, Sun, Monitor, AlertCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { User, Notification } from "../types";
 import { markNotificationsAsRead, fetchNotifications } from "../utils/api";
@@ -17,11 +17,12 @@ interface LayoutProps {
   children: React.ReactNode;
   currentUser: User | null;
   logout: () => void;
+  isOnline: boolean; // Add isOnline prop
 }
 
 
 
-export default function Layout({ children, currentUser, logout }: LayoutProps) {
+export default function Layout({ children, currentUser, logout, isOnline }: LayoutProps) {
   const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -29,6 +30,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
   const { theme, setTheme, systemTheme } = useTheme();
   const [currentMode, setCurrentMode] = useState("system");
   const { toast } = useToast();
+  const [onlineStatus, setOnlineStatus] = useState(true); // Move onlineStatus state to Layout
 
   const fetchUserNotifications = useCallback(async () => {
     if (currentUser) {
@@ -100,17 +102,23 @@ const toggleTheme = () => {
 };
 
   useEffect(() => {
+    setOnlineStatus(isOnline); // Update onlineStatus based on prop
+  }, [isOnline]);
+
+  useEffect(() => {
     const handleOnline = () => {
+      setOnlineStatus(true); // Update online status
       toast({
-        title: "You're back online",
+        title: "Back online",
         description: "Your connection has been restored.",
       });
     };
 
     const handleOffline = () => {
+      setOnlineStatus(false); // Update online status
       toast({
-        title: "You're offline",
-        description: "Please check your internet connection.",
+        title: "Offline",
+        description: "Functionalities may be limited.",
         variant: "destructive",
       });
     };
@@ -249,7 +257,9 @@ const toggleTheme = () => {
         </div>
       </header>
 
-      <main className="flex-grow container mx-auto px-4 py-8">{children}</main>
+      <main className="flex-grow container mx-auto px-4 py-8">
+        {children}
+      </main>
 
       <footer className="bg-background py-8 text-center text-sm text-zinc-500">
         <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>

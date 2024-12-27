@@ -17,6 +17,8 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("")
   const [etag, setEtag] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('active') // default tab
+  const [isOnline, setIsOnline] = useState(true); // Add isOnline state
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
   const router = useRouter()
   const { toast } = useToast()
@@ -44,13 +46,30 @@ export default function Dashboard() {
   }, [router])
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (currentUser && etag) {
-        void fetchUserDataCallback(currentUser.id)
-      }
-    }, 10000)
-    return () => clearInterval(intervalId)
-  }, [currentUser, etag])
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Re-fetch data when back online
+      void fetchUserDataCallback(currentUser!.id);
+      setRefreshInterval(setInterval(() => {
+        void fetchUserDataCallback(currentUser!.id);
+      }, 10000));
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      clearInterval(refreshInterval!); // Stop fetching when offline
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      clearInterval(refreshInterval!);
+    };
+  }, [currentUser, etag, toast, refreshInterval]);
+
 
   const fetchUserDataCallback = async (userId: string) => {
     try {
@@ -88,7 +107,7 @@ export default function Dashboard() {
   }
 
   return (
-    <Layout currentUser={currentUser} logout={logout}>
+    <Layout currentUser={currentUser} logout={logout} isOnline={isOnline}>
       <DashboardPage
         currentUser={currentUser!}
         rides={rides}

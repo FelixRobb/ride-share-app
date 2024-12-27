@@ -19,9 +19,9 @@ interface CreateRidePageProps {
   fetchUserData: (userId: string) => Promise<void>;
   setCurrentPage: (page: string) => void;
   associatedPeople: AssociatedPerson[];
+  isOnline: boolean;
 }
-
-export default function CreateRidePage({ currentUser, fetchUserData, setCurrentPage, associatedPeople }: CreateRidePageProps) {
+export default function CreateRidePage({ currentUser, fetchUserData, setCurrentPage, associatedPeople, isOnline }: CreateRidePageProps) {
   const [rideData, setRideData] = useState<RideData>({
     from_location: "",
     to_location: "",
@@ -98,6 +98,11 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
         <CardDescription>Fill in the details for your ride request.</CardDescription>
       </CardHeader>
       <CardContent>
+      {!isOnline && ( // Conditionally render offline banner
+        <div className="bg-destructive/10 text-destructive px-4 py-2 rounded-md mb-4">
+          You are currently offline. Ride creation is disabled.
+        </div>
+      )}
         {isClient && (
           <form onSubmit={handleSubmit}>
             <div className="grid w-full items-center gap-4">
@@ -175,7 +180,7 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
                 />
               </div>
             </div>
-            <Button className="w-full mt-4" type="submit" disabled={isSubmitting}>
+            <Button className="w-full mt-4" type="submit" disabled={isSubmitting || !isOnline}>
               {isSubmitting ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
               {isSubmitting ? "Creating..." : "Create Ride"}
             </Button>

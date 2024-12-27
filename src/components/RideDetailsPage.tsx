@@ -19,9 +19,10 @@ interface RideDetailsPageProps {
   currentUser: User
   contacts: Contact[]
   fetchUserData: () => Promise<void>
+  isOnline: boolean; // Add isOnline prop
 }
 
-export default function RideDetailsPage({ ride: initialRide, currentUser, contacts, fetchUserData }: RideDetailsPageProps) {
+export default function RideDetailsPage({ ride: initialRide, currentUser, contacts, fetchUserData, isOnline }: RideDetailsPageProps) {
   const [ride, setRide] = useState<Ride>(initialRide)
   const [notes, setNotes] = useState<Note[]>([])
   const [newNote, setNewNote] = useState("")
@@ -39,6 +40,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   const [map, setMap] = useState<maplibregl.Map | null>(null);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const searchParams = useSearchParams()
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
   const fromTab = searchParams.get('from') || 'available'
 
   const scrollToBottom = useCallback(() => {
@@ -87,7 +89,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
         });
       }
     }
-  }, [ride.id, ride.status, currentUser.id, toast, notes.length]);
+  }, [ride.id, ride.status, currentUser.id, toast, notes.length, isOnline]);
 
   const refreshRideData = useCallback(async () => {
     try {
@@ -98,19 +100,33 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
     } finally {
       setLoading(false);
     }
-  }, [currentUser.id, ride.id]);
+  }, [currentUser.id, ride.id, isOnline]);
 
   useEffect(() => {
     loadNotes();
     scrollToBottom();
-    const notesInterval = setInterval(loadNotes, 10000);
-    const rideInterval = setInterval(refreshRideData, 20000);
+
+    // Use a ref to store the interval ID
+    const notesIntervalId = setInterval(() => {
+      if (isOnline) { // Only fetch if online
+        void loadNotes();
+      }
+    }, 5000); // Fetch notes every 5 seconds if online
+
+    const rideIntervalId = setInterval(() => {
+      if (isOnline) { // Only fetch if online
+        void refreshRideData();
+      }
+    }, 10000); // Fetch ride details every 10 seconds if online
+
+    // Store the interval ID in the ref
+    setRefreshInterval(notesIntervalId);
 
     return () => {
-      clearInterval(notesInterval);
-      clearInterval(rideInterval);
+      clearInterval(notesIntervalId);
+      clearInterval(rideIntervalId);
     };
-  }, [loadNotes, refreshRideData]);
+  }, [loadNotes, refreshRideData, isOnline]);
 
   useEffect(() => {
     const buildMap = async () => {
@@ -122,13 +138,11 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
             throw new Error("Map container is null");
           }
 
-          // Calculate center coordinates
           const center = [
             (ride?.from_lon + ride?.to_lon) / 2 || 0,
             (ride?.from_lat + ride?.to_lat) / 2 || 0,
           ];
 
-          // Initialize the map
           const newMap = new maplibregl.Map({
             container: mapContainer,
             style: `https://api.maptiler.com/maps/streets/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
@@ -141,11 +155,9 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
           newMap.on('load', () => {
             if (ride) {
               try {
-                // Add markers for the starting and ending points
                 new maplibregl.Marker().setLngLat([ride.from_lon, ride.from_lat]).addTo(newMap);
                 new maplibregl.Marker().setLngLat([ride.to_lon, ride.to_lat]).addTo(newMap);
 
-                // Fit map bounds to markers
                 newMap.fitBounds(
                   [
                     [ride.from_lon, ride.from_lat],
@@ -246,7 +258,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   };
 
   const handleAcceptRide = async () => {
-    setIsLoading(true); // Update: Set isLoading to true
+    setIsLoading(true);
     try {
       await acceptRide(ride.id, currentUser.id);
       await fetchUserData();
@@ -299,7 +311,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
 
   const confirmCancelOffer = async () => {
     try {
-      setIsLoading(true); // Update: Set isLoading to true
+      setIsLoading(true);
       setIsCancelOfferDialogOpen(false);
       await cancelOffer(ride.id, currentUser.id);
       await fetchUserData();
@@ -320,7 +332,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   }
 
   const handleFinishRide = async () => {
-    setIsLoading(true); // Update: Set isLoading to true
+    setIsLoading(true);
     setIsFinishRideDialogOpen(false);
     try {
       await finishRide(ride.id, currentUser.id);
@@ -336,7 +348,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false); // Update: Set isLoading to false
+      setIsLoading(false);
     }
   };
 
@@ -527,7 +539,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                   </div>
                   {note.user_id === currentUser?.id && !editingNoteId && (
                     <div className="mt-1">
-                      <Button onClick={() => handleEditNote(note.id)} size="sm" variant="ghost" className="p-1">
+                      <Button onClick={() => handleEditNote(note.id)} size="sm" variant="ghost" className="p-1" >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button onClick={() => handleDeleteNote(note.id)} size="sm" variant="ghost" className="p-1">
