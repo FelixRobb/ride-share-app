@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, ArrowRight, User, Mail, Phone, Lock, CheckCircle } from 'lucide-react'
 
@@ -190,27 +190,27 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
           exit={{ x: -10, opacity: 0 }}
           transition={{ duration: 0.2 }}
         >
-          <Card className="w-[350px]">
+          <Card className="w-full max-w-[350px] mx-auto">
             <CardHeader>
               <CardTitle>{steps[step].title}</CardTitle>
               <CardDescription>{steps[step].description}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 sm:px-6">
               {steps[step].fields}
               {error && <p className="text-sm text-destructive mt-2">{error}</p>}
             </CardContent>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex flex-col sm:flex-row gap-2">
               {step > 0 && (
-                <Button type="button" variant="outline" onClick={handleBack}>
+                <Button type="button" variant="outline" onClick={handleBack} className="w-full sm:w-auto">
                   <ArrowLeft className="mr-2 h-4 w-4" /> Back
                 </Button>
               )}
               {step < steps.length - 1 ? (
-                <Button type="button" onClick={handleNext} className="ml-auto">
+                <Button type="button" onClick={handleNext} className="w-full sm:w-auto sm:ml-auto">
                   Next <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button type="submit" disabled={isLoading || !agreedToTerms} className="ml-auto">
+                <Button type="submit" disabled={isLoading || !agreedToTerms} className="w-full sm:w-auto sm:ml-auto">
                   {isLoading ? (
                     <>
                       <motion.div

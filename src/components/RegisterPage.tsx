@@ -30,10 +30,10 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="bg-background p-4 shadow-sm">
-        <div className="container mx-auto flex justify-between items-center">
+        <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
           <h1 className="text-2xl font-bold text-primary">RideShare</h1>
-          <div>
-            <Button variant="ghost" asChild className="mr-2">
+          <div className="flex gap-2">
+            <Button variant="ghost" asChild>
               <Link href="/login">Login</Link>
             </Button>
             <Button variant="outline" asChild>
@@ -42,8 +42,8 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
           </div>
         </div>
       </header>
-      <main className="flex-grow flex items-center justify-center p-4">
-        <Card className="w-[350px]">
+      <main className="flex-grow flex items-center justify-center p-4 sm:p-6 md:p-8">
+        <Card className="w-full max-w-[350px]">
           <CardHeader>
             <CardTitle>Create an Account</CardTitle>
             <CardDescription>Join RideShare and start sharing rides today!</CardDescription>
