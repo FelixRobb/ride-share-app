@@ -34,10 +34,10 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="bg-background p-4 shadow-sm">
-        <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+        <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">RideShare</h1>
-          <div className="flex gap-2">
-            <Button variant="ghost" asChild>
+          <div>
+            <Button variant="ghost" asChild className="mr-2">
               <Link href="/login">Login</Link>
             </Button>
             <Button variant="outline" asChild>
