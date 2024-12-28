@@ -1,9 +1,12 @@
 import { useState } from "react"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { User } from "../types"
 import { MultiStepRegisterForm } from "./MultiStepRegisterForm"
+import { useRouter } from "next/navigation"
+import { register } from "@/utils/api"
+import { fetchUserData } from "@/utils/api"
 
 interface RegisterPageProps {
   setCurrentUser: (user: User) => void
@@ -13,6 +16,7 @@ interface RegisterPageProps {
 
 export default function RegisterPage({ setCurrentUser, handleRegister, isLoading }: RegisterPageProps) {
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const onSubmit = async (name: string, phone: string, email: string, password: string) => {
     try {

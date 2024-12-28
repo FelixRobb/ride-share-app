@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, ArrowRight, User, Mail, Phone, Lock, CheckCircle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle } from 'lucide-react'
+import PhoneInput from 'react-phone-number-input'
+import 'react-phone-number-input/style.css'
 
 interface MultiStepRegisterFormProps {
   onSubmit: (name: string, phone: string, email: string, password: string) => Promise<void>
@@ -32,11 +34,16 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
   }
 
   const handleNext = () => {
-    if (step === 3 && formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match")
-      return
+    if (isStepValid(step)) {
+      if (step === 2 && formData.password !== formData.confirmPassword) {
+        setError("Passwords do not match")
+        return
+      }
+      setStep((prev) => prev + 1)
+      setError(null)
+    } else {
+      setError("Please fill in all required fields")
     }
-    setStep((prev) => prev + 1)
   }
 
   const handleBack = () => setStep((prev) => prev - 1)
@@ -55,6 +62,21 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
       } else {
         setError("An unexpected error occurred")
       }
+    }
+  }
+
+  const isStepValid = (stepIndex: number) => {
+    switch (stepIndex) {
+      case 0:
+        return formData.name.trim() !== ""
+      case 1:
+        return formData.phone !== ""
+      case 2:
+        return formData.email.trim() !== "" && formData.password !== "" && formData.confirmPassword !== ""
+      case 3:
+        return agreedToTerms
+      default:
+        return false
     }
   }
 
@@ -88,19 +110,22 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="phone">Phone Number</Label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="Enter your phone number"
-                value={formData.phone}
-                onChange={(e) => updateFormData("phone", e.target.value)}
-                className="pl-9"
-                required
-              />
-            </div>
+            <PhoneInput
+              id="phone"
+              placeholder="Enter phone number"
+              value={formData.phone}
+              onChange={(value) => updateFormData("phone", value || "")}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            />
           </div>
+        </div>
+      ),
+    },
+    {
+      title: "Account Information",
+      description: "Set up your account",
+      fields: (
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
             <div className="relative">
@@ -116,14 +141,6 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
               />
             </div>
           </div>
-        </div>
-      ),
-    },
-    {
-      title: "Create Password",
-      description: "Choose a secure password",
-      fields: (
-        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <div className="relative">
@@ -206,7 +223,12 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
                 </Button>
               )}
               {step < steps.length - 1 ? (
-                <Button type="button" onClick={handleNext} className="w-full sm:w-auto sm:ml-auto">
+                <Button
+                  type="button"
+                  onClick={handleNext}
+                  className="w-full sm:w-auto sm:ml-auto"
+                  disabled={!isStepValid(step)}
+                >
                   Next <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
@@ -236,3 +258,4 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
     </form>
   )
 }
+
