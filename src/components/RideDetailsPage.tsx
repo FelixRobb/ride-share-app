@@ -517,9 +517,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                       <>
                         <p className="text-sm mb-1 break-words">{note.note}</p>
                         <div className="flex justify-between items-center text-xs mt-2">
-                          <span>{getUserName(note.user_id)}</span>
-                          <span>&nbsp;-&nbsp;</span>
-                          <span>{new Date(note.created_at).toLocaleString()}</span>
+                          <span>{getUserName(note.user_id)} - {new Date(note.created_at).toLocaleString()}</span>
                         </div>
                         {note.is_edited && <span className="text-xs text-muted-foreground">(edited)</span>}
                       </>
