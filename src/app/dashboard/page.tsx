@@ -28,7 +28,7 @@ export default function Dashboard() {
     const search = new URLSearchParams(window.location.search)
     setSearchParamsState(search)
     if (search) {
-      setActiveTab(search.get('tab') || 'available')
+      setActiveTab(search.get('tab') || 'active')
     }
   }, [])
 
