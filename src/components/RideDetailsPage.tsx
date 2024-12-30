@@ -475,7 +475,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
           </div>
           <p className="ml-7">{ride.note || "No initial notes provided"}</p>
         </div>
-        {ride.status === "accepted" && ride.accepter_id && (
+        {(ride.status === "accepted" || ride.status === "completed") && ride.accepter_id && (
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
               <LucideUser className="w-5 h-5 text-primary" />
