@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LucideUser, Mail, Phone, Car, MapPin, CheckCircle, Loader } from 'lucide-react';
+import { LucideUser, Mail, Phone, Car, MapPin, Loader } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { User, Contact, AssociatedPerson, UserStats } from "../types";
 import {
@@ -29,7 +29,6 @@ interface ProfilePageProps {
   associatedPeople: AssociatedPerson[];
   userStats: UserStats | null;
   fetchUserData: (userId: string) => Promise<void>;
-  isOnline: boolean;
 }
 
 export default function ProfilePage({
@@ -39,7 +38,6 @@ export default function ProfilePage({
   associatedPeople,
   userStats,
   fetchUserData,
-  isOnline
 }: ProfilePageProps) {
   const [newContactPhone, setNewContactPhone] = useState("");
   const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" });
@@ -61,7 +59,6 @@ export default function ProfilePage({
   const [isDeleteContactDialogOpen, setIsDeleteContactDialogOpen] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<string | null>(null);
   const [isPushLoading, setIsPushLoading] = useState(true);
-  const [userStatsState, setUserStats] = useState<UserStats | null>(null); // Added state for userStats
 
   const { toast } = useToast();
 
@@ -89,45 +86,12 @@ export default function ProfilePage({
   }, [currentUser, toast]);
 
   useEffect(() => {
-    const fetchSuggestedContacts = async () => {
-      if (!currentUser) return;
-      setIsFetchingSuggestions(true);
-      try {
-        const response = await fetch(`/api/suggested-contacts?userId=${currentUser.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setSuggestedContacts(data.suggestedContacts || []);
-        } else {
-          throw new Error("Failed to fetch suggested contacts");
-        }
-      } catch (error) {
-        console.error("Error fetching suggested contacts:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load suggested contacts. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsFetchingSuggestions(false);
-      }
-    };
-
-    let intervalId: NodeJS.Timeout | null = null;
-
-    if (isOnline) {
-      intervalId = setInterval(fetchSuggestedContacts, 20000);
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [currentUser, toast, isOnline, fetchSuggestedContacts]);
+    fetchSuggestedContacts();
+  }, [fetchSuggestedContacts]);
 
   useEffect(() => {
     const fetchPushPreference = async () => {
-      setIsPushLoading(true); 
+      setIsPushLoading(true); // Set loading to true before fetching
       try {
         const response = await fetch(`/api/users/${currentUser.id}/push-preference`);
         if (response.ok) {
@@ -137,7 +101,7 @@ export default function ProfilePage({
       } catch (error) {
         console.error('Error fetching push notification preference:', error);
       } finally {
-        setIsPushLoading(false); 
+        setIsPushLoading(false); // Set loading to false after fetching, regardless of success/failure
       }
     };
 
@@ -340,34 +304,9 @@ export default function ProfilePage({
         description: "Failed to update push notification preference. Please try again.",
         variant: "destructive",
       });
-      setIsPushEnabled(!checked); 
+      setIsPushEnabled(!checked); // Revert the switch if the API call fails
     }
   };
-
-  useEffect(() => {
-    const fetchUserStats = async () => {
-      if (!currentUser) return;
-      try {
-        const response = await fetch(`/api/users/${currentUser.id}/stats`);
-        if (response.ok) {
-          const data = await response.json();
-          setUserStats(data.stats);
-        } else {
-          throw new Error("Failed to fetch user stats");
-        }
-      } catch (error) {
-        console.error("Error fetching user stats:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load user statistics. Please try again later.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    fetchUserStats();
-  }, [currentUser, toast]); // Added useEffect to fetch user stats
-
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -416,28 +355,14 @@ export default function ProfilePage({
               <Car className="h-6 w-6 text-primary" />
               <div>
                 <p className="text-sm font-medium">Rides Offered</p>
-                <p>{userStatsState?.rides_offered || 0}</p> {/* Updated to use userStatsState */}
+                <p>{userStats?.rides_offered || 0}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <MapPin className="h-6 w-6 text-primary" />
               <div>
                 <p className="text-sm font-medium">Rides Accepted</p>
-                <p>{userStatsState?.rides_accepted || 0}</p> {/* Updated to use userStatsState */}
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <CheckCircle className="h-6 w-6 text-primary" />
-              <div>
-                <p className="text-sm font-medium">Completed Rides Offered</p>
-                <p>{userStatsState?.completed_rides_offered || 0}</p> {/* Updated to use userStatsState */}
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <CheckCircle className="h-6 w-6 text-primary" />
-              <div>
-                <p className="text-sm font-medium">Completed Rides Accepted</p>
-                <p>{userStatsState?.completed_rides_accepted || 0}</p> {/* Updated to use userStatsState */}
+                <p>{userStats?.rides_accepted || 0}</p>
               </div>
             </div>
           </div>
@@ -454,7 +379,7 @@ export default function ProfilePage({
               <p className="font-medium">Push Notifications</p>
               <p className="text-sm text-muted-foreground">Receive notifications even when the app is closed</p>
             </div>
-            {isPushLoading ? ( 
+            {isPushLoading ? ( // Conditionally render loader or switch
               <Loader className="animate-spin h-5 w-5" />
             ) : (
               <Switch
@@ -513,7 +438,7 @@ export default function ProfilePage({
               value={newContactPhone}
               onChange={(e) => setNewContactPhone(e.target.value)}
             />
-            <Button onClick={handleAddContact} disabled={isAddingContact || !isOnline}>
+            <Button onClick={handleAddContact} disabled={isAddingContact}>
               {isAddingContact ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
               {isAddingContact ? "Adding..." : "Add Contact"}
             </Button>
@@ -578,7 +503,7 @@ export default function ProfilePage({
                 <span>
                   {person.name} ({person.relationship})
                 </span>
-                <Button variant="destructive" size="sm" onClick={() => handleDeleteAssociatedPerson(person.id)} disabled={!isOnline}>
+                <Button variant="destructive" size="sm" onClick={() => handleDeleteAssociatedPerson(person.id)}>
                   Delete
                 </Button>
               </div>
@@ -597,7 +522,7 @@ export default function ProfilePage({
               value={newAssociatedPerson.relationship}
               onChange={(e) => setNewAssociatedPerson((prev) => ({ ...prev, relationship: e.target.value }))}
             />
-            <Button onClick={handleAddAssociatedPerson} className="w-full" disabled={!isOnline}>
+            <Button onClick={handleAddAssociatedPerson} className="w-full">
               Add Associated Person
             </Button>
           </div>
@@ -609,7 +534,7 @@ export default function ProfilePage({
           <CardTitle className="text-2xl text-destructive">Danger Zone</CardTitle>
         </CardHeader>
         <CardContent>
-          <Button variant="destructive" onClick={handleDeleteUser} disabled={isDeletingAccount || !isOnline}>
+          <Button variant="destructive" onClick={handleDeleteUser} disabled={isDeletingAccount}>
             {isDeletingAccount ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
             {isDeletingAccount ? "Deleting..." : "Delete Account"}
           </Button>
@@ -653,7 +578,7 @@ export default function ProfilePage({
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button type="submit" disabled={isUpdatingProfile || !isOnline}>
+              <Button type="submit" disabled={isUpdatingProfile}>
                 {isUpdatingProfile ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
                 {isUpdatingProfile ? "Updating..." : "Save Changes"}
               </Button>
@@ -702,7 +627,7 @@ export default function ProfilePage({
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button type="submit" disabled={isChangingPassword || !isOnline}>
+              <Button type="submit" disabled={isChangingPassword}>
                 {isChangingPassword ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
                 {isChangingPassword ? "Changing..." : "Change Password"}
               </Button>
@@ -721,7 +646,7 @@ export default function ProfilePage({
           </DialogHeader>
           <DialogFooter>
             <Button className="mb-2" variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)}>Cancel</Button>
-            <Button className="mb-2" variant="destructive" onClick={confirmDeleteUser} disabled={!isOnline}>Delete Account</Button>
+            <Button className="mb-2" variant="destructive" onClick={confirmDeleteUser}>Delete Account</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -736,7 +661,7 @@ export default function ProfilePage({
           </DialogHeader>
           <DialogFooter>
             <Button className="mb-2" variant="outline" onClick={() => setIsDeleteContactDialogOpen(false)}>Cancel</Button>
-            <Button className="mb-2" variant="destructive" onClick={confirmDeleteContact} disabled={!isOnline}>Delete Contact</Button>
+            <Button className="mb-2" variant="destructive" onClick={confirmDeleteContact}>Delete Contact</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
