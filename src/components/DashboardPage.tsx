@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Search, Clock, MapPin, User2, CalendarIcon, ArrowRight, CheckCircle, Filter } from 'lucide-react';
 import { User, Ride, Contact } from "../types";
 import Link from 'next/link';
+import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
 interface FilterPopoverProps {
   statusFilter: string | null;
@@ -97,6 +98,21 @@ export default function DashboardPage({
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
+  const isOnline = useOnlineStatus();
+
+  const fetchData = useCallback(async () => {
+    if (isOnline) {
+      setIsLoading(true);
+      await fetchUserData();
+      setIsLoading(false);
+    }
+  }, [isOnline, fetchUserData]);
+
+  useEffect(() => {
+    fetchData();
+    const intervalId = setInterval(fetchData, 10000);
+    return () => clearInterval(intervalId);
+  }, [fetchData]);
 
   const formatDateTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -118,14 +134,6 @@ export default function DashboardPage({
     return contact ? (contact.user_id === ride.requester_id ? contact.user.name : contact.contact.name) : "Unknown";
   };
 
-  useEffect(() => {
-    const fetchRides = async () => {
-      setIsLoading(true);
-      await fetchUserData();
-      setIsLoading(false);
-    };
-    fetchRides();
-  }, [fetchUserData]);
 
   const filteredRides = useMemo(() => {
     return rides.filter((ride) => {

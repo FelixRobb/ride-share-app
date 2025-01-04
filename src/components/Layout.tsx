@@ -12,6 +12,7 @@ import { markNotificationsAsRead, fetchNotifications } from "../utils/api";
 import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
 import PushNotificationHandler from './PushNotificationHandler';
+import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -27,28 +28,40 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
   const { theme, setTheme, systemTheme } = useTheme();
   const [currentMode, setCurrentMode] = useState("system");
   const { toast } = useToast();
+  const isOnline = useOnlineStatus();
 
   const fetchUserNotifications = useCallback(async () => {
-    if (currentUser) {
+    if (currentUser && isOnline) {
       try {
         const fetchedNotifications = await fetchNotifications(currentUser.id);
         setNotifications(fetchedNotifications);
       } catch (error) {
         console.error("Error fetching notifications:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch notifications.",
-          variant: "destructive",
-        });
       }
     }
-  }, [currentUser, toast]);
+  }, [currentUser, isOnline]);
 
   useEffect(() => {
     fetchUserNotifications();
-    const intervalId = setInterval(fetchUserNotifications, 60000);
+    const intervalId = setInterval(fetchUserNotifications, 10000);
     return () => clearInterval(intervalId);
   }, [fetchUserNotifications]);
+
+  useEffect(() => {
+    if (isOnline) {
+      toast({
+        title: "You're back online",
+        description: "Your connection has been restored.",
+      });
+      fetchUserNotifications();
+    } else {
+      toast({
+        title: "You're offline",
+        description: "Please check your internet connection.",
+        variant: "destructive",
+      });
+    }
+  }, [isOnline, toast, fetchUserNotifications]);
 
   const unreadNotificationsCount = notifications.filter((n) => !n.is_read).length;
 
@@ -97,30 +110,6 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
     });
   };
 
-  useEffect(() => {
-    const handleOnline = () => {
-      toast({
-        title: "You're back online",
-        description: "Your connection has been restored.",
-      });
-    };
-
-    const handleOffline = () => {
-      toast({
-        title: "You're offline",
-        description: "Please check your internet connection.",
-        variant: "destructive",
-      });
-    };
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, [toast]);
 
   const handleLogout = () => {
     setIsLogoutDialogOpen(true);
@@ -289,4 +278,3 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
     </div>
   );
 }
-

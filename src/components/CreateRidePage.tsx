@@ -9,6 +9,7 @@ import { User, RideData, AssociatedPerson } from "../types";
 import { createRide } from "../utils/api";
 import dynamic from 'next/dynamic';
 import { Loader } from 'lucide-react'
+import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
 const LocationSearch = dynamic(() => import('./LocationSearch'), { ssr: false });
 const MapDialog = dynamic(() => import('./MapDialog'), { ssr: false });
@@ -40,6 +41,7 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
   const { toast } = useToast();
   const [isMounted, setIsMounted] = useState(false); // Add state for mounted check
   const [isSubmitting, setIsSubmitting] = useState(false); // Added loading state
+  const isOnline = useOnlineStatus();
 
   useEffect(() => {
     setIsMounted(true); // Set mounted to true when component mounts
@@ -98,6 +100,11 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
         <CardDescription>Fill in the details for your ride request.</CardDescription>
       </CardHeader>
       <CardContent>
+      {!isOnline && (
+          <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded">
+            You are currently offline. Ride creation is disabled.
+          </div>
+        )}
         {isClient && (
           <form onSubmit={handleSubmit}>
             <div className="grid w-full items-center gap-4">
@@ -175,7 +182,7 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
                 />
               </div>
             </div>
-            <Button className="w-full mt-4" type="submit" disabled={isSubmitting}>
+            <Button className="w-full mt-4" type="submit" disabled={isSubmitting || !isOnline}>
               {isSubmitting ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
               {isSubmitting ? "Creating..." : "Create Ride"}
             </Button>

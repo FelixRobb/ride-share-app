@@ -21,6 +21,7 @@ import {
   deleteUser,
 } from "../utils/api";
 import { Switch } from "@/components/ui/switch";
+import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
 interface ProfilePageProps {
   currentUser: User;
@@ -61,9 +62,10 @@ export default function ProfilePage({
   const [isPushLoading, setIsPushLoading] = useState(true);
 
   const { toast } = useToast();
+  const isOnline = useOnlineStatus();
 
   const fetchSuggestedContacts = useCallback(async () => {
-    if (!currentUser) return;
+    if (!currentUser || !isOnline) return;
     setIsFetchingSuggestions(true);
     try {
       const response = await fetch(`/api/suggested-contacts?userId=${currentUser.id}`);
@@ -75,40 +77,50 @@ export default function ProfilePage({
       }
     } catch (error) {
       console.error("Error fetching suggested contacts:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load suggested contacts. Please try again later.",
-        variant: "destructive",
-      });
+      if (isOnline) {
+        toast({
+          title: "Error",
+          description: "Failed to load suggested contacts. Please try again later.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsFetchingSuggestions(false);
     }
-  }, [currentUser, toast]);
+  }, [currentUser, toast, isOnline]);
 
   useEffect(() => {
-    fetchSuggestedContacts();
-  }, [fetchSuggestedContacts]);
+    if (isOnline) {
+      fetchSuggestedContacts();
+    }
+  }, [fetchSuggestedContacts, isOnline]);
 
   useEffect(() => {
     const fetchPushPreference = async () => {
-      setIsPushLoading(true); // Set loading to true before fetching
+      setIsPushLoading(true);
       try {
+        if (!isOnline) {
+          console.log('User is offline. Skipping push preference fetch.');
+          return;
+        }
         const response = await fetch(`/api/users/${currentUser.id}/push-preference`);
         if (response.ok) {
           const data = await response.json();
           setIsPushEnabled(data.enabled);
+        } else {
+          console.error('Failed to fetch push preference:', response.statusText);
         }
       } catch (error) {
         console.error('Error fetching push notification preference:', error);
       } finally {
-        setIsPushLoading(false); // Set loading to false after fetching, regardless of success/failure
+        setIsPushLoading(false);
       }
     };
 
     if (currentUser) {
       void fetchPushPreference();
     }
-  }, [currentUser]);
+  }, [currentUser, isOnline]);
 
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -308,6 +320,27 @@ export default function ProfilePage({
     }
   };
 
+  const fetchUserDataCallback = useCallback(async () => {
+    if (isOnline && currentUser) {
+      try {
+        await fetchUserData(currentUser.id);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch user data. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [isOnline, currentUser, fetchUserData, toast]);
+
+  useEffect(() => {
+    fetchUserDataCallback();
+    const intervalId = setInterval(fetchUserDataCallback, 20000);
+    return () => clearInterval(intervalId);
+  }, [fetchUserDataCallback]);
+
   return (
     <div className="w-full max-w-4xl mx-auto">
       <Card className="mb-8">
@@ -339,8 +372,8 @@ export default function ProfilePage({
             </div>
           </div>
           <div className="flex space-x-4 mt-4">
-            <Button onClick={() => setIsEditProfileOpen(true)}>Edit Profile</Button>
-            <Button onClick={() => setIsChangePasswordOpen(true)}>Change Password</Button>
+            <Button onClick={() => setIsEditProfileOpen(true)} disabled={!isOnline}>Edit Profile</Button>
+            <Button onClick={() => setIsChangePasswordOpen(true)} disabled={!isOnline}>Change Password</Button>
           </div>
         </CardContent>
       </Card>
@@ -385,6 +418,7 @@ export default function ProfilePage({
               <Switch
                 checked={isPushEnabled}
                 onCheckedChange={handlePushToggle}
+                disabled={!isOnline}
               />
             )}
           </div>
@@ -418,11 +452,11 @@ export default function ProfilePage({
                   </div>
                   <div className="flex space-x-2">
                     {contact.status === "pending" && contact.contact_id === currentUser?.id && (
-                      <Button onClick={() => handleAcceptContact(contact.id)} size="sm">
+                      <Button onClick={() => handleAcceptContact(contact.id)} size="sm" disabled={!isOnline}>
                         Accept
                       </Button>
                     )}
-                    <Button onClick={() => handleDeleteContact(contact.id)} variant="destructive" size="sm">
+                    <Button onClick={() => handleDeleteContact(contact.id)} variant="destructive" size="sm" disabled={!isOnline}>
                       Delete
                     </Button>
                   </div>
@@ -438,7 +472,7 @@ export default function ProfilePage({
               value={newContactPhone}
               onChange={(e) => setNewContactPhone(e.target.value)}
             />
-            <Button onClick={handleAddContact} disabled={isAddingContact}>
+            <Button onClick={handleAddContact} disabled={isAddingContact || !isOnline}>
               {isAddingContact ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
               {isAddingContact ? "Adding..." : "Add Contact"}
             </Button>
@@ -478,7 +512,7 @@ export default function ProfilePage({
                           ? "Mutual contact"
                           : "No common rides"}
                       </p>
-                      <Button variant="outline" size="sm" className="w-full" onClick={() => addContact(currentUser.id, contact.phone)}>
+                      <Button variant="outline" size="sm" className="w-full" onClick={() => addContact(currentUser.id, contact.phone)} disabled={!isOnline}>
                         Add Contact
                       </Button>
                     </div>
@@ -503,7 +537,7 @@ export default function ProfilePage({
                 <span>
                   {person.name} ({person.relationship})
                 </span>
-                <Button variant="destructive" size="sm" onClick={() => handleDeleteAssociatedPerson(person.id)}>
+                <Button variant="destructive" size="sm" onClick={() => handleDeleteAssociatedPerson(person.id)} disabled={!isOnline}>
                   Delete
                 </Button>
               </div>
@@ -522,7 +556,7 @@ export default function ProfilePage({
               value={newAssociatedPerson.relationship}
               onChange={(e) => setNewAssociatedPerson((prev) => ({ ...prev, relationship: e.target.value }))}
             />
-            <Button onClick={handleAddAssociatedPerson} className="w-full">
+            <Button onClick={handleAddAssociatedPerson} className="w-full" disabled={!isOnline}>
               Add Associated Person
             </Button>
           </div>
@@ -534,7 +568,7 @@ export default function ProfilePage({
           <CardTitle className="text-2xl text-destructive">Danger Zone</CardTitle>
         </CardHeader>
         <CardContent>
-          <Button variant="destructive" onClick={handleDeleteUser} disabled={isDeletingAccount}>
+          <Button variant="destructive" onClick={handleDeleteUser} disabled={isDeletingAccount || !isOnline}>
             {isDeletingAccount ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
             {isDeletingAccount ? "Deleting..." : "Delete Account"}
           </Button>
@@ -578,7 +612,7 @@ export default function ProfilePage({
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button type="submit" disabled={isUpdatingProfile}>
+              <Button type="submit" disabled={isUpdatingProfile || !isOnline}>
                 {isUpdatingProfile ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
                 {isUpdatingProfile ? "Updating..." : "Save Changes"}
               </Button>
@@ -627,7 +661,7 @@ export default function ProfilePage({
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button type="submit" disabled={isChangingPassword}>
+              <Button type="submit" disabled={isChangingPassword || !isOnline}>
                 {isChangingPassword ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
                 {isChangingPassword ? "Changing..." : "Change Password"}
               </Button>
@@ -645,8 +679,8 @@ export default function ProfilePage({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="mb-2" variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)}>Cancel</Button>
-            <Button className="mb-2" variant="destructive" onClick={confirmDeleteUser}>Delete Account</Button>
+            <Button className="mb-2" variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)} disabled={!isOnline}>Cancel</Button>
+            <Button className="mb-2" variant="destructive" onClick={confirmDeleteUser} disabled={!isOnline}>Delete Account</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -660,8 +694,8 @@ export default function ProfilePage({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="mb-2" variant="outline" onClick={() => setIsDeleteContactDialogOpen(false)}>Cancel</Button>
-            <Button className="mb-2" variant="destructive" onClick={confirmDeleteContact}>Delete Contact</Button>
+            <Button className="mb-2" variant="outline" onClick={() => setIsDeleteContactDialogOpen(false)} disabled={!isOnline}>Cancel</Button>
+            <Button className="mb-2" variant="destructive" onClick={confirmDeleteContact} disabled={!isOnline}>Delete Contact</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
