@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, LogOut, Home, Car, Users, Menu, Moon, Sun, Monitor } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Bell, LogOut, Home, Car, Users, Menu, Moon, Sun, Monitor, MessageSquare, UserPlus, CheckCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { User, Notification } from "../types";
 import { markNotificationsAsRead, fetchNotifications } from "../utils/api";
@@ -13,6 +13,34 @@ import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
 import PushNotificationHandler from './PushNotificationHandler';
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
+
+const getNotificationIcon = (type: string) => {
+  switch (type) {
+    case 'newNote':
+      return <MessageSquare className="h-4 w-4 text-blue-500" />;
+    case 'contactRequest':
+    case 'contactAccepted':
+      return <UserPlus className="h-4 w-4 text-green-500" />;
+    case 'newRide':
+    case 'rideAccepted':
+    case 'rideCancelled':
+      return <Car className="h-4 w-4 text-orange-500" />;
+    case 'rideCompleted':
+      return <CheckCircle className="h-4 w-4 text-purple-500" />;
+    default:
+      return <Bell className="h-4 w-4 text-zinc-500" />;
+  }
+};
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+};
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -29,6 +57,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
   const [currentMode, setCurrentMode] = useState("system");
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
+  const [wasPreviouslyOffline, setWasPreviouslyOffline] = useState(false);
 
   const fetchUserNotifications = useCallback(async () => {
     if (currentUser && isOnline) {
@@ -48,20 +77,21 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
   }, [fetchUserNotifications]);
 
   useEffect(() => {
-    if (isOnline) {
-      toast({
-        title: "You're back online",
-        description: "Your connection has been restored.",
-      });
-      fetchUserNotifications();
-    } else {
+    if (!isOnline) {
+      setWasPreviouslyOffline(true);
       toast({
         title: "You're offline",
         description: "Please check your internet connection.",
         variant: "destructive",
       });
+    } else if (isOnline && wasPreviouslyOffline) {
+      setWasPreviouslyOffline(false);
+      toast({
+        title: "You're back online",
+        description: "Your connection has been restored.",
+      });
     }
-  }, [isOnline, toast, fetchUserNotifications]);
+  }, [isOnline, toast, wasPreviouslyOffline]);
 
   const unreadNotificationsCount = notifications.filter((n) => !n.is_read).length;
 
@@ -162,9 +192,16 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
                   ) : (
                     notifications.map((notification) => (
                       <Card key={notification.id} className={`mb-4 ${notification.is_read ? "opacity-60" : ""}`}>
-                        <CardHeader className="p-4">
-                          <CardTitle className="text-sm font-medium">{notification.type}</CardTitle>
-                          <CardDescription className="text-xs">{new Date(notification.created_at).toLocaleString()}</CardDescription>
+                        <CardHeader className="p-4 pb-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              {getNotificationIcon(notification.type)}
+                              <CardTitle className="text-sm font-medium">{notification.type}</CardTitle>
+                            </div>
+                            <CardDescription className="text-xs">
+                              {formatDate(notification.created_at)}
+                            </CardDescription>
+                          </div>
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
                           <p className="text-sm">{notification.message}</p>
@@ -278,3 +315,4 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
     </div>
   );
 }
+

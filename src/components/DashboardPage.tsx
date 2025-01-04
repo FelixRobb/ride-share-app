@@ -258,9 +258,9 @@ export default function DashboardPage({
     <Card className="mb-4">
       <CardContent className="p-4 sm:p-6">
         <div className="space-y-3">
-          <Skeleton className="h-4 w-[250px]" />
-          <Skeleton className="h-4 w-[200px]" />
-          <Skeleton className="h-4 w-[150px]" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-9/12" />
+          <Skeleton className="h-4 w-7/12" />
         </div>
       </CardContent>
     </Card>

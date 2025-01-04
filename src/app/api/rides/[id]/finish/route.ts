@@ -38,14 +38,23 @@ export async function POST(request: Request) {
 
     const otherUserId = userId === ride.requester_id ? ride.accepter_id : ride.requester_id;
 
+    // Fetch the user's name who finished the ride
+    const { data: finisher, error: finisherError } = await supabase
+      .from('users')
+      .select('name')
+      .eq('id', userId)
+      .single();
+
+    if (finisherError) throw finisherError;
+
     await sendImmediateNotification(
       otherUserId,
       'Ride Completed',
-      'Your ride has been marked as completed'
+      `Your ride has been marked as completed by ${finisher.name}`
     );
     await supabase.from('notifications').insert({
       user_id: otherUserId,
-      message: 'Your ride has been marked as completed',
+      message: `Your ride has been marked as completed by ${finisher.name}`,
       type: 'rideCompleted',
       related_id: rideId
     });

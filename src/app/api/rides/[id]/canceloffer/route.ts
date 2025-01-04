@@ -33,25 +33,25 @@ export async function POST(request: Request) {
 
     if (updateError) throw updateError;
 
-    // Soft delete associated notes (consistent with other routes)
-    const { error: deleteNotesError } = await supabase
-      .from('ride_notes')
-      .update({ is_deleted: true })
-      .eq('ride_id', rideId);
+    // Fetch the accepter's name
+    const { data: accepter, error: accepterError } = await supabase
+      .from('users')
+      .select('name')
+      .eq('id', userId)
+      .single();
 
-    if (deleteNotesError) throw deleteNotesError;
-
+    if (accepterError) throw accepterError;
 
     if (ride.requester_id) {
       await sendImmediateNotification(
         ride.requester_id,
         'Ride Offer Cancelled',
-        'The accepted offer for your ride has been cancelled'
+        `The accepted offer for your ride has been cancelled by ${accepter.name}`
       );
 
       await supabase.from('notifications').insert({
         user_id: ride.requester_id,
-        message: 'The accepted offer for your ride has been cancelled',
+        message: `The accepted offer for your ride has been cancelled by ${accepter.name}`,
         type: 'Ride Offer Cancelled',
         related_id: rideId,
       });
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof Error) {
       console.error('Cancel ride offer error:', error.message);
-      return NextResponse.json({ error: error.message }, { status: 400 }); // Correct status code for client errors
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     console.error('Cancel ride offer error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -30,15 +30,24 @@ export async function POST(request: Request) {
     if (updateError) throw updateError;
 
     if (ride.accepter_id) {
+      // Fetch the requester's name
+      const { data: requester, error: requesterError } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', userId)
+        .single();
+
+      if (requesterError) throw requesterError;
+
       await sendImmediateNotification(
         ride.accepter_id,
         'Ride Cancelled',
-        'A ride you accepted has been cancelled by the requester'
+        `The ride you accepted has been cancelled by ${requester.name}`
       );
       await supabase.from('notifications').insert({
         user_id: ride.accepter_id,
-        message: 'A ride you accepted has been cancelled by the requester',
-        type: 'Ride Cancelled',
+        message: `The ride you accepted has been cancelled by ${requester.name}`,
+        type: 'rideCancelled',
         related_id: rideId
       });
     }

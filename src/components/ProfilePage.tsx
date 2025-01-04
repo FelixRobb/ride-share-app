@@ -1,15 +1,33 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LucideUser, Mail, Phone, Car, MapPin, Loader } from 'lucide-react';
+import { LucideUser, Mail, Phone, Car, MapPin, Loader, Search } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { User, Contact, AssociatedPerson, UserStats } from "../types";
+import {
+  User,
+  Contact,
+  AssociatedPerson,
+  UserStats,
+} from "../types";
 import {
   updateProfile,
   changePassword,
@@ -22,6 +40,10 @@ import {
 } from "../utils/api";
 import { Switch } from "@/components/ui/switch";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
+import ContactDetailsPopup from "./ContactDetailsPopup";
+import PhoneInput, { isPossiblePhoneNumber } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+
 
 interface ProfilePageProps {
   currentUser: User;
@@ -40,7 +62,7 @@ export default function ProfilePage({
   userStats,
   fetchUserData,
 }: ProfilePageProps) {
-  const [newContactPhone, setNewContactPhone] = useState("");
+  const [newContactPhone, setNewContactPhone] = useState<string | undefined>("");
   const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" });
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -60,6 +82,12 @@ export default function ProfilePage({
   const [isDeleteContactDialogOpen, setIsDeleteContactDialogOpen] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<string | null>(null);
   const [isPushLoading, setIsPushLoading] = useState(true);
+  const [matchingUsers, setMatchingUsers] = useState<User[]>([]);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [isContactDetailsOpen, setIsContactDetailsOpen] = useState(false);
+  const [isSearchingContacts, setIsSearchingContacts] = useState(false);
+  const [contactSearchTerm, setContactSearchTerm] = useState("");
+  const [isAddContactDialogOpen, setIsAddContactDialogOpen] = useState(false);
 
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
@@ -178,23 +206,34 @@ export default function ProfilePage({
     }
   };
 
-  const handleAddContact = async () => {
-    if (newContactPhone.trim()) {
-      try {
-        setIsAddingContact(true);
-        await addContact(currentUser.id, newContactPhone);
-        setNewContactPhone("");
+  const handleAddContact = async (contactId: string) => {
+    try {
+      const response = await fetch('/api/contacts', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: currentUser.id, contactId }),
+      });
+
+      if (response.ok) {
         await fetchUserData(currentUser.id);
-        await fetchSuggestedContacts();
-      } catch (error) {
+        setNewContactPhone("");
+        setMatchingUsers([]);
+        setIsAddContactDialogOpen(false);
         toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "An unexpected error occurred",
-          variant: "destructive",
+          title: "Success",
+          description: "Contact request sent successfully",
         });
-      } finally {
-        setIsAddingContact(false);
+      } else {
+        throw new Error('Failed to add contact');
       }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
     }
   };
 
@@ -341,6 +380,86 @@ export default function ProfilePage({
     return () => clearInterval(intervalId);
   }, [fetchUserDataCallback]);
 
+  const handleSearchContact = async () => {
+    if (!newContactPhone || !isPossiblePhoneNumber(newContactPhone)) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please enter a valid phone number to search.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newContactPhone === currentUser.phone) {
+      toast({
+        title: "Error",
+        description: "You cannot add yourself as a contact.",
+        variant: "destructive",
+      });
+      setMatchingUsers([]);
+      return;
+    }
+
+    const existingContact = contacts.find(
+      (contact) =>
+        contact.user?.phone === newContactPhone || contact.contact?.phone === newContactPhone
+    );
+    if (existingContact) {
+      toast({
+        title: "Error",
+        description:
+          "This user is already in your contacts or has a pending request.",
+        variant: "destructive",
+      });
+      setMatchingUsers([]);
+      return;
+    }
+
+    try {
+      setIsSearchingContacts(true);
+      const response = await fetch("/api/contacts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          contactPhone: newContactPhone,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMatchingUsers(data.matchingUsers);
+        if (data.matchingUsers.length === 0) {
+          toast({
+            title: "No matching users",
+            description: "No users found with the provided phone number.",
+            variant: "default",
+          });
+        }
+      } else {
+        throw new Error("Failed to search for contacts");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearchingContacts(false);
+    }
+  };
+
+  const handleOpenContactDetails = (contact: Contact) => {
+    setSelectedContact(contact);
+    setIsContactDetailsOpen(true);
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto">
       <Card className="mb-8">
@@ -412,7 +531,7 @@ export default function ProfilePage({
               <p className="font-medium">Push Notifications</p>
               <p className="text-sm text-muted-foreground">Receive notifications even when the app is closed</p>
             </div>
-            {isPushLoading ? ( // Conditionally render loader or switch
+            {isPushLoading ? (
               <Loader className="animate-spin h-5 w-5" />
             ) : (
               <Switch
@@ -436,7 +555,7 @@ export default function ProfilePage({
             const contactPhone = isCurrentUserRequester ? contact.contact?.phone ?? "Unknown phone" : contact.user?.phone ?? "Unknown phone";
 
             return (
-              <div key={contact.id} className="flex flex-col space-y-2 p-3 bg-secondary rounded-lg">
+              <div key={contact.id} className="flex flex-col space-y-2 p-3 bg-secondary rounded-lg cursor-pointer" onClick={() => handleOpenContactDetails(contact)}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
@@ -452,31 +571,60 @@ export default function ProfilePage({
                   </div>
                   <div className="flex space-x-2">
                     {contact.status === "pending" && contact.contact_id === currentUser?.id && (
-                      <Button onClick={() => handleAcceptContact(contact.id)} size="sm" disabled={!isOnline}>
+                      <Button onClick={(e) => { e.stopPropagation(); handleAcceptContact(contact.id); }} size="sm" disabled={!isOnline}>
                         Accept
                       </Button>
                     )}
-                    <Button onClick={() => handleDeleteContact(contact.id)} variant="destructive" size="sm" disabled={!isOnline}>
-                      Delete
-                    </Button>
                   </div>
                 </div>
               </div>
             );
           })}
-          <div className="flex space-x-2 mt-4">
-            <Input
-              id="telephone-contact"
-              type="tel"
-              placeholder="Enter contact's phone number"
-              value={newContactPhone}
-              onChange={(e) => setNewContactPhone(e.target.value)}
-            />
-            <Button onClick={handleAddContact} disabled={isAddingContact || !isOnline}>
-              {isAddingContact ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
-              {isAddingContact ? "Adding..." : "Add Contact"}
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setIsAddContactDialogOpen(true)}
+          >
+            <Search className="w-4 h-4 mr-2" />
+            Add Contact
+          </Button>
+
+          <Dialog open={isAddContactDialogOpen} onOpenChange={setIsAddContactDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Add Contact</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <PhoneInput
+                    international
+                    countryCallingCodeEditable={false}
+                    defaultCountry="PT"
+                    placeholder="Enter a phone number"
+                    value={newContactPhone}
+                    onChange={(value) => {
+                      setNewContactPhone(value);
+                      setContactSearchTerm(value || "");
+                    }}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button 
+                  onClick={() => handleSearchContact()}
+                  disabled={!newContactPhone || !isPossiblePhoneNumber(newContactPhone)}
+                >
+                  {isSearchingContacts ? (
+                    <Loader className="animate-spin h-5 w-5 mr-2" />
+                  ) : (
+                    <Search className="w-4 h-4 mr-2" />
+                  )}
+                  Search
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-2">Suggested Contacts</h3>
@@ -622,7 +770,7 @@ export default function ProfilePage({
       </Dialog>
 
       <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
-      <DialogContent className="rounded-lg w-11/12">
+        <DialogContent className="rounded-lg w-11/12">
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
             <DialogDescription>Enter your current password and a new password</DialogDescription>
@@ -671,7 +819,7 @@ export default function ProfilePage({
       </Dialog>
 
       <Dialog open={isDeleteAccountDialogOpen} onOpenChange={setIsDeleteAccountDialogOpen}>
-      <DialogContent className="rounded-lg w-11/12">
+        <DialogContent className="rounded-lg w-11/12">
           <DialogHeader>
             <DialogTitle>Confirm Account Deletion</DialogTitle>
             <DialogDescription>
@@ -686,7 +834,7 @@ export default function ProfilePage({
       </Dialog>
 
       <Dialog open={isDeleteContactDialogOpen} onOpenChange={setIsDeleteContactDialogOpen}>
-      <DialogContent className="rounded-lg w-11/12">
+        <DialogContent className="rounded-lg w-11/12">
           <DialogHeader>
             <DialogTitle>Confirm Delete Contact</DialogTitle>
             <DialogDescription>
@@ -699,7 +847,12 @@ export default function ProfilePage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ContactDetailsPopup
+        contact={selectedContact}
+        isOpen={isContactDetailsOpen}
+        onClose={() => setIsContactDetailsOpen(false)}
+        onDelete={handleDeleteContact}
+      />
     </div>
   );
 }
-
