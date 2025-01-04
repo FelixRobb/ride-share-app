@@ -26,7 +26,7 @@ export async function sendPushNotification(subscription: webpush.PushSubscriptio
   }
 }
 
-export async function sendImmediateNotification(userId: string, title: string, body: string, addToDatabase: boolean = true) {
+export async function sendImmediateNotification(userId: string, title: string, body: string, addToDatabase: boolean = false) {
   try {
     const { data: subscriptionData, error: subscriptionError } = await supabase
       .from('push_subscriptions')
