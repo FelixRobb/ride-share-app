@@ -53,15 +53,24 @@ export async function POST(request: Request) {
     if (ride) {
       const otherUserId = userId === ride.requester_id ? ride.accepter_id : ride.requester_id;
       if (otherUserId) {
+        // Fetch the name of the user who added the note
+        const { data: noteAuthor, error: authorError } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', userId)
+          .single();
+
+        if (authorError) throw authorError;
+
         await sendImmediateNotification(
           otherUserId,
           'New Ride Message',
-          `New message for ride ${rideId}`
+          `${noteAuthor.name} has added a new message to your ride`
         );
         await supabase.from('notifications').insert({
           user_id: otherUserId,
-          message: `New message for ride ${rideId}`,
-          type: 'New Message',
+          message: `${noteAuthor.name} has added a new message to your ride`,
+          type: 'newNote',
           related_id: rideId
         });
       }
@@ -148,4 +157,3 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

@@ -8,6 +8,7 @@ import { Loader } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact } from "@/types"
 import { fetchUserData } from "@/utils/api"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
 export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -20,6 +21,7 @@ export default function Dashboard() {
 
   const router = useRouter()
   const { toast } = useToast()
+  const isOnline = useOnlineStatus()
 
   // Declare the searchParams variable inside a useEffect to ensure it is only accessed on the client
   const [searchParams, setSearchParamsState] = useState<URLSearchParams | null>(null)
@@ -43,36 +45,38 @@ export default function Dashboard() {
     }
   }, [router])
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (currentUser && etag) {
-        void fetchUserDataCallback(currentUser.id)
-      }
-    }, 10000)
-    return () => clearInterval(intervalId)
-  }, [currentUser, etag])
-
   const fetchUserDataCallback = async (userId: string) => {
-    try {
-      const result = await fetchUserData(userId, etag)
-      if (result) {
-        const { data, newEtag } = result
-        if (newEtag !== etag) {
-          setEtag(newEtag)
-          setRides(data.rides)
-          setContacts(data.contacts)
+    if (isOnline) {
+      try {
+        const result = await fetchUserData(userId, etag)
+        if (result) {
+          const { data, newEtag } = result
+          if (newEtag !== etag) {
+            setEtag(newEtag)
+            setRides(data.rides)
+            setContacts(data.contacts)
+          }
         }
+        setIsLoading(false)
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+        toast({
+          title: "Error",
+          description: "Failed to fetch user data. Please try again.",
+          variant: "destructive",
+        })
       }
-      setIsLoading(false)
-    } catch (error) {
-      console.error("Error fetching user data:", error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch user data. Please try again.",
-        variant: "destructive",
-      })
     }
   }
+
+  useEffect(() => {
+    if (currentUser) {
+      const intervalId = setInterval(() => {
+        void fetchUserDataCallback(currentUser.id)
+      }, 10000)
+      return () => clearInterval(intervalId)
+    }
+  }, [currentUser, isOnline])
 
   const logout = () => {
     localStorage.removeItem("currentUser")

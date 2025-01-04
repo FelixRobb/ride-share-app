@@ -99,16 +99,25 @@ export async function POST(request: Request) {
 
     if (contactsError) throw contactsError;
 
+    // Fetch the current user's name
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('name')
+      .eq('id', requester_id)
+      .single();
+
+    if (userError) throw userError;
+
     for (const contact of contacts) {
       await sendImmediateNotification(
         contact.contact_id,
         'New Ride Available',
-        'A new ride is available from your contact'
+        `A new ride is available from your contact ${currentUser.name}`
       );
       await supabase.from('notifications').insert({
         user_id: contact.contact_id,
-        message: 'A new ride is available from your contact',
-        type: 'New Ride',
+        message: `A new ride is available from your contact ${currentUser.name}`,
+        type: 'newRide',
         related_id: newRide.id
       });
     }

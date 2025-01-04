@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { User, AssociatedPerson } from "@/types";
 import { Loader } from 'lucide-react';
 import { fetchUserData } from "@/utils/api";
+import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
 export default function CreateRide() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -17,6 +18,7 @@ export default function CreateRide() {
 
   const router = useRouter();
   const { toast } = useToast();
+  const isOnline = useOnlineStatus();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -32,23 +34,34 @@ export default function CreateRide() {
   }, [router]);
 
   const fetchUserDataCallback = async (userId: string) => {
-    try {
-      const result = await fetchUserData(userId, etag);
-      if (result) {
-        const { data, newEtag } = result;
-        setEtag(newEtag);
-        setAssociatedPeople(data.associatedPeople);
+    if (isOnline) {
+      try {
+        const result = await fetchUserData(userId, etag);
+        if (result) {
+          const { data, newEtag } = result;
+          setEtag(newEtag);
+          setAssociatedPeople(data.associatedPeople);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch user data. Please try again.",
+          variant: "destructive",
+        });
       }
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch user data. Please try again.",
-        variant: "destructive",
-      });
     }
   };
+
+  useEffect(() => {
+    if (currentUser) {
+      const intervalId = setInterval(() => {
+        void fetchUserDataCallback(currentUser.id);
+      }, 10000);
+      return () => clearInterval(intervalId);
+    }
+  }, [currentUser, isOnline]);
 
   const logout = () => {
     if (typeof window !== 'undefined') {
@@ -76,3 +89,4 @@ export default function CreateRide() {
     </Layout>
   );
 }
+

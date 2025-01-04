@@ -27,17 +27,26 @@ export async function POST(request: NextRequest) {
 
     if (updateError) throw updateError;
 
+    // Fetch the current user's name
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('name')
+      .eq('id', userId)
+      .single();
+
+    if (userError) throw userError;
+
     await sendImmediateNotification(
       contact.user_id,
       'Contact Request Accepted',
-      'Your contact request has been accepted'
+      `Your contact request has been accepted by ${currentUser.name}`
     );
 
     const { error: notificationError } = await supabase
       .from('notifications')
       .insert({
         user_id: contact.user_id,
-        message: 'Your contact request has been accepted',
+        message: `Your contact request has been accepted by ${currentUser.name}`,
         type: 'contactAccepted',
         related_id: contactId
       });

@@ -11,6 +11,7 @@ import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare,
 import { useToast } from "@/hooks/use-toast";
 import { User, Ride, Contact, Note } from "@/types";
 import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes, editNote, deleteNote, markNoteAsSeen, fetchRideDetails, finishRide } from "@/utils/api";
+import { useOnlineStatus } from "@/utils/useOnlineStatus";
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -39,7 +40,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   const [map, setMap] = useState<maplibregl.Map | null>(null);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const searchParams = useSearchParams()
-  const fromTab = searchParams.get('from') || 'available'
+  const isOnline = useOnlineStatus();
 
   const scrollToBottom = useCallback(() => {
     if (typeof window !== 'undefined' && scrollAreaRef.current) {
@@ -59,7 +60,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   };
 
   const loadNotes = useCallback(async () => {
-    if (ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") {
+    if (isOnline && (ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed")) {
       try {
         const fetchedNotes = await fetchNotes(ride.id);
         setNotes(fetchedNotes || []);
@@ -80,31 +81,36 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
         }
       } catch (error) {
         console.error("Error fetching notes:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load notes. Please try again.",
-          variant: "destructive",
-        });
+        if (isOnline) {
+          toast({
+            title: "Error",
+            description: "Failed to load notes. Please try again.",
+            variant: "destructive",
+          });
+        }
       }
     }
-  }, [ride.id, ride.status, currentUser.id, toast, notes.length]);
+  }, [ride.id, ride.status, currentUser.id, toast, notes.length, isOnline]);
 
   const refreshRideData = useCallback(async () => {
-    try {
-      const updatedRide = await fetchRideDetails(currentUser.id, ride.id);
-      setRide(updatedRide);
-    } catch (error) {
-      console.error("Error refreshing ride data:", error);
-    } finally {
-      setLoading(false);
+    if (isOnline) {
+      try {
+        setLoading(true);
+        const updatedRide = await fetchRideDetails(currentUser.id, ride.id);
+        setRide(updatedRide);
+      } catch (error) {
+        console.error("Error refreshing ride data:", error);
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [currentUser.id, ride.id]);
+  }, [currentUser.id, ride.id, isOnline]);
 
   useEffect(() => {
     loadNotes();
     scrollToBottom();
-    const notesInterval = setInterval(loadNotes, 10000);
-    const rideInterval = setInterval(refreshRideData, 20000);
+    const notesInterval = setInterval(loadNotes, 5000);
+    const rideInterval = setInterval(refreshRideData, 10000);
 
     return () => {
       clearInterval(notesInterval);
@@ -508,10 +514,10 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                           onChange={(e) => setEditedNoteContent(e.target.value)}
                           className="mb-2"
                         />
-                        <Button onClick={handleSaveEdit} size="sm" className="mr-2">
+                        <Button onClick={handleSaveEdit} size="sm" className="mr-2" disabled={!isOnline}>
                           Save
                         </Button>
-                        <Button onClick={() => setEditingNoteId(null)} size="sm" variant="outline">
+                        <Button onClick={() => setEditingNoteId(null)} size="sm" variant="outline" disabled={!isOnline}>
                           Cancel
                         </Button>
                       </div>
@@ -527,7 +533,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                   </div>
                   {note.user_id === currentUser?.id && !editingNoteId && (
                     <div className="mt-1">
-                      <Button onClick={() => handleEditNote(note.id)} size="sm" variant="ghost" className="p-1">
+                      <Button onClick={() => handleEditNote(note.id)} size="sm" variant="ghost" className="p-1" disabled={!isOnline}>
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button onClick={() => handleDeleteNote(note.id)} size="sm" variant="ghost" className="p-1">
@@ -547,8 +553,9 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
                   onKeyPress={(e) => handleAddNote(e)}
                   placeholder="Type your message..."
                   className="flex-grow"
+                  disabled={!isOnline}
                 />
-                <Button onClick={() => handleAddNote()} size="icon">
+                <Button onClick={() => handleAddNote()} size="icon" disabled={!isOnline}>
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
@@ -558,12 +565,12 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row gap-2">
         {ride.requester_id === currentUser?.id && ride.status !== "cancelled" && ride.status !== "completed" && (
-          <Button variant="destructive" onClick={handleCancelRequest} className="w-full sm:w-auto" disabled={isLoading}>
+          <Button variant="destructive" onClick={handleCancelRequest} className="w-full sm:w-auto" disabled={isLoading || !isOnline}>
             {isLoading ? <Loader className="animate-spin h-5 w-5" /> : "Cancel Request"}
           </Button>
         )}
         {ride.accepter_id === currentUser?.id && ride.status === "accepted" && (
-          <Button variant="destructive" onClick={handleCancelOffer} className="w-full sm:w-auto" disabled={isLoading}>
+          <Button variant="destructive" onClick={handleCancelOffer} className="w-full sm:w-auto" disabled={isLoading || !isOnline}>
             {isLoading ? <Loader className="animate-spin h-5 w-5" /> : "Cancel Offer"}
           </Button>
         )}
@@ -571,7 +578,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
           <Button
             onClick={handleAcceptRide}
             className="w-full sm:w-auto"
-            disabled={isLoading}
+            disabled={isLoading || !isOnline}
           >
             {isLoading ? <Loader className="animate-spin h-5 w-5" /> : "Offer Ride"}
           </Button>
@@ -580,7 +587,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
           <Button
             onClick={() => setIsFinishRideDialogOpen(true)}
             className="w-full sm:w-auto"
-            disabled={isLoading}
+            disabled={isLoading || !isOnline}
           >
             {isLoading ? <Loader className="animate-spin h-5 w-5" /> : "Finish Ride"}
           </Button>
