@@ -32,18 +32,26 @@ export async function POST(request: Request) {
 
     if (updateError) throw updateError;
 
+    // Fetch the current user's name
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('name')
+      .eq('id', userId)
+      .single();
+
+    if (userError) throw userError;
+
     await sendImmediateNotification(
       ride.requester_id,
       'Ride Accepted',
-      'Your ride request has been accepted'
+      `Your ride request has been accepted by ${currentUser.name}`
     );
     await supabase.from('notifications').insert({
       user_id: ride.requester_id,
-      message: 'Your ride request has been accepted',
-      type: 'Ride Accepted',
+      message: `Your ride request has been accepted by ${currentUser.name}`,
+      type: 'rideAccepted',
       related_id: rideId
     });
-
 
     return NextResponse.json({ ride: updatedRide });
   } catch (error) {

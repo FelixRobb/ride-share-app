@@ -11,6 +11,7 @@ import { fetchUserData, fetchRideDetails } from "@/utils/api"
 import dynamic from 'next/dynamic';
 import { Button } from "@/components/ui/button";
 import { ArrowBigLeft } from 'lucide-react';
+import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
 const RideDetailsPage = dynamic(() => import('@/components/RideDetailsPage'), { ssr: false });
 
@@ -26,8 +27,8 @@ export default function RideDetails() {
   const { toast } = useToast()
   const searchParams = useSearchParams()
   const fromTab = searchParams.get('from') || 'available'
+  const isOnline = useOnlineStatus()
 
-  // Fetch user data from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const user = localStorage.getItem('currentUser');
@@ -48,41 +49,54 @@ export default function RideDetails() {
   }, [currentUser, id])
 
   const fetchUserDataCallback = async (userId: string) => {
-    try {
-      const result = await fetchUserData(userId, etag)
-      if (result) {
-        const { data, newEtag } = result
-        setEtag(newEtag)
-        setContacts(data.contacts)
+    if (isOnline) {
+      try {
+        const result = await fetchUserData(userId, etag)
+        if (result) {
+          const { data, newEtag } = result
+          setEtag(newEtag)
+          setContacts(data.contacts)
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+        toast({
+          title: "Error",
+          description: "Failed to fetch user data. Please try again.",
+          variant: "destructive",
+        })
       }
-    } catch (error) {
-      console.error("Error fetching user data:", error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch user data. Please try again.",
-        variant: "destructive",
-      })
     }
   }
 
   const fetchRideDetailsCallback = async (rideId: string) => {
-    try {
-      if (!currentUser) {
-        throw new Error("User not authenticated");
+    if (isOnline) {
+      try {
+        if (!currentUser) {
+          throw new Error("User not authenticated");
+        }
+        const rideDetails = await fetchRideDetails(currentUser.id, rideId);
+        setRide(rideDetails);
+      } catch (error) {
+        console.error("Error fetching ride details:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch ride details, or you don't have permission to see this ride. Please go back.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
-      const rideDetails = await fetchRideDetails(currentUser.id, rideId);
-      setRide(rideDetails);
-    } catch (error) {
-      console.error("Error fetching ride details:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch ride details, or you don't have permission to see this ride. Please go back.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (currentUser && id) {
+      const intervalId = setInterval(() => {
+        void fetchRideDetailsCallback(id as string);
+      }, 10000);
+      return () => clearInterval(intervalId);
+    }
+  }, [currentUser, id, isOnline]);
 
   const logout = () => {
     localStorage.removeItem("currentUser")

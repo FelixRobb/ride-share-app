@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Loader } from 'lucide-react'
 import { User, Contact, AssociatedPerson, UserStats, Notification } from "@/types"
 import { fetchUserData } from "@/utils/api"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
 export default function Profile() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -19,27 +20,30 @@ export default function Profile() {
 
   const router = useRouter()
   const { toast } = useToast()
+  const isOnline = useOnlineStatus()
 
   const fetchUserDataCallback = useCallback(async (userId: string) => {
-    try {
-      const result = await fetchUserData(userId, etag)
-      if (result) {
-        const { data, newEtag } = result
-        setEtag(newEtag)
-        setContacts(data.contacts)
-        setAssociatedPeople(data.associatedPeople)
-        setUserStats(data.stats)
+    if (isOnline) {
+      try {
+        const result = await fetchUserData(userId, etag)
+        if (result) {
+          const { data, newEtag } = result
+          setEtag(newEtag)
+          setContacts(data.contacts)
+          setAssociatedPeople(data.associatedPeople)
+          setUserStats(data.stats)
+        }
+        setIsLoading(false)
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+        toast({
+          title: "Error",
+          description: "Failed to fetch user data. Please try again.",
+          variant: "destructive",
+        })
       }
-      setIsLoading(false)
-    } catch (error) {
-      console.error("Error fetching user data:", error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch user data. Please try again.",
-        variant: "destructive",
-      })
     }
-  }, [etag, toast])
+  }, [etag, toast, isOnline])
 
   useEffect(() => {
     const user = localStorage.getItem("currentUser")
@@ -53,12 +57,12 @@ export default function Profile() {
   }, [router, fetchUserDataCallback])
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (currentUser) {
+    if (currentUser) {
+      const intervalId = setInterval(() => {
         void fetchUserDataCallback(currentUser.id)
-      }
-    }, 10000)
-    return () => clearInterval(intervalId)
+      }, 20000)
+      return () => clearInterval(intervalId)
+    }
   }, [currentUser, fetchUserDataCallback])
 
   const logout = () => {
@@ -87,3 +91,4 @@ export default function Profile() {
     </Layout>
   )
 }
+
