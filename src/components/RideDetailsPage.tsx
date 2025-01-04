@@ -324,6 +324,8 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
     setIsFinishRideDialogOpen(false);
     try {
       await finishRide(ride.id, currentUser.id);
+      await fetchUserData();
+      await refreshRideData();
       toast({
         title: "Success",
         description: "Ride marked as completed.",

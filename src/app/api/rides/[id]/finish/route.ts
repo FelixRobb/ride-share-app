@@ -36,19 +36,6 @@ export async function POST(request: Request) {
 
     if (updateError) throw updateError;
 
-    // Update user stats
-    await fetch(`/api/users/${ride.requester_id}/stats`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ completed_rides_offered: 1 }),
-    });
-
-    await fetch(`/api/users/${ride.accepter_id}/stats`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ completed_rides_accepted: 1 }),
-    });
-
     const otherUserId = userId === ride.requester_id ? ride.accepter_id : ride.requester_id;
 
     await sendImmediateNotification(

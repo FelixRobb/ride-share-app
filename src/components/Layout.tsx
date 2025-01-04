@@ -19,8 +19,6 @@ interface LayoutProps {
   logout: () => void;
 }
 
-
-
 export default function Layout({ children, currentUser, logout }: LayoutProps) {
   const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
@@ -81,23 +79,23 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
     setIsNotificationDialogOpen(false);
   }, [currentUser, notifications, toast]);
 
-// Sync the theme state with the current mode
-useEffect(() => {
-  if (currentMode === "system") {
-    setTheme(systemTheme || "dark"); // Default to "dark" if systemTheme is undefined
-  } else {
-    setTheme(currentMode);
-  }
-}, [currentMode, setTheme, systemTheme]);
+  // Sync the theme state with the current mode
+  useEffect(() => {
+    if (currentMode === "system") {
+      setTheme(systemTheme || "dark"); // Default to "dark" if systemTheme is undefined
+    } else {
+      setTheme(currentMode);
+    }
+  }, [currentMode, setTheme, systemTheme]);
 
-// Toggle between "system", "dark", and "light"
-const toggleTheme = () => {
-  setCurrentMode((prevMode) => {
-    if (prevMode === "system") return "dark";
-    if (prevMode === "dark") return "light";
-    return "system";
-  });
-};
+  // Toggle between "system", "dark", and "light"
+  const toggleTheme = () => {
+    setCurrentMode((prevMode) => {
+      if (prevMode === "system") return "dark";
+      if (prevMode === "dark") return "light";
+      return "system";
+    });
+  };
 
   useEffect(() => {
     const handleOnline = () => {
@@ -190,14 +188,14 @@ const toggleTheme = () => {
             </Dialog>
 
             <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-accent">
-            {currentMode === "system" ? (
-              <Monitor className="h-4 w-4" />
-            ) : currentMode === "dark" ? (
-              <Moon className="h-4 w-4" />
-            ) : (
-              <Sun className="h-4 w-4" />
-            )}
-          </button>
+              {currentMode === "system" ? (
+                <Monitor className="h-4 w-4" />
+              ) : currentMode === "dark" ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4" />
+              )}
+            </button>
 
             <Button variant="ghost" onClick={handleLogout} className="rounded-full px-4 py-2 hover:bg-destructive hover:text-destructive-foreground">
               <LogOut className="mr-2 h-4 w-4" /> Logout
@@ -237,8 +235,22 @@ const toggleTheme = () => {
               </DropdownMenuItem>
 
               <DropdownMenuItem onClick={toggleTheme}>
-                {theme === "light" ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
-                {theme === "light" ? "Dark Mode" : "Light Mode"}
+                  {currentMode === "system" ? (
+                    <>
+                      <Monitor className="h-4 w-4 mr-2" />
+                      System mode
+                    </>
+                  ) : currentMode === "dark" ? (
+                    <>
+                      <Moon className="h-4 w-4 mr-2" />
+                      Dark mode
+                    </>
+                  ) : (
+                    <>
+                      <Sun className="h-4 w-4 mr-2" />
+                      Light mode
+                    </>
+                  )}
               </DropdownMenuItem>
 
               <DropdownMenuItem onClick={handleLogout} className="text-destructive hover:text-destructive-foreground focus:bg-destructive/10">
