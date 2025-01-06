@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -8,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle } from 'lucide-react'
+import CustomPhoneInput from './PhoneInput'
 
 interface MultiStepRegisterFormProps {
   onSubmit: (name: string, phone: string, email: string, password: string) => Promise<void>
@@ -106,16 +105,11 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
       description: "How can we reach you?",
       fields: (
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              placeholder="Enter phone number"
-              value={formData.phone}
-              onChange={(e) => updateFormData("phone", e.target.value)}
-              required
-            />
-          </div>
+          <CustomPhoneInput
+            value={formData.phone}
+            onChange={(value) => updateFormData("phone", value || "")}
+            label="Phone Number"
+          />
         </div>
       ),
     },

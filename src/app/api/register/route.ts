@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 import bcrypt from 'bcrypt';
 import { sendEmail, getWelcomeEmailContent } from '@/lib/emailService';
+import { parsePhoneNumber } from 'libphonenumber-js';
 
 export async function POST(request: Request) {
   const { name, phone, email, password } = await request.json();
@@ -19,13 +20,23 @@ export async function POST(request: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const lowerCaseEmail = email.toLowerCase();
+
+    const phoneNumber = parsePhoneNumber(phone);
+    if (!phoneNumber || !phoneNumber.isValid()) {
+      return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 });
+    }
 
     const { data: newUser, error: insertError } = await supabase
       .from('users')
-      .insert({ name, phone, email: lowerCaseEmail, password: hashedPassword })
-      .select('id, name, phone, email')
+      .insert({
+        name,
+        phone: phoneNumber.number,
+        phone_country: phoneNumber.country,
+        email: lowerCaseEmail,
+        password: hashedPassword
+      })
+      .select('id, name, phone, phone_country, email')
       .single();
 
     if (insertError) throw insertError;

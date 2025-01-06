@@ -1,34 +1,48 @@
-// src/app/api/login/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 import bcrypt from 'bcrypt';
 
 export async function POST(request: Request) {
-  const { phoneOrEmail, password } = await request.json();
+  const { email, password } = await request.json();
+  console.log('Login request received:', { email, password: '******' });
 
-  const phoneOrEmaillower = phoneOrEmail.toLowerCase();
-  
+  if (!email || !password) {
+    console.log('Email or password is missing');
+    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+  }
+
+  const lowerCaseEmail = email.toLowerCase();
+
   try {
-    const { data: user, error } = await supabase
+    const { data, error } = await supabase
       .from('users')
       .select('*')
-      .or(`phone.eq.${phoneOrEmaillower},email.eq.${phoneOrEmaillower}`)
+      .eq('email', lowerCaseEmail)
       .single();
 
-    if (error || !user) {
+    if (error) {
+      console.error('Error querying user:', error);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!data) {
+      console.log('No user found with this email');
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, data.password);
+    console.log('Password valid:', isPasswordValid);
+
     if (!isPasswordValid) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     // Don't send the password back to the client
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, ...userWithoutPassword } = data;
     return NextResponse.json({ user: userWithoutPassword });
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

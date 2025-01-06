@@ -12,10 +12,10 @@ export default function Login() {
   const router = useRouter()
   const { toast } = useToast()
 
-  const handleLogin = async (phoneOrEmail: string, password: string) => {
+  const handleLogin = async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      const user = await login(phoneOrEmail, password)
+      const user = await login(email, password)
       localStorage.setItem("currentUser", JSON.stringify(user))
       localStorage.setItem("theme", "dark")
       await fetchUserData(user.id, null)

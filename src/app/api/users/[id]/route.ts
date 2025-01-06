@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
+import { parsePhoneNumber } from 'libphonenumber-js';
 import { sendImmediateNotification } from '@/lib/pushNotificationService';
 
 // PUT Handler: Update User Information
@@ -14,11 +15,21 @@ export async function PUT(request: Request) {
   }
 
   try {
+    const phoneNumber = parsePhoneNumber(phone);
+    if (!phoneNumber || !phoneNumber.isValid()) {
+      return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 });
+    }
+
     const { data: updatedUser, error } = await supabase
       .from('users')
-      .update({ name, phone, email })
+      .update({
+        name,
+        phone: phoneNumber.number,
+        phone_country: phoneNumber.country,
+        email
+      })
       .eq('id', userId)
-      .select('id, name, phone, email')
+      .select('id, name, phone, phone_country, email')
       .single();
 
     if (error) throw error;

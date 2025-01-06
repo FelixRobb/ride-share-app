@@ -2,7 +2,7 @@ import { useState } from "react"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
@@ -10,7 +10,7 @@ import { User } from "../types"
 
 interface LoginPageProps {
   setCurrentUser: (user: User) => void
-  handleLogin: (phoneOrEmail: string, password: string) => Promise<void>
+  handleLogin: (email: string, password: string) => Promise<void>
   isLoading: boolean
 }
 
@@ -19,24 +19,48 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
   const [isResetLoading, setIsResetLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-
-  const handleResetPassword = async (
-  ) => {
+  const handleResetPassword = async () => {
     try {
       setIsResetLoading(true);
       const response = await fetch("/api/auth/reset-password",
         {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: resetEmail }),
-        }); if (
-        response.ok) {
-        toast({ title: "Success", description: "Password reset email sent. Please check your inbox.", }); setIsResetPasswordOpen(false);
-      } else { const data = await response.json(); throw new Error(data.error || "Failed to send reset email"); }
-    } catch (
-    error
-    ) { toast({ title: "Error", description: error instanceof Error ? error.message : "An unexpected error occurred", variant: "destructive", }); }
-    finally {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: resetEmail }),
+        });
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Password reset email sent. Please check your inbox.",
+        });
+        setIsResetPasswordOpen(false);
+      } else {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to send reset email");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
       setIsResetLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      console.log('Submitting login form with:', { email, password: '******' });
+      await handleLogin(email, password);
+    } catch (error) {
+      console.error('Login error in component:', error);
+      setError("Invalid email or password. Please try again.");
     }
   };
 
@@ -59,30 +83,31 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
         <Card className="w-full max-w-[350px]">
           <CardHeader>
             <CardTitle>Login</CardTitle>
-            <CardDescription>Enter your phone number or email and password to login.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault()
-                const phoneOrEmail = (e.currentTarget.elements.namedItem("phoneOrEmail") as HTMLInputElement).value
-                const password = (e.currentTarget.elements.namedItem("password") as HTMLInputElement).value
-                try {
-                  await handleLogin(phoneOrEmail, password)
-                  setError(null)
-                } catch (error) {
-                  setError("Invalid phone number/email or password. Please try again.")
-                }
-              }}
-            >
+            <form onSubmit={handleSubmit}>
               <div className="grid w-full items-center gap-4">
                 <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="phoneOrEmail">Phone or Email</Label>
-                  <Input id="phoneOrEmail" placeholder="Enter your phone number or email" required />
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" placeholder="Enter your password" required />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
                 </div>
               </div>
               {error && <p className="text-destructive mt-2">{error}</p>}
@@ -99,28 +124,6 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
               Forgot your password?
             </Button>
           </CardFooter>
-
-          <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
-            <DialogContent className="rounded-lg w-11/12">
-              <DialogHeader>
-                <DialogTitle>Reset Password</DialogTitle>
-                <DialogDescription>Enter your email to receive a password reset link.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="reset-email" className="text-right">
-                    Email
-                  </Label>
-                  <Input id="reset-email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="col-span-3" />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={handleResetPassword} disabled={isResetLoading}>
-                  {isResetLoading ? "Sending..." : "Send Reset Link"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </Card>
       </main>
       <footer className="bg-background p-4 border-t">
@@ -128,6 +131,28 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
           © {new Date().getFullYear()} RideShare. All rights reserved.
         </div>
       </footer>
+
+      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+        <DialogContent className="rounded-lg w-11/12">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>Enter your email to receive a password reset link.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="reset-email" className="text-right">
+                Email
+              </Label>
+              <Input id="reset-email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="col-span-3" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleResetPassword} disabled={isResetLoading}>
+              {isResetLoading ? "Sending..." : "Send Reset Link"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

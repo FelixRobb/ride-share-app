@@ -22,6 +22,7 @@ import {
 } from "../utils/api";
 import { Switch } from "@/components/ui/switch";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
+import PhoneInput from './PhoneInput';
 
 interface ProfilePageProps {
   currentUser: User;
@@ -592,15 +593,10 @@ export default function ProfilePage({
                   required
                 />
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="edit-phone">Phone</Label>
-                <Input
-                  id="edit-phone"
-                  value={editedUser?.phone || ""}
-                  onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, phone: e.target.value } : null))}
-                  required
-                />
-              </div>
+              <PhoneInput
+                value={editedUser?.phone || ""}
+                onChange={(value) => setEditedUser((prev) => (prev ? { ...prev, phone: value } : null))}
+              />
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="edit-email">Email</Label>
                 <Input

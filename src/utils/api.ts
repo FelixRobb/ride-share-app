@@ -1,10 +1,10 @@
 import { User, RideData, Contact, AssociatedPerson, Notification, Ride, Note } from '../types';
 
-export const login = async (phoneOrEmail: string, password: string): Promise<User> => {
+export const login = async (email: string, password: string): Promise<User> => {
   const response = await fetch("/api/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phoneOrEmail, password }),
+    body: JSON.stringify({ email, password }),
   });
   const data = await response.json();
   if (response.ok && data.user) {
