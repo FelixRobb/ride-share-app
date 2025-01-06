@@ -8,8 +8,6 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle } from 'lucide-react'
-import PhoneInput from 'react-phone-number-input'
-import 'react-phone-number-input/style.css'
 
 interface MultiStepRegisterFormProps {
   onSubmit: (name: string, phone: string, email: string, password: string) => Promise<void>
@@ -110,12 +108,12 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="phone">Phone Number</Label>
-            <PhoneInput
+            <Input
               id="phone"
               placeholder="Enter phone number"
               value={formData.phone}
-              onChange={(value) => updateFormData("phone", value || "")}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              onChange={(e) => updateFormData("phone", e.target.value)}
+              required
             />
           </div>
         </div>
