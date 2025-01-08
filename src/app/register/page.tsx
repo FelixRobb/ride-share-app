@@ -12,10 +12,10 @@ export default function Register() {
   const router = useRouter()
   const { toast } = useToast()
 
-  const handleRegister = async (name: string, phone: string, email: string, password: string) => {
+  const handleRegister = async (name: string, phone: string, countryCode: string, email: string, password: string) => {
     setIsLoading(true)
     try {
-      const user = await register(name, phone, email, password)
+      const user = await register(name, phone, countryCode, email, password)
       localStorage.setItem("currentUser", JSON.stringify(user))
       await fetchUserData(user.id, null)
       router.push('/dashboard')
@@ -40,3 +40,4 @@ export default function Register() {
     />
   )
 }
+

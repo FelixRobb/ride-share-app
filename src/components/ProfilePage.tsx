@@ -22,6 +22,8 @@ import {
 } from "../utils/api";
 import { Switch } from "@/components/ui/switch";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
+import 'react-phone-number-input/style.css';
+import ContactForm from './ContactForm';
 
 interface ProfilePageProps {
   currentUser: User;
@@ -178,23 +180,26 @@ export default function ProfilePage({
     }
   };
 
-  const handleAddContact = async () => {
-    if (newContactPhone.trim()) {
-      try {
-        setIsAddingContact(true);
-        await addContact(currentUser.id, newContactPhone);
-        setNewContactPhone("");
-        await fetchUserData(currentUser.id);
-        await fetchSuggestedContacts();
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "An unexpected error occurred",
-          variant: "destructive",
-        });
-      } finally {
-        setIsAddingContact(false);
-      }
+  const handleAddContact = async (phone: string, countryCode: string) => {
+    try {
+      setIsAddingContact(true);
+      await addContact(currentUser.id, phone, countryCode);
+      await fetchUserData(currentUser.id);
+      await fetchSuggestedContacts();
+      setNewContactPhone("");
+      toast({
+        title: "Success",
+        description: "Contact added successfully!",
+      });
+    } catch (error) {
+      console.error("Error adding contact:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingContact(false);
     }
   };
 
@@ -316,7 +321,7 @@ export default function ProfilePage({
         description: "Failed to update push notification preference. Please try again.",
         variant: "destructive",
       });
-      setIsPushEnabled(!checked); // Revert the switch if the API call fails
+      setIsPushEnabled(!checked);
     }
   };
 
@@ -412,7 +417,7 @@ export default function ProfilePage({
               <p className="font-medium">Push Notifications</p>
               <p className="text-sm text-muted-foreground">Receive notifications even when the app is closed</p>
             </div>
-            {isPushLoading ? ( // Conditionally render loader or switch
+            {isPushLoading ? (
               <Loader className="animate-spin h-5 w-5" />
             ) : (
               <Switch
@@ -464,19 +469,7 @@ export default function ProfilePage({
               </div>
             );
           })}
-          <div className="flex space-x-2 mt-4">
-            <Input
-              id="telephone-contact"
-              type="tel"
-              placeholder="Enter contact's phone number"
-              value={newContactPhone}
-              onChange={(e) => setNewContactPhone(e.target.value)}
-            />
-            <Button onClick={handleAddContact} disabled={isAddingContact || !isOnline}>
-              {isAddingContact ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
-              {isAddingContact ? "Adding..." : "Add Contact"}
-            </Button>
-          </div>
+          <ContactForm onAddContact={handleAddContact} />
 
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-2">Suggested Contacts</h3>
@@ -512,7 +505,7 @@ export default function ProfilePage({
                           ? "Mutual contact"
                           : "No common rides"}
                       </p>
-                      <Button variant="outline" size="sm" className="w-full" onClick={() => addContact(currentUser.id, contact.phone)} disabled={!isOnline}>
+                      <Button variant="outline" size="sm" className="w-full" onClick={() => handleAddContact(contact.phone, contact.country_code || "")} disabled={!isOnline}>
                         Add Contact
                       </Button>
                     </div>
@@ -597,7 +590,11 @@ export default function ProfilePage({
                 <Input
                   id="edit-phone"
                   value={editedUser?.phone || ""}
-                  onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, phone: e.target.value } : null))}
+                  onChange={(e) => {
+                    const phoneNumber = e.target.value;
+                    setEditedUser((prev) => prev ? { ...prev, phone: phoneNumber } : null);
+                  }}
+                  placeholder="Enter your phone number"
                   required
                 />
               </div>
@@ -622,7 +619,7 @@ export default function ProfilePage({
       </Dialog>
 
       <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
-      <DialogContent className="rounded-lg w-11/12">
+        <DialogContent className="rounded-lg w-11/12">
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
             <DialogDescription>Enter your current password and a new password</DialogDescription>
@@ -671,7 +668,7 @@ export default function ProfilePage({
       </Dialog>
 
       <Dialog open={isDeleteAccountDialogOpen} onOpenChange={setIsDeleteAccountDialogOpen}>
-      <DialogContent className="rounded-lg w-11/12">
+        <DialogContent className="rounded-lg w-11/12">
           <DialogHeader>
             <DialogTitle>Confirm Account Deletion</DialogTitle>
             <DialogDescription>
@@ -686,7 +683,7 @@ export default function ProfilePage({
       </Dialog>
 
       <Dialog open={isDeleteContactDialogOpen} onOpenChange={setIsDeleteContactDialogOpen}>
-      <DialogContent className="rounded-lg w-11/12">
+        <DialogContent className="rounded-lg w-11/12">
           <DialogHeader>
             <DialogTitle>Confirm Delete Contact</DialogTitle>
             <DialogDescription>

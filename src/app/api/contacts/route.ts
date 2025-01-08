@@ -1,87 +1,59 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
-import { sendImmediateNotification } from '@/lib/pushNotificationService';
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const userId = searchParams.get('userId');
-
-  if (!userId) {
-    return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-  }
-
-  try {
-    const { data: contacts, error } = await supabase
-      .from('contacts')
-      .select(`
-        *,
-        user:users!contacts_user_id_fkey (name, phone),
-        contact:users!contacts_contact_id_fkey (name, phone)
-      `)
-      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
-
-    if (error) throw error;
-
-    return NextResponse.json({ contacts });
-  } catch (error) {
-    console.error('Fetch contacts error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
+import bcrypt from 'bcrypt';
+import { sendEmail, getWelcomeEmailContent } from '@/lib/emailService';
+import { parsePhoneNumber } from 'libphonenumber-js';
 
 export async function POST(request: Request) {
-  const { userId, contactPhone } = await request.json();
+  const { name, phone, countryCode, email, password } = await request.json();
 
   try {
-    const { data: contactUser, error: contactUserError } = await supabase
+    const { data: existingUser } = await supabase
       .from('users')
-      .select('id, name, phone')
-      .eq('phone', contactPhone)
-      .single();
-
-    if (contactUserError || !contactUser) {
-      return NextResponse.json({ error: 'Contact user not found' }, { status: 404 });
-    }
-
-    const { data: existingContact, error: existingContactError } = await supabase
-      .from('contacts')
       .select('*')
-      .or(`and(user_id.eq.${userId},contact_id.eq.${contactUser.id}),and(user_id.eq.${contactUser.id},contact_id.eq.${userId})`)
+      .or(`phone.eq.${phone},email.eq.${email}`)
       .single();
 
-    if (existingContact) {
-      return NextResponse.json({ error: 'Contact already exists' }, { status: 409 });
+    if (existingUser) {
+      return NextResponse.json({ error: 'User already exists' }, { status: 409 });
     }
 
-    const { data: newContact, error: insertError } = await supabase
-      .from('contacts')
-      .insert({ user_id: userId, contact_id: contactUser.id, status: 'pending' })
-      .select()
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const lowerCaseEmail = email.toLowerCase();
+    const trimmedCountryCode = countryCode.slice(0, 5); // Ensure country code is not longer than 5 characters
+
+    const { data: newUser, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        name,
+        phone,
+        country_code: trimmedCountryCode,
+        email: lowerCaseEmail,
+        password: hashedPassword
+      })
+      .select('id, name, phone, country_code, email')
       .single();
 
     if (insertError) throw insertError;
 
-    await sendImmediateNotification(
-      contactUser.id,
-      'New Contact Request',
-      'You have a new contact request'
-    );
+    const { error: statsError } = await supabase
+      .from('user_stats')
+      .insert({ user_id: newUser.id });
 
-    const { error: notificationError } = await supabase
-      .from('notifications')
-      .insert({
-        user_id: contactUser.id,
-        message: 'You have a new contact request',
-        type: 'contactRequest',
-        related_id: newContact.id
-      });
+    if (statsError) throw statsError;
 
-    if (notificationError) throw notificationError;
+    // Send welcome email
+    try {
+      const welcomeEmailContent = getWelcomeEmailContent(newUser.name);
+      await sendEmail(newUser.email, 'Welcome to RideShare!', welcomeEmailContent);
+    } catch (emailError) {
+      console.error('Error sending welcome email:', emailError);
+      // Don't throw an error here, as we don't want to prevent successful registration
+    }
 
-    return NextResponse.json({ contact: { ...newContact, contact_name: contactUser.name, contact_phone: contactUser.phone } });
+    return NextResponse.json({ user: newUser });
   } catch (error) {
-    console.error('Add contact error:', error);
+    console.error('Registration error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

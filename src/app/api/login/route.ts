@@ -1,25 +1,53 @@
-// src/app/api/login/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 import bcrypt from 'bcrypt';
 
 export async function POST(request: Request) {
-  const { phoneOrEmail, password } = await request.json();
+  const { identifier, password, loginMethod } = await request.json();
+  console.log('Login request received:', { identifier, password: '******', loginMethod });
 
-  const phoneOrEmaillower = phoneOrEmail.toLowerCase();
-  
+  if (!identifier || !password) {
+    console.log('Identifier or password is missing');
+    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+  }
+
   try {
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .or(`phone.eq.${phoneOrEmaillower},email.eq.${phoneOrEmaillower}`)
-      .single();
+    let query;
+    if (loginMethod === 'email') {
+      query = supabase
+        .from('users')
+        .select('*')
+        .eq('email', identifier.toLowerCase())
+        .single();
+    } else {
+      // For phone login, we need to handle the country code separately
+      const phoneNumber = identifier.replace(/\s+/g, ''); // Remove any spaces
+      const countryCode = phoneNumber.startsWith('+') ? phoneNumber.slice(0, phoneNumber.length - 9) : '+351'; // Default to Portugal if no country code
+      const nationalNumber = phoneNumber.startsWith('+') ? phoneNumber.slice(phoneNumber.length - 9) : phoneNumber;
 
-    if (error || !user) {
+      query = supabase
+        .from('users')
+        .select('*')
+        .eq('phone', nationalNumber)
+        .eq('country_code', countryCode)
+        .single();
+    }
+
+    const { data: user, error } = await query;
+
+    if (error) {
+      console.error('Error querying user:', error);
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }
+
+    if (!user) {
+      console.log('No user found with this identifier');
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    console.log('Password valid:', isPasswordValid);
+
     if (!isPasswordValid) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
@@ -32,3 +60,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

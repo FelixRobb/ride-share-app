@@ -5,12 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { User } from "../types"
 import { MultiStepRegisterForm } from "./MultiStepRegisterForm"
 import { useRouter } from "next/navigation"
-import { register } from "@/utils/api"
-import { fetchUserData } from "@/utils/api"
+import { toast } from "@/hooks/use-toast"
 
 interface RegisterPageProps {
   setCurrentUser: (user: User) => void
-  handleRegister: (name: string, phone: string, email: string, password: string) => Promise<void>
+  handleRegister: (name: string, phone: string, countryCode: string, email: string, password: string) => Promise<void>
   isLoading: boolean
 }
 
@@ -18,9 +17,9 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const onSubmit = async (name: string, phone: string, email: string, password: string) => {
+  const onSubmit = async (name: string, phone: string, countryCode: string, email: string, password: string) => {
     try {
-      await handleRegister(name, phone, email, password)
+      await handleRegister(name, phone, countryCode, email, password)
     } catch (error) {
       if (error instanceof Error && error.message.includes("User already exists")) {
         setError("This phone number or email is already registered. Please use a different one or login.")
@@ -53,7 +52,10 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
             <CardDescription>Join RideShare and start sharing rides today!</CardDescription>
           </CardHeader>
           <CardContent>
-            <MultiStepRegisterForm onSubmit={onSubmit} isLoading={isLoading} />
+            <MultiStepRegisterForm
+              onSubmit={onSubmit}
+              isLoading={isLoading}
+            />
           </CardContent>
           {error && <p className="text-destructive text-center mt-2">{error}</p>}
           <CardFooter className="flex justify-center">
