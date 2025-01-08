@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
 import 'react-phone-number-input/style.css';
 import ContactForm from './ContactForm';
+import { ContactDialog } from './ContactDialog';
 
 interface ProfilePageProps {
   currentUser: User;
@@ -42,7 +43,6 @@ export default function ProfilePage({
   userStats,
   fetchUserData,
 }: ProfilePageProps) {
-  const [newContactPhone, setNewContactPhone] = useState("");
   const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" });
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -50,52 +50,16 @@ export default function ProfilePage({
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
-
-  const [suggestedContacts, setSuggestedContacts] = useState<any[]>([]);
-  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false);
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [isAddingContact, setIsAddingContact] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-  const [isDeleteContactDialogOpen, setIsDeleteContactDialogOpen] = useState(false);
-  const [contactToDelete, setContactToDelete] = useState<string | null>(null);
   const [isPushLoading, setIsPushLoading] = useState(true);
 
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
 
-  const fetchSuggestedContacts = useCallback(async () => {
-    if (!currentUser || !isOnline) return;
-    setIsFetchingSuggestions(true);
-    try {
-      const response = await fetch(`/api/suggested-contacts?userId=${currentUser.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSuggestedContacts(data.suggestedContacts || []);
-      } else {
-        throw new Error("Failed to fetch suggested contacts");
-      }
-    } catch (error) {
-      console.error("Error fetching suggested contacts:", error);
-      if (isOnline) {
-        toast({
-          title: "Error",
-          description: "Failed to load suggested contacts. Please try again later.",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setIsFetchingSuggestions(false);
-    }
-  }, [currentUser, toast, isOnline]);
-
-  useEffect(() => {
-    if (isOnline) {
-      fetchSuggestedContacts();
-    }
-  }, [fetchSuggestedContacts, isOnline]);
 
   useEffect(() => {
     const fetchPushPreference = async () => {
@@ -180,69 +144,6 @@ export default function ProfilePage({
     }
   };
 
-  const handleAddContact = async (phone: string, countryCode: string) => {
-    try {
-      setIsAddingContact(true);
-      await addContact(currentUser.id, phone, countryCode);
-      await fetchUserData(currentUser.id);
-      await fetchSuggestedContacts();
-      setNewContactPhone("");
-      toast({
-        title: "Success",
-        description: "Contact added successfully!",
-      });
-    } catch (error) {
-      console.error("Error adding contact:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAddingContact(false);
-    }
-  };
-
-  const handleAcceptContact = async (contactId: string) => {
-    try {
-      await acceptContact(contactId, currentUser.id);
-      await fetchUserData(currentUser.id);
-      await fetchSuggestedContacts();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteContact = (contactId: string) => {
-    setContactToDelete(contactId);
-    setIsDeleteContactDialogOpen(true);
-  };
-
-  const confirmDeleteContact = async () => {
-    if (contactToDelete) {
-      try {
-        await deleteContact(contactToDelete, currentUser.id);
-        await fetchUserData(currentUser.id);
-        await fetchSuggestedContacts();
-        setIsDeleteContactDialogOpen(false);
-        setContactToDelete(null);
-        toast({
-          title: "Contact Deleted",
-          description: "The contact has been successfully deleted.",
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "An unexpected error occurred",
-          variant: "destructive",
-        });
-      }
-    }
-  };
 
   const handleAddAssociatedPerson = async () => {
     if (newAssociatedPerson.name && newAssociatedPerson.relationship) {
@@ -434,88 +335,12 @@ export default function ProfilePage({
         <CardHeader>
           <CardTitle className="text-2xl">Contacts</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {contacts.map((contact) => {
-            const isCurrentUserRequester = contact.user_id === currentUser?.id;
-            const contactName = isCurrentUserRequester ? contact.contact?.name ?? "Unknown name" : contact.user?.name ?? "Unknown name";
-            const contactPhone = isCurrentUserRequester ? contact.contact?.phone ?? "Unknown phone" : contact.user?.phone ?? "Unknown phone";
-
-            return (
-              <div key={contact.id} className="flex flex-col space-y-2 p-3 bg-secondary rounded-lg">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                      {contactName.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="flex flex-row items-center gap-1">
-                        <p className="font-semibold">{contactName}</p>
-                        <p className="text-sm text-muted-foreground">({contact.status})</p>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{contactPhone}</p>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    {contact.status === "pending" && contact.contact_id === currentUser?.id && (
-                      <Button onClick={() => handleAcceptContact(contact.id)} size="sm" disabled={!isOnline}>
-                        Accept
-                      </Button>
-                    )}
-                    <Button onClick={() => handleDeleteContact(contact.id)} variant="destructive" size="sm" disabled={!isOnline}>
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          <ContactForm onAddContact={handleAddContact} />
-
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-2">Suggested Contacts</h3>
-            {isFetchingSuggestions ? (
-              <div className="flex space-x-4 overflow-x-auto p-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex flex-col items-center space-y-2 w-32">
-                    <Skeleton className="h-20 w-20 rounded-full" />
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-8 w-full" />
-                  </div>
-                ))}
-              </div>
-            ) : suggestedContacts.length > 0 ? (
-              <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-                <div className="flex w-max space-x-4 p-4">
-                  {suggestedContacts.map((contact) => (
-                    <div key={contact.id} className="flex flex-col items-center space-y-2 w-32">
-                      <Avatar className="h-20 w-20">
-                        <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                          {contact.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="text-center">
-                        <p className="font-medium text-sm">{contact.name}</p>
-                        <p className="text-xs text-muted-foreground">{contact.phone}</p>
-                      </div>
-                      <p className="text-xs text-center text-muted-foreground">
-                        {contact.common_rides > 0
-                          ? `${contact.common_rides} common ride${contact.common_rides > 1 ? "s" : ""}`
-                          : contact.is_mutual_contact
-                          ? "Mutual contact"
-                          : "No common rides"}
-                      </p>
-                      <Button variant="outline" size="sm" className="w-full" onClick={() => handleAddContact(contact.phone, contact.country_code || "")} disabled={!isOnline}>
-                        Add Contact
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            ) : (
-              <p className="text-center text-muted-foreground py-4">No suggested contacts at the moment.</p>
-            )}
-          </div>
+        <CardContent>
+          <ContactDialog
+            currentUser={currentUser}
+            contacts={contacts}
+            fetchUserData={() => fetchUserData(currentUser.id)}
+          />
         </CardContent>
       </Card>
 
@@ -681,22 +506,6 @@ export default function ProfilePage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={isDeleteContactDialogOpen} onOpenChange={setIsDeleteContactDialogOpen}>
-        <DialogContent className="rounded-lg w-11/12">
-          <DialogHeader>
-            <DialogTitle>Confirm Delete Contact</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this contact? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button className="mb-2" variant="outline" onClick={() => setIsDeleteContactDialogOpen(false)} disabled={!isOnline}>Cancel</Button>
-            <Button className="mb-2" variant="destructive" onClick={confirmDeleteContact} disabled={!isOnline}>Delete Contact</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
-
