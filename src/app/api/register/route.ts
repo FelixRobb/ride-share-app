@@ -1,11 +1,11 @@
-// src/app/api/register/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 import bcrypt from 'bcrypt';
 import { sendEmail, getWelcomeEmailContent } from '@/lib/emailService';
+import { parsePhoneNumber } from 'libphonenumber-js';
 
 export async function POST(request: Request) {
-  const { name, phone, email, password } = await request.json();
+  const { name, phone, countryCode, email, password } = await request.json();
 
   try {
     const { data: existingUser } = await supabase
@@ -19,13 +19,18 @@ export async function POST(request: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const lowerCaseEmail = email.toLowerCase();
 
     const { data: newUser, error: insertError } = await supabase
       .from('users')
-      .insert({ name, phone, email: lowerCaseEmail, password: hashedPassword })
-      .select('id, name, phone, email')
+      .insert({
+        name,
+        phone,
+        country_code: countryCode,
+        email: lowerCaseEmail,
+        password: hashedPassword
+      })
+      .select('id, name, phone, country_code, email')
       .single();
 
     if (insertError) throw insertError;

@@ -30,13 +30,14 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { userId, contactPhone } = await request.json();
+  const { userId, contactPhone, countryCode } = await request.json();
 
   try {
     const { data: contactUser, error: contactUserError } = await supabase
       .from('users')
-      .select('id, name, phone')
+      .select('id, name, phone, country_code')
       .eq('phone', contactPhone)
+      .eq('country_code', countryCode)
       .single();
 
     if (contactUserError || !contactUser) {
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
 
     if (notificationError) throw notificationError;
 
-    return NextResponse.json({ contact: { ...newContact, contact_name: contactUser.name, contact_phone: contactUser.phone } });
+    return NextResponse.json({ contact: { ...newContact, contact_name: contactUser.name, contact_phone: contactUser.phone, contact_country_code: contactUser.country_code } });
   } catch (error) {
     console.error('Add contact error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -1,10 +1,10 @@
 import { User, RideData, Contact, AssociatedPerson, Notification, Ride, Note } from '../types';
 
-export const login = async (phoneOrEmail: string, password: string): Promise<User> => {
+export const login = async (email: string, password: string): Promise<User> => {
   const response = await fetch("/api/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phoneOrEmail, password }),
+    body: JSON.stringify({ email, password }),
   });
   const data = await response.json();
   if (response.ok && data.user) {
@@ -14,11 +14,11 @@ export const login = async (phoneOrEmail: string, password: string): Promise<Use
   }
 };
 
-export const register = async (name: string, phone: string, email: string, password: string): Promise<User> => {
+export const register = async (name: string, phone: string, countryCode: string, email: string, password: string): Promise<User> => {
   const response = await fetch("/api/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, phone, email, password }),
+    body: JSON.stringify({ name, phone, countryCode, email, password }),
   });
   const data = await response.json();
   if (response.ok && data.user) {
@@ -164,17 +164,17 @@ export const markNoteAsSeen = async (noteId: string, userId: string): Promise<vo
   }
 };
 
-export const addContact = async (userId: string, contactPhone: string): Promise<Contact> => {
+export const addContact = async (userId: string, contactPhone: string, countryCode: string): Promise<Contact> => {
   const response = await fetch("/api/contacts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, contactPhone }),
+    body: JSON.stringify({ userId, contactPhone, countryCode }),
   });
   const data = await response.json();
   if (response.ok && data.contact) {
     return data.contact;
   } else {
-    throw new Error(data.error || "Failed to add contact. Please try again.");
+    throw new Error(data.error || "Failed to add contact. User not found or an error occurred.");
   }
 };
 
