@@ -174,7 +174,7 @@ export const addContact = async (userId: string, contactPhone: string, countryCo
   if (response.ok && data.contact) {
     return data.contact;
   } else {
-    throw new Error(data.error || "Failed to add contact. Please try again.");
+    throw new Error(data.error || "Failed to add contact. User not found or an error occurred.");
   }
 };
 

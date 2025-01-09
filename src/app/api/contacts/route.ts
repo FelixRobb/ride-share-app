@@ -30,13 +30,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { userId, phone, countryCode } = await request.json();
+  const { userId, contactPhone, countryCode } = await request.json();
 
   try {
     const { data: contactUser, error: contactUserError } = await supabase
       .from('users')
       .select('id, name, phone, country_code')
-      .eq('phone', phone)
+      .eq('phone', contactPhone)
       .eq('country_code', countryCode)
       .single();
 

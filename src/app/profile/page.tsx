@@ -30,6 +30,7 @@ export default function Profile() {
           const { data, newEtag } = result
           setEtag(newEtag)
           setContacts(data.contacts)
+          console.log(data.contacts)
           setAssociatedPeople(data.associatedPeople)
           setUserStats(data.stats)
         }

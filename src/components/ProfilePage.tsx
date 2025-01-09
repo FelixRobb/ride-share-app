@@ -1,21 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LucideUser, Mail, Phone, Car, MapPin, Loader } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { User, Contact, AssociatedPerson, UserStats } from "../types";
 import {
   updateProfile,
   changePassword,
-  addContact,
-  acceptContact,
-  deleteContact,
   addAssociatedPerson,
   deleteAssociatedPerson,
   deleteUser,

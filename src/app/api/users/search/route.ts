@@ -15,7 +15,8 @@ export async function GET(request: Request) {
       .from('users')
       .select('id, name, phone, country_code')
       .or(`name.ilike.%${query}%,phone.ilike.%${query}%`)
-      .neq('id', currentUserId);
+      .neq('id', currentUserId)
+      .limit(7);
 
     if (error) throw error;
 
