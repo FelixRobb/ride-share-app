@@ -12,20 +12,17 @@ export async function GET(request: Request) {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id')
+      .select('*')
       .eq('id', userId)
       .single();
 
-    if (error) throw error;
-
-    if (data) {
-      return NextResponse.json({ exists: true });
-    } else {
-      return NextResponse.json({ exists: false });
+    if (error || !data) {
+      return NextResponse.json({ exists: false, message: error?.message || 'User not found' }, { status: 404 });
     }
+
+    return NextResponse.json({ exists: true, user: data });
   } catch (error) {
     console.error('Check user error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

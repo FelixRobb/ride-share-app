@@ -4,10 +4,8 @@ import bcrypt from 'bcrypt';
 
 export async function POST(request: Request) {
   const { identifier, password, loginMethod } = await request.json();
-  console.log('Login request received:', { identifier, password: '******', loginMethod });
 
   if (!identifier || !password) {
-    console.log('Identifier or password is missing');
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
@@ -36,17 +34,14 @@ export async function POST(request: Request) {
     const { data: user, error } = await query;
 
     if (error) {
-      console.error('Error querying user:', error);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     if (!user) {
-      console.log('No user found with this identifier');
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    console.log('Password valid:', isPasswordValid);
 
     if (!isPasswordValid) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
@@ -56,7 +51,6 @@ export async function POST(request: Request) {
     const { password: _, ...userWithoutPassword } = user;
     return NextResponse.json({ user: userWithoutPassword });
   } catch (error) {
-    console.error('Login error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
