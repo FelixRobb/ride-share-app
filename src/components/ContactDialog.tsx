@@ -80,7 +80,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
   const handleAddContact = async (user: User) => {
     setAddingUserId(user.id);
     try {
-      await addContact(currentUser.id, user.phone, user.country_code);
+      await addContact(currentUser.id, user.phone, user.country_code || '');
       await fetchUserData();
       setSearchQuery('');
       setSearchResults([]);
@@ -134,17 +134,22 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
     }
   };
 
-  const getContactStatus = (contactId: string) => {
-    const existingContact = contacts.find(c => c.contact_id === contactId || c.user_id === contactId);
-    if (existingContact) {
-      if (existingContact.status === 'accepted') return 'Accepted';
-      if (existingContact.status === 'pending') {
-        if (existingContact.user_id === currentUser.id) return 'Pending';
-        return 'Pending their approval';
+  const getContactStatus = (user: User | Contact): string | null => {
+    if ('status' in user) {
+      // This is a Contact object
+      if (user.status === 'accepted') return 'Accepted';
+      if (user.status === 'pending') {
+        return user.user_id === currentUser.id ? 'Pending' : 'Pending their approval';
       }
-      return existingContact.status;
+      return user.status;
+    } else {
+      // This is a User object from search results
+      const existingContact = contacts.find(c => c.contact_id === user.id || c.user_id === user.id);
+      if (existingContact) {
+        return getContactStatus(existingContact);
+      }
+      return null;
     }
-    return null;
   };
 
   const handleOpenContactDetails = (contact: Contact) => {
@@ -196,20 +201,20 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
                       <Button
                         size="sm"
                         onClick={() => handleAddContact(user)}
-                        disabled={getContactStatus(user.id) !== null}
+                        disabled={getContactStatus(user) !== null}
                       >
                         {addingUserId === user.id ? (
                           <Loader className="animate-spin w-4 h-4 mr-2" />
-                        ) : getContactStatus(user.id) === 'Accepted' ? (
+                        ) : getContactStatus(user) === 'Accepted' ? (
                           <Check className="w-4 h-4 mr-2" />
-                        ) : getContactStatus(user.id) === 'Pending' ? (
+                        ) : getContactStatus(user) === 'Pending' ? (
                           <span>Pending</span>
-                        ) : getContactStatus(user.id) === 'Pending their approval' ? (
+                        ) : getContactStatus(user) === 'Pending their approval' ? (
                           <span>Pending</span>
                         ) : (
                           <UserPlus className="w-4 h-4 mr-2" />
                         )}
-                        {addingUserId === user.id ? "Adding..." : getContactStatus(user.id) || "Add"}
+                        {addingUserId === user.id ? "Adding..." : getContactStatus(user) || "Add"}
                       </Button>
                     </div>
                   ))}
@@ -225,8 +230,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
                   contacts.map((contact) => {
                     const isCurrentUserRequester = contact.user_id === currentUser.id;
                     const contactUser = isCurrentUserRequester ? contact.contact : contact.user;
-                    const contactId = isCurrentUserRequester ? contact.contact_id : contact.user_id; // Fix: Use contactId here
-                    const contactStatus = getContactStatus(contactId);
+                    const contactStatus = getContactStatus(contact);
 
                     return (
                       <div key={contact.id} className="flex items-center justify-between mb-2 p-2 hover:bg-accent cursor-pointer rounded-md border" onClick={() => handleOpenContactDetails(contact)}>
@@ -264,17 +268,17 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
               <div className="flex items-center gap-4">
                 <Avatar className="w-16 h-16">
                   <AvatarImage src="/placeholder.svg" alt="Avatar" />
-                  <AvatarFallback>{selectedContact.contact.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{(selectedContact.user_id === currentUser.id ? selectedContact.contact.name : selectedContact.user.name).charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-lg font-semibold">{selectedContact.contact.name}</h3>
-                  <p className="text-sm text-muted-foreground">{selectedContact.status}</p>
+                  <h3 className="text-lg font-semibold">{selectedContact.user_id === currentUser.id ? selectedContact.contact.name : selectedContact.user.name}</h3>
+                  <p className="text-sm text-muted-foreground">{getContactStatus(selectedContact)}</p>
                 </div>
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  <p>{selectedContact.contact.phone}</p>
+                  <p>{selectedContact.user_id === currentUser.id ? selectedContact.contact.phone : selectedContact.user.phone}</p>
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
@@ -292,3 +296,4 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
     </div>
   );
 }
+
