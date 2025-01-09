@@ -79,7 +79,7 @@ export default function WelcomePage() {
       </motion.header>
 
       <section className="h-screen flex flex-col justify-center items-center text-center px-4">
-      <motion.h1 
+        <motion.h1
           className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary-foreground"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -95,7 +95,11 @@ export default function WelcomePage() {
         >
           Connect with friends, share rides, and travel together safely.
         </motion.p>
-        <motion.div style={{ opacity, y: arrowY }}>
+        <motion.div style={{ opacity, y: arrowY }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <button
             onClick={scrollToContent}
           >
@@ -127,7 +131,7 @@ export default function WelcomePage() {
       </section>
 
       <section className="py-20 bg-background">
-      <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center text-orange-500">Why Choose RideShare?</h2>
           <div className="space-y-6 max-w-2xl mx-auto">
             {whyChooseRideShare.map((benefit, index) => (
