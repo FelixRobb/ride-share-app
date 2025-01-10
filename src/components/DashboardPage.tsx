@@ -298,7 +298,7 @@ export default function DashboardPage({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-1 sm:px-4 lg:px-8">
+    <div className="w-full max-w-4xl mx-auto" data-tutorial="dashboard">
       <Card className="shadow-lg min-h-min">
         <CardHeader className="space-y-6">
           <div>
@@ -373,4 +373,3 @@ export default function DashboardPage({
     </div>
   );
 }
-

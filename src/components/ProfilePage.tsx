@@ -308,7 +308,7 @@ export default function ProfilePage({
         </CardContent>
       </Card>
 
-      <Card className="mb-8">
+      <Card className="mb-8" data-tutorial="notification-settings">
         <CardHeader>
           <CardTitle className="text-2xl">Notifications</CardTitle>
         </CardHeader>
@@ -509,4 +509,3 @@ export default function ProfilePage({
     </div>
   );
 }
-

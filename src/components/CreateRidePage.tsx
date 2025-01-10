@@ -209,4 +209,3 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
     </Card>
   );
 }
-

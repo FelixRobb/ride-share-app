@@ -10,7 +10,6 @@ import { User, Ride, Contact } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { TutorialProvider } from '@/contexts/TutorialContext'
-import { Tutorial } from '@/components/Tutorial'
 
 export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)

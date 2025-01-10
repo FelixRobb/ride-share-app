@@ -237,7 +237,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-background text-foreground">
               <DropdownMenuLabel className="flex items-center">
-                <Users className="mr-2 h-4 w-4" /> {currentUser.name}
+                <Users className="mr-2 h-4 w-4" /> {currentUser?.name}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
 

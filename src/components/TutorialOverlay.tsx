@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from 'next/navigation';
+import { ChevronRight, ChevronLeft, X } from 'lucide-react';
 
 export const TutorialOverlay: React.FC = () => {
   const { currentStep, nextStep, prevStep, skipTutorial } = useTutorial();
@@ -16,78 +17,82 @@ export const TutorialOverlay: React.FC = () => {
       if (element) {
         const rect = element.getBoundingClientRect();
         setTargetElement(rect);
+      } else {
+        setTargetElement(null)
       }
     } else {
       setTargetElement(null);
     }
   }, [currentStep]);
 
-  useEffect(() => {
-    if (currentStep && currentStep.page !== window.location.pathname) {
-      router.push(currentStep.page);
+  const handleNext = useCallback(() => {
+    nextStep();
+    const updatedStep = JSON.parse(localStorage.getItem('tutorialStep') || 'null');
+    if (updatedStep && updatedStep.page !== window.location.pathname) {
+      router.push(updatedStep.page);
     }
-  }, [currentStep, router]);
+  }, [nextStep, router]);
+
+  const handlePrev = useCallback(() => {
+    prevStep();
+    const updatedStep = JSON.parse(localStorage.getItem('tutorialStep') || 'null');
+    if (updatedStep && updatedStep.page !== window.location.pathname) {
+      router.push(updatedStep.page);
+    }
+  }, [prevStep, router]);
 
   if (!currentStep) return null;
-
-  const handleNext = () => {
-    const nextStepData = nextStep();
-
-    if (nextStepData && nextStepData.page !== window.location.pathname) {
-      router.push(nextStepData.page)
-    }
-  }
-
-  const handlePrev = () => {
-    const prevStepData = prevStep();
-
-    if (prevStepData && prevStepData.page !== window.location.pathname) {
-      router.push(prevStepData.page)
-    }
-  }
 
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+        key={currentStep.key}
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 50 }}
+        className="fixed bottom-4 right-4 z-50"
       >
-        <Card className="w-full max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle>{currentStep.title}</CardTitle>
+        <Card className="w-80 shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex justify-between items-center">
+              <span>Step {currentStep.step}: {currentStep.title}</span>
+              <Button variant="ghost" size="sm" onClick={skipTutorial}>
+                <X className="h-4 w-4" />
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p>{currentStep.content}</p>
+            <p className="text-sm">{currentStep.content}</p>
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={handlePrev} disabled={currentStep.step === 1}>
-              Previous
+          <CardFooter className="flex justify-between pt-2">
+            <Button variant="outline" size="sm" onClick={handlePrev} disabled={currentStep.step === 1}>
+              <ChevronLeft className="h-4 w-4 mr-1" /> Prev
             </Button>
-            <Button variant="outline" onClick={skipTutorial}>
-              Skip Tutorial
-            </Button>
-            <Button onClick={handleNext}>
-              {currentStep.step < tutorialSteps.length ? "Next" : "Finish"}
+            <Button variant="outline" size="sm" onClick={handleNext}>
+              {currentStep.step < 9 ? (
+                <>Next <ChevronRight className="h-4 w-4 ml-1" /></>
+              ) : (
+                "Finish"
+              )}
             </Button>
           </CardFooter>
         </Card>
-        {targetElement && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute border-2 border-primary rounded-md"
-            style={{
-              left: targetElement.left - 4,
-              top: targetElement.top - 4,
-              width: targetElement.width + 8,
-              height: targetElement.height + 8,
-            }}
-          />
-        )}
       </motion.div>
+      {targetElement && (
+        <motion.div
+          key={`highlight-${currentStep.key}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed border-2 border-primary rounded-md pointer-events-none"
+          style={{
+            left: targetElement.left - 4,
+            top: targetElement.top - 4,
+            width: targetElement.width + 8,
+            height: targetElement.height + 8,
+          }}
+        />
+      )}
     </AnimatePresence>
   );
 };
