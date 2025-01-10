@@ -13,7 +13,7 @@ import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
 import PushNotificationHandler from './PushNotificationHandler';
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
-import { TutorialOverlay } from './TutorialOverlay';
+import { TutorialOverlay } from '@/components/TutorialOverlay';
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -55,7 +55,12 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const router = useRouter();
   const { theme, setTheme, systemTheme } = useTheme();
-  const [currentMode, setCurrentMode] = useState("system");
+  const [currentMode, setCurrentMode] = useState<"system" | "light" | "dark">(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem("theme") as "system" | "light" | "dark") || "system";
+    }
+    return "system";
+  });
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
   const [wasPreviouslyOffline, setWasPreviouslyOffline] = useState(false);
@@ -94,6 +99,17 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
     }
   }, [isOnline, toast, wasPreviouslyOffline]);
 
+  useEffect(() => {
+    localStorage.setItem("theme", currentMode);
+
+    if (currentMode === "system") {
+      setTheme(systemTheme || "dark");
+    } else {
+      setTheme(currentMode);
+    }
+  }, [currentMode, setTheme, systemTheme]);
+
+
   const unreadNotificationsCount = notifications.filter((n) => !n.is_read).length;
 
   const handleOpenNotificationDialog = useCallback(() => {
@@ -124,20 +140,14 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
   }, [currentUser, notifications, toast]);
 
   // Sync the theme state with the current mode
-  useEffect(() => {
-    if (currentMode === "system") {
-      setTheme(systemTheme || "dark"); // Default to "dark" if systemTheme is undefined
-    } else {
-      setTheme(currentMode);
-    }
-  }, [currentMode, setTheme, systemTheme]);
+  
 
   // Toggle between "system", "dark", and "light"
   const toggleTheme = () => {
     setCurrentMode((prevMode) => {
-      if (prevMode === "system") return "dark";
-      if (prevMode === "dark") return "light";
-      return "system";
+      const newMode = prevMode === "system" ? "dark" : prevMode === "dark" ? "light" : "system";
+      localStorage.setItem("theme", newMode);
+      return newMode;
     });
   };
 
