@@ -324,7 +324,7 @@ export default function DashboardPage({
                 dateFilter={dateFilter}
                 setDateFilter={setDateFilter}
               />
-              <Button data-tutorial="create-ride" variant="default" onClick={() => router.push('/create-ride')}>
+              <Button className="h-10" data-tutorial="create-ride" variant="default" onClick={() => router.push('/create-ride')}>
                 Create Ride
               </Button>
             </div>
