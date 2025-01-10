@@ -14,6 +14,7 @@ import { Search, Clock, MapPin, User2, CalendarIcon, ArrowRight, CheckCircle, Fi
 import { User, Ride, Contact } from "../types";
 import Link from 'next/link';
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
+import { toast } from "@/hooks/use-toast";
 
 interface FilterPopoverProps {
   statusFilter: string | null;
@@ -95,24 +96,38 @@ export default function DashboardPage({
 }: DashboardPageProps) {
   const router = useRouter();
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
+  const [localRides, setLocalRides] = useState<Ride[]>(rides);
   const isOnline = useOnlineStatus();
 
-  const fetchData = useCallback(async () => {
-    if (isOnline) {
-      setIsLoading(true);
-      await fetchUserData();
-      setIsLoading(false);
-    }
-  }, [isOnline, fetchUserData]);
+  useEffect(() => {
+    setLocalRides(rides);
+  }, [rides]);
 
   useEffect(() => {
+    const fetchData = async () => {
+      if (isOnline) {
+        try {
+          await fetchUserData();
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          toast({
+            title: "Error",
+            description: "Failed to fetch user data. Please try again.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsInitialLoading(false);
+        }
+      }
+    };
+
     fetchData();
     const intervalId = setInterval(fetchData, 10000);
     return () => clearInterval(intervalId);
-  }, [fetchData]);
+  }, [isOnline, fetchUserData]);
 
   const formatDateTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -136,7 +151,7 @@ export default function DashboardPage({
 
 
   const filteredRides = useMemo(() => {
-    return rides.filter((ride) => {
+    return localRides.filter((ride) => {
       const matchesSearch =
         ride.from_location.toLowerCase().includes(localSearchTerm.toLowerCase()) ||
         ride.to_location.toLowerCase().includes(localSearchTerm.toLowerCase()) ||
@@ -148,7 +163,7 @@ export default function DashboardPage({
 
       return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [rides, localSearchTerm, statusFilter, dateFilter]);
+  }, [localRides, localSearchTerm, statusFilter, dateFilter]);
 
   const activeRides = useMemo(() =>
     filteredRides.filter(ride =>
@@ -312,7 +327,7 @@ export default function DashboardPage({
                 id="search"
                 type="text"
                 placeholder="Search rides..."
-                value={searchTerm}
+                value={localSearchTerm}
                 onChange={(e) => setLocalSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full h-10"
               />
@@ -324,7 +339,7 @@ export default function DashboardPage({
                 dateFilter={dateFilter}
                 setDateFilter={setDateFilter}
               />
-              <Button className="h-10" data-tutorial="create-ride" variant="default" onClick={() => router.push('/create-ride')}>
+              <Button data-tutorial="create-ride" variant="default" onClick={() => router.push('/create-ride')}>
                 Create Ride
               </Button>
             </div>
@@ -352,7 +367,7 @@ export default function DashboardPage({
               {["active", "available", "history"].map((tab) => (
                 <TabsContent key={tab} value={tab}>
                   <ScrollArea className="h-[calc(100vh-300px)] pr-3">
-                    {isLoading ? (
+                    {isInitialLoading ? (
                       Array(3).fill(0).map((_, i) => (
                         <RideCardSkeleton key={i} />
                       ))
@@ -373,3 +388,4 @@ export default function DashboardPage({
     </div>
   );
 }
+
