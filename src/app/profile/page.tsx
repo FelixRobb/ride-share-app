@@ -9,6 +9,7 @@ import { Loader } from 'lucide-react'
 import { User, Contact, AssociatedPerson, UserStats, Notification } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import { TutorialProvider } from '@/contexts/TutorialContext'
 
 export default function Profile() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -30,7 +31,6 @@ export default function Profile() {
           const { data, newEtag } = result
           setEtag(newEtag)
           setContacts(data.contacts)
-          console.log(data.contacts)
           setAssociatedPeople(data.associatedPeople)
           setUserStats(data.stats)
         }
@@ -80,16 +80,18 @@ export default function Profile() {
   }
 
   return (
-    <Layout currentUser={currentUser} logout={logout}>
-      <ProfilePage
-        currentUser={currentUser!}
-        setCurrentUser={setCurrentUser}
-        contacts={contacts}
-        associatedPeople={associatedPeople}
-        userStats={userStats}
-        fetchUserData={fetchUserDataCallback}
-      />
-    </Layout>
+    <TutorialProvider>
+      <Layout currentUser={currentUser} logout={logout}>
+        <ProfilePage
+          currentUser={currentUser!}
+          setCurrentUser={setCurrentUser}
+          contacts={contacts}
+          associatedPeople={associatedPeople}
+          userStats={userStats}
+          fetchUserData={fetchUserDataCallback}
+        />
+      </Layout>
+    </TutorialProvider>
   )
 }
 

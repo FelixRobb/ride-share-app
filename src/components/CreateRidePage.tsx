@@ -94,7 +94,7 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
   const isClient = typeof window !== 'undefined';
 
   return (
-    <Card className="w-full max-w-[350px] mx-auto">
+    <Card className="w-full max-w-[350px] mx-auto" data-tutorial="ride-form">
       <CardHeader>
         <CardTitle>Create a Ride</CardTitle>
         <CardDescription>Fill in the details for your ride request.</CardDescription>

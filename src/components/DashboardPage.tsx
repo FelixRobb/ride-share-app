@@ -312,7 +312,7 @@ export default function DashboardPage({
                 id="search"
                 type="text"
                 placeholder="Search rides..."
-                value={localSearchTerm}
+                value={searchTerm}
                 onChange={(e) => setLocalSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full h-10"
               />
@@ -324,6 +324,9 @@ export default function DashboardPage({
                 dateFilter={dateFilter}
                 setDateFilter={setDateFilter}
               />
+              <Button data-tutorial="create-ride" variant="default" onClick={() => router.push('/create-ride')}>
+                Create Ride
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -333,7 +336,7 @@ export default function DashboardPage({
             setActiveTab(value);
             router.push(`/dashboard?tab=${value}`, { scroll: false });
           }} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsList className="grid w-full grid-cols-3 mb-4" data-tutorial="dashboard-tabs">
               <TabsTrigger value="active" className="text-xs">
                 Active
               </TabsTrigger>
