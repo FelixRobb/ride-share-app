@@ -87,6 +87,8 @@ const tutorialSteps: TutorialStep[] = [
   },
 ];
 
+export { tutorialSteps };
+
 const getInitialStep = (): TutorialStep | null => {
   if (typeof window !== 'undefined') {
     const savedStepKey = localStorage.getItem('tutorialStepKey');
