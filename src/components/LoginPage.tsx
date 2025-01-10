@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
 import { User } from "../types"
+import { Loader2, Mail, Lock, ArrowRight, Phone } from 'lucide-react'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 
@@ -97,14 +98,14 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
                     variant={loginMethod === 'email' ? 'default' : 'outline'}
                     onClick={() => setLoginMethod('email')}
                   >
-                    Email
+                    <Mail className="mr-2 h-4 w-4" /> Email
                   </Button>
                   <Button
                     type="button"
                     variant={loginMethod === 'phone' ? 'default' : 'outline'}
                     onClick={() => setLoginMethod('phone')}
                   >
-                    Phone
+                    <Phone className="mr-2 h-4 w-4" /> Phone
                   </Button>
                 </div>
                 {loginMethod === 'email' ? (
@@ -113,7 +114,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
                     <Input
                       id="email"
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder="name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -131,15 +132,26 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
                     />
                   </div>
                 )}
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="password">Password</Label>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="password">Password</Label>
+                    <Button
+                      variant="link"
+                      onClick={() => setIsResetPasswordOpen(true)}
+                      className="text-xs text-muted-foreground hover:text-primary px-0"
+                      type="button"
+                    >
+                      Forgot password?
+                    </Button>
+                  </div>
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    className="bg-background/50"
                   />
                 </div>
               </div>
@@ -150,12 +162,12 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
-            <Button variant="link" asChild>
-              <Link href="/register">Don&apos;t have an account? Register</Link>
-            </Button>
-            <Button variant="link" onClick={() => setIsResetPasswordOpen(true)}>
-              Forgot your password?
-            </Button>
+            <div className="w-full text-center text-sm">
+              Don't have an account?{" "}
+              <Link href="/register" className="font-medium text-primary hover:underline">
+                Create one now
+              </Link>
+            </div>
           </CardFooter>
         </Card>
       </main>
@@ -166,22 +178,35 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
       </footer>
 
       <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
-        <DialogContent className="rounded-lg w-11/12">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
-            <DialogDescription>Enter your email to receive a password reset link.</DialogDescription>
+            <DialogTitle>Reset your password</DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you a link to reset your password.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="reset-email" className="text-right">
-                Email
-              </Label>
-              <Input id="reset-email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="col-span-3" />
+            <div className="space-y-2">
+              <Label htmlFor="reset-email">Email address</Label>
+              <Input
+                id="reset-email"
+                type="email"
+                placeholder="name@example.com"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleResetPassword} disabled={isResetLoading}>
-              {isResetLoading ? "Sending..." : "Send Reset Link"}
+            <Button onClick={handleResetPassword} disabled={isResetLoading} className="w-full">
+              {isResetLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                "Send reset link"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -189,4 +214,3 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
     </div>
   )
 }
-

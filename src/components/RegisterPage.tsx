@@ -46,7 +46,7 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
         </div>
       </header>
       <main className="flex-grow flex items-center justify-center p-4 sm:p-6 md:p-8">
-        <Card className="w-full max-w-[350px]">
+        <Card className="w-full max-w-[400px]">
           <CardHeader>
             <CardTitle>Create an Account</CardTitle>
             <CardDescription>Join RideShare and start sharing rides today!</CardDescription>
