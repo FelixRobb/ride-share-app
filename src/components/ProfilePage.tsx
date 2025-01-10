@@ -1,15 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LucideUser, Mail, Phone, Car, MapPin, Loader } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { User, Contact, AssociatedPerson, UserStats } from "../types";
 import {
   updateProfile,
   changePassword,
+  addContact,
+  acceptContact,
+  deleteContact,
   addAssociatedPerson,
   deleteAssociatedPerson,
   deleteUser,
@@ -243,7 +249,7 @@ export default function ProfilePage({
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <Card className="mb-8">
+      <Card className="mb-8" data-tutorial="profile-info">
         <CardHeader>
           <CardTitle className="text-2xl">Profile Information</CardTitle>
         </CardHeader>
@@ -302,7 +308,7 @@ export default function ProfilePage({
         </CardContent>
       </Card>
 
-      <Card className="mb-8">
+      <Card className="mb-8" data-tutorial="notification-settings">
         <CardHeader>
           <CardTitle className="text-2xl">Notifications</CardTitle>
         </CardHeader>
@@ -325,7 +331,7 @@ export default function ProfilePage({
         </CardContent>
       </Card>
 
-      <Card className="mb-8">
+      <Card className="mb-8" data-tutorial="contacts-section">
         <CardHeader>
           <CardTitle className="text-2xl">Contacts</CardTitle>
         </CardHeader>

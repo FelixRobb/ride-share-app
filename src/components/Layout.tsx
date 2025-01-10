@@ -13,6 +13,7 @@ import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
 import PushNotificationHandler from './PushNotificationHandler';
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
+import { TutorialOverlay } from './TutorialOverlay';
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -236,7 +237,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-background text-foreground">
               <DropdownMenuLabel className="flex items-center">
-                <Users className="mr-2 h-4 w-4" /> {currentUser.name}
+                <Users className="mr-2 h-4 w-4" /> {currentUser?.name}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
 
@@ -287,7 +288,10 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
         </div>
       </header>
 
-      <main className="flex-grow container mx-auto px-4 py-8">{children}</main>
+      <main className="flex-grow container mx-auto px-4 py-8">
+        {children}
+        <TutorialOverlay />
+      </main>
 
       <footer className="bg-background py-8 text-center text-sm text-zinc-500">
         <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>

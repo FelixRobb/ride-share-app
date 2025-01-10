@@ -9,6 +9,7 @@ import { User, AssociatedPerson } from "@/types";
 import { Loader } from 'lucide-react';
 import { fetchUserData } from "@/utils/api";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
+import { TutorialProvider } from '@/contexts/TutorialContext'
 
 export default function CreateRide() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -79,14 +80,16 @@ export default function CreateRide() {
   }
 
   return (
-    <Layout currentUser={currentUser} logout={logout}>
-      <CreateRidePage
-        currentUser={currentUser!}
-        fetchUserData={() => fetchUserDataCallback(currentUser!.id)}
-        setCurrentPage={(page) => router.push(`/${page}`)}
-        associatedPeople={associatedPeople}
-      />
-    </Layout>
+    <TutorialProvider>
+      <Layout currentUser={currentUser} logout={logout}>
+        <CreateRidePage
+          currentUser={currentUser!}
+          fetchUserData={() => fetchUserDataCallback(currentUser!.id)}
+          setCurrentPage={(page) => router.push(`/${page}`)}
+          associatedPeople={associatedPeople}
+        />
+      </Layout>
+    </TutorialProvider>
   );
 }
 

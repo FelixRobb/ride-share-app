@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import { TutorialProvider } from '@/contexts/TutorialContext'
 
 export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -18,6 +19,7 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("")
   const [etag, setEtag] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('active') // default tab
+  const [showTutorial, setShowTutorial] = useState(false)
 
   const router = useRouter()
   const { toast } = useToast()
@@ -40,6 +42,13 @@ export default function Dashboard() {
       const parsedUser = JSON.parse(user) as User
       setCurrentUser(parsedUser)
       void fetchUserDataCallback(parsedUser.id)
+
+      // Check if the user is coming from the register page
+      const fromRegister = localStorage.getItem("fromRegister")
+      if (fromRegister === "true") {
+        setShowTutorial(true)
+        localStorage.removeItem("fromRegister") // Remove the flag after showing the tutorial
+      }
     } else {
       router.push('/')
     }
@@ -83,6 +92,11 @@ export default function Dashboard() {
     router.push('/')
   }
 
+  const handleTutorialComplete = () => {
+    setShowTutorial(false)
+    localStorage.setItem("tutorialCompleted", "true")
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -92,18 +106,20 @@ export default function Dashboard() {
   }
 
   return (
-    <Layout currentUser={currentUser} logout={logout}>
-      <DashboardPage
-        currentUser={currentUser!}
-        rides={rides}
-        contacts={contacts}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        fetchUserData={() => fetchUserDataCallback(currentUser!.id)}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-      />
-    </Layout>
+    <TutorialProvider>
+      <Layout currentUser={currentUser} logout={logout}>
+        <DashboardPage
+          currentUser={currentUser!}
+          rides={rides}
+          contacts={contacts}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          fetchUserData={() => fetchUserDataCallback(currentUser!.id)}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
+      </Layout>
+    </TutorialProvider>
   )
 }
 
