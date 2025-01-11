@@ -1,36 +1,30 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import DashboardPage from '@/components/DashboardPage'
+import dynamic from 'next/dynamic'
 import Layout from '@/components/Layout'
-import { Loader } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { User, Ride, Contact } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
-import { TutorialProvider } from '@/contexts/TutorialContext'
+
+const DashboardPage = dynamic(() => import('@/components/DashboardPage'), { ssr: false });
 
 export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [rides, setRides] = useState<Ride[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [etag, setEtag] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('active') // default tab
-  const [showTutorial, setShowTutorial] = useState(false)
 
   const router = useRouter()
   const { toast } = useToast()
   const isOnline = useOnlineStatus()
 
-  // Declare the searchParams variable inside a useEffect to ensure it is only accessed on the client
-  const [searchParams, setSearchParamsState] = useState<URLSearchParams | null>(null)
-
   useEffect(() => {
     const search = new URLSearchParams(window.location.search)
-    setSearchParamsState(search)
     if (search) {
       setActiveTab(search.get('tab') || 'active')
     }
@@ -41,14 +35,9 @@ export default function Dashboard() {
     if (user) {
       const parsedUser = JSON.parse(user) as User
       setCurrentUser(parsedUser)
-      void fetchUserDataCallback(parsedUser.id)
 
-      // Check if the user is coming from the register page
-      const fromRegister = localStorage.getItem("fromRegister")
-      if (fromRegister === "true") {
-        setShowTutorial(true)
-        localStorage.removeItem("fromRegister") // Remove the flag after showing the tutorial
-      }
+      // Fetch initial data on mount
+      void fetchUserDataCallback(parsedUser.id)
     } else {
       router.push('/')
     }
@@ -60,13 +49,14 @@ export default function Dashboard() {
         const result = await fetchUserData(userId, etag)
         if (result) {
           const { data, newEtag } = result
+
+          // Conditionally update the states to avoid unnecessary re-renders.
           if (newEtag !== etag) {
             setEtag(newEtag)
             setRides(data.rides)
             setContacts(data.contacts)
           }
         }
-        setIsLoading(false)
       } catch (error) {
         console.error("Error fetching user data:", error)
         toast({
@@ -92,26 +82,22 @@ export default function Dashboard() {
     router.push('/')
   }
 
-  const handleTutorialComplete = () => {
-    setShowTutorial(false)
-    localStorage.setItem("tutorialCompleted", "true")
-  }
-
   return (
-    <TutorialProvider>
-      <Layout currentUser={currentUser} logout={logout}>
-        <DashboardPage
-          currentUser={currentUser!}
-          rides={rides}
-          contacts={contacts}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          fetchUserData={() => fetchUserDataCallback(currentUser!.id)}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-        />
-      </Layout>
-    </TutorialProvider>
+    <Layout currentUser={currentUser} logout={logout}>
+      <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your dashboard</div>}>
+        {currentUser && ( // Check if currentUser is loaded before rendering DashboardPage
+          <DashboardPage
+            currentUser={currentUser}
+            rides={rides}
+            contacts={contacts}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            fetchUserData={() => fetchUserDataCallback(currentUser.id)}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
+        )}
+      </Suspense>
+    </Layout>
   )
 }
-
