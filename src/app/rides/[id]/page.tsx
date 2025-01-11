@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useParams } from 'next/navigation'
 import Layout from '@/components/Layout'
@@ -113,14 +113,16 @@ export default function RideDetails() {
   return (
     <Layout currentUser={currentUser} logout={logout}>
       <Button type="button" variant="ghost" onClick={() => router.push(`/dashboard?tab=${fromTab}`)} className='mb-2'><ArrowBigLeft />Go Back to Dashboard</Button>
-      {ride && currentUser && (
-        <RideDetailsPage
-          ride={ride}
-          currentUser={currentUser}
-          contacts={contacts}
-          fetchUserData={() => fetchUserDataCallback(currentUser.id)}
-        />
-      )}
+      <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
+        {ride && currentUser && (
+          <RideDetailsPage
+            ride={ride}
+            currentUser={currentUser}
+            contacts={contacts}
+            fetchUserData={() => fetchUserDataCallback(currentUser.id)}
+          />
+        )}
+      </Suspense>
     </Layout>
   )
 }
