@@ -35,7 +35,7 @@ const FilterPopover: React.FC<FilterPopoverProps> = ({ statusFilter, setStatusFi
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0">
+      <PopoverContent className="w-[280px] p-0 sm:w-[320px] left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0">
         <Card className="border-none shadow-none">
           <CardContent className="space-y-4 p-4">
             <div className="space-y-2">
@@ -334,8 +334,8 @@ export default function DashboardPage({
                 className="pl-10 pr-4 py-2 w-full h-10"
               />
             </div>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="w-full sm:w-auto">
+            <div className="flex flex-row gap-2 w-full sm:w-auto">
+              <div className="flex-1 sm:flex-none">
                 <FilterPopover
                   statusFilter={statusFilter}
                   setStatusFilter={setStatusFilter}
@@ -343,7 +343,7 @@ export default function DashboardPage({
                   setDateFilter={setDateFilter}
                 />
               </div>
-              <div className="w-full sm:w-auto">
+              <div className="flex-1 sm:flex-none">
                 <Button data-tutorial="create-ride" variant="default" onClick={() => router.push('/create-ride')} className="w-full">
                   Create Ride
                 </Button>
@@ -394,4 +394,3 @@ export default function DashboardPage({
     </div>
   );
 }
-
