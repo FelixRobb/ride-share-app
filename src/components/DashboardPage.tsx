@@ -113,11 +113,6 @@ export default function DashboardPage({
           await fetchUserData();
         } catch (error) {
           console.error("Error fetching user data:", error);
-          toast({
-            title: "Error",
-            description: "Failed to fetch user data. Please try again.",
-            variant: "destructive",
-          });
         } finally {
           setIsInitialLoading(false);
         }
