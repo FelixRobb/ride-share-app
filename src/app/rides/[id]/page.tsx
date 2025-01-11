@@ -5,12 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useParams } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { useToast } from "@/hooks/use-toast"
-import { Loader } from 'lucide-react'
+import { ArrowBigLeft } from 'lucide-react'
 import { User, Ride, Contact, Notification } from "@/types"
 import { fetchUserData, fetchRideDetails } from "@/utils/api"
 import dynamic from 'next/dynamic';
 import { Button } from "@/components/ui/button";
-import { ArrowBigLeft } from 'lucide-react';
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
 const RideDetailsPage = dynamic(() => import('@/components/RideDetailsPage'), { ssr: false });
@@ -19,7 +18,7 @@ export default function RideDetails() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [ride, setRide] = useState<Ride | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  //const [isLoading, setIsLoading] = useState(true)
   const [etag, setEtag] = useState<string | null>(null)
 
   const router = useRouter()
@@ -84,7 +83,7 @@ export default function RideDetails() {
           variant: "destructive",
         });
       } finally {
-        setIsLoading(false);
+        //setIsLoading(false);
       }
     }
   };
@@ -103,17 +102,10 @@ export default function RideDetails() {
     router.push('/')
   }
 
-   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    )
-  }
   return (
-    <Layout currentUser={currentUser} logout={logout}>
-      <Button type="button" variant="ghost" onClick={() => router.push(`/dashboard?tab=${fromTab}`)} className='mb-2'><ArrowBigLeft />Go Back to Dashboard</Button>
-      <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <Layout currentUser={currentUser} logout={logout}>
+        <Button type="button" variant="ghost" onClick={() => router.push(`/dashboard?tab=${fromTab}`)} className='mb-2'><ArrowBigLeft />Go Back to Dashboard</Button>
         {ride && currentUser && (
           <RideDetailsPage
             ride={ride}
@@ -122,8 +114,8 @@ export default function RideDetails() {
             fetchUserData={() => fetchUserDataCallback(currentUser.id)}
           />
         )}
-      </Suspense>
-    </Layout>
+      </Layout>
+    </Suspense>
   )
 }
 
