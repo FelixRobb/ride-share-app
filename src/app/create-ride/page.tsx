@@ -1,15 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import CreateRidePage from '@/components/CreateRidePage';
+import dynamic from 'next/dynamic';
 import Layout from '@/components/Layout';
 import { useToast } from "@/hooks/use-toast";
 import { User, AssociatedPerson } from "@/types";
-import { Loader } from 'lucide-react';
 import { fetchUserData } from "@/utils/api";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
 import { TutorialProvider } from '@/contexts/TutorialContext'
+import { Loader } from 'lucide-react';
+
+const CreateRidePage = dynamic(() => import('@/components/CreateRidePage'), { ssr: false });
 
 export default function CreateRide() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -82,12 +84,16 @@ export default function CreateRide() {
   return (
     <TutorialProvider>
       <Layout currentUser={currentUser} logout={logout}>
-        <CreateRidePage
-          currentUser={currentUser!}
-          fetchUserData={() => fetchUserDataCallback(currentUser!.id)}
-          setCurrentPage={(page) => router.push(`/${page}`)}
-          associatedPeople={associatedPeople}
-        />
+        <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
+          {currentUser && (
+            <CreateRidePage
+              currentUser={currentUser}
+              fetchUserData={() => fetchUserDataCallback(currentUser.id)}
+              setCurrentPage={(page) => router.push(`/${page}`)}
+              associatedPeople={associatedPeople}
+            />
+          )}
+        </Suspense>
       </Layout>
     </TutorialProvider>
   );

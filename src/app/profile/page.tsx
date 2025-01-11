@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
-import ProfilePage from '@/components/ProfilePage'
+import dynamic from 'next/dynamic'
 import Layout from '@/components/Layout'
 import { useToast } from "@/hooks/use-toast"
 import { Loader } from 'lucide-react'
@@ -10,6 +10,8 @@ import { User, Contact, AssociatedPerson, UserStats, Notification } from "@/type
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { TutorialProvider } from '@/contexts/TutorialContext'
+
+const ProfilePage = dynamic(() => import('@/components/ProfilePage'), { ssr: false });
 
 export default function Profile() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -82,14 +84,18 @@ export default function Profile() {
   return (
     <TutorialProvider>
       <Layout currentUser={currentUser} logout={logout}>
-        <ProfilePage
-          currentUser={currentUser!}
-          setCurrentUser={setCurrentUser}
-          contacts={contacts}
-          associatedPeople={associatedPeople}
-          userStats={userStats}
-          fetchUserData={fetchUserDataCallback}
-        />
+        <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your profile</div>}>
+          {currentUser && (
+            <ProfilePage
+              currentUser={currentUser}
+              setCurrentUser={setCurrentUser}
+              contacts={contacts}
+              associatedPeople={associatedPeople}
+              userStats={userStats}
+              fetchUserData={fetchUserDataCallback}
+            />
+          )}
+        </Suspense>
       </Layout>
     </TutorialProvider>
   )
