@@ -3,22 +3,19 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
+const ProfilePage = dynamic(() => import('@/components/ProfilePage'), { ssr: false });
 import Layout from '@/components/Layout'
 import { useToast } from "@/hooks/use-toast"
-import { Loader } from 'lucide-react'
 import { User, Contact, AssociatedPerson, UserStats, Notification } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { TutorialProvider } from '@/contexts/TutorialContext'
-
-const ProfilePage = dynamic(() => import('@/components/ProfilePage'), { ssr: false });
 
 export default function Profile() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([])
   const [userStats, setUserStats] = useState<UserStats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [etag, setEtag] = useState<string | null>(null)
 
   const router = useRouter()
@@ -36,7 +33,6 @@ export default function Profile() {
           setAssociatedPeople(data.associatedPeople)
           setUserStats(data.stats)
         }
-        setIsLoading(false)
       } catch (error) {
         console.error("Error fetching user data:", error)
         toast({
@@ -73,18 +69,10 @@ export default function Profile() {
     router.push('/')
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    )
-  }
-
   return (
     <TutorialProvider>
-      <Layout currentUser={currentUser} logout={logout}>
-        <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your profile</div>}>
+      <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+        <Layout currentUser={currentUser} logout={logout}>
           {currentUser && (
             <ProfilePage
               currentUser={currentUser}
@@ -95,8 +83,8 @@ export default function Profile() {
               fetchUserData={fetchUserDataCallback}
             />
           )}
-        </Suspense>
-      </Layout>
+        </Layout>
+      </Suspense>
     </TutorialProvider>
   )
 }
