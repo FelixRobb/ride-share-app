@@ -35,7 +35,7 @@ const FilterPopover: React.FC<FilterPopoverProps> = ({ statusFilter, setStatusFi
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80">
+      <PopoverContent className="w-80 m-auto">
         <div className="grid gap-4">
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Status</h4>
