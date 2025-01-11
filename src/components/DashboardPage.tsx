@@ -27,7 +27,7 @@ const FilterPopover: React.FC<FilterPopoverProps> = ({ statusFilter, setStatusFi
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="h-10 w-full">
+        <Button variant="outline" className="h-10 w-full sm:w-auto">
           <Filter className="mr-2 h-4 w-4" />
           Filters
           {(statusFilter || dateFilter) && (
@@ -35,41 +35,39 @@ const FilterPopover: React.FC<FilterPopoverProps> = ({ statusFilter, setStatusFi
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px] p-0 sm:w-[320px] left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0">
-        <Card className="border-none shadow-none">
-          <CardContent className="space-y-4 p-4">
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">Status</h4>
-              <Select value={statusFilter || "all"} onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="accepted">Accepted</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">Date</h4>
-              <Calendar
-                mode="single"
-                selected={dateFilter !== null ? dateFilter : undefined}
-                onSelect={(day) => setDateFilter(day ?? null)}
-                initialFocus
-              />
-            </div>
-            <Button className="w-full" onClick={() => {}}>Apply Filters</Button>
-            {(statusFilter || dateFilter) && (
-              <Button variant="ghost" onClick={() => { setStatusFilter(null); setDateFilter(null); }} className="w-full">
-                Clear Filters
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+      <PopoverContent className="w-80 sm:w-auto sm:min-w-[350px] left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0">
+        <div className="grid gap-4">
+          <div className="space-y-2">
+            <h4 className="font-medium leading-none">Status</h4>
+            <Select value={statusFilter || "all"} onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="accepted">Accepted</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-medium leading-none">Date</h4>
+            <Calendar
+              mode="single"
+              selected={dateFilter !== null ? dateFilter : undefined}
+              onSelect={(day) => setDateFilter(day ?? null)}
+              initialFocus
+            />
+          </div>
+          <Button className="w-full" onClick={() => { }}>Apply Filters</Button>
+          {(statusFilter || dateFilter) && (
+                <Button variant="ghost" onClick={() => { setStatusFilter(null); setDateFilter(null); }} className="h-10">
+                  Clear Filters
+                </Button>
+              )}
+        </div>
       </PopoverContent>
     </Popover>
   )
@@ -334,20 +332,16 @@ export default function DashboardPage({
                 className="pl-10 pr-4 py-2 w-full h-10"
               />
             </div>
-            <div className="flex flex-row gap-2 w-full sm:w-auto">
-              <div className="flex-1 sm:flex-none">
-                <FilterPopover
-                  statusFilter={statusFilter}
-                  setStatusFilter={setStatusFilter}
-                  dateFilter={dateFilter}
-                  setDateFilter={setDateFilter}
-                />
-              </div>
-              <div className="flex-1 sm:flex-none">
-                <Button data-tutorial="create-ride" variant="default" onClick={() => router.push('/create-ride')} className="w-full">
-                  Create Ride
-                </Button>
-              </div>
+            <div className="flex gap-2">
+              <FilterPopover
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                dateFilter={dateFilter}
+                setDateFilter={setDateFilter}
+              />
+              <Button data-tutorial="create-ride" variant="default" onClick={() => router.push('/create-ride')}>
+                Create Ride
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -394,3 +388,4 @@ export default function DashboardPage({
     </div>
   );
 }
+
