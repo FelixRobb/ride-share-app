@@ -6,13 +6,20 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { User, Contact } from "@/types";
+import { User as BaseUser, Contact } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { addContact, acceptContact, deleteContact } from "@/utils/api";
-import { Loader, Search, UserPlus, Check, Phone } from 'lucide-react';
+import { Loader, Search, UserPlus, Check, Phone, X } from 'lucide-react';
+import { useOnlineStatus } from "@/utils/useOnlineStatus";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+interface ExtendedUser extends BaseUser {
+  contactStatus?: string | null;
+  contactId?: string | null;
+}
 
 interface ContactDialogProps {
-  currentUser: User;
+  currentUser: ExtendedUser;
   contacts: Contact[];
   fetchUserData: () => Promise<void>;
 }
@@ -20,14 +27,14 @@ interface ContactDialogProps {
 export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [searchResults, setSearchResults] = useState<ExtendedUser[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isAddingContact, setIsAddingContact] = useState(false);
   const { toast } = useToast();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isContactDetailsOpen, setIsContactDetailsOpen] = useState(false);
-  const searchResultsRef = useRef<HTMLDivElement>(null);
   const [addingUserId, setAddingUserId] = useState<string | null>(null);
+  const isOnline = useOnlineStatus();
 
   useEffect(() => {
     if (searchQuery.length >= 2) {
@@ -36,19 +43,6 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
       setSearchResults([]);
     }
   }, [searchQuery]);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (searchResultsRef.current && !searchResultsRef.current.contains(event.target as Node)) {
-        setSearchResults([]);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   const searchUsers = async () => {
     if (searchQuery.length < 2) {
@@ -77,7 +71,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
     }
   };
 
-  const handleAddContact = async (user: User) => {
+  const handleAddContact = async (user: ExtendedUser) => {
     setAddingUserId(user.id);
     try {
       await addContact(currentUser.id, user.phone, user.country_code || '');
@@ -121,6 +115,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
     try {
       await deleteContact(contactId, currentUser.id);
       await fetchUserData();
+      setIsContactDetailsOpen(false);
       toast({
         title: "Success",
         description: "Contact deleted successfully!",
@@ -134,7 +129,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
     }
   };
 
-  const getContactStatus = (user: User | Contact): string | null => {
+  const getContactStatus = (user: ExtendedUser | Contact): string | null => {
     if ('status' in user) {
       // This is a Contact object
       if (user.status === 'accepted') return 'Accepted';
@@ -143,12 +138,8 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
       }
       return user.status;
     } else {
-      // This is a User object from search results
-      const existingContact = contacts.find(c => c.contact_id === user.id || c.user_id === user.id);
-      if (existingContact) {
-        return getContactStatus(existingContact);
-      }
-      return null;
+      // This is an ExtendedUser object from search results
+      return user.contactStatus || null;
     }
   };
 
@@ -161,32 +152,34 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
     <div>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline">Manage Contacts</Button>
+          <Button variant="outline" disabled={!isOnline}>Manage Contacts</Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[500px] p-0">
-          <DialogHeader className="px-6 py-4 border-b">
+        <DialogContent className="sm:max-w-[500px] p-0 max-h-[80vh] overflow-auto">
+          <DialogHeader className="text-primary px-6 py-4 border-b">
             <DialogTitle className="text-lg font-medium">Contacts</DialogTitle>
-            <DialogDescription>Manage your contacts and add new ones.</DialogDescription>
+            <DialogDescription className='text-secondary-foreground' >Manage your contacts and add new ones.</DialogDescription>
           </DialogHeader>
           <div className="p-6">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or phone"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full rounded-md border border-gray-300 focus:ring-primary focus:border-primary"
-              />
-              {isSearching && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <Loader className="h-4 w-4 animate-spin text-primary" />
+            <Popover open={searchResults.length > 0}>
+              <PopoverTrigger asChild>
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name or phone"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-2 w-full rounded-md border border-input"
+                  />
+                  {isSearching && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader className="h-4 w-4 animate-spin text-primary" />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            {searchResults.length > 0 && (
-              <div ref={searchResultsRef} className="relative z-10 mt-1 w-full bg-popover shadow-md rounded-md border border-border">
-                <ScrollArea className="h-[200px]">
-                  {searchResults.map((user) => (
+              </PopoverTrigger>
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" sideOffset={5}>
+                <ScrollArea className="h-[300px] w-full rounded-md border">
+                  {searchResults.map((user: ExtendedUser) => (
                     <div key={user.id} className="flex items-center justify-between p-2 hover:bg-accent">
                       <div className="flex items-center space-x-3">
                         <Avatar>
@@ -201,16 +194,14 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
                       <Button
                         size="sm"
                         onClick={() => handleAddContact(user)}
-                        disabled={getContactStatus(user) !== null}
+                        disabled={user.contactStatus === 'accepted' || user.contactStatus === 'pending' || addingUserId === user.id || !isOnline}
                       >
                         {addingUserId === user.id ? (
                           <Loader className="animate-spin w-4 h-4 mr-2" />
-                        ) : getContactStatus(user) === 'Accepted' ? (
+                        ) : user.contactStatus === 'accepted' ? (
                           <Check className="w-4 h-4 mr-2" />
-                        ) : getContactStatus(user) === 'Pending' ? (
-                          <span>Pending</span>
-                        ) : getContactStatus(user) === 'Pending their approval' ? (
-                          <span>Pending</span>
+                        ) : user.contactStatus === 'pending' ? (
+                          <Check className="w-4 h-4 mr-2" />
                         ) : (
                           <UserPlus className="w-4 h-4 mr-2" />
                         )}
@@ -219,11 +210,11 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
                     </div>
                   ))}
                 </ScrollArea>
-              </div>
-            )}
-            <div className="mt-8">
-              <h4 className="text-lg font-medium mb-2">Your Contacts</h4>
-              <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+              </PopoverContent>
+            </Popover>
+            <div className="mt-4">
+              <h4 className="text-lg font-medium mb-2 px-6">Your Contacts</h4>
+              <ScrollArea className="h-[300px] w-full rounded-md">
                 {contacts.length === 0 ? (
                   <p className="text-center text-muted-foreground py-4">No contacts yet.</p>
                 ) : (
@@ -233,7 +224,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
                     const contactStatus = getContactStatus(contact);
 
                     return (
-                      <div key={contact.id} className="flex items-center justify-between mb-2 p-2 hover:bg-accent cursor-pointer rounded-md border" onClick={() => handleOpenContactDetails(contact)}>
+                      <div key={contact.id} className="flex items-center justify-between p-4 hover:bg-accent cursor-pointer border-b" onClick={() => handleOpenContactDetails(contact)}>
                         <div className="flex items-center space-x-3">
                           <Avatar>
                             <AvatarImage src="/placeholder.svg" alt="Avatar" />
@@ -283,9 +274,9 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
               </div>
               <div className="flex justify-end gap-2 mt-4">
                 {selectedContact.status === "pending" && selectedContact.contact_id === currentUser.id ? (
-                  <Button onClick={() => handleAcceptContact(selectedContact.id)}>Accept Contact</Button>
+                  <Button onClick={() => handleAcceptContact(selectedContact.id)} disabled={!isOnline}>Accept Contact</Button>
                 ) : null}
-                <Button variant="destructive" onClick={() => handleDeleteContact(selectedContact.id)}>
+                <Button variant="destructive" onClick={() => handleDeleteContact(selectedContact.id)} disabled={!isOnline}>
                   Remove Contact
                 </Button>
               </div>

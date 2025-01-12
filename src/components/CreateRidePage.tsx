@@ -129,7 +129,7 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
                 <Input
                   id="time"
                   type="datetime-local"
-                  value={rideData.time}
+                  value={rideData.time || new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().slice(0, 16)}
                   onChange={(e) => setRideData((prev) => ({ ...prev, time: e.target.value }))}
                   required
                 />
