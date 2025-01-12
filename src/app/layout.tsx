@@ -7,9 +7,18 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rideshareappweb.netl
 const ogImageUrl = `${siteUrl}/og-image.png`;
 const twitterImageUrl = `${siteUrl}/twitter-image.png`;
 
+<meta name="apple-mobile-web-app-title" content="RideShare" />
+
 export const metadata = {
   title: 'RideShare',
   description: 'Connect with friends, share rides, and travel together safely.',
+  manifest: '/manifest.json',
+  themeColor: '#f97316',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'RideShare',
+  },
   openGraph: {
     title: 'RideShare',
     description: 'Connect with friends, share rides, and travel together safely.',

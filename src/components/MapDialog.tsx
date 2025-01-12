@@ -24,6 +24,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
+  const searchResultsRef = useRef<HTMLDivElement | null>(null); // Added ref for search results
   const [isLoading, setIsLoading] = useState(false);
 
   const handleMapClick = (e: maplibregl.MapMouseEvent) => {
@@ -109,6 +110,8 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   };
 
   const handleSearch = async () => {
+    setSearchResults([]); // Clear previous results
+    if (!searchQuery.trim()) return; // Don't search if query is empty
     try {
       const response = await fetch(
         `https://api.maptiler.com/geocoding/${encodeURIComponent(searchQuery)}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
@@ -179,9 +182,19 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, "_blank");
   };
 
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery) {
+        handleSearch();
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[90vw] md:max-w-[800px] lg:max-w-[1000px] rounded-lg h-[90vh] max-h-[80vh] p-0 overflow-scroll">
+      <DialogContent className="sm:max-w-[90vw] md:max-w-[800px] lg:max-w-[1000px] rounded-lg h-[90vh] max-h-[80vh] p-0 overflow-scroll bg-background text-foreground">
         <div className="flex flex-col h-full">
           <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
             <DialogTitle className="text-xl font-semibold">Select Location</DialogTitle>
@@ -190,17 +203,36 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
           <div className="grid grid-cols-1 lg:grid-cols-3 flex-1 min-h-0">
             {/* Search Panel */}
             <div className="p-4 lg:border-r flex flex-col">
-              <div className="relative flex-shrink-0">
+              <div className="relative flex-shrink-0 mb-4">
                 <Input
                   placeholder="Search for a location"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="pl-10"
+                  className="pl-10 bg-background text-foreground border-input"
                 />
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+
+                {searchResults.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-10 bg-background shadow-md rounded-md border border-input max-h-60 overflow-y-auto">
+                    <ul>
+                      {searchResults.map((result) => (
+                        <li
+                          key={result.id}
+                          onClick={() => handleSelectSearchResult(result)}
+                          className="p-2 hover:bg-accent cursor-pointer transition-colors"
+                        >
+                          <div className="flex items-start gap-2">
+                            <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
+                            <span className="text-sm">{result.place_name}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-              
+
               <div className="flex gap-2 mt-4 flex-shrink-0">
                 <Button onClick={handleSearch} className="flex-1">
                   <SearchIcon className="w-4 h-4 mr-2" />
@@ -212,32 +244,8 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
                 </Button>
               </div>
 
-              {searchResults.length > 0 && (
-                <div className="absolute left-4 right-4 top-32 z-10">
-                  <div className="bg-card border rounded-lg shadow-lg">
-                    <div className="p-2">
-                      <h3 className="text-sm font-medium px-2">Search Results</h3>
-                      <ul className="mt-2 max-h-[40vh] overflow-y-auto">
-                        {searchResults.map((result) => (
-                          <li
-                            key={result.id}
-                            onClick={() => handleSelectSearchResult(result)}
-                            className="p-2 hover:bg-accent cursor-pointer transition-colors rounded-sm"
-                          >
-                            <div className="flex items-start gap-2">
-                              <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
-                              <span className="text-sm">{result.place_name}</span>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {address && (
-                <div className="mt-4 p-4 rounded-lg border bg-card flex-shrink-0">
+                <div className="mt-4 p-4 rounded-lg border bg-card text-card-foreground"> {/* Updated selected location card */}
                   <h3 className="text-sm font-medium mb-2">Selected Location</h3>
                   <p className="text-sm mb-3 break-words">{address}</p>
                   <div className="flex gap-2">
@@ -266,12 +274,12 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
 
             {/* Map Panel */}
             <div className="relative p-4 lg:col-span-2 min-h-[400px] lg:min-h-0">
-              <div ref={mapRef} className="rounded-lg absolute inset-0 w-full h-full" />
+              <div className="h-[300px] w-full relative border rounded-lg bg-background" ref={mapRef} style={{ width: '100%', height: '300px' }} /> {/* Updated map container */}
               {isLoading && (
                 <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-10">
                   <div className="bg-background p-4 rounded-lg shadow-lg flex items-center gap-2">
-                    <Loader className="w-5 h-5 animate-spin" />
-                    <span className="text-sm font-medium">Loading map...</span>
+                    <Loader className="w-5 h-5 animate-spin text-primary" />
+                    <span className="text-sm font-medium text-foreground">Loading map...</span>
                   </div>
                 </div>
               )}
@@ -296,3 +304,4 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
 };
 
 export default MapDialog;
+
