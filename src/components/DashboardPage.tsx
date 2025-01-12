@@ -27,7 +27,7 @@ const FilterPopover: React.FC<FilterPopoverProps> = ({ statusFilter, setStatusFi
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="h-10 w-full sm:w-auto">
+        <Button variant="outline" className="h-10 w-full">
           <Filter className="mr-2 h-4 w-4" />
           Filters
           {(statusFilter || dateFilter) && (
@@ -35,7 +35,7 @@ const FilterPopover: React.FC<FilterPopoverProps> = ({ statusFilter, setStatusFi
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 sm:w-auto sm:min-w-[350px] left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0">
+      <PopoverContent className="w-80">
         <div className="grid gap-4">
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Status</h4>
@@ -321,7 +321,7 @@ export default function DashboardPage({
             <CardDescription>Manage your rides and connections</CardDescription>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-grow">
+            <div className="relative flex-grow flex flex-row gap-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="search"
@@ -331,15 +331,18 @@ export default function DashboardPage({
                 onChange={(e) => setLocalSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full h-10"
               />
+              <Button className="block sm:hidden h-10" data-tutorial="create-ride" variant="default" onClick={() => router.push('/create-ride')}>
+                Create Ride
+              </Button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <FilterPopover
                 statusFilter={statusFilter}
                 setStatusFilter={setStatusFilter}
                 dateFilter={dateFilter}
                 setDateFilter={setDateFilter}
               />
-              <Button data-tutorial="create-ride" variant="default" onClick={() => router.push('/create-ride')}>
+              <Button className="hidden sm:block h-10" data-tutorial="create-ride" variant="default" onClick={() => router.push('/create-ride')}>
                 Create Ride
               </Button>
             </div>
