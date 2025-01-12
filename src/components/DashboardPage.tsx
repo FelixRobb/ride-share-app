@@ -35,38 +35,40 @@ const FilterPopover: React.FC<FilterPopoverProps> = ({ statusFilter, setStatusFi
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80">
-        <div className="grid gap-4">
-          <div className="space-y-2">
-            <h4 className="font-medium leading-none">Status</h4>
-            <Select value={statusFilter || "all"} onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="accepted">Accepted</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+      <PopoverContent className="p-0">
+        <div className="w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[350px] bg-popover rounded-md shadow-md left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0">
+          <div className="p-4 grid gap-4">
+            <div className="space-y-2">
+              <h4 className="font-medium leading-none">Status</h4>
+              <Select value={statusFilter || "all"} onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="accepted">Accepted</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium leading-none">Date</h4>
+              <Calendar
+                mode="single"
+                selected={dateFilter !== null ? dateFilter : undefined}
+                onSelect={(day) => setDateFilter(day ?? null)}
+                initialFocus
+              />
+            </div>
+            <Button className="w-full" onClick={() => { }}>Apply Filters</Button>
+            {(statusFilter || dateFilter) && (
+              <Button variant="ghost" onClick={() => { setStatusFilter(null); setDateFilter(null); }} className="h-10">
+                Clear Filters
+              </Button>
+            )}
           </div>
-          <div className="space-y-2">
-            <h4 className="font-medium leading-none">Date</h4>
-            <Calendar
-              mode="single"
-              selected={dateFilter !== null ? dateFilter : undefined}
-              onSelect={(day) => setDateFilter(day ?? null)}
-              initialFocus
-            />
-          </div>
-          <Button className="w-full" onClick={() => { }}>Apply Filters</Button>
-          {(statusFilter || dateFilter) && (
-                <Button variant="ghost" onClick={() => { setStatusFilter(null); setDateFilter(null); }} className="h-10">
-                  Clear Filters
-                </Button>
-              )}
         </div>
       </PopoverContent>
     </Popover>
