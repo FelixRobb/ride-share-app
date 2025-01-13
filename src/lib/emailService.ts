@@ -242,7 +242,7 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
         <p style="text-align: center; margin-top: 20px;">This link will expire in 1 hour for security reasons.</p>
         
         <div class="warning">
-          <p><strong>Important:</strong> If you didn't request a password reset, please contact our support team immediately at <a href="mailto:support@rideshare.com" style="color: #ef4444;">support@rideshare.com</a>.</p>
+          <p><strong>Important:</strong> If you didn't request a password reset, please contact our support team immediately at <a href="mailto:rideshareapp.mail@gmail.com" style="color: #ef4444;">rideshareapp.mail@gmail.com</a>.</p>
         </div>
         
         <h2 style="color: #f97316; font-size: 18px; margin-top: 30px;">Keeping Your Account Secure</h2>
