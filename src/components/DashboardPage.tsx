@@ -309,7 +309,15 @@ export default function DashboardPage({
       <div className="mb-6 bg-primary/5 rounded-lg p-4 border border-primary/8">
         <h2 className="text-xl font-bold mb-2">Important Rides</h2>
         <p className="text-sm text-muted-foreground mb-4">Your upcoming rides that need attention</p>
-        {renderRides(upcomingRides)}
+        {upcomingRides.length > 1 ? (
+          <ScrollArea orientation="horizontal" className="w-full whitespace-nowrap">
+            <div className="flex gap-4">
+              {renderRides(upcomingRides)}
+            </div>
+          </ScrollArea>
+        ) : (
+          renderRides(upcomingRides)
+        )}
       </div>
     );
   };
