@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea, type ScrollAreaProps } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -305,21 +305,16 @@ export default function DashboardPage({
       return null;
     }
 
-    const horizontalScrollAreaProps: ScrollAreaProps = {
-      orientation: "horizontal",
-      className: "w-full whitespace-nowrap",
-    };
-
-
     return (
       <div className="mb-6 bg-primary/5 rounded-lg p-4 border border-primary/8">
         <h2 className="text-xl font-bold mb-2">Important Rides</h2>
         <p className="text-sm text-muted-foreground mb-4">Your upcoming rides that need attention</p>
         {upcomingRides.length > 1 ? (
-          <ScrollArea {...horizontalScrollAreaProps}>
+          <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-4">
               {renderRides(upcomingRides)}
             </div>
+            <ScrollBar orientation="horizontal" />
           </ScrollArea>
         ) : (
           renderRides(upcomingRides)
