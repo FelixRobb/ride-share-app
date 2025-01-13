@@ -211,7 +211,7 @@ export default function DashboardPage({
 
     return (
       <Link href={`/rides/${ride.id}?from=${activeTab}`}>
-        <Card className="mb-4 hover:bg-accent transition-colors duration-200 group">
+        <Card className="mb-4 hover:bg-accent transition-colors duration-200 group w-full">
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col space-y-4">
               <div className="flex items-start justify-between">
@@ -309,16 +309,17 @@ export default function DashboardPage({
       <div className="mb-6 bg-primary/5 rounded-lg p-4 border border-primary/8">
         <h2 className="text-xl font-bold mb-2">Important Rides</h2>
         <p className="text-sm text-muted-foreground mb-4">Your upcoming rides that need attention</p>
-        {upcomingRides.length > 1 ? (
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex gap-4">
-              {renderRides(upcomingRides)}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        ) : (
-          renderRides(upcomingRides)
-        )}
+
+        <ScrollArea className="w-full snap-x snap-mandatory overflow-y-auto">
+          <div className="flex gap-4 snap-x">
+            {upcomingRides.map((ride) => (
+              <div key={ride.id} className="w-full shrink-0 snap-start">
+                <RideCard ride={ride} />
+              </div>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </div>
     );
   };
