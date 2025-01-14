@@ -310,10 +310,10 @@ export default function DashboardPage({
         <h2 className="text-xl font-bold mb-2">Important Rides</h2>
         <p className="text-sm text-muted-foreground mb-4">Your upcoming rides that need attention</p>
 
-        <ScrollArea className="w-full snap-x snap-mandatory overflow-y-auto">
-          <div className="flex gap-4 snap-x">
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="flex space-x-4">
             {upcomingRides.map((ride) => (
-              <div key={ride.id} className="w-full shrink-0 snap-start">
+              <div key={ride.id} className="inline-block w-[calc(100vw-4rem)] sm:w-[calc(100vw-6rem)] md:w-[calc(50vw-4rem)] lg:w-[calc(33.33vw-4rem)]">
                 <RideCard ride={ride} />
               </div>
             ))}
