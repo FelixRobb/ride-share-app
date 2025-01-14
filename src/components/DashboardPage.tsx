@@ -310,16 +310,11 @@ export default function DashboardPage({
         <h2 className="text-xl font-bold mb-2">Important Rides</h2>
         <p className="text-sm text-muted-foreground mb-4">Your upcoming rides that need attention</p>
 
-        <ScrollArea className="w-full snap-x snap-mandatory overflow-y-auto">
-          <div className="flex gap-4 snap-x">
-            {upcomingRides.map((ride) => (
-              <div key={ride.id} className="w-full shrink-0 snap-start">
-                <RideCard ride={ride} />
-              </div>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        <div className="grid gap-4 grid-cols-1">
+          {upcomingRides.map((ride) => (
+            <RideCard key={ride.id} ride={ride} />
+          ))}
+        </div>
       </div>
     );
   };
