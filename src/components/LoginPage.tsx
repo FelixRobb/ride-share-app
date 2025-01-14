@@ -147,7 +147,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
                   <Input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
