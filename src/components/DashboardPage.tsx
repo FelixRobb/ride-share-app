@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Search, Clock, MapPin, User2, CalendarIcon, ArrowRight, CheckCircle, Filter } from 'lucide-react';
+import { Search, Clock, MapPin, User2, CalendarIcon, ArrowRight, CheckCircle, Filter, MoreHorizontal } from 'lucide-react';
 import { User, Ride, Contact } from "../types";
 import Link from 'next/link';
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
@@ -35,8 +35,8 @@ const FilterPopover: React.FC<FilterPopoverProps> = ({ statusFilter, setStatusFi
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
-        <div className="bg-popover rounded-md shadow-md">
+      <PopoverContent className="p-0">
+        <div className="w-full bg-popover rounded-md shadow-md">
           <div className="p-4 grid gap-4">
             <div className="space-y-2">
               <h4 className="font-medium leading-none">Status</h4>
@@ -211,7 +211,7 @@ export default function DashboardPage({
 
     return (
       <Link href={`/rides/${ride.id}?from=${activeTab}`}>
-        <Card className="mb-4 hover:bg-accent transition-colors duration-200 group w-full">
+        <Card className="mb-4 hover:bg-accent transition-colors duration-200 group">
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col space-y-4">
               <div className="flex items-start justify-between">
@@ -256,7 +256,7 @@ export default function DashboardPage({
                 )}
               </div>
 
-              {(ride.status === "accepted" || ride.status === "completed" ) && ride.accepter_id && (
+              {(ride.status === "accepted" || ride.status === "completed") && ride.accepter_id && (
                 <div className="flex items-center space-x-2 pt-2 border-t">
                   <User2 className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
@@ -305,28 +305,98 @@ export default function DashboardPage({
       return null;
     }
 
-    return (
-      <div className="mb-6 bg-primary/5 rounded-lg p-4 border border-primary/8">
-        <h2 className="text-xl font-bold mb-2">Important Rides</h2>
-        <p className="text-sm text-muted-foreground mb-4">Your upcoming rides that need attention</p>
+    const renderImportantRide = (ride: Ride) => {
+      const { date, time } = formatDateTime(ride.time);
+      const isUserRequester = ride.requester_id === currentUser.id;
+      const actionNeeded = ride.status === "pending" ? (isUserRequester ? "Waiting for offer" : "Offer a ride") : "";
+      const fromLocationParts = ride.from_location.split(",");
+      const toLocationParts = ride.to_location.split(",");
+      const shortFromLocation = fromLocationParts[0];
+      const shortToLocation = toLocationParts[0];
 
-        <ScrollArea className="w-full whitespace-nowrap">
-          <div className="flex space-x-4">
-            {upcomingRides.map((ride) => (
-              <div key={ride.id} className="inline-block w-[calc(100vw-4rem)] sm:w-[calc(100vw-6rem)] md:w-[calc(50vw-4rem)] lg:w-[calc(33.33vw-4rem)]">
-                <RideCard ride={ride} />
+      return (
+        <Card key={ride.id} className="w-full mb-4 hover:bg-accent transition-colors duration-200 overflow-hidden mr-3">
+          <CardHeader className="pb-2 bg-primary/10">
+            <div className="flex justify-between items-start flex-col sm:flex-row">
+              <div className="">
+                <CardTitle className="text-md">
+                  <MapPin className="mx-1 h-4 w-4 inline text-muted-foreground mb-1" /> {shortFromLocation} to {shortToLocation}
+                </CardTitle>
+                <CardDescription className="flex items-center gap-2 ml-1 mb-1">
+                  <Clock className="h-4 w-4 inline text-muted-foreground" /> {date} at {time}
+                </CardDescription>
               </div>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+              <div className="flex flex-row justify-between items-center sm:justify-end sm:flex-col sm:items-end gap-4 sm:gap-1">
+                <div> {getStatusBadge(ride.status)}</div>
+                <div>{actionNeeded && (
+                  <Badge variant="destructive">
+                    {actionNeeded}
+                  </Badge>
+                )}</div>
+
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4 bg-primary/10">
+            <div className="space-y-2 border rounded-lg p-3 bg-card">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Requester:</span>
+                <span>{getRequesterName(ride)}</span>
+              </div>
+              {ride.status === "accepted" && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Offered by:</span>
+                  <span>{getOfferedByText(ride)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Rider:</span>
+                <span>{ride.rider_name}</span>
+              </div>
+              {ride.rider_phone && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Rider Phone:</span>
+                  <span>{ride.rider_phone}</span>
+                </div>
+              )}
+              {ride.note && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Note:</span>
+                  <span className="text-sm break-words max-w-[70%]">{ride.note}</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+          <CardFooter className="pt-3 bg-primary/5">
+            <Button variant="outline" className="w-full" asChild>
+              <Link href={`/rides/${ride.id}?from=active`}>View Details</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      );
+    };
+
+    return (
+      <div className="mb-6 bg-primary/5 rounded-lg p-4 border border-primary/8 flex flex-col">
+        <div>
+          <h2 className="text-xl font-bold mb-2">Important Rides</h2>
+          <p className="text-sm text-muted-foreground">Your upcoming rides that need attention</p>
+        </div>
+
+        <div className="relative mt-4">
+          <ScrollArea className="w-full h-[350px] sm:h-[450px] overflow-y-auto">
+            <div className="flex flex-col">
+              {upcomingRides.map(renderImportantRide)}
+            </div>
+          </ScrollArea>
+        </div>
       </div>
     );
   };
 
   return (
     <div className="w-full max-w-4xl mx-auto" data-tutorial="dashboard">
-      <Card className="shadow-lg min-h-min">
+      <Card className="shadow-lg min-h-min relative z-10">
         <CardHeader className="space-y-6">
           <div>
             <CardTitle className="text-2xl font-bold">Dashboard</CardTitle>
