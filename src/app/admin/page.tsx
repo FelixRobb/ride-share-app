@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import AdminDashboard from '@/components/AdminDashboard'
 import AdminLogin from '@/components/AdminLogin'
+import { toast } from "sonner"
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -34,11 +35,11 @@ export default function AdminPage() {
         localStorage.setItem('adminAuth', 'true')
         setIsAuthenticated(true)
       } else {
-        alert('Invalid password')
+        toast.error("Invalid password");
       }
     } catch (error) {
       console.error('Login error:', error)
-      alert('An error occurred during login')
+      toast.error("An error occurred during login");
     }
   }
 
@@ -54,3 +55,4 @@ export default function AdminPage() {
 
   return <AdminDashboard onLogout={handleLogout} />
 }
+

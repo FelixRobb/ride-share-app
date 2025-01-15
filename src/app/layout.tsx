@@ -1,5 +1,6 @@
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from 'sonner';
+import { Toaster as ToasterComponent } from "@/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 
@@ -55,7 +56,7 @@ export default function RootLayout({
           <TutorialProvider>
             {children}
           </TutorialProvider>
-          <Toaster />
+          <Toaster  closeButton />
         </ThemeProvider>
       </body>
     </html>

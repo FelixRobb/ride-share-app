@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { User } from "../types"
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
@@ -37,21 +37,14 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
           body: JSON.stringify({ email: resetEmail }),
         });
       if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Password reset email sent. Please check your inbox.",
-        });
+        toast.success("Password reset email sent. Please check your inbox.");
         setIsResetPasswordOpen(false);
       } else {
         const data = await response.json();
         throw new Error(data.error || "Failed to send reset email");
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
       setIsResetLoading(false);
     }

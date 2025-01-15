@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast";
+import { toast } from 'sonner'
 
 interface AdminDashboardProps {
   onLogout: () => void
@@ -23,7 +23,6 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [isNotifyUserDialogOpen, setIsNotifyUserDialogOpen] = useState(false)
   const [notificationTitle, setNotificationTitle] = useState('')
   const [notificationBody, setNotificationBody] = useState('')
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchStats()
@@ -37,11 +36,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       setStats(data)
     } catch (error) {
       console.error('Error fetching stats:', error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch statistics",
-        variant: "destructive",
-      })
+      toast.error("Failed to fetch statistics");
     }
   }
 
@@ -52,11 +47,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       setUsers(data)
     } catch (error) {
       console.error('Error fetching users:', error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch users",
-        variant: "destructive",
-      })
+      toast.error("Failed to fetch users");
     }
   }
 
@@ -78,20 +69,13 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         })
         if (response.ok) {
           setUsers(users.filter(user => user.id !== userId))
-          toast({
-            title: "Success",
-            description: "User deleted successfully",
-          })
+          toast.success("User deleted successfully");
         } else {
           throw new Error('Failed to delete user')
         }
       } catch (error) {
         console.error('Error deleting user:', error)
-        toast({
-          title: "Error",
-          description: "Failed to delete user",
-          variant: "destructive",
-        })
+        toast.error("Failed to delete user");
       }
     }
   }
@@ -109,20 +93,13 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       if (response.ok) {
         setUsers(users.map(user => user.id === selectedUser.id ? selectedUser : user))
         setIsEditDialogOpen(false)
-        toast({
-          title: "Success",
-          description: "User updated successfully",
-        })
+        toast.success("User updated successfully");
       } else {
         throw new Error('Failed to update user')
       }
     } catch (error) {
       console.error('Error updating user:', error)
-      toast({
-        title: "Error",
-        description: "Failed to update user",
-        variant: "destructive",
-      })
+      toast.error("Failed to update user");
     }
   }
 
@@ -140,20 +117,13 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setIsNotifyDialogOpen(false)
         setNotificationTitle('')
         setNotificationBody('')
-        toast({
-          title: "Success",
-          description: "Notification sent to all users",
-        })
+        toast.success("Notification sent to all users");
       } else {
         throw new Error('Failed to send notification')
       }
     } catch (error) {
       console.error('Error sending notification:', error)
-      toast({
-        title: "Error",
-        description: "Failed to send notification",
-        variant: "destructive",
-      })
+      toast.error("Failed to send notification");
     }
   }
 
@@ -175,20 +145,13 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setIsNotifyUserDialogOpen(false)
         setNotificationTitle('')
         setNotificationBody('')
-        toast({
-          title: "Success",
-          description: `Notification sent to ${selectedUser.name}`,
-        })
+        toast.success(`Notification sent to ${selectedUser.name}`);
       } else {
         throw new Error('Failed to send notification')
       }
     } catch (error) {
       console.error('Error sending notification:', error)
-      toast({
-        title: "Error",
-        description: "Failed to send notification",
-        variant: "destructive",
-      })
+      toast.error("Failed to send notification");
     }
   }
 

@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LucideUser, Mail, Phone, Car, MapPin, Loader } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { User, Contact, AssociatedPerson } from "../types";
 import {
   updateProfile,
@@ -24,7 +24,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
 import 'react-phone-number-input/style.css';
-import ContactForm from './ContactForm';
 import { ContactDialog } from './ContactDialog';
 
 interface ProfilePageProps {
@@ -57,7 +56,6 @@ export default function ProfilePage({
   const [isPushLoading, setIsPushLoading] = useState(true);
   const [userStats, setUserStats] = useState<{ ridesOffered: number; ridesRequested: number } | null>(null);
 
-  const { toast } = useToast();
   const isOnline = useOnlineStatus();
 
 
@@ -97,18 +95,11 @@ export default function ProfilePage({
         await updateProfile(currentUser.id, editedUser);
         setCurrentUser(editedUser);
         localStorage.setItem("currentUser", JSON.stringify(editedUser));
-        toast({
-          title: "Success",
-          description: "Profile updated successfully!",
-        });
+        toast.success("Profile updated successfully!");
         setIsEditProfileOpen(false);
         void fetchUserData(currentUser.id);
       } catch (error) {
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "An unexpected error occurred",
-          variant: "destructive",
-        });
+        toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
       } finally {
         setIsUpdatingProfile(false);
       }
@@ -118,27 +109,16 @@ export default function ProfilePage({
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmNewPassword) {
-      toast({
-        title: "Error",
-        description: "New passwords do not match",
-        variant: "destructive",
-      });
+      toast.error("New passwords do not match");
       return;
     }
     try {
       setIsChangingPassword(true);
       await changePassword(currentUser.id, currentPassword, newPassword);
-      toast({
-        title: "Success",
-        description: "Password changed successfully!",
-      });
+      toast.success("Password changed successfully!");
       setIsChangePasswordOpen(false);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
       setIsChangingPassword(false);
     }
@@ -152,11 +132,7 @@ export default function ProfilePage({
         setNewAssociatedPerson({ name: "", relationship: "" });
         void fetchUserData(currentUser.id);
       } catch (error) {
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "An unexpected error occurred",
-          variant: "destructive",
-        });
+        toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
       }
     }
   };
@@ -166,11 +142,7 @@ export default function ProfilePage({
       await deleteAssociatedPerson(personId, currentUser.id);
       void fetchUserData(currentUser.id);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     }
   };
 
@@ -184,17 +156,10 @@ export default function ProfilePage({
       await deleteUser(currentUser.id);
       setCurrentUser(null);
       localStorage.removeItem("currentUser");
-      toast({
-        title: "Account Deleted",
-        description: "Your account has been successfully deleted.",
-      });
+      toast.success("Your account has been successfully deleted.");
       setIsDeleteAccountDialogOpen(false);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
       setIsDeletingAccount(false);
     }
@@ -211,17 +176,10 @@ export default function ProfilePage({
       if (!response.ok) {
         throw new Error('Failed to update push notification preference');
       }
-      toast({
-        title: checked ? "Push notifications enabled" : "Push notifications disabled",
-        description: checked ? "You will now receive push notifications" : "You will no longer receive push notifications",
-      });
+      toast.success(checked ? "Push notifications enabled" : "Push notifications disabled");
     } catch (error) {
       console.error('Error updating push notification preference:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update push notification preference. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to update push notification preference. Please try again.");
       setIsPushEnabled(!checked);
     }
   };
@@ -232,11 +190,7 @@ export default function ProfilePage({
         await fetchUserData(currentUser.id);
       } catch (error) {
         console.error("Error fetching user data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch user data. Please try again.",
-          variant: "destructive",
-        });
+        toast.error("Failed to fetch user data. Please try again.");
       }
     }
   }, [isOnline, currentUser, fetchUserData, toast]);
@@ -255,11 +209,7 @@ export default function ProfilePage({
           setUserStats(stats);
         } catch (error) {
           console.error("Error fetching user stats:", error);
-          toast({
-            title: "Error",
-            description: "Failed to fetch user statistics. Please try again.",
-            variant: "destructive",
-          });
+          toast.error("Failed to fetch user statistics. Please try again.");
         }
       }
     };

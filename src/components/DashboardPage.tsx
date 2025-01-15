@@ -14,7 +14,7 @@ import { Search, Clock, MapPin, User2, CalendarIcon, ArrowRight, CheckCircle, Fi
 import { User, Ride, Contact } from "../types";
 import Link from 'next/link';
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface FilterPopoverProps {
   statusFilter: string | null;
@@ -115,11 +115,7 @@ export default function DashboardPage({
           await fetchUserData();
         } catch (error) {
           console.error("Error fetching user data:", error);
-          toast({
-            title: "Error",
-            description: "Failed to fetch user data. Please try again.",
-            variant: "destructive",
-          });
+          toast.error("Failed to fetch user data. Please try again.");
         } finally {
           setIsInitialLoading(false);
         }

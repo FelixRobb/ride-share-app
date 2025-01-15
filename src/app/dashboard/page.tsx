@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import Layout from '@/components/Layout'
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { User, Ride, Contact } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
@@ -20,7 +20,6 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('active') // default tab
 
   const router = useRouter()
-  const { toast } = useToast()
   const isOnline = useOnlineStatus()
 
   useEffect(() => {
@@ -59,11 +58,7 @@ export default function Dashboard() {
         }
       } catch (error) {
         console.error("Error fetching user data:", error)
-        toast({
-          title: "Error",
-          description: "Failed to fetch user data. Please try again.",
-          variant: "destructive",
-        })
+        toast.error("Failed to fetch user data. Please try again.");
       }
     }
   }
@@ -101,3 +96,4 @@ export default function Dashboard() {
     </Layout>
   )
 }
+
