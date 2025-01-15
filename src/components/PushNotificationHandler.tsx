@@ -106,7 +106,7 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
         }
       });
     }
-  }, []); // Removed toast from dependency array
+  }, []);
 
   return null;
 }
