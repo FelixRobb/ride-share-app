@@ -1,11 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-import { useToast } from "@/hooks/use-toast"
+import { toast } from 'sonner'; // Import toast directly
 
 export default function PushNotificationHandler({ userId }: { userId: string }) {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     const setupPushNotifications = async () => {
@@ -101,15 +100,13 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'PUSH_NOTIFICATION') {
-          toast({
-            title: event.data.title,
+          toast(event.data.title, {
             description: event.data.body,
           });
         }
       });
     }
-  }, [toast]);
+  }, []); // Removed toast from dependency array
 
   return null;
 }
-

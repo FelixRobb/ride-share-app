@@ -1,4 +1,3 @@
-// src/app/reset-password/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -51,11 +50,7 @@ function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      })
+      toast.error("Passwords do not match") 
       return
     }
 
@@ -67,21 +62,14 @@ function ResetPasswordForm() {
       })
 
       if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Your password has been reset successfully",
-        })
+        toast.success("Your password has been reset successfully") 
         router.push('/')
       } else {
         const data = await response.json()
         throw new Error(data.error || 'Failed to reset password')
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      })
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred") 
     }
   }
 
@@ -164,4 +152,3 @@ export default function ResetPassword() {
     </Suspense>
   )
 }
-

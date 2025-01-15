@@ -86,7 +86,6 @@ export default function Profile() {
               setCurrentUser={setCurrentUser}
               contacts={contacts}
               associatedPeople={associatedPeople}
-              userStats={userStats}
               fetchUserData={fetchUserDataCallback}
             />
           )}
