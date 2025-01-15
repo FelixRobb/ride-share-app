@@ -2,14 +2,14 @@ import { useState } from "react"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast"
 import { User } from "../types"
-import { Loader2, Mail, Lock, ArrowRight, Phone } from 'lucide-react'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
+import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react'
 
 interface LoginPageProps {
   setCurrentUser: (user: User) => void
@@ -61,8 +61,9 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
     e.preventDefault();
     setError(null);
     try {
-      console.log('Submitting login form with:', { email, phone, password: '******', loginMethod });
-      await handleLogin(loginMethod === 'email' ? email : phone, password, loginMethod);
+      let formattedIdentifier = loginMethod === 'email' ? email : phone;
+      console.log('Submitting login form with:', { identifier: formattedIdentifier, password: '******', loginMethod });
+      await handleLogin(formattedIdentifier, password, loginMethod);
     } catch (error) {
       console.error('Login error in component:', error);
       setError("Invalid email/phone or password. Please try again.");
@@ -70,8 +71,8 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-background p-4 shadow-sm">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary/20 to-secondary/20">
+      <header className="bg-background/80 backdrop-blur-sm p-4 shadow-sm">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">RideShare</h1>
           <div>
@@ -84,45 +85,49 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
           </div>
         </div>
       </header>
-      <main className="flex-grow flex items-center justify-center">
-        <Card className="w-full max-w-[350px]">
-          <CardHeader>
-            <CardTitle>Login</CardTitle>
+      <main className="flex-grow flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
+            <CardDescription className="text-center">Enter your credentials to access your account</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit}>
-              <div className="grid w-full items-center gap-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
                 <div className="flex justify-center space-x-2 mb-4">
                   <Button
                     type="button"
-                    variant={loginMethod === 'email' ? 'default' : 'outline'}
                     onClick={() => setLoginMethod('email')}
+                    variant={loginMethod === 'email' ? 'default' : 'outline'}
+                    className="w-full"
                   >
                     <Mail className="mr-2 h-4 w-4" /> Email
                   </Button>
                   <Button
                     type="button"
-                    variant={loginMethod === 'phone' ? 'default' : 'outline'}
                     onClick={() => setLoginMethod('phone')}
+                    variant={loginMethod === 'phone' ? 'default' : 'outline'}
+                    className="w-full"
                   >
-                    <Phone className="mr-2 h-4 w-4" /> Phone
+                    {/* <Phone className="mr-2 h-4 w-4" /> */} Phone
                   </Button>
                 </div>
                 {loginMethod === 'email' ? (
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="email">Email</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="email" className="sr-only">Email</Label>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="name@example.com"
+                      placeholder="Enter your email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      className="w-full"
                     />
                   </div>
                 ) : (
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="phone">Phone</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="phone" className="sr-only">Phone</Label>
                     <PhoneInput
                       international
                       defaultCountry="PT"
@@ -132,18 +137,8 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
                     />
                   </div>
                 )}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor="password">Password</Label>
-                    <Button
-                      variant="link"
-                      onClick={() => setIsResetPasswordOpen(true)}
-                      className="text-xs text-muted-foreground hover:text-primary px-0"
-                      type="button"
-                    >
-                      Forgot password?
-                    </Button>
-                  </div>
+                <div className="space-y-1">
+                  <Label htmlFor="password" className="sr-only">Password</Label>
                   <Input
                     id="password"
                     type="password"
@@ -151,27 +146,28 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="bg-background/50"
+                    className="w-full"
                   />
                 </div>
               </div>
-              {error && <p className="text-destructive mt-2">{error}</p>}
-              <Button className="w-full mt-4" type="submit" disabled={isLoading}>
+              {error && <p className="text-destructive text-sm mt-2">{error}</p>}
+              <Button className="w-full" type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
-            <div className="w-full text-center text-sm">
-              Don't have an account?{" "}
-              <Link href="/register" className="font-medium text-primary hover:underline">
-                Create one now
-              </Link>
-            </div>
+            <Button variant="link" asChild className="w-full">
+              <Link href="/register">Don't have an account? Register</Link>
+            </Button>
+            <Button variant="link" onClick={() => setIsResetPasswordOpen(true)} className="w-full">
+              Forgot your password?
+            </Button>
           </CardFooter>
         </Card>
       </main>
-      <footer className="bg-background p-4 border-t">
+      <footer className="bg-background/80 backdrop-blur-sm p-4 border-t">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
           © {new Date().getFullYear()} RideShare. All rights reserved.
         </div>
@@ -180,33 +176,21 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
       <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Reset your password</DialogTitle>
-            <DialogDescription>
-              Enter your email address and we'll send you a link to reset your password.
-            </DialogDescription>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>Enter your email to receive a password reset link.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="reset-email">Email address</Label>
-              <Input
-                id="reset-email"
-                type="email"
-                placeholder="name@example.com"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
-              />
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="reset-email" className="text-right">
+                Email
+              </Label>
+              <Input id="reset-email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="col-span-3" />
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleResetPassword} disabled={isResetLoading} className="w-full">
-              {isResetLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                "Send reset link"
-              )}
+            <Button onClick={handleResetPassword} disabled={isResetLoading}>
+              {isResetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isResetLoading ? "Sending..." : "Send Reset Link"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -214,3 +198,4 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
     </div>
   )
 }
+
