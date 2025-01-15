@@ -14,7 +14,7 @@ import { Search, Clock, MapPin, User2, CalendarIcon, ArrowRight, CheckCircle, Fi
 import { User, Ride, Contact } from "../types";
 import Link from 'next/link';
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 interface FilterPopoverProps {
   statusFilter: string | null;
