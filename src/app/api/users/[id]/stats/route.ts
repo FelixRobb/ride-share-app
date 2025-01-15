@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const userId = await params.id;
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const userId = params.id;
 
   try {
     // Count completed rides offered by the user
