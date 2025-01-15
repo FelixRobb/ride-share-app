@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SearchIcon, MapPin, Crosshair, Loader, Copy, ExternalLink } from 'lucide-react';
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
