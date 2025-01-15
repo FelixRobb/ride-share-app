@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LucideUser, Mail, Phone, Car, MapPin, Loader } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { User, Contact, AssociatedPerson, UserStats } from "../types";
+import { User, Contact, AssociatedPerson } from "../types";
 import {
   updateProfile,
   changePassword,
@@ -19,6 +19,7 @@ import {
   addAssociatedPerson,
   deleteAssociatedPerson,
   deleteUser,
+  fetchUserStats
 } from "../utils/api";
 import { Switch } from "@/components/ui/switch";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
@@ -31,7 +32,6 @@ interface ProfilePageProps {
   setCurrentUser: (user: User | null) => void;
   contacts: Contact[];
   associatedPeople: AssociatedPerson[];
-  userStats: UserStats | null;
   fetchUserData: (userId: string) => Promise<void>;
 }
 
@@ -40,7 +40,6 @@ export default function ProfilePage({
   setCurrentUser,
   contacts,
   associatedPeople,
-  userStats,
   fetchUserData,
 }: ProfilePageProps) {
   const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" });
@@ -56,6 +55,7 @@ export default function ProfilePage({
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isPushLoading, setIsPushLoading] = useState(true);
+  const [userStats, setUserStats] = useState<{ ridesOffered: number; ridesRequested: number } | null>(null);
 
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
@@ -247,6 +247,28 @@ export default function ProfilePage({
     return () => clearInterval(intervalId);
   }, [fetchUserDataCallback]);
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (currentUser && isOnline) {
+        try {
+          const stats = await fetchUserStats(currentUser.id);
+          setUserStats(stats);
+        } catch (error) {
+          console.error("Error fetching user stats:", error);
+          toast({
+            title: "Error",
+            description: "Failed to fetch user statistics. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    fetchStats();
+    const intervalId = setInterval(fetchStats, 60000); // Refresh every minute
+    return () => clearInterval(intervalId);
+  }, [currentUser, isOnline, toast]);
+
   return (
     <div className="w-full max-w-4xl mx-auto">
       <Card className="mb-8" data-tutorial="profile-info">
@@ -294,14 +316,14 @@ export default function ProfilePage({
               <Car className="h-6 w-6 text-primary" />
               <div>
                 <p className="text-sm font-medium">Rides Offered</p>
-                <p>{userStats?.rides_offered || 0}</p>
+                <p>{userStats?.ridesOffered || 0}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <MapPin className="h-6 w-6 text-primary" />
               <div>
-                <p className="text-sm font-medium">Rides Accepted</p>
-                <p>{userStats?.rides_accepted || 0}</p>
+                <p className="text-sm font-medium">Rides Requested</p>
+                <p>{userStats?.ridesRequested || 0}</p>
               </div>
             </div>
           </div>
@@ -509,3 +531,4 @@ export default function ProfilePage({
     </div>
   );
 }
+

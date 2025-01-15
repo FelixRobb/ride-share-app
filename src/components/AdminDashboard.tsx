@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "sonner"
+import { useToast } from "@/hooks/use-toast";
 
 interface AdminDashboardProps {
   onLogout: () => void
@@ -23,6 +23,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [isNotifyUserDialogOpen, setIsNotifyUserDialogOpen] = useState(false)
   const [notificationTitle, setNotificationTitle] = useState('')
   const [notificationBody, setNotificationBody] = useState('')
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchStats()

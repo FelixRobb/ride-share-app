@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
+import { useToast } from "@/hooks/use-toast";
 
 interface ContactFormProps {
   onAddContact: (phone: string, countryCode: string) => Promise<void>
@@ -11,6 +11,7 @@ interface ContactFormProps {
 export default function ContactForm({ onAddContact }: ContactFormProps) {
   const [phone, setPhone] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -1,59 +1,34 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const userId = url.pathname.split('/').at(-2);
+export async function GET(request: Request, { params }: { params: { id: string } }) {
+  const userId = await params.id;
 
   try {
-    const { data: stats, error } = await supabase
-      .from('user_stats')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    // Count completed rides offered by the user
+    const { count: ridesOffered, error: offeredError } = await supabase
+      .from('rides')
+      .select('*', { count: 'exact', head: true })
+      .eq('accepter_id', userId)
+      .eq('status', 'completed');
 
-    if (error) throw error;
+    if (offeredError) throw offeredError;
 
-    return NextResponse.json({ stats });
+    // Count completed rides requested by the user
+    const { count: ridesRequested, error: requestedError } = await supabase
+      .from('rides')
+      .select('*', { count: 'exact', head: true })
+      .eq('requester_id', userId)
+      .eq('status', 'completed');
+
+    if (requestedError) throw requestedError;
+
+    return NextResponse.json({
+      ridesOffered: ridesOffered || 0,
+      ridesRequested: ridesRequested || 0,
+    });
   } catch (error) {
-    console.error('Fetch user stats error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function PUT(request: Request) {
-  const url = new URL(request.url);
-  const userId = url.pathname.split('/').at(-2);
-  const updates = await request.json();
-
-  try {
-    const { data: currentStats, error: fetchError } = await supabase
-      .from('user_stats')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    const newStats = {
-      rides_offered: (currentStats?.rides_offered || 0) + (updates.rides_offered || 0),
-      rides_accepted: (currentStats?.rides_accepted || 0) + (updates.rides_accepted || 0),
-      completed_rides_offered: (currentStats?.completed_rides_offered || 0) + (updates.completed_rides_offered || 0),
-      completed_rides_accepted: (currentStats?.completed_rides_accepted || 0) + (updates.completed_rides_accepted || 0),
-    };
-
-    const { data: updatedStats, error: updateError } = await supabase
-      .from('user_stats')
-      .update(newStats)
-      .eq('user_id', userId)
-      .select()
-      .single();
-
-    if (updateError) throw updateError;
-
-    return NextResponse.json({ stats: updatedStats });
-  } catch (error) {
-    console.error('Update user stats error:', error);
+    console.error('Error fetching user stats:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

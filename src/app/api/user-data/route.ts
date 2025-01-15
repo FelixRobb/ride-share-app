@@ -59,17 +59,8 @@ export async function GET(request: Request) {
 
     if (associatedPeopleError) throw associatedPeopleError;
 
-    // Fetch user stats
-    const { data: stats, error: statsError } = await supabase
-      .from("user_stats")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-
-    if (statsError) throw statsError;
-
     // Prepare response data
-    const data = { rides, contacts, associatedPeople, stats };
+    const data = { rides, contacts, associatedPeople };
     const dataString = JSON.stringify(data);
     const etag = crypto.createHash("md5").update(dataString).digest("hex");
 

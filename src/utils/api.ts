@@ -343,3 +343,11 @@ export const finishRide = async (rideId: string, userId: string) => {
   }
 };
 
+export const fetchUserStats = async (userId: string): Promise<{ ridesOffered: number; ridesRequested: number }> => {
+  const response = await fetch(`/api/users/${userId}/stats`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch user stats');
+  }
+  return await response.json();
+};
+

@@ -20,13 +20,14 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const lowerCaseEmail = email.toLowerCase();
+    const trimmedCountryCode = countryCode.slice(0, 5); // Ensure country code is not longer than 5 characters
 
     const { data: newUser, error: insertError } = await supabase
       .from('users')
       .insert({
         name,
         phone,
-        country_code: countryCode,
+        country_code: trimmedCountryCode,
         email: lowerCaseEmail,
         password: hashedPassword
       })
@@ -34,12 +35,6 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError) throw insertError;
-
-    const { error: statsError } = await supabase
-      .from('user_stats')
-      .insert({ user_id: newUser.id });
-
-    if (statsError) throw statsError;
 
     // Send welcome email
     try {
