@@ -16,6 +16,7 @@ interface RegisterPageProps {
 export default function RegisterPage({ setCurrentUser, handleRegister, isLoading }: RegisterPageProps) {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const { toast } = useToast();
 
   const onSubmit = async (name: string, phone: string, countryCode: string, email: string, password: string) => {
     try {

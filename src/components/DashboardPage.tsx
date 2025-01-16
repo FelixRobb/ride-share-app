@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
 import { toast } from "sonner";
 
+
 interface FilterPopoverProps {
   statusFilter: string | null;
   setStatusFilter: (status: string | null) => void;
@@ -103,6 +104,7 @@ export default function DashboardPage({
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
   const [localRides, setLocalRides] = useState<Ride[]>(rides);
   const isOnline = useOnlineStatus();
+  const { toast } = useToast();
 
   useEffect(() => {
     setLocalRides(rides);

@@ -26,6 +26,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
+  const { toast } = useToast();
 
   const handleResetPassword = async () => {
     try {
