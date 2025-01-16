@@ -128,7 +128,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
         <DialogTrigger asChild>
           <Button className='w-full' variant="outline" disabled={!isOnline}>Manage Contacts</Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[500px] p-0 max-h-[80vh] overflow-auto">
+        <DialogContent className="sm:max-w-[500px] p-0 max-h-[80vh] overflow-auto rounded-lg">
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle className="text-lg font-medium">Contacts</DialogTitle>
             <DialogDescription>Manage your contacts and add new ones.</DialogDescription>
@@ -224,7 +224,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
         </DialogContent>
       </Dialog>
       <Dialog open={isContactDetailsOpen} onOpenChange={setIsContactDetailsOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] rounded-lg">
           <DialogHeader>
             <DialogTitle>Contact Details</DialogTitle>
           </DialogHeader>

@@ -214,7 +214,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <DialogTrigger asChild>
                   <Button>Notify All Users</Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className='rounded-lg'>
                   <DialogHeader>
                     <DialogTitle>Send Notification to All Users</DialogTitle>
                     <DialogDescription>
@@ -309,7 +309,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       </Tabs>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className='rounded-lg'>
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
@@ -360,7 +360,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       </Dialog>
 
       <Dialog open={isNotifyUserDialogOpen} onOpenChange={setIsNotifyUserDialogOpen}>
-        <DialogContent>
+        <DialogContent className='rounded-lg'>
           <DialogHeader>
             <DialogTitle>Send Notification to User</DialogTitle>
             <DialogDescription>
