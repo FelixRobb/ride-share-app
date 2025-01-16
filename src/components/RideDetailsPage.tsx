@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, MessageSquare, Send, Edit, Trash, ArrowBigLeft, Loader, CheckCircle } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { User, Ride, Contact, Note } from "@/types";
 import { acceptRide, cancelRequest, cancelOffer, addNote, fetchNotes, editNote, deleteNote, markNoteAsSeen, fetchRideDetails, finishRide } from "@/utils/api";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
@@ -31,7 +31,6 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   const [loading, setLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter()
-  const { toast } = useToast()
   const [isCancelRequestDialogOpen, setIsCancelRequestDialogOpen] = useState(false);
   const [isCancelOfferDialogOpen, setIsCancelOfferDialogOpen] = useState(false);
   const [isFinishRideDialogOpen, setIsFinishRideDialogOpen] = useState(false);
@@ -82,11 +81,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
       } catch (error) {
         console.error("Error fetching notes:", error);
         if (isOnline) {
-          toast({
-            title: "Error",
-            description: "Failed to load notes. Please try again.",
-            variant: "destructive",
-          });
+          toast.error("Failed to load notes. Please try again.");
         }
       }
     }
@@ -187,18 +182,11 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
           setNotes((prevNotes) => [...prevNotes, addedNote]);
           setNewNote("");
           scrollToBottom();
-          toast({
-            title: "Success",
-            description: "Message sent successfully.",
-          });
+          toast.success("Message sent successfully.");
         }
       } catch (error) {
         console.error("Error adding note:", error);
-        toast({
-          title: "Error",
-          description: "Failed to send message. Please try again.",
-          variant: "destructive",
-        });
+        toast.error("Failed to send message. Please try again.");
       }
     }
   };
@@ -218,17 +206,10 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
         setNotes(prevNotes => prevNotes.map(note => note.id === editingNoteId ? updatedNote : note));
         setEditingNoteId(null);
         setEditedNoteContent("");
-        toast({
-          title: "Success",
-          description: "Message edited successfully.",
-        });
+        toast.success("Message edited successfully.");
       } catch (error) {
         console.error("Error editing note:", error);
-        toast({
-          title: "Error",
-          description: "Failed to edit message. Please try again.",
-          variant: "destructive",
-        });
+        toast.error("Failed to edit message. Please try again.");
       }
     }
   };
@@ -237,37 +218,23 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
     try {
       await deleteNote(noteId, currentUser.id);
       setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
-      toast({
-        title: "Success",
-        description: "Message deleted successfully.",
-      });
+      toast.success("Message deleted successfully.");
     } catch (error) {
       console.error("Error deleting note:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete message. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete message. Please try again.");
     }
   };
 
   const handleAcceptRide = async () => {
-    setIsLoading(true); // Update: Set isLoading to true
+    setIsLoading(true); 
     try {
       await acceptRide(ride.id, currentUser.id);
       await fetchUserData();
       await refreshRideData();
-      toast({
-        title: "Success",
-        description: "Ride offered successfully.",
-      });
+      toast.success("Ride offered successfully.");
     } catch (error) {
       console.error("Error offering ride:", error);
-      toast({
-        title: "Error",
-        description: "Failed to accept ride. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to accept ride. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -283,19 +250,12 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
       setIsCancelRequestDialogOpen(true);
       await cancelRequest(ride.id, currentUser.id);
       await fetchUserData();
-      toast({
-        title: "Success",
-        description: "Ride request cancelled successfully.",
-      });
+      toast.success("Ride request cancelled successfully.");
       setIsCancelRequestDialogOpen(false);
       router.push('/dashboard');
     } catch (error) {
       console.error("Error cancelling request:", error);
-      toast({
-        title: "Error",
-        description: "Failed to cancel request. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to cancel request. Please try again.");
     }
   }
 
@@ -305,46 +265,32 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
 
   const confirmCancelOffer = async () => {
     try {
-      setIsLoading(true); // Update: Set isLoading to true
+      setIsLoading(true); 
       setIsCancelOfferDialogOpen(false);
       await cancelOffer(ride.id, currentUser.id);
       await fetchUserData();
-      toast({
-        title: "Success",
-        description: "Ride offer cancelled successfully.",
-      });
+      toast.success("Ride offer cancelled successfully.");
       setIsCancelOfferDialogOpen(false);
       router.push('/dashboard');
     } catch (error) {
       console.error("Error cancelling offer:", error);
-      toast({
-        title: "Error",
-        description: "Failed to cancel offer. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to cancel offer. Please try again.");
     }
   }
 
   const handleFinishRide = async () => {
-    setIsLoading(true); // Update: Set isLoading to true
+    setIsLoading(true); 
     setIsFinishRideDialogOpen(false);
     try {
       await finishRide(ride.id, currentUser.id);
       await fetchUserData();
       await refreshRideData();
-      toast({
-        title: "Success",
-        description: "Ride marked as completed.",
-      });
+      toast.success("Ride marked as completed.");
     } catch (error) {
       console.error("Error finishing ride:", error);
-      toast({
-        title: "Error",
-        description: "Failed to finish ride. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to finish ride. Please try again.");
     } finally {
-      setIsLoading(false); // Update: Set isLoading to false
+      setIsLoading(false); 
     }
   };
 
@@ -379,10 +325,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   const copyToClipboard = (text: string) => {
     if (typeof window !== 'undefined') {
       navigator.clipboard.writeText(text).then(() => {
-        toast({
-          title: "Copied to clipboard",
-          description: "The address has been copied to your clipboard.",
-        });
+        toast.success("The address has been copied to your clipboard.");
       }, (err) => {
         console.error('Could not copy text: ', err);
       });
@@ -448,7 +391,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
               <LucideUser className="w-5 h-5 text-primary" />
               <Label className="font-semibold">Requester</Label>
             </div>
-            <p className="ml-7">{getRequesterName(ride)}</p> {/* Use getRequesterName here */}
+            <p className="ml-7">{getRequesterName(ride)}</p> 
           </div>
           <div className="space-y-2">
             <div className="flex items-center space-x-2">

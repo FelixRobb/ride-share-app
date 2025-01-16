@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { User } from "../types"
 import { MultiStepRegisterForm } from "./MultiStepRegisterForm"
 import { useRouter } from "next/navigation"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 interface RegisterPageProps {
   setCurrentUser: (user: User) => void
@@ -26,6 +26,7 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
         setError("This phone number or email is already registered. Please use a different one or login.")
       } else {
         setError("Registration failed. Please try again.")
+        toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
       }
       throw error
     }
@@ -47,7 +48,7 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
         </div>
       </header>
       <main className="flex-grow flex items-center justify-center p-4 sm:p-6 md:p-8">
-        <Card className="w-full max-w-[400px]">
+        <Card className="w-full max-w-[350px]">
           <CardHeader>
             <CardTitle>Create an Account</CardTitle>
             <CardDescription>Join RideShare and start sharing rides today!</CardDescription>

@@ -10,10 +10,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { User, Notification } from "../types";
 import { markNotificationsAsRead, fetchNotifications } from "../utils/api";
 import { useTheme } from "next-themes";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import PushNotificationHandler from './PushNotificationHandler';
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
-import { TutorialOverlay } from '@/components/TutorialOverlay';
+import { TutorialOverlay } from './TutorialOverlay';
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -61,7 +61,6 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
     }
     return "system";
   });
-  const { toast } = useToast();
   const isOnline = useOnlineStatus();
   const [wasPreviouslyOffline, setWasPreviouslyOffline] = useState(false);
 
@@ -85,17 +84,10 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
   useEffect(() => {
     if (!isOnline) {
       setWasPreviouslyOffline(true);
-      toast({
-        title: "You're offline",
-        description: "Please check your internet connection.",
-        variant: "destructive",
-      });
+      toast.error("You're offline. Please check your internet connection.");
     } else if (isOnline && wasPreviouslyOffline) {
       setWasPreviouslyOffline(false);
-      toast({
-        title: "You're back online",
-        description: "Your connection has been restored.",
-      });
+      toast.success("You're back online. Your connection has been restored.");
     }
   }, [isOnline, toast, wasPreviouslyOffline]);
 
@@ -129,11 +121,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
         );
       } catch (error) {
         console.error("Error marking notifications as read:", error);
-        toast({
-          title: "Error",
-          description: "Failed to mark notifications as read.",
-          variant: "destructive",
-        });
+        toast.error("Failed to mark notifications as read.");
       }
     }
     setIsNotificationDialogOpen(false);

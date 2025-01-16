@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import Layout from '@/components/Layout'
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Loader } from 'lucide-react'
 import { User, Contact, AssociatedPerson, UserStats, Notification } from "@/types"
 import { fetchUserData } from "@/utils/api"
@@ -22,7 +22,6 @@ export default function Profile() {
   const [etag, setEtag] = useState<string | null>(null)
 
   const router = useRouter()
-  const { toast } = useToast()
   const isOnline = useOnlineStatus()
 
   const fetchUserDataCallback = useCallback(async (userId: string) => {
@@ -39,11 +38,7 @@ export default function Profile() {
         setIsLoading(false)
       } catch (error) {
         console.error("Error fetching user data:", error)
-        toast({
-          title: "Error",
-          description: "Failed to fetch user data. Please try again.",
-          variant: "destructive",
-        })
+        toast.error("Failed to fetch user data. Please try again.");
       }
     }
   }, [etag, toast, isOnline])

@@ -3,14 +3,13 @@
 import { useState } from "react"
 import { useRouter } from 'next/navigation'
 import RegisterPage from '@/components/RegisterPage'
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { User } from "@/types"
 import { register, fetchUserData } from "@/utils/api"
 
 export default function Register() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const { toast } = useToast()
 
   const handleRegister = async (name: string, phone: string, countryCode: string, email: string, password: string) => {
     setIsLoading(true)
@@ -20,11 +19,7 @@ export default function Register() {
       await fetchUserData(user.id, null)
       router.push('/dashboard')
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      })
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred"); //Replaced toast call
     } finally {
       setIsLoading(false)
     }

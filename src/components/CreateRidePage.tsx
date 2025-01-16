@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { User, RideData, AssociatedPerson } from "../types";
 import { createRide } from "../utils/api";
 import dynamic from 'next/dynamic';
@@ -38,7 +38,6 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
   const [riderType, setRiderType] = useState("self");
   const [isFromMapOpen, setIsFromMapOpen] = useState(false);
   const [isToMapOpen, setIsToMapOpen] = useState(false);
-  const { toast } = useToast();
   const [isMounted, setIsMounted] = useState(false); // Add state for mounted check
   const [isSubmitting, setIsSubmitting] = useState(false); // Added loading state
   const isOnline = useOnlineStatus();
@@ -53,30 +52,19 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
     if (!isMounted) return;
     if (rideData.from_lat === 0 || rideData.from_lon === 0 || rideData.to_lat === 0 || rideData.to_lon === 0) {
       if (!isMounted) return;
-      toast({
-        title: "Error",
-        description: "Please select both 'From' and 'To' locations.",
-        variant: "destructive",
-      });
+      toast.error("Please select both 'From' and 'To' locations.");
       return;
     }
     try {
       setIsSubmitting(true);
       await createRide(rideData, currentUser.id);
       if (!isMounted) return;
-      toast({
-        title: "Ride Created",
-        description: "Your ride request has been created successfully.",
-      });
+      toast.success("Your ride request has been created successfully.");
       setCurrentPage("dashboard");
       void fetchUserData(currentUser.id);
     } catch (error) {
       if (!isMounted) return;
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -129,7 +117,7 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
                 <Input
                   id="time"
                   type="datetime-local"
-                  value={rideData.time || new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().slice(0, 16)}
+                  value={rideData.time}
                   onChange={(e) => setRideData((prev) => ({ ...prev, time: e.target.value }))}
                   required
                 />
@@ -209,3 +197,4 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
     </Card>
   );
 }
+

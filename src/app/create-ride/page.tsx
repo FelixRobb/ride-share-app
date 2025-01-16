@@ -1,25 +1,25 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import Layout from '@/components/Layout';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { User, AssociatedPerson } from "@/types";
+import { fetchUserData } from "@/utils/api";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
 import { TutorialProvider } from '@/contexts/TutorialContext'
-import { fetchUserData } from "@/utils/api";
+import { Loader } from 'lucide-react';
 
 const CreateRidePage = dynamic(() => import('@/components/CreateRidePage'), { ssr: false });
 
 export default function CreateRide() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [etag, setEtag] = useState<string | null>(null);
 
   const router = useRouter();
-  const { toast } = useToast();
   const isOnline = useOnlineStatus();
 
   useEffect(() => {
@@ -44,14 +44,10 @@ export default function CreateRide() {
           setEtag(newEtag);
           setAssociatedPeople(data.associatedPeople);
         }
-        //setIsLoading(false);
+        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching user data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch user data. Please try again.",
-          variant: "destructive",
-        });
+        toast.error("Failed to fetch user data. Please try again.");
       }
     }
   };
@@ -72,11 +68,18 @@ export default function CreateRide() {
     router.push('/');
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
-      <TutorialProvider>
-        <Layout currentUser={currentUser} logout={logout}>
+    <TutorialProvider>
+      <Layout currentUser={currentUser} logout={logout}>
+        <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
           {currentUser && (
             <CreateRidePage
               currentUser={currentUser}
@@ -85,9 +88,9 @@ export default function CreateRide() {
               associatedPeople={associatedPeople}
             />
           )}
-        </Layout>
-      </TutorialProvider>
-    </Suspense>
+        </Suspense>
+      </Layout>
+    </TutorialProvider>
   );
 }
 

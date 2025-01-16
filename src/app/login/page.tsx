@@ -3,14 +3,14 @@
 import { useState } from "react"
 import { useRouter } from 'next/navigation'
 import LoginPage from '@/components/LoginPage'
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { User } from "@/types"
 import { fetchUserData } from "@/utils/api"
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const { toast } = useToast()
+  
 
   const handleLogin = async (identifier: string, password: string, loginMethod: 'email' | 'phone') => {
     setIsLoading(true)
@@ -33,11 +33,7 @@ export default function Login() {
       await fetchUserData(data.user.id, null)
       router.push('/dashboard')
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      })
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
       setIsLoading(false)
     }

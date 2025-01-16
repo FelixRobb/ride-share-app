@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SearchIcon, MapPin, Crosshair, Loader, Copy, ExternalLink } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";;
+import { toast } from "sonner";
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -168,10 +168,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(
       () => {
-        toast({
-          title: "Copied to clipboard",
-          description: "The address has been copied to your clipboard.",
-        });
+        toast.success("The address has been copied to your clipboard.");
       },
       (error) => {
         console.error("Could not copy text to clipboard:", error);
