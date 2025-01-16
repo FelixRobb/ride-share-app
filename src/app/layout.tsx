@@ -56,7 +56,7 @@ export default function RootLayout({
           <TutorialProvider>
             {children}
           </TutorialProvider>
-          <Toaster  closeButton />
+          <Toaster richColors closeButton />
         </ThemeProvider>
       </body>
     </html>
