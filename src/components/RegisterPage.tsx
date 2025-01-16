@@ -10,7 +10,7 @@ import { toast } from "sonner"
 
 interface RegisterPageProps {
   setCurrentUser: (user: User) => void
-  handleRegister: (name: string, phone: string, countryCode: string, email: string, password: string) => Promise<void>
+  handleRegister: (name: string, phone: string, email: string, password: string) => Promise<void>
   isLoading: boolean
   quoteIndex: number;
 }
@@ -38,9 +38,9 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
   const router = useRouter()
   const randomQuote = quotes[quoteIndex];
 
-  const onSubmit = async (name: string, phone: string, countryCode: string, email: string, password: string) => {
+  const onSubmit = async (name: string, phone: string, email: string, password: string) => {
     try {
-      await handleRegister(name, phone, countryCode, email, password)
+      await handleRegister(name, phone, email, password)
     } catch (error) {
       if (error instanceof Error && error.message.includes("User already exists")) {
         setError("This phone number or email is already registered. Please use a different one or login.")

@@ -36,10 +36,10 @@ export default function Register() {
 
   if (quoteIndex === null) return null;
 
-  const handleRegister = async (name: string, phone: string, countryCode: string, email: string, password: string) => {
+  const handleRegister = async (name: string, phone: string, email: string, password: string) => {
     setIsLoading(true)
     try {
-      const user = await register(name, phone, countryCode, email, password)
+      const user = await register(name, phone, email, password)
       localStorage.setItem("currentUser", JSON.stringify(user))
       await fetchUserData(user.id, null)
       router.push('/dashboard')
@@ -49,6 +49,8 @@ export default function Register() {
           toast.error("This email is already registered. Please use a different email or try logging in.");
         } else if (error.message.includes("Phone number already registered")) {
           toast.error("This phone number is already registered. Please use a different number or try logging in.");
+        } else if (error.message.includes("Invalid phone number")) {
+          toast.error("Please enter a valid phone number.");
         } else {
           toast.error(error.message);
         }
