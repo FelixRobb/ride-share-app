@@ -55,7 +55,7 @@ export default function RootLayout({
           <TutorialProvider>
             {children}
           </TutorialProvider>
-          <Toaster richColors />
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
