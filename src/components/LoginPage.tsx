@@ -64,8 +64,8 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary/20 to-secondary/20">
-      <header className="bg-background/80 backdrop-blur-sm p-4 shadow-sm">
+    <div className="min-h-screen flex flex-col bg-background">
+      <header className="bg-background/80 backdrop-blur-sm p-4 shadow-sm border-b">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">RideShare</h1>
           <div>
