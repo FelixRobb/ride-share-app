@@ -5,10 +5,18 @@ import { sendEmail, getWelcomeEmailContent } from '@/lib/emailService';
 import { parsePhoneNumber } from 'libphonenumber-js';
 
 export async function POST(request: Request) {
-  const { name, phone, countryCode, email, password } = await request.json();
+  const { name, phone, email, password } = await request.json();
 
-  console.log("just trying", phone, countryCode, email)
   try {
+    // Parse the phone number
+    const phoneNumber = parsePhoneNumber(phone);
+    if (!phoneNumber || !phoneNumber.isValid()) {
+      return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 });
+    }
+
+    const countryCode = phoneNumber.countryCallingCode;
+    const nationalNumber = phoneNumber.nationalNumber;
+
     // Check if email already exists
     const { data: existingEmail } = await supabase
       .from('users')
@@ -24,7 +32,7 @@ export async function POST(request: Request) {
     const { data: existingPhone } = await supabase
       .from('users')
       .select('phone')
-      .eq('phone', phone)
+      .eq('phone', nationalNumber)
       .single();
 
     if (existingPhone) {
@@ -33,14 +41,13 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const lowerCaseEmail = email.toLowerCase();
-    const trimmedCountryCode = countryCode.slice(0, 5); // Ensure country code is not longer than 5 characters
 
     const { data: newUser, error: insertError } = await supabase
       .from('users')
       .insert({
         name,
-        phone,
-        country_code: trimmedCountryCode,
+        phone: nationalNumber,
+        country_code: `+${countryCode}`,
         email: lowerCaseEmail,
         password: hashedPassword
       })

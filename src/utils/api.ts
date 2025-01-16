@@ -14,11 +14,11 @@ export const login = async (email: string, password: string): Promise<User> => {
   }
 };
 
-export const register = async (name: string, phone: string, countryCode: string, email: string, password: string): Promise<User> => {
+export const register = async (name: string, phone: string, email: string, password: string): Promise<User> => {
   const response = await fetch("/api/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, phone, countryCode, email, password }),
+    body: JSON.stringify({ name, phone, email, password }),
   });
   const data = await response.json();
   if (response.ok && data.user) {

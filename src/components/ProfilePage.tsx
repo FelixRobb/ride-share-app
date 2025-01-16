@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,7 +56,7 @@ export default function ProfilePage({
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isPushLoading, setIsPushLoading] = useState(true);
   const [userStats, setUserStats] = useState<{ ridesOffered: number; ridesRequested: number } | null>(null);
-
+  const router = useRouter()
   const isOnline = useOnlineStatus();
 
 
@@ -158,6 +159,7 @@ export default function ProfilePage({
       localStorage.removeItem("currentUser");
       toast.success("Your account has been successfully deleted.");
       setIsDeleteAccountDialogOpen(false);
+      router.push('/');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {

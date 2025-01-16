@@ -10,7 +10,7 @@ import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 
 interface MultiStepRegisterFormProps {
-  onSubmit: (name: string, phone: string, countryCode: string, email: string, password: string) => Promise<void>
+  onSubmit: (name: string, phone: string, email: string, password: string) => Promise<void>
   isLoading: boolean
 }
 
@@ -19,7 +19,6 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    countryCode: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -53,10 +52,8 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
       setError("Passwords do not match")
       return
     }
-    // Ensure country code is not longer than 5 characters
-    const trimmedCountryCode = formData.countryCode.slice(0, 5);
     try {
-      await onSubmit(formData.name, formData.phone, trimmedCountryCode, formData.email, formData.password)
+      await onSubmit(formData.name, formData.phone, formData.email, formData.password)
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message)
@@ -117,14 +114,9 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
               value={formData.phone}
               onChange={(value) => {
                 if (value) {
-                  const phoneNumber = value.toString();
-                  const countryCode = phoneNumber.split(' ')[0]; // This will get just the country code
-                  const phoneWithoutCode = phoneNumber.slice(phoneNumber.indexOf(' ') + 1);
-                  updateFormData("phone", phoneWithoutCode);
-                  updateFormData("countryCode", countryCode);
+                  updateFormData("phone", value);
                 } else {
                   updateFormData("phone", "");
-                  updateFormData("countryCode", "");
                 }
               }}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
