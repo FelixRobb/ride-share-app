@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { toast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { User } from "../types"
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
@@ -26,6 +26,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading }: Lo
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
+  const { toast } = useToast();
 
   const handleResetPassword = async () => {
     try {

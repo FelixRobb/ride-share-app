@@ -14,7 +14,7 @@ import { Search, Clock, MapPin, User2, CalendarIcon, ArrowRight, CheckCircle, Fi
 import { User, Ride, Contact } from "../types";
 import Link from 'next/link';
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface FilterPopoverProps {
   statusFilter: string | null;
@@ -103,6 +103,7 @@ export default function DashboardPage({
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
   const [localRides, setLocalRides] = useState<Ride[]>(rides);
   const isOnline = useOnlineStatus();
+  const { toast } = useToast();
 
   useEffect(() => {
     setLocalRides(rides);

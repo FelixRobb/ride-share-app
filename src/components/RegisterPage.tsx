@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { User } from "../types"
 import { MultiStepRegisterForm } from "./MultiStepRegisterForm"
 import { useRouter } from "next/navigation"
-import { toast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast"
 
 interface RegisterPageProps {
   setCurrentUser: (user: User) => void
@@ -16,6 +16,7 @@ interface RegisterPageProps {
 export default function RegisterPage({ setCurrentUser, handleRegister, isLoading }: RegisterPageProps) {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const { toast } = useToast();
 
   const onSubmit = async (name: string, phone: string, countryCode: string, email: string, password: string) => {
     try {
