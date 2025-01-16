@@ -13,12 +13,13 @@ export const metadata = {
   title: 'RideShare',
   description: 'Connect with friends, share rides, and travel together safely.',
   manifest: '/manifest.json',
-  themeColor: '#f97316',
+
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'RideShare',
   },
+
   openGraph: {
     title: 'RideShare',
     description: 'Connect with friends, share rides, and travel together safely.',
@@ -34,13 +35,15 @@ export const metadata = {
     ],
     type: 'website',
   },
+
   twitter: {
     card: 'summary_large_image',
     title: 'RideShare',
     description: 'Connect with friends, share rides, and travel together safely.',
     images: [twitterImageUrl],
   },
-  metadataBase: new URL(siteUrl),
+
+  metadataBase: new URL(siteUrl)
 };
 
 export default function RootLayout({
@@ -61,4 +64,8 @@ export default function RootLayout({
     </html>
   );
 }
+
+export const viewport = {
+  themeColor: '#f97316'
+};
 
