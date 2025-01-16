@@ -104,7 +104,6 @@ export default function DashboardPage({
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
   const [localRides, setLocalRides] = useState<Ride[]>(rides);
   const isOnline = useOnlineStatus();
-  const { toast } = useToast();
 
   useEffect(() => {
     setLocalRides(rides);

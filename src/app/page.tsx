@@ -3,11 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import WelcomePage from '@/components/WelcomePage';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export default function Home() {
   const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
     const checkCurrentUser = async () => {
@@ -34,28 +33,18 @@ export default function Home() {
               // Fields don't match, clear local storage and redirect
               localStorage.removeItem('currentUser');
               router.push('/login');
-              toast({
-                title: 'Session Expired',
-                description: 'Your session has expired. Please log in again.',
-                variant: 'destructive',
-              });
+              toast.error('Session Expired', { 
+                description: 'Your session has expired. Please log in again.' })
             }
           } else {
             localStorage.removeItem("currentUser");
             router.push('/login');
-            toast({
-              title: 'Session Expired',
-              description: 'Your session has expired. Please log in again.',
-              variant: 'destructive',
-            });
+            toast.error('Session Expired', { 
+              description: 'Your session has expired. Please log in again.' })
           }
         } catch (error) {
           console.error("Error checking user:", error);
-          toast({
-            title: "Error",
-            description: error instanceof Error ? error.message : "An error occurred while checking your session. Please try again.",
-            variant: "destructive",
-          });
+          toast.error(error instanceof Error ? error.message : "An error occurred while checking your session. Please try again.");
           localStorage.removeItem("currentUser"); // Remove invalid user data
         }
       } else {

@@ -7,11 +7,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { User as BaseUser, Contact } from "@/types";
-import { useToast } from "@/hooks/use-toast";
 import { addContact, acceptContact, deleteContact } from "@/utils/api";
 import { Loader, Search, UserPlus, Check, Phone, X } from 'lucide-react';
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toast } from 'sonner';
 
 interface ExtendedUser extends BaseUser {
   contactStatus?: string | null;
@@ -30,7 +30,6 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
   const [searchResults, setSearchResults] = useState<ExtendedUser[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isAddingContact, setIsAddingContact] = useState(false);
-  const { toast } = useToast();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isContactDetailsOpen, setIsContactDetailsOpen] = useState(false);
   const [addingUserId, setAddingUserId] = useState<string | null>(null);
@@ -61,11 +60,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
       }
     } catch (error) {
       console.error('Error searching users:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to search users. Please try again.",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "Failed to search users. Please try again.");
     } finally {
       setIsSearching(false);
     }
@@ -78,17 +73,10 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
       await fetchUserData();
       setSearchQuery('');
       setSearchResults([]);
-      toast({
-        title: "Success",
-        description: "Contact request sent successfully!",
-      });
+      toast.success("Contact request sent successfully!");
     } catch (error) {
       console.error("Error adding contact:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
       setAddingUserId(null);
     }
@@ -98,16 +86,9 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
     try {
       await acceptContact(contactId, currentUser.id);
       await fetchUserData();
-      toast({
-        title: "Success",
-        description: "Contact accepted successfully!",
-      });
+      toast.success("Contact accepted successfully!");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     }
   };
 
@@ -116,16 +97,9 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
       await deleteContact(contactId, currentUser.id);
       await fetchUserData();
       setIsContactDetailsOpen(false);
-      toast({
-        title: "Success",
-        description: "Contact deleted successfully!",
-      });
+      toast.success("Contact deleted successfully!");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     }
   };
 
@@ -152,12 +126,12 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
     <div>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" disabled={!isOnline}>Manage Contacts</Button>
+          <Button className='w-full' variant="outline" disabled={!isOnline}>Manage Contacts</Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[500px] p-0 max-h-[80vh] overflow-auto">
-          <DialogHeader className="text-primary px-6 py-4 border-b">
+          <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle className="text-lg font-medium">Contacts</DialogTitle>
-            <DialogDescription className='text-secondary-foreground' >Manage your contacts and add new ones.</DialogDescription>
+            <DialogDescription>Manage your contacts and add new ones.</DialogDescription>
           </DialogHeader>
           <div className="p-6">
             <Popover open={searchResults.length > 0}>
@@ -194,14 +168,14 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
                       <Button
                         size="sm"
                         onClick={() => handleAddContact(user)}
-                        disabled={user.contactStatus === 'accepted' || user.contactStatus === 'pending' || addingUserId === user.id || !isOnline}
+                        disabled={user.contactStatus === 'accepted' || addingUserId === user.id || !isOnline}
                       >
                         {addingUserId === user.id ? (
                           <Loader className="animate-spin w-4 h-4 mr-2" />
                         ) : user.contactStatus === 'accepted' ? (
                           <Check className="w-4 h-4 mr-2" />
                         ) : user.contactStatus === 'pending' ? (
-                          <Check className="w-4 h-4 mr-2" />
+                          <span>Pending</span>
                         ) : (
                           <UserPlus className="w-4 h-4 mr-2" />
                         )}
@@ -287,4 +261,3 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
     </div>
   );
 }
-

@@ -17,8 +17,6 @@ export default function Profile() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([])
-  const [userStats, setUserStats] = useState<UserStats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [etag, setEtag] = useState<string | null>(null)
 
   const router = useRouter()
@@ -33,9 +31,7 @@ export default function Profile() {
           setEtag(newEtag)
           setContacts(data.contacts)
           setAssociatedPeople(data.associatedPeople)
-          setUserStats(data.stats)
         }
-        setIsLoading(false)
       } catch (error) {
         console.error("Error fetching user data:", error)
         toast.error("Failed to fetch user data. Please try again.");
@@ -66,14 +62,6 @@ export default function Profile() {
   const logout = () => {
     localStorage.removeItem("currentUser")
     router.push('/')
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    )
   }
 
   return (
