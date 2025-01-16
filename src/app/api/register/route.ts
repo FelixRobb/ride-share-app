@@ -7,15 +7,28 @@ import { parsePhoneNumber } from 'libphonenumber-js';
 export async function POST(request: Request) {
   const { name, phone, countryCode, email, password } = await request.json();
 
+  console.log("just trying", phone, countryCode, email)
   try {
-    const { data: existingUser } = await supabase
+    // Check if email already exists
+    const { data: existingEmail } = await supabase
       .from('users')
-      .select('*')
-      .or(`phone.eq.${phone},email.eq.${email}`)
+      .select('email')
+      .eq('email', email.toLowerCase())
       .single();
 
-    if (existingUser) {
-      return NextResponse.json({ error: 'User already exists' }, { status: 409 });
+    if (existingEmail) {
+      return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
+    }
+
+    // Check if phone already exists
+    const { data: existingPhone } = await supabase
+      .from('users')
+      .select('phone')
+      .eq('phone', phone)
+      .single();
+
+    if (existingPhone) {
+      return NextResponse.json({ error: 'Phone number already registered' }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
