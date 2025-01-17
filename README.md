@@ -1,5 +1,9 @@
 # Ride Sharing App for Parents
 
+
+[![Netlify Status](https://api.netlify.com/api/v1/badges/3c958cfa-2c19-4c63-9cdb-d5a09d003b81/deploy-status)](https://app.netlify.com/sites/rideshareappweb/deploys)
+
+
 This is a simplified ride-sharing app designed specifically for parents to coordinate and share rides for their children. The app connects parents based on phone numbers, allowing for easy ride requests, notifications, and a user-friendly interface.
 
 ## Features
