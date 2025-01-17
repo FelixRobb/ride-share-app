@@ -1,19 +1,27 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { Car, Users, Shield, Zap, ChevronDown, Star } from 'lucide-react'
+import { Car, Users, Shield, Zap, ChevronDown, Star, ArrowRight } from 'lucide-react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
 export default function WelcomePage() {
   const [scrolled, setScrolled] = useState(false)
   const [showCookieNotice, setShowCookieNotice] = useState(false)
+  const [showHeader, setShowHeader] = useState(false)
   const { scrollY } = useScroll()
-  const opacity = useTransform(scrollY, [0, 100], [1, 0])
-  const arrowY = useTransform(scrollY, [0, 100], [0, 20])
+
+  // Enhanced parallax effects
+  const carX = useTransform(scrollY, [0, 500], [0, 1000])
+  const carScale = useTransform(scrollY, [0, 200], [1, 0.8])
+  const carOpacity = useTransform(scrollY, [0, 300], [1, 0])
+  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0])
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
+      // Show header after scrolling 100px
+      setShowHeader(window.scrollY > 100)
+      // Add blur effect after scrolling 150px
+      setScrolled(window.scrollY > 150)
       if (window.scrollY > 200 && !localStorage.getItem('cookiePreferences')) {
         setShowCookieNotice(true)
       }
@@ -32,8 +40,8 @@ export default function WelcomePage() {
     window.scrollTo({
       top: window.innerHeight,
       behavior: 'smooth'
-    });
-  };
+    })
+  }
 
   const features = [
     { icon: Car, title: "Easy Ride Sharing", description: "Create or join rides with just a few taps" },
@@ -59,11 +67,19 @@ export default function WelcomePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden dark">
+      {/* Enhanced Header */}
       <motion.header
-        className={`fixed top-4 left-0 right-0 z-50 transition-all duration-300 border rounded-full w-11/12 m-auto shadow-inner ${scrolled ? 'bg-background/80 backdrop-blur-sm' : 'bg-transparent'}`}
+        className={`fixed top-4 left-0 right-0 z-50 transition-all duration-300 border rounded-full w-11/12 m-auto shadow-lg ${scrolled ? 'bg-background/80 backdrop-blur-sm' : 'bg-transparent'
+          }`}
         initial={{ y: -100 }}
-        animate={{ y: scrolled ? 0 : -100 }}
-        transition={{ duration: 0.3 }}
+        animate={{
+          y: showHeader ? 0 : -100,
+          opacity: showHeader ? 1 : 0
+        }}
+        transition={{
+          duration: 0.3,
+          ease: "easeOut"
+        }}
       >
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">RideShare</h1>
@@ -78,48 +94,121 @@ export default function WelcomePage() {
         </div>
       </motion.header>
 
-      <section className="h-screen flex flex-col justify-center items-center text-center px-4">
-        <motion.h1
-          className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary-foreground"
+      {/* Modified Hero Section with Adjusted Car Position */}
+      <section className="relative h-screen flex flex-col justify-center items-center text-center px-4 overflow-hidden">
+        <motion.div
+          className="absolute w-full h-full top-0 left-0"
+          style={{ opacity: heroOpacity }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary-foreground/20 opacity-30" />
+          <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid" />
+        </motion.div>
+
+        {/* Title and Description */}
+        <motion.div
+          className="relative"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          RideShare
-        </motion.h1>
-        <motion.p
-          className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          <h1 className="text-6xl md:text-8xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary-foreground">
+            RideShare
+          </h1>
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-12">
+            Connect with friends, share rides, and travel together safely.
+          </p>
+        </motion.div>
+
+        {/* Car Aanimation */}
+        <motion.div
+          className="absolute top-[80vh]"
+          style={{
+            x: carX,
+            scale: carScale,
+            opacity: carOpacity,
+            top: '65%',
+            transform: 'translateY(-50%)'
+          }}
+          initial={{
+            opacity: 0,
+          }}
+          transition={{
+            duration: 1.5, // Animation duration
+            ease: "easeOut", // Smooth easing
+          }}
+          animate={{
+            opacity: 1
+          }}
         >
-          Connect with friends, share rides, and travel together safely.
-        </motion.p>
-        <motion.div style={{ opacity, y: arrowY }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          <div className="relative w-64 h-64">
+            <Car className="w-full h-full text-primary" />
+            <motion.div
+              className="absolute -inset-4 bg-primary/20 rounded-full blur-xl"
+              animate={{
+                scale: [1, 1.2, 1],
+                opacity: [0.3, 0.5, 0.3]
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+          </div>
+        </motion.div>
+
+        {/* CTA Button */}
+        <motion.div
+          className="flex flex-col items-center gap-6 relative z-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
         >
-          <button
+          <Button
+            size="lg"
+            className="bg-primary hover:bg-primary/90 text-black px-8 py-6 text-lg rounded-full group relative overflow-hidden"
             onClick={scrollToContent}
           >
-            <ChevronDown className="w-18 h-18 text-primary animate-bounce" />
-          </button>
+            <span className="relative z-10">Start Your Journey</span>
+            <motion.div
+              className="absolute inset-0 bg-white/20"
+              initial={{ x: "-100%" }}
+              whileHover={{ x: "100%" }}
+              transition={{ duration: 0.5 }}
+            />
+            <ArrowRight className="w-6 h-6 ml-2 inline-block group-hover:translate-x-1 transition-transform" />
+          </Button>
+
+          <motion.div
+            animate={{
+              y: [0, 10, 0]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
+            <ChevronDown className="w-8 h-8 text-primary cursor-pointer" onClick={scrollToContent} />
+          </motion.div>
         </motion.div>
       </section>
 
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
+      {/* Features Section */}
+      <section className="py-20 bg-background relative">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid" />
+        <div className="container mx-auto px-4 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center text-primary">Our Features</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                className="border rounded-lg p-6 shadow-lg hover:shadow-primary/20 transition-shadow duration-300"
+                className="border rounded-lg p-6 shadow-lg hover:shadow-primary/20 transition-all duration-300 bg-background/50 backdrop-blur-sm"
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ scale: 1.02 }}
               >
                 <feature.icon className="w-12 h-12 text-primary mb-4" />
                 <h3 className="text-xl font-semibold mb-2 text-primary">{feature.title}</h3>
@@ -130,18 +219,21 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
+      {/* Why Choose Section */}
+      <section className="py-20 bg-background relative">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid" />
+        <div className="container mx-auto px-4 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center text-orange-500">Why Choose RideShare?</h2>
           <div className="space-y-6 max-w-2xl mx-auto">
             {whyChooseRideShare.map((benefit, index) => (
               <motion.div
                 key={index}
-                className="flex items-center space-x-4 border rounded-lg p-4 shadow-lg hover:shadow-primary/20 transition-shadow duration-300"
+                className="flex items-center space-x-4 border rounded-lg p-4 shadow-lg hover:shadow-primary/20 transition-all duration-300 bg-background/50 backdrop-blur-sm"
                 initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
+                whileHover={{ scale: 1.02 }}
               >
                 <div className="bg-orange-500 rounded-full p-2">
                   <ChevronDown className="w-6 h-6 text-black" />
@@ -153,18 +245,21 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
+      {/* Reviews Section */}
+      <section className="py-20 bg-background relative">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid" />
+        <div className="container mx-auto px-4 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center text-primary">What Our Users Say</h2>
           <div className="flex flex-wrap justify-center gap-6">
             {reviews.map((review, index) => (
               <motion.div
                 key={index}
-                className="bg-card rounded-lg p-6 shadow-lg flex-shrink-0 w-full md:w-80 hover:shadow-primary/20 transition-shadow duration-300"
+                className="rounded-lg p-6 shadow-lg flex-shrink-0 w-full md:w-80 hover:shadow-primary/20 transition-all duration-300 bg-background/50 backdrop-blur-sm"
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ scale: 1.02 }}
               >
                 <div className="flex items-center mb-4">
                   {[...Array(review.rating)].map((_, i) => (
@@ -179,30 +274,59 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4 text-center">
+      {/* Call to Action Section */}
+      <section className="py-20 bg-background relative">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid" />
+        <div className="container mx-auto px-4 text-center relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-8 text-primary">Start Sharing Rides Today</h2>
           <p className="text-lg text-zinc-300 max-w-2xl mx-auto mb-12">
             Join our community of ride-sharers and experience a new way of traveling.
             Best of all, RideShare is completely free to use!
           </p>
           <div className="space-x-4">
-            <Button asChild size="lg" className="px-8 bg-primary hover:bg-primary/90 text-black">
-              <Link href="/register">Sign Up Now</Link>
+            <Button
+              asChild
+              size="lg"
+              className="px-8 bg-primary hover:bg-primary/90 text-black relative overflow-hidden group"
+            >
+              <Link href="/register">
+                <span className="relative z-10">Sign Up Now</span>
+                <motion.div
+                  className="absolute inset-0 bg-white/20"
+                  initial={{ x: "-100%" }}
+                  whileHover={{ x: "100%" }}
+                  transition={{ duration: 0.5 }}
+                />
+              </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="px-8 text-primary border-primary hover:bg-primary hover:text-black">
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="px-8 text-primary border-primary hover:bg-primary hover:text-black"
+            >
               <Link href="/login">Login</Link>
             </Button>
           </div>
         </div>
       </section>
 
-      <footer className="bg-background py-8 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
-        <div className="mt-2 space-x-4">
-          <Link href="/privacy-policy" className="hover:text-primary transition-colors duration-300">Privacy Policy</Link>
-          <Link href="/terms-of-service" className="hover:text-primary transition-colors duration-300">Terms of Service</Link>
-          <Link href="https://github.com/FelixRobb/ride-share-app" className="hover:text-primary transition-colors duration-300">Source code on github</Link>
+      {/* Footer */}
+      <footer className="bg-background py-8 text-center text-sm text-muted-foreground relative">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid" />
+        <div className="relative z-10">
+          <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
+          <div className="mt-2 space-x-4">
+            <Link href="/privacy-policy" className="hover:text-primary transition-colors duration-300">
+              Privacy Policy
+            </Link>
+            <Link href="/terms-of-service" className="hover:text-primary transition-colors duration-300">
+              Terms of Service
+            </Link>
+            <Link href="https://github.com/FelixRobb/ride-share-app" className="hover:text-primary transition-colors duration-300">
+              Source code on github
+            </Link>
+          </div>
         </div>
       </footer>
 
