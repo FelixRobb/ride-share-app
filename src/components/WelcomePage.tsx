@@ -95,7 +95,7 @@ export default function WelcomePage() {
       </motion.header>
 
       {/* Modified Hero Section with Adjusted Car Position */}
-      <section className="relative h-dhv flex flex-col justify-center items-center text-center px-4 overflow-hidden">
+      <section className="relative h-dvh flex flex-col justify-center items-center text-center px-4 overflow-hidden">
         <motion.div
           className="absolute w-full h-full top-0 left-0"
           style={{ opacity: heroOpacity }}
