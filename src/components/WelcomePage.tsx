@@ -95,7 +95,7 @@ export default function WelcomePage() {
       </motion.header>
 
       {/* Modified Hero Section with Adjusted Car Position */}
-      <section className="relative h-dvh flex flex-col justify-center items-center text-center px-4 overflow-hidden">
+      <section className="relative h-svh flex flex-col justify-center items-center text-center px-4 overflow-hidden">
         <motion.div
           className="absolute w-full h-full top-0 left-0"
           style={{ opacity: heroOpacity }}
@@ -121,12 +121,12 @@ export default function WelcomePage() {
 
         {/* Car Aanimation */}
         <motion.div
-          className="absolute top-[80vh]"
+          className="absolute top-[70vh]"
           style={{
             x: carX,
             scale: carScale,
             opacity: carOpacity,
-            top: '65%',
+            
             transform: 'translateY(-50%)'
           }}
           initial={{
@@ -140,7 +140,7 @@ export default function WelcomePage() {
             opacity: 1
           }}
         >
-          <div className="relative w-64 h-64">
+          <div className="relative w-40 h-40 sm:w-64 sm:h-64">
             <Car className="w-full h-full text-primary" />
             <motion.div
               className="absolute -inset-4 bg-primary/20 rounded-full blur-xl"
