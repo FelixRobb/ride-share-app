@@ -312,64 +312,63 @@ export default function DashboardPage({
       const shortToLocation = toLocationParts[0];
 
       return (
-        <Card key={ride.id} className="w-full mb-4 hover:bg-accent transition-colors duration-200 overflow-hidden mr-3">
-          <CardHeader className="pb-2 bg-primary/10">
-            <div className="flex justify-between items-start flex-col sm:flex-row">
-              <div className="">
-                <CardTitle className="text-md">
-                  <MapPin className="mx-1 h-4 w-4 inline text-muted-foreground mb-1" /> {shortFromLocation} to {shortToLocation}
-                </CardTitle>
-                <CardDescription className="flex items-center gap-2 ml-1 mb-1">
-                  <Clock className="h-4 w-4 inline text-muted-foreground" /> {date} at {time}
-                </CardDescription>
-              </div>
-              <div className="flex flex-row justify-between items-center sm:justify-end sm:flex-col sm:items-end gap-4 sm:gap-1">
-                <div> {getStatusBadge(ride.status)}</div>
-                <div>{actionNeeded && (
-                  <Badge variant="destructive">
-                    {actionNeeded}
-                  </Badge>
-                )}</div>
 
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-4 bg-primary/10">
-            <div className="space-y-2 border rounded-lg p-3 bg-card">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Requester:</span>
-                <span>{getRequesterName(ride)}</span>
-              </div>
-              {ride.status === "accepted" && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Offered by:</span>
-                  <span>{getOfferedByText(ride)}</span>
+        <Card key={ride.id} className="w-full mb-4 hover:bg-accent transition-colors duration-200 overflow-hidden mr-3">
+          <Link href={`/rides/${ride.id}?from=active`}>
+            <CardHeader className="pb-2 bg-primary/10">
+              <div className="flex justify-between items-start flex-col sm:flex-row">
+                <div className="">
+                  <CardTitle className="text-md">
+                    <MapPin className="mx-1 h-4 w-4 inline text-muted-foreground mb-1" /> {shortFromLocation} to {shortToLocation}
+                  </CardTitle>
+                  <CardDescription className="flex items-center gap-2 ml-1 mb-1">
+                    <Clock className="h-4 w-4 inline text-muted-foreground" /> {date} at {time}
+                  </CardDescription>
                 </div>
-              )}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Rider:</span>
-                <span>{ride.rider_name}</span>
+                <div className="flex flex-row justify-between items-center sm:justify-end sm:flex-col sm:items-end gap-4 sm:gap-1">
+                  <div> {getStatusBadge(ride.status)}</div>
+                  <div>{actionNeeded && (
+                    <Badge variant="destructive">
+                      {actionNeeded}
+                    </Badge>
+                  )}</div>
+
+                </div>
               </div>
-              {ride.rider_phone && (
+            </CardHeader>
+            <CardContent className="pt-4 bg-primary/10">
+              <div className="space-y-2 border rounded-lg p-3 bg-card">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Rider Phone:</span>
-                  <span>{ride.rider_phone}</span>
+                  <span className="text-sm font-medium">Requester:</span>
+                  <span>{getRequesterName(ride)}</span>
                 </div>
-              )}
-              {ride.note && (
+                {ride.status === "accepted" && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Offered by:</span>
+                    <span>{getOfferedByText(ride)}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Note:</span>
-                  <span className="text-sm break-words max-w-[70%]">{ride.note}</span>
+                  <span className="text-sm font-medium">Rider:</span>
+                  <span>{ride.rider_name}</span>
                 </div>
-              )}
-            </div>
-          </CardContent>
-          <CardFooter className="pt-3 bg-primary/5">
-            <Button variant="outline" className="w-full" asChild>
-              <Link href={`/rides/${ride.id}?from=active`}>View Details</Link>
-            </Button>
-          </CardFooter>
-        </Card>
+                {ride.rider_phone && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Rider Phone:</span>
+                    <span>{ride.rider_phone}</span>
+                  </div>
+                )}
+                {ride.note && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Note:</span>
+                    <span className="text-sm break-words max-w-[70%]">{ride.note}</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Link>
+        </Card >
+
       );
     };
 
@@ -381,7 +380,7 @@ export default function DashboardPage({
         </div>
 
         <div className="relative mt-4">
-          <ScrollArea className="w-full h-[350px] sm:h-[450px] overflow-y-auto">
+          <ScrollArea className="w-full max-h-[350px] sm:max-h-[450px] overflow-y-auto">
             <div className="flex flex-col">
               {upcomingRides.map(renderImportantRide)}
             </div>

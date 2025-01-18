@@ -93,14 +93,7 @@ export default function RideDetails() {
     localStorage.removeItem("currentUser")
     router.push('/')
   }
-
-   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    )
-  }
+  
   return (
     <Layout currentUser={currentUser} logout={logout}>
       <Button type="button" variant="ghost" onClick={() => router.push(`/dashboard?tab=${fromTab}`)} className='mb-2'><ArrowBigLeft />Go Back to Dashboard</Button>

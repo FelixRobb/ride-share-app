@@ -68,14 +68,6 @@ export default function CreateRide() {
     router.push('/');
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <TutorialProvider>
       <Layout currentUser={currentUser} logout={logout}>
