@@ -271,7 +271,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
 
             {/* Map Panel */}
             <div className="relative p-4 lg:col-span-2 min-h-[400px] lg:min-h-0">
-              <div className="h-[300px] w-full relative border rounded-lg bg-background" ref={mapRef} style={{ width: '100%', height: '300px' }} /> {/* Updated map container */}
+              <div className="h-[300px] w-full relative border rounded-lg bg-background" ref={mapRef} style={{ width: '100%', height: '100%' }} /> {/* Updated map container */}
               {isLoading && (
                 <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-10">
                   <div className="bg-background p-4 rounded-lg shadow-lg flex items-center gap-2">
