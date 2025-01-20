@@ -128,8 +128,10 @@ export default function ProfilePage({
 
   const handleAddAssociatedPerson = async () => {
     if (newAssociatedPerson.name && newAssociatedPerson.relationship) {
+      const associatename = newAssociatedPerson.name.trim();
+      const associaterela = newAssociatedPerson.relationship.trim();
       try {
-        await addAssociatedPerson(currentUser.id, newAssociatedPerson.name, newAssociatedPerson.relationship);
+        await addAssociatedPerson(currentUser.id, associatename, associaterela);
         setNewAssociatedPerson({ name: "", relationship: "" });
         void fetchUserData(currentUser.id);
       } catch (error) {
