@@ -293,8 +293,12 @@ export default function DashboardPage({
 
   const ImportantRides = () => {
     const now = new Date();
+    const twoDaysFromNow = new Date();
+    twoDaysFromNow.setDate(now.getDate() + 2);
+
+
     const upcomingRides = activeRides
-      .filter(ride => new Date(ride.time) > now)
+      .filter(ride => new Date(ride.time) > now && new Date(ride.time) < twoDaysFromNow)
       .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
       .slice(0, 3);
 
