@@ -15,7 +15,8 @@ export async function GET(request: Request) {
       .from('notifications')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(30);
 
     if (error) throw error;
 
