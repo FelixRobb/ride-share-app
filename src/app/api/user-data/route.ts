@@ -47,7 +47,8 @@ export async function GET(request: Request) {
         accepter:users!rides_accepter_id_fkey (id, name, phone)
       `)
       .or(`requester_id.eq.${userId},accepter_id.eq.${userId},requester_id.in.(${connectedUserIds.join(',')})`)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(30);
 
     if (ridesError) throw ridesError;
     
