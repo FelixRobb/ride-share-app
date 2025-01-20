@@ -38,7 +38,6 @@ const quotes = [
   { quote: "A journey is best measured in friends rather than miles.", author: "Tim Cahill" },
 ];
 
-
 export default function LoginPage({ setCurrentUser, handleLogin, isLoading, quoteIndex }: LoginPageProps) {
   const [error, setError] = useState<string | null>(null)
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
@@ -130,7 +129,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading, quot
                   </div>
                   {loginMethod === 'email' ? (
                     <div className="space-y-1">
-                      <Label htmlFor="email" className="sr-only">Email</Label>
+                      <Label htmlFor="email">Email</Label>
                       <Input
                         id="email"
                         type="email"
@@ -143,7 +142,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading, quot
                     </div>
                   ) : (
                     <div className="space-y-1">
-                      <Label htmlFor="phone" className="sr-only">Phone</Label>
+                      <Label htmlFor="phone">Phone</Label>
                       <PhoneInput
                         international
                         defaultCountry="PT"
@@ -154,7 +153,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading, quot
                     </div>
                   )}
                   <div className="space-y-1">
-                    <Label htmlFor="password" className="sr-only">Password</Label>
+                    <Label htmlFor="password">Password</Label>
                     <Input
                       id="password"
                       type="password"
@@ -191,6 +190,8 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading, quot
             height={0}
             sizes="50vw"
             className="w-full lg:w-7/12 h-auto lg:rounded-l-lg"
+            placeholder = 'blur'
+            blurDataURL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkqAcAAIUAgUW0RjgAAAAASUVORK5CYII="
           />
           {randomQuote && (
             <blockquote className="p-4 mt-4 text-center text-lg italic border-l-4 border-primary bg-muted/50 rounded-r-lg">

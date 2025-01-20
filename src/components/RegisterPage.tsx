@@ -95,6 +95,8 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
               height={0}
               sizes="50vw"
               className="w-full lg:w-7/12 h-auto lg:rounded-l-lg"
+              placeholder = 'blur'
+              blurDataURL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkqAcAAIUAgUW0RjgAAAAASUVORK5CYII="
             />
             {randomQuote && (
               <blockquote className="p-4 mt-4 text-center text-lg italic border-l-4 border-primary bg-muted/50 rounded-r-lg">

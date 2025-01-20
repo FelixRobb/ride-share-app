@@ -413,7 +413,7 @@ export default function DashboardPage({
                 onChange={(e) => setLocalSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full h-10"
               />
-              <Button className="block sm:hidden h-10" data-tutorial="create-ride" variant="default" onClick={() => router.push('/create-ride')}>
+              <Button className="block sm:hidden h-10" data-tutorial='create-ride' variant="default" onClick={() => router.push('/create-ride')}>
                 Create Ride
               </Button>
             </div>

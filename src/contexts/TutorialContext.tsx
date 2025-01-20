@@ -182,12 +182,6 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setPendingStep(null);
   }, []);
 
-  // Debug effect to help track state changes
-  useEffect(() => {
-    const stepNum = currentStep?.step || 'null';
-    const pendingNum = pendingStep?.step || 'null';
-    console.log(`Current Step: ${stepNum}, Pending Step: ${pendingNum}, Path: ${pathname}`);
-  }, [currentStep, pendingStep, pathname]);
 
   return (
     <TutorialContext.Provider value={{
