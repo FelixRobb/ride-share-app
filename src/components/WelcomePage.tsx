@@ -96,7 +96,7 @@ export default function WelcomePage() {
 
       {/* Modified Hero Section with Adjusted Car Position */}
       <section className="relative h-svh flex flex-col justify-center items-center text-center px-4 overflow-hidden">
-     
+
         {/* Title and Description */}
         <motion.div
           className="relative"
@@ -119,7 +119,7 @@ export default function WelcomePage() {
             x: carX,
             scale: carScale,
             opacity: carOpacity,
-            
+
             transform: 'translateY(-50%)'
           }}
           initial={{
@@ -208,6 +208,7 @@ export default function WelcomePage() {
                 <p className="text-zinc-400">{feature.description}</p>
               </motion.div>
             ))}
+
           </div>
         </div>
       </section>
