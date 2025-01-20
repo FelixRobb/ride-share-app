@@ -180,7 +180,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
                 <Bell className="h-4 w-4" />
                 {unreadNotificationsCount > 0 && <span className="absolute top-0 right-0 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">{unreadNotificationsCount}</span>}
               </Button>
-              <DialogContent className="sm:max-w-[425px] rounded-lg w-11/12 bg-background text-foreground">
+              <DialogContent className="sm:max-w-md rounded-lg w-md bg-background text-foreground">
                 <DialogHeader>
                   <DialogTitle>Notifications</DialogTitle>
                   <DialogDescription>Your recent notifications</DialogDescription>
