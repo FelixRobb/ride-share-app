@@ -154,7 +154,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <PushNotificationHandler userId={currentUser!.id} />
-      <header className="bg-background shadow-md border-b border-border sticky top-0 z-50">
+      <header className="bg-background/80 backdrop-blur-sm shadow-md border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex-shrink-0 mr-4">
             <Link href="/dashboard" className="text-2xl font-bold text-primary">
@@ -307,10 +307,10 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
             <DialogDescription>Are you sure you want to log out?</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="mb-4" variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
               Cancel
             </Button>
-            <Button className="mb-4" onClick={confirmLogout}>Logout</Button>
+            <Button className="mb-2" onClick={confirmLogout}>Logout</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
