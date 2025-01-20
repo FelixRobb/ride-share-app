@@ -18,8 +18,8 @@ export default function WelcomePage() {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Show header after scrolling 100px
-      setShowHeader(window.scrollY > 100)
+      // Show header after scrolling 80px
+      setShowHeader(window.scrollY > 80)
       // Add blur effect after scrolling 150px
       setScrolled(window.scrollY > 150)
       if (window.scrollY > 200 && !localStorage.getItem('cookiePreferences')) {
@@ -331,7 +331,7 @@ export default function WelcomePage() {
       </footer>
 
       {showCookieNotice && (
-        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 bg-card border border-zinc-700 rounded-lg p-4 shadow-lg max-w-xs mx-auto md:mx-0">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 bg-card border border-zinc-700 rounded-lg p-4 shadow-lg max-w-xs mx-auto md:mx-0 z-40">
           <p className="text-sm text-zinc-300 mb-3">
             This website uses cookies to enhance your experience. By continuing to browse, you agree to our use of cookies.
           </p>

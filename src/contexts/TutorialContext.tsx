@@ -1,5 +1,5 @@
 "use client"
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 type TutorialStep = {
@@ -13,7 +13,6 @@ type TutorialStep = {
 
 type TutorialContextType = {
   currentStep: TutorialStep | null;
-  setCurrentStep: (step: TutorialStep | null) => void;
   nextStep: () => void;
   prevStep: () => void;
   skipTutorial: () => void;
@@ -84,90 +83,119 @@ const tutorialSteps: TutorialStep[] = [
     step: 8,
     title: "Congratulations!",
     content: "You've completed the tutorial. You're now ready to start sharing rides with your contacts. Enjoy using RideShare!"
-  },
+  }
 ];
 
 export { tutorialSteps };
-
-const getInitialStep = (): TutorialStep | null => {
-  if (typeof window !== 'undefined') {
-    const savedStepKey = localStorage.getItem('tutorialStepKey');
-    if (savedStepKey) {
-      const step = tutorialSteps.find(step => step.key === savedStepKey);
-      return step || null;
-    }
-  }
-  return tutorialSteps[0];
-};
 
 export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [currentStep, setCurrentStep] = useState<TutorialStep | null>(null);
+  const [pendingStep, setPendingStep] = useState<TutorialStep | null>(null);
 
+  // Initialize tutorial on mount
   useEffect(() => {
-    // Only set the current step on the first load or if it's null
-    if (currentStep === null) {
-      setCurrentStep(getInitialStep());
+    const initializeTutorial = () => {
+      if (localStorage.getItem('tutorialCompleted') === 'true') {
+        setCurrentStep(null);
+        setPendingStep(null);
+        return;
+      }
+
+      const savedStepNumber = parseInt(localStorage.getItem('tutorialStep') || '1', 10);
+      const step = tutorialSteps.find(s => s.step === savedStepNumber) || tutorialSteps[0];
+      
+      if (step.page === pathname) {
+        setCurrentStep(step);
+        setPendingStep(null);
+      } else {
+        setPendingStep(step);
+        router.push(step.page);
+      }
+    };
+
+    initializeTutorial();
+  }, [pathname]);
+
+  // Handle page changes
+  useEffect(() => {
+    if (pendingStep && pathname === pendingStep.page) {
+      setCurrentStep(pendingStep);
+      setPendingStep(null);
     }
-  }, []); // Run only on the first mount
-  
-  useEffect(() => {
-    const tutorialCompleted = localStorage.getItem('tutorialCompleted');
-    if (tutorialCompleted === 'true') {
+  }, [pathname, pendingStep]);
+
+  const changeStep = useCallback(async (step: TutorialStep | null) => {
+    if (!step) {
+      localStorage.removeItem('tutorialStep');
+      localStorage.setItem('tutorialCompleted', 'true');
       setCurrentStep(null);
+      setPendingStep(null);
       return;
     }
-  
-    if (currentStep) {
-      localStorage.setItem('tutorialStepKey', currentStep.key);
-      
-      // Redirect only if the target page is different and not the current page
-      if (currentStep.page !== pathname) {
-        router.push(currentStep.page);
-      }
+
+    // Store the new step number before navigation
+    localStorage.setItem('tutorialStep', step.step.toString());
+    
+    if (step.page === pathname) {
+      setCurrentStep(step);
+      setPendingStep(null);
+    } else {
+      setPendingStep(step);
+      router.push(step.page);
     }
-  }, [currentStep]); // Removed pathname from dependencies
-  
+  }, [pathname, router]);
 
-  const nextStep = () => {
-    setCurrentStep((prevStep) => {
-      if (prevStep) {
-        const currentIndex = tutorialSteps.findIndex(step => step.key === prevStep.key);
-        if (currentIndex < tutorialSteps.length - 1) {
-          const nextStep = tutorialSteps[currentIndex + 1];
-          localStorage.setItem('tutorialStepKey', nextStep.key);
-          return nextStep;
-        }
-      }
-      localStorage.removeItem('tutorialStepKey');
+  const nextStep = useCallback(() => {
+    if (!currentStep) return;
+
+    const currentIndex = tutorialSteps.findIndex(step => step.step === currentStep.step);
+    
+    // Handle the last step specifically
+    if (currentIndex === tutorialSteps.length - 1) {
+      localStorage.removeItem('tutorialStep');
       localStorage.setItem('tutorialCompleted', 'true');
-      return null;
-    });
-  };
+      setCurrentStep(null);
+      setPendingStep(null);
+      return;
+    }
 
-  const prevStep = () => {
-    setCurrentStep((prevStep) => {
-      if (prevStep) {
-        const currentIndex = tutorialSteps.findIndex(step => step.key === prevStep.key);
-        if (currentIndex > 0) {
-          const prevStep = tutorialSteps[currentIndex - 1];
-          localStorage.setItem('tutorialStepKey', prevStep.key);
-          return prevStep;
-        }
-      }
-      return null;
-    });
-  };
+    const nextStep = tutorialSteps[currentIndex + 1];
+    changeStep(nextStep);
+  }, [currentStep, changeStep]);
 
-  const skipTutorial = () => {
-    setCurrentStep(null);
-    localStorage.removeItem('tutorialStepKey');
+  const prevStep = useCallback(() => {
+    if (!currentStep) return;
+
+    const currentIndex = tutorialSteps.findIndex(step => step.step === currentStep.step);
+    if (currentIndex > 0) {
+      const prevStep = tutorialSteps[currentIndex - 1];
+      changeStep(prevStep);
+    }
+  }, [currentStep, changeStep]);
+
+  const skipTutorial = useCallback(() => {
+    localStorage.removeItem('tutorialStep');
     localStorage.setItem('tutorialCompleted', 'true');
-  };
+    setCurrentStep(null);
+    setPendingStep(null);
+  }, []);
+
+  // Debug effect to help track state changes
+  useEffect(() => {
+    const stepNum = currentStep?.step || 'null';
+    const pendingNum = pendingStep?.step || 'null';
+    console.log(`Current Step: ${stepNum}, Pending Step: ${pendingNum}, Path: ${pathname}`);
+  }, [currentStep, pendingStep, pathname]);
 
   return (
-    <TutorialContext.Provider value={{ currentStep, setCurrentStep, nextStep, prevStep, skipTutorial }}>
+    <TutorialContext.Provider value={{
+      currentStep,
+      nextStep,
+      prevStep,
+      skipTutorial
+    }}>
       {children}
     </TutorialContext.Provider>
   );
@@ -180,4 +208,3 @@ export const useTutorial = () => {
   }
   return context;
 };
-

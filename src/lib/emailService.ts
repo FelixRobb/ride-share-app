@@ -142,7 +142,7 @@ export function getWelcomeEmailContent(name: string): string {
           <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="cta-button">Start Sharing Rides</a>
         </div>
         
-        <p style="text-align: center; margin-top: 20px;">Questions? Reach out to our support team at <a href="mailto:support@rideshare.com" style="color: #f97316;">support@rideshare.com</a>.</p>
+        <p style="text-align: center; margin-top: 20px;">Questions? Reach out to our support team at <a href="${process.env.GMAIL_USER}" style="color: #f97316;">support@rideshare.com</a>.</p>
         
         <div class="footer">
           <p>© ${new Date().getFullYear()} RideShare. All rights reserved.</p>
@@ -249,11 +249,10 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
         <ul>
           <li>Never share your password with anyone.</li>
           <li>Use a strong, unique password for your RideShare account.</li>
-          <li>Enable two-factor authentication for extra security.</li>
           <li>Regularly update your password to maintain account safety.</li>
         </ul>
         
-        <p style="text-align: center; margin-top: 20px;">Need help? Our support team is always here to assist you.</p>
+        <p style="text-align: center; margin-top: 20px;">Need help? Our support team is always here to assist you. contact us at ${process.env.GMAIL_USER}</p>
         
         <div class="footer">
           <p>© ${new Date().getFullYear()} RideShare. All rights reserved.</p>
