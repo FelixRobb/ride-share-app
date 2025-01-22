@@ -1,4 +1,3 @@
-// src/app/api/suggested-users/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 
@@ -11,24 +10,32 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Get current user's contacts
+    // Get current user's contacts (both directions)
     const { data: currentContacts, error: contactsError } = await supabase
       .from('contacts')
-      .select('contact_id')
-      .eq('user_id', userId)
+      .select('user_id, contact_id')
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`)
       .eq('status', 'accepted');
 
     if (contactsError) throw contactsError;
 
-    const contactIds = currentContacts?.map(contact => contact.contact_id) || [];
+    // Extract all contact IDs (regardless of whether they're in user_id or contact_id)
+    const contactIds = new Set(
+      currentContacts?.flatMap(contact => [
+        contact.user_id === userId ? contact.contact_id : contact.user_id
+      ]) || []
+    );
+    const contactIdsArray = Array.from(contactIds);
 
     // Get contacts of contacts (mutual contacts)
     const { data: contactsOfContacts, error: contactsOfContactsError } = await supabase
       .from('contacts')
-      .select('contact_id, user_id')
-      .in('user_id', contactIds)
-      .eq('status', 'accepted')
-      .not('contact_id', 'in', `(${[userId, ...contactIds].join(',')})`);
+      .select('user_id, contact_id')
+      .or(
+        `user_id.in.(${contactIdsArray.join(',')}),` +
+        `contact_id.in.(${contactIdsArray.join(',')})`
+      )
+      .eq('status', 'accepted');
 
     if (contactsOfContactsError) throw contactsOfContactsError;
 
@@ -36,7 +43,10 @@ export async function GET(request: Request) {
     const { data: contactRides, error: contactRidesError } = await supabase
       .from('rides')
       .select('id, requester_id, accepter_id')
-      .or(`requester_id.in.(${contactIds.join(',')}),accepter_id.in.(${contactIds.join(',')})`)
+      .or(
+        `requester_id.in.(${contactIdsArray.join(',')}),` +
+        `accepter_id.in.(${contactIdsArray.join(',')})`
+      )
       .not('requester_id', 'eq', userId)
       .not('accepter_id', 'eq', userId);
 
@@ -45,29 +55,67 @@ export async function GET(request: Request) {
     // Process mutual contacts
     const mutualContactsMap = new Map();
     contactsOfContacts?.forEach(contact => {
-      if (!mutualContactsMap.has(contact.contact_id)) {
-        mutualContactsMap.set(contact.contact_id, { count: 1, users: [contact.user_id] });
+      // Determine which ID is the potential suggestion
+      let potentialContactId;
+      let mutualContactId;
+
+      if (contactIds.has(contact.user_id)) {
+        potentialContactId = contact.contact_id;
+        mutualContactId = contact.user_id;
+      } else if (contactIds.has(contact.contact_id)) {
+        potentialContactId = contact.user_id;
+        mutualContactId = contact.contact_id;
       } else {
-        const data = mutualContactsMap.get(contact.contact_id);
-        data.count++;
-        data.users.push(contact.user_id);
-        mutualContactsMap.set(contact.contact_id, data);
+        return; // Skip if neither ID is in our contacts
+      }
+
+      // Skip if the potential contact is the user or already a contact
+      if (potentialContactId === userId || contactIds.has(potentialContactId)) {
+        return;
+      }
+
+      if (!mutualContactsMap.has(potentialContactId)) {
+        mutualContactsMap.set(potentialContactId, { count: 1, users: [mutualContactId] });
+      } else {
+        const data = mutualContactsMap.get(potentialContactId);
+        if (!data.users.includes(mutualContactId)) {
+          data.count++;
+          data.users.push(mutualContactId);
+        }
+        mutualContactsMap.set(potentialContactId, data);
       }
     });
 
     // Process users with common rides through contacts
     const commonRidesMap = new Map();
     contactRides?.forEach(ride => {
-      const otherUserId = ride.requester_id === userId ? ride.accepter_id : ride.requester_id;
-      if (!commonRidesMap.has(otherUserId) && !contactIds.includes(otherUserId) && otherUserId !== userId) {
-        commonRidesMap.set(otherUserId, 1);
-      } else if (commonRidesMap.has(otherUserId)) {
-        commonRidesMap.set(otherUserId, commonRidesMap.get(otherUserId) + 1);
+      const potentialContactIds = [];
+      if (!contactIds.has(ride.requester_id) && ride.requester_id !== userId) {
+        potentialContactIds.push(ride.requester_id);
       }
+      if (!contactIds.has(ride.accepter_id) && ride.accepter_id !== userId) {
+        potentialContactIds.push(ride.accepter_id);
+      }
+
+      potentialContactIds.forEach(potentialContactId => {
+        if (!commonRidesMap.has(potentialContactId)) {
+          commonRidesMap.set(potentialContactId, 1);
+        } else {
+          commonRidesMap.set(potentialContactId, commonRidesMap.get(potentialContactId) + 1);
+        }
+      });
     });
 
     // Fetch user details for suggested contacts
-    const suggestedUserIds = [...Array.from(mutualContactsMap.keys()), ...Array.from(commonRidesMap.keys())];
+    const mutualContactsKeys = Array.from(mutualContactsMap.keys());
+    const commonRidesKeys = Array.from(commonRidesMap.keys());
+    const combinedIds = [...mutualContactsKeys, ...commonRidesKeys];
+    const suggestedUserIds = Array.from(new Set(combinedIds));
+
+    if (suggestedUserIds.length === 0) {
+      return NextResponse.json({ suggestedContacts: [] });
+    }
+
     const { data: suggestedUsers, error: suggestedUsersError } = await supabase
       .from('users')
       .select('id, name, phone')
@@ -97,4 +145,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

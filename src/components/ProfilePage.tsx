@@ -1,16 +1,23 @@
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LucideUser, Mail, Phone, Car, MapPin, Loader } from 'lucide-react';
-import { toast } from "sonner";
-import { User, Contact, AssociatedPerson } from "../types";
+import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { LucideUser, Mail, Phone, Car, MapPin, Loader } from "lucide-react"
+import { toast } from "sonner"
+import type { User, Contact, AssociatedPerson } from "../types"
 import {
   updateProfile,
   changePassword,
@@ -20,19 +27,19 @@ import {
   addAssociatedPerson,
   deleteAssociatedPerson,
   deleteUser,
-  fetchUserStats
-} from "../utils/api";
-import { Switch } from "@/components/ui/switch";
-import { useOnlineStatus } from "@/utils/useOnlineStatus";
-import 'react-phone-number-input/style.css';
-import { ContactDialog } from './ContactDialog';
+  fetchUserStats,
+} from "../utils/api"
+import { Switch } from "@/components/ui/switch"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import "react-phone-number-input/style.css"
+import { ContactDialog } from "./ContactDialog"
 
 interface ProfilePageProps {
-  currentUser: User;
-  setCurrentUser: (user: User | null) => void;
-  contacts: Contact[];
-  associatedPeople: AssociatedPerson[];
-  fetchUserData: (userId: string) => Promise<void>;
+  currentUser: User
+  setCurrentUser: (user: User | null) => void
+  contacts: Contact[]
+  associatedPeople: AssociatedPerson[]
+  fetchUserData: (userId: string) => Promise<void>
 }
 
 export default function ProfilePage({
@@ -42,186 +49,205 @@ export default function ProfilePage({
   associatedPeople,
   fetchUserData,
 }: ProfilePageProps) {
-  const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" });
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const [editedUser, setEditedUser] = useState<User | null>(currentUser);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false);
-  const [isPushEnabled, setIsPushEnabled] = useState(false);
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-  const [isPushLoading, setIsPushLoading] = useState(true);
-  const [userStats, setUserStats] = useState<{ ridesOffered: number; ridesRequested: number } | null>(null);
+  const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" })
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
+  const [editedUser, setEditedUser] = useState<User | null>(currentUser)
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmNewPassword, setConfirmNewPassword] = useState("")
+  const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false)
+  const [isPushEnabled, setIsPushEnabled] = useState(false)
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [isPushLoading, setIsPushLoading] = useState(true)
+  const [userStats, setUserStats] = useState<{ ridesOffered: number; ridesRequested: number } | null>(null)
+  const [suggestedContacts, setSuggestedContacts] = useState<any[]>([])
   const router = useRouter()
-  const isOnline = useOnlineStatus();
-
+  const isOnline = useOnlineStatus()
 
   useEffect(() => {
     const fetchPushPreference = async () => {
-      setIsPushLoading(true);
+      setIsPushLoading(true)
       try {
         if (!isOnline) {
-          console.log('User is offline. Skipping push preference fetch.');
-          return;
+          console.log("User is offline. Skipping push preference fetch.")
+          return
         }
-        const response = await fetch(`/api/users/${currentUser.id}/push-preference`);
+        const response = await fetch(`/api/users/${currentUser.id}/push-preference`)
         if (response.ok) {
-          const data = await response.json();
-          setIsPushEnabled(data.enabled);
+          const data = await response.json()
+          setIsPushEnabled(data.enabled)
         } else {
-          console.error('Failed to fetch push preference:', response.statusText);
+          console.error("Failed to fetch push preference:", response.statusText)
         }
       } catch (error) {
-        console.error('Error fetching push notification preference:', error);
+        console.error("Error fetching push notification preference:", error)
       } finally {
-        setIsPushLoading(false);
+        setIsPushLoading(false)
       }
-    };
+    }
 
     if (currentUser) {
-      void fetchPushPreference();
+      void fetchPushPreference()
     }
-  }, [currentUser, isOnline]);
-
+  }, [currentUser, isOnline])
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (editedUser) {
       try {
-        setIsUpdatingProfile(true);
-        await updateProfile(currentUser.id, editedUser);
-        setCurrentUser(editedUser);
-        localStorage.setItem("currentUser", JSON.stringify(editedUser));
-        toast.success("Profile updated successfully!");
-        setIsEditProfileOpen(false);
-        void fetchUserData(currentUser.id);
+        setIsUpdatingProfile(true)
+        await updateProfile(currentUser.id, editedUser)
+        setCurrentUser(editedUser)
+        localStorage.setItem("currentUser", JSON.stringify(editedUser))
+        toast.success("Profile updated successfully!")
+        setIsEditProfileOpen(false)
+        void fetchUserData(currentUser.id)
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
       } finally {
-        setIsUpdatingProfile(false);
+        setIsUpdatingProfile(false)
       }
     }
-  };
+  }
 
   const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (newPassword !== confirmNewPassword) {
-      toast.error("New passwords do not match");
-      return;
+      toast.error("New passwords do not match")
+      return
     }
     try {
-      setIsChangingPassword(true);
-      await changePassword(currentUser.id, currentPassword, newPassword);
-      toast.success("Password changed successfully!");
-      setIsChangePasswordOpen(false);
+      setIsChangingPassword(true)
+      await changePassword(currentUser.id, currentPassword, newPassword)
+      toast.success("Password changed successfully!")
+      setIsChangePasswordOpen(false)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
     } finally {
-      setIsChangingPassword(false);
+      setIsChangingPassword(false)
     }
-  };
-
+  }
 
   const handleAddAssociatedPerson = async () => {
     if (newAssociatedPerson.name && newAssociatedPerson.relationship) {
-      const associatename = newAssociatedPerson.name.trim();
-      const associaterela = newAssociatedPerson.relationship.trim();
+      const associatename = newAssociatedPerson.name.trim()
+      const associaterela = newAssociatedPerson.relationship.trim()
       try {
-        await addAssociatedPerson(currentUser.id, associatename, associaterela);
-        setNewAssociatedPerson({ name: "", relationship: "" });
-        void fetchUserData(currentUser.id);
+        await addAssociatedPerson(currentUser.id, associatename, associaterela)
+        setNewAssociatedPerson({ name: "", relationship: "" })
+        void fetchUserData(currentUser.id)
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
       }
     }
-  };
+  }
 
   const handleDeleteAssociatedPerson = async (personId: string) => {
     try {
-      await deleteAssociatedPerson(personId, currentUser.id);
-      void fetchUserData(currentUser.id);
+      await deleteAssociatedPerson(personId, currentUser.id)
+      void fetchUserData(currentUser.id)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
     }
-  };
+  }
 
   const handleDeleteUser = async () => {
-    setIsDeleteAccountDialogOpen(true);
-  };
+    setIsDeleteAccountDialogOpen(true)
+  }
 
   const confirmDeleteUser = async () => {
     try {
-      setIsDeletingAccount(true);
-      await deleteUser(currentUser.id);
-      setCurrentUser(null);
-      localStorage.removeItem("currentUser");
-      toast.success("Your account has been successfully deleted.");
-      setIsDeleteAccountDialogOpen(false);
-      router.push('/');
+      setIsDeletingAccount(true)
+      await deleteUser(currentUser.id)
+      setCurrentUser(null)
+      localStorage.removeItem("currentUser")
+      toast.success("Your account has been successfully deleted.")
+      setIsDeleteAccountDialogOpen(false)
+      router.push("/")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
     } finally {
-      setIsDeletingAccount(false);
+      setIsDeletingAccount(false)
     }
-  };
+  }
 
   const handlePushToggle = async (checked: boolean) => {
-    setIsPushEnabled(checked);
+    setIsPushEnabled(checked)
     try {
       const response = await fetch(`/api/users/${currentUser.id}/push-preference`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: checked }),
-      });
+      })
       if (!response.ok) {
-        throw new Error('Failed to update push notification preference');
+        throw new Error("Failed to update push notification preference")
       }
-      toast.success(checked ? "Push notifications enabled" : "Push notifications disabled");
+      toast.success(checked ? "Push notifications enabled" : "Push notifications disabled")
     } catch (error) {
-      console.error('Error updating push notification preference:', error);
-      toast.error("Failed to update push notification preference. Please try again.");
-      setIsPushEnabled(!checked);
+      console.error("Error updating push notification preference:", error)
+      toast.error("Failed to update push notification preference. Please try again.")
+      setIsPushEnabled(!checked)
     }
-  };
+  }
 
   const fetchUserDataCallback = useCallback(async () => {
     if (isOnline && currentUser) {
       try {
-        await fetchUserData(currentUser.id);
+        await fetchUserData(currentUser.id)
       } catch (error) {
-        console.error("Error fetching user data:", error);
-        toast.error("Failed to fetch user data. Please try again.");
+        console.error("Error fetching user data:", error)
+        toast.error("Failed to fetch user data. Please try again.")
       }
     }
-  }, [isOnline, currentUser, fetchUserData, toast]);
+  }, [isOnline, currentUser, fetchUserData, toast])
+
+  const fetchSuggestedContacts = useCallback(async () => {
+    if (isOnline && currentUser) {
+      try {
+        const response = await fetch(`/api/suggested-contacts?userId=${currentUser.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setSuggestedContacts(data.suggestedContacts)
+        } else {
+          throw new Error("Failed to fetch suggested contacts")
+        }
+      } catch (error) {
+        console.error("Error fetching suggested contacts:", error)
+        toast.error("Failed to fetch suggested contacts. Please try again.")
+      }
+    }
+  }, [isOnline, currentUser, toast])
 
   useEffect(() => {
-    fetchUserDataCallback();
-    const intervalId = setInterval(fetchUserDataCallback, 20000);
-    return () => clearInterval(intervalId);
-  }, [fetchUserDataCallback]);
+    fetchUserDataCallback()
+    fetchSuggestedContacts()
+    const intervalId = setInterval(() => {
+      fetchUserDataCallback()
+      fetchSuggestedContacts()
+    }, 20000)
+    return () => clearInterval(intervalId)
+  }, [fetchUserDataCallback, fetchSuggestedContacts])
 
   useEffect(() => {
     const fetchStats = async () => {
       if (currentUser && isOnline) {
         try {
-          const stats = await fetchUserStats(currentUser.id);
-          setUserStats(stats);
+          const stats = await fetchUserStats(currentUser.id)
+          setUserStats(stats)
         } catch (error) {
-          console.error("Error fetching user stats:", error);
-          toast.error("Failed to fetch user statistics. Please try again.");
+          console.error("Error fetching user stats:", error)
+          toast.error("Failed to fetch user statistics. Please try again.")
         }
       }
-    };
+    }
 
-    fetchStats();
-    const intervalId = setInterval(fetchStats, 60000); // Refresh every minute
-    return () => clearInterval(intervalId);
-  }, [currentUser, isOnline, toast]);
+    fetchStats()
+    const intervalId = setInterval(fetchStats, 60000) // Refresh every minute
+    return () => clearInterval(intervalId)
+  }, [currentUser, isOnline, toast])
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -254,8 +280,12 @@ export default function ProfilePage({
             </div>
           </div>
           <div className="flex space-x-4 mt-4">
-            <Button onClick={() => setIsEditProfileOpen(true)} disabled={!isOnline}>Edit Profile</Button>
-            <Button onClick={() => setIsChangePasswordOpen(true)} disabled={!isOnline}>Change Password</Button>
+            <Button onClick={() => setIsEditProfileOpen(true)} disabled={!isOnline}>
+              Edit Profile
+            </Button>
+            <Button onClick={() => setIsChangePasswordOpen(true)} disabled={!isOnline}>
+              Change Password
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -297,11 +327,7 @@ export default function ProfilePage({
             {isPushLoading ? (
               <Loader className="animate-spin h-5 w-5" />
             ) : (
-              <Switch
-                checked={isPushEnabled}
-                onCheckedChange={handlePushToggle}
-                disabled={!isOnline}
-              />
+              <Switch checked={isPushEnabled} onCheckedChange={handlePushToggle} disabled={!isOnline} />
             )}
           </div>
         </CardContent>
@@ -315,6 +341,7 @@ export default function ProfilePage({
           <ContactDialog
             currentUser={currentUser}
             contacts={contacts}
+            suggestedContacts={suggestedContacts}
             fetchUserData={() => fetchUserData(currentUser.id)}
           />
         </CardContent>
@@ -331,7 +358,12 @@ export default function ProfilePage({
                 <span>
                   {person.name} ({person.relationship})
                 </span>
-                <Button variant="destructive" size="sm" onClick={() => handleDeleteAssociatedPerson(person.id)} disabled={!isOnline}>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDeleteAssociatedPerson(person.id)}
+                  disabled={!isOnline}
+                >
                   Delete
                 </Button>
               </div>
@@ -392,8 +424,8 @@ export default function ProfilePage({
                   id="edit-phone"
                   value={editedUser?.phone || ""}
                   onChange={(e) => {
-                    const phoneNumber = e.target.value;
-                    setEditedUser((prev) => prev ? { ...prev, phone: phoneNumber } : null);
+                    const phoneNumber = e.target.value
+                    setEditedUser((prev) => (prev ? { ...prev, phone: phoneNumber } : null))
                   }}
                   placeholder="Enter your phone number"
                   required
@@ -477,12 +509,21 @@ export default function ProfilePage({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="mb-2" variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)} disabled={!isOnline}>Cancel</Button>
-            <Button className="mb-2" variant="destructive" onClick={confirmDeleteUser} disabled={!isOnline}>Delete Account</Button>
+            <Button
+              className="mb-2"
+              variant="outline"
+              onClick={() => setIsDeleteAccountDialogOpen(false)}
+              disabled={!isOnline}
+            >
+              Cancel
+            </Button>
+            <Button className="mb-2" variant="destructive" onClick={confirmDeleteUser} disabled={!isOnline}>
+              Delete Account
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }
 
