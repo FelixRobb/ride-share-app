@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Car, Users, Shield, Zap, ChevronDown, Star, ArrowRight } from 'lucide-react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { Car, Users, Shield, Zap, ChevronDown, Star, ArrowRight } from "lucide-react"
+import { motion, useScroll, useTransform } from "framer-motion"
 
 export default function WelcomePage() {
   const [scrolled, setScrolled] = useState(false)
@@ -16,30 +16,48 @@ export default function WelcomePage() {
   const carOpacity = useTransform(scrollY, [0, 300], [1, 0])
   const heroOpacity = useTransform(scrollY, [0, 300], [1, 0])
 
+  // Add a new state to track user authentication status
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
   useEffect(() => {
     const handleScroll = () => {
       // Show header after scrolling 80px
       setShowHeader(window.scrollY > 80)
       // Add blur effect after scrolling 150px
       setScrolled(window.scrollY > 150)
-      if (window.scrollY > 200 && !localStorage.getItem('cookiePreferences')) {
+      if (window.scrollY > 200 && !localStorage.getItem("cookiePreferences")) {
         setShowCookieNotice(true)
       }
     }
 
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  // Add an effect to check authentication status
+  useEffect(() => {
+    const checkAuth = () => {
+      const user = localStorage.getItem("currentUser")
+      setIsAuthenticated(!!user)
+    }
+
+    checkAuth()
+    window.addEventListener("storage", checkAuth)
+
+    return () => {
+      window.removeEventListener("storage", checkAuth)
+    }
   }, [])
 
   const handleAcceptCookies = () => {
-    localStorage.setItem('cookiePreferences', 'accepted')
+    localStorage.setItem("cookiePreferences", "accepted")
     setShowCookieNotice(false)
   }
 
   const scrollToContent = () => {
     window.scrollTo({
       top: window.innerHeight,
-      behavior: 'smooth'
+      behavior: "smooth",
     })
   }
 
@@ -69,34 +87,42 @@ export default function WelcomePage() {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden dark">
       {/* Enhanced Header */}
       <motion.header
-        className={`fixed top-4 left-0 right-0 z-50 transition-all duration-300 border rounded-full w-11/12 m-auto shadow-lg ${scrolled ? 'bg-background/80 backdrop-blur-sm' : 'bg-transparent'
-          }`}
+        className={`fixed top-4 left-0 right-0 z-50 transition-all duration-300 border rounded-full w-11/12 m-auto shadow-lg ${
+          scrolled ? "bg-background/80 backdrop-blur-sm" : "bg-transparent"
+        }`}
         initial={{ y: -100 }}
         animate={{
           y: showHeader ? 0 : -100,
-          opacity: showHeader ? 1 : 0
+          opacity: showHeader ? 1 : 0,
         }}
         transition={{
           duration: 0.3,
-          ease: "easeOut"
+          ease: "easeOut",
         }}
       >
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">RideShare</h1>
           <nav>
-            <Button asChild variant="ghost" className="text-primary hover:text-primary mr-1">
-              <Link href="/login">Login</Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="text-primary hover:text-primary px-2 py-1.5">
-              <Link href="/register">Register</Link>
-            </Button>
+            {isAuthenticated ? (
+              <Button asChild variant="outline" size="lg" className="text-primary hover:text-primary px-2 py-1.5">
+                <Link href="/dashboard">Go to Dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost" className="text-primary hover:text-primary mr-1">
+                  <Link href="/login">Login</Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="text-primary hover:text-primary px-2 py-1.5">
+                  <Link href="/register">Register</Link>
+                </Button>
+              </>
+            )}
           </nav>
         </div>
       </motion.header>
 
       {/* Modified Hero Section with Adjusted Car Position */}
       <section className="relative h-svh flex flex-col justify-center items-center text-center px-4 overflow-hidden">
-
         {/* Title and Description */}
         <motion.div
           className="relative"
@@ -120,7 +146,7 @@ export default function WelcomePage() {
             scale: carScale,
             opacity: carOpacity,
 
-            transform: 'translateY(-50%)'
+            transform: "translateY(-50%)",
           }}
           initial={{
             opacity: 0,
@@ -130,7 +156,7 @@ export default function WelcomePage() {
             ease: "easeOut", // Smooth easing
           }}
           animate={{
-            opacity: 1
+            opacity: 1,
           }}
         >
           <div className="relative w-40 h-40 sm:w-64 sm:h-64">
@@ -139,12 +165,12 @@ export default function WelcomePage() {
               className="absolute -inset-4 bg-primary/20 rounded-full blur-xl"
               animate={{
                 scale: [1, 1.2, 1],
-                opacity: [0.3, 0.5, 0.3]
+                opacity: [0.3, 0.5, 0.3],
               }}
               transition={{
                 duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut"
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "easeInOut",
               }}
             />
           </div>
@@ -174,12 +200,12 @@ export default function WelcomePage() {
 
           <motion.div
             animate={{
-              y: [0, 10, 0]
+              y: [0, 10, 0],
             }}
             transition={{
               duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "easeInOut",
             }}
           >
             <ChevronDown className="w-8 h-8 text-primary cursor-pointer" onClick={scrollToContent} />
@@ -208,7 +234,6 @@ export default function WelcomePage() {
                 <p className="text-zinc-400">{feature.description}</p>
               </motion.div>
             ))}
-
           </div>
         </div>
       </section>
@@ -274,33 +299,53 @@ export default function WelcomePage() {
         <div className="container mx-auto px-4 text-center relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-8 text-primary">Start Sharing Rides Today</h2>
           <p className="text-lg text-zinc-300 max-w-2xl mx-auto mb-12">
-            Join our community of ride-sharers and experience a new way of traveling.
-            Best of all, RideShare is completely free to use!
+            Join our community of ride-sharers and experience a new way of traveling. Best of all, RideShare is
+            completely free to use!
           </p>
           <div className="space-x-4">
-            <Button
-              asChild
-              size="lg"
-              className="px-8 bg-primary hover:bg-primary/90 text-black relative overflow-hidden group"
-            >
-              <Link href="/register">
-                <span className="relative z-10">Sign Up Now</span>
-                <motion.div
-                  className="absolute inset-0 bg-white/20"
-                  initial={{ x: "-100%" }}
-                  whileHover={{ x: "100%" }}
-                  transition={{ duration: 0.5 }}
-                />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="px-8 text-primary border-primary hover:bg-primary hover:text-black"
-            >
-              <Link href="/login">Login</Link>
-            </Button>
+            {isAuthenticated ? (
+              <Button
+                asChild
+                size="lg"
+                className="px-8 bg-primary hover:bg-primary/90 text-black relative overflow-hidden group"
+              >
+                <Link href="/dashboard">
+                  <span className="relative z-10">Go to Dashboard</span>
+                  <motion.div
+                    className="absolute inset-0 bg-white/20"
+                    initial={{ x: "-100%" }}
+                    whileHover={{ x: "100%" }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button
+                  asChild
+                  size="lg"
+                  className="px-8 bg-primary hover:bg-primary/90 text-black relative overflow-hidden group"
+                >
+                  <Link href="/register">
+                    <span className="relative z-10">Sign Up Now</span>
+                    <motion.div
+                      className="absolute inset-0 bg-white/20"
+                      initial={{ x: "-100%" }}
+                      whileHover={{ x: "100%" }}
+                      transition={{ duration: 0.5 }}
+                    />
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className="px-8 text-primary border-primary hover:bg-primary hover:text-black"
+                >
+                  <Link href="/login">Login</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -317,7 +362,10 @@ export default function WelcomePage() {
             <Link href="/terms-of-service" className="hover:text-primary transition-colors duration-300">
               Terms of Service
             </Link>
-            <Link href="https://github.com/FelixRobb/ride-share-app" className="hover:text-primary transition-colors duration-300">
+            <Link
+              href="https://github.com/FelixRobb/ride-share-app"
+              className="hover:text-primary transition-colors duration-300"
+            >
               Source code on github
             </Link>
           </div>
@@ -327,7 +375,8 @@ export default function WelcomePage() {
       {showCookieNotice && (
         <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 bg-card border border-zinc-700 rounded-lg p-4 shadow-lg max-w-xs mx-auto md:mx-0 z-40">
           <p className="text-sm text-zinc-300 mb-3">
-            This website uses cookies to enhance your experience. By continuing to browse, you agree to our use of cookies.
+            This website uses cookies to enhance your experience. By continuing to browse, you agree to our use of
+            cookies.
           </p>
           <Button onClick={handleAcceptCookies} size="sm" className="w-full bg-primary hover:bg-primary/90 text-black">
             Accept
