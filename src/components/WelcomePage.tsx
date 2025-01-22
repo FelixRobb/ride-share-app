@@ -234,6 +234,7 @@ export default function WelcomePage() {
                 <p className="text-zinc-400">{feature.description}</p>
               </motion.div>
             ))}
+
           </div>
         </div>
       </section>
