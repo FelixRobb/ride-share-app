@@ -65,21 +65,19 @@ export default function Profile() {
   }
 
   return (
-    <TutorialProvider>
-      <Layout currentUser={currentUser} logout={logout}>
-        <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your profile</div>}>
-          {currentUser && (
-            <ProfilePage
-              currentUser={currentUser}
-              setCurrentUser={setCurrentUser}
-              contacts={contacts}
-              associatedPeople={associatedPeople}
-              fetchUserData={fetchUserDataCallback}
-            />
-          )}
-        </Suspense>
-      </Layout>
-    </TutorialProvider>
+    <Layout currentUser={currentUser} logout={logout}>
+      <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your profile</div>}>
+        {currentUser && (
+          <ProfilePage
+            currentUser={currentUser}
+            setCurrentUser={setCurrentUser}
+            contacts={contacts}
+            associatedPeople={associatedPeople}
+            fetchUserData={fetchUserDataCallback}
+          />
+        )}
+      </Suspense>
+    </Layout>
   )
 }
 
