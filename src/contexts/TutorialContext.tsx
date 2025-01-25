@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { TutorialOverlay } from "@/components/TutorialOverlay"
 
@@ -29,6 +29,7 @@ type TutorialContextType = {
   nextStep: () => void
   prevStep: () => void
   skipTutorial: () => void
+  restartTutorial: () => void // Add this new function
   showPopup: boolean
   handlePopupChoice: (choice: boolean) => void
 }
@@ -148,55 +149,55 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (pathname === pendingStep.page) {
         // Longer delay and more controlled state transition
         const timeoutId = setTimeout(() => {
-          setCurrentStep(pendingStep);
-          setPendingStep(null);
-          setShowStepPopup(true);
-          setShowPopup(false);
-          setIsTransitioning(false);
-        }, 300); // Increased delay for smoother transition
-  
-        return () => clearTimeout(timeoutId);
+          setCurrentStep(pendingStep)
+          setPendingStep(null)
+          setShowStepPopup(true)
+          setShowPopup(false)
+          setIsTransitioning(false)
+        }, 300) // Increased delay for smoother transition
+
+        return () => clearTimeout(timeoutId)
       } else if (!isTransitioning) {
-        setShowPopup(true);
-        setShowStepPopup(false);
+        setShowPopup(true)
+        setShowStepPopup(false)
       }
     }
-  }, [pathname, pendingStep, isInitialized, isTransitioning]);
+  }, [pathname, pendingStep, isInitialized, isTransitioning])
 
   const changeStep = useCallback(
     async (step: TutorialStep | null) => {
       if (!step) {
         // Completely reset tutorial state
-        localStorage.removeItem("tutorialStep");
-        localStorage.setItem("tutorialCompleted", "true");
-        setCurrentStep(null);
-        setPendingStep(null);
-        setShowStepPopup(false);
-        setShowPopup(false);
-        return;
+        localStorage.removeItem("tutorialStep")
+        localStorage.setItem("tutorialCompleted", "true")
+        setCurrentStep(null)
+        setPendingStep(null)
+        setShowStepPopup(false)
+        setShowPopup(false)
+        return
       }
 
       // Clear any lingering state from previous step
-      setCurrentStep(null);
-      setPendingStep(null);
-      setShowStepPopup(false);
+      setCurrentStep(null)
+      setPendingStep(null)
+      setShowStepPopup(false)
 
       // Short delay to ensure clean state before new step
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50))
 
-      localStorage.setItem("tutorialStep", step.step.toString());
+      localStorage.setItem("tutorialStep", step.step.toString())
 
       if (step.page !== pathname) {
-        setIsTransitioning(true);
-        setPendingStep(step);
-        router.push(step.page);
+        setIsTransitioning(true)
+        setPendingStep(step)
+        router.push(step.page)
       } else {
-        setCurrentStep(step);
-        setShowStepPopup(true);
+        setCurrentStep(step)
+        setShowStepPopup(true)
       }
     },
-    [pathname, router]
-  );
+    [pathname, router],
+  )
 
   const nextStep = useCallback(() => {
     if (!currentStep) return
@@ -235,6 +236,17 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setShowPopup(false)
   }, [])
 
+  const restartTutorial = useCallback(() => {
+    localStorage.removeItem("tutorialCompleted")
+    localStorage.setItem("tutorialStep", "1")
+    const firstStep = tutorialSteps[0]
+    setCurrentStep(firstStep)
+    setPendingStep(null)
+    setShowStepPopup(true)
+    setShowPopup(false)
+    router.push(firstStep.page)
+  }, [router])
+
   const handlePopupChoice = useCallback(
     (choice: boolean) => {
       if (choice) {
@@ -256,6 +268,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         nextStep,
         prevStep,
         skipTutorial,
+        restartTutorial, // Add this new function to the context
         showPopup,
         handlePopupChoice,
       }}
@@ -264,7 +277,9 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       {isInitialized && !isTransitioning && (
         <>
           <PopupDialog open={showPopup} onOpenChange={setShowPopup} onChoice={handlePopupChoice} />
-          {showStepPopup && <TutorialOverlay />}
+          <AnimatePresence mode="wait">
+            {showStepPopup && currentStep && <TutorialOverlay key={currentStep.key} />}
+          </AnimatePresence>
         </>
       )}
     </TutorialContext.Provider>

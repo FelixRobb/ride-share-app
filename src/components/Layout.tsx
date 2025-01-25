@@ -25,6 +25,7 @@ import {
   MessageSquare,
   UserPlus,
   CheckCircle,
+  HelpCircle,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -41,7 +42,7 @@ import { toast } from "sonner"
 import PushNotificationHandler from "./PushNotificationHandler"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { TutorialOverlay } from "./TutorialOverlay"
-import { TutorialProvider } from "@/contexts/TutorialContext"
+import { TutorialProvider, useTutorial } from "@/contexts/TutorialContext"
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -117,7 +118,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
       setWasPreviouslyOffline(false)
       toast.success("You're back online. Your connection has been restored.")
     }
-  }, [isOnline, toast, wasPreviouslyOffline])
+  }, [isOnline, wasPreviouslyOffline])
 
   useEffect(() => {
     localStorage.setItem("theme", currentMode)
@@ -152,8 +153,6 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
     setIsNotificationDialogOpen(false)
   }, [currentUser, notifications, toast])
 
-  // Sync the theme state with the current mode
-
   // Toggle between "system", "dark", and "light"
   const toggleTheme = () => {
     setCurrentMode((prevMode) => {
@@ -170,6 +169,16 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
   const confirmLogout = () => {
     setIsLogoutDialogOpen(false)
     logout()
+  }
+
+  const TutorialButton = () => {
+    const { restartTutorial } = useTutorial()
+    return (
+      <Button variant="outline" size="sm" className="mt-4" onClick={restartTutorial}>
+        <HelpCircle className="mr-2 h-4 w-4" />
+        Restart Tutorial
+      </Button>
+    )
   }
 
   if (!currentUser) return children
@@ -355,6 +364,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
             Source code on github
           </Link>
         </div>
+        <TutorialButton />
       </footer>
 
       <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
