@@ -1,59 +1,62 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useTutorial, tutorialSteps } from '@/contexts/TutorialContext';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronRight, ChevronLeft, X } from 'lucide-react';
+import type React from "react"
+import { useEffect, useState, useCallback } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { useTutorial, tutorialSteps } from "@/contexts/TutorialContext"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { ChevronRight, ChevronLeft, X } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 export const TutorialOverlay: React.FC = () => {
-  const { currentStep, nextStep, prevStep, skipTutorial } = useTutorial();
-  const [targetElement, setTargetElement] = useState<DOMRect | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
+  const { currentStep, nextStep, prevStep, skipTutorial } = useTutorial()
+  const [targetElement, setTargetElement] = useState<DOMRect | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
+  const pathname = usePathname()
 
   const updateTargetElement = useCallback(() => {
     if (!currentStep?.target || !isMounted) {
-      setTargetElement(null);
-      return;
+      setTargetElement(null)
+      return
     }
 
-    const element = document.querySelector(currentStep.target);
+    const element = document.querySelector(currentStep.target)
     if (element) {
-      const rect = element.getBoundingClientRect();
-      setTargetElement(rect);
+      const rect = element.getBoundingClientRect()
+      setTargetElement(rect)
     } else {
-      setTargetElement(null);
+      setTargetElement(null)
     }
-  }, [currentStep, isMounted]);
+  }, [currentStep, isMounted])
 
   // Set mounted state
   useEffect(() => {
-    setIsMounted(true);
-    return () => setIsMounted(false);
-  }, []);
+    setIsMounted(true)
+    return () => setIsMounted(false)
+  }, [])
 
   // Update target element when step changes
   useEffect(() => {
-    if (!isMounted) return;
-    
-    updateTargetElement();
-    
+    if (!isMounted) return
+
+    updateTargetElement()
+
     const handleUpdate = () => {
-      requestAnimationFrame(updateTargetElement);
-    };
+      requestAnimationFrame(updateTargetElement)
+    }
 
-    window.addEventListener('scroll', handleUpdate);
-    window.addEventListener('resize', handleUpdate);
-    
+    window.addEventListener("scroll", handleUpdate)
+    window.addEventListener("resize", handleUpdate)
+
     return () => {
-      window.removeEventListener('scroll', handleUpdate);
-      window.removeEventListener('resize', handleUpdate);
-    };
-  }, [updateTargetElement, isMounted]);
+      window.removeEventListener("scroll", handleUpdate)
+      window.removeEventListener("resize", handleUpdate)
+    }
+  }, [updateTargetElement, isMounted])
 
-  if (!currentStep || !isMounted) return null;
+  if (!currentStep || !isMounted || currentStep.page !== pathname) return null
 
-  const isLastStep = currentStep.step === tutorialSteps.length;
-  const progress = `${currentStep.step}/${tutorialSteps.length}`;
+  const isLastStep = currentStep.step === tutorialSteps.length
+  const progress = `${currentStep.step}/${tutorialSteps.length}`
 
   return (
     <AnimatePresence mode="wait">
@@ -81,20 +84,17 @@ export const TutorialOverlay: React.FC = () => {
             <p className="text-sm">{currentStep.content}</p>
           </CardContent>
           <CardFooter className="flex justify-between pt-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={prevStep} 
-              disabled={currentStep.step === 1}
-            >
+            <Button variant="outline" size="sm" onClick={prevStep} disabled={currentStep.step === 1}>
               <ChevronLeft className="h-4 w-4 mr-1" /> Previous
             </Button>
-            <Button 
-              variant="default"
-              size="sm" 
-              onClick={nextStep}
-            >
-              {isLastStep ? "Finish" : <>Next <ChevronRight className="h-4 w-4 ml-1" /></>}
+            <Button variant="default" size="sm" onClick={nextStep}>
+              {isLastStep ? (
+                "Finish"
+              ) : (
+                <>
+                  Next <ChevronRight className="h-4 w-4 ml-1" />
+                </>
+              )}
             </Button>
           </CardFooter>
         </Card>
@@ -115,5 +115,6 @@ export const TutorialOverlay: React.FC = () => {
         />
       )}
     </AnimatePresence>
-  );
-};
+  )
+}
+

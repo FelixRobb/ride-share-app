@@ -1,7 +1,6 @@
 import "./globals.css";
 import { Toaster } from 'sonner';
 import { ThemeProvider } from "next-themes";
-import { TutorialProvider } from "@/contexts/TutorialContext";
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rideshareappweb.netlify.app"; // Fallback URL
 const ogImageUrl = `${siteUrl}/og-image.png`;
@@ -55,9 +54,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <TutorialProvider>
             {children}
-          </TutorialProvider>
           <Toaster richColors closeButton theme="dark"/>
         </ThemeProvider>
       </body>
