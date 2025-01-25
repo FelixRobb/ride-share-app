@@ -1,100 +1,68 @@
-// src/app/api/suggested-users/route.ts
-import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/db';
+import { NextResponse } from "next/server"
+import { supabase } from "@/lib/db"
+import type { User } from "@/types"
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const userId = searchParams.get('userId');
+  const { searchParams } = new URL(request.url)
+  const userId = searchParams.get("userId")
 
   if (!userId) {
-    return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    return NextResponse.json({ error: "User ID is required" }, { status: 400 })
   }
 
   try {
-    // Get current user's contacts
-    const { data: currentContacts, error: contactsError } = await supabase
-      .from('contacts')
-      .select('contact_id')
-      .eq('user_id', userId)
-      .eq('status', 'accepted');
 
-    if (contactsError) throw contactsError;
+    // 1. Get the user's accepted contacts
+    const { data: userContacts, error: userContactsError } = await supabase
+      .from("contacts")
+      .select("user_id, contact_id")
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`)
+      .eq("status", "accepted")
 
-    const contactIds = currentContacts?.map(contact => contact.contact_id) || [];
+    if (userContactsError) throw userContactsError
 
-    // Get contacts of contacts (mutual contacts)
+    // Extract the IDs of the user's contacts
+    const userContactIds = userContacts.map((contact) =>
+      contact.user_id === userId ? contact.contact_id : contact.user_id,
+    )
+
+    // 2. Find contacts of contacts (potential mutual contacts)
     const { data: contactsOfContacts, error: contactsOfContactsError } = await supabase
-      .from('contacts')
-      .select('contact_id, user_id')
-      .in('user_id', contactIds)
-      .eq('status', 'accepted')
-      .not('contact_id', 'in', `(${[userId, ...contactIds].join(',')})`);
+      .from("contacts")
+      .select("user_id, contact_id")
+      .or(`user_id.in.(${userContactIds.join(",")}),contact_id.in.(${userContactIds.join(",")})`)
+      .eq("status", "accepted")
 
-    if (contactsOfContactsError) throw contactsOfContactsError;
+    if (contactsOfContactsError) throw contactsOfContactsError
 
-    // Get rides of contacts
-    const { data: contactRides, error: contactRidesError } = await supabase
-      .from('rides')
-      .select('id, requester_id, accepter_id')
-      .or(`requester_id.in.(${contactIds.join(',')}),accepter_id.in.(${contactIds.join(',')})`)
-      .not('requester_id', 'eq', userId)
-      .not('accepter_id', 'eq', userId);
+    // 3. Identify mutual contacts
+    const mutualContactIds = contactsOfContacts
+      .flatMap((contact) => [contact.user_id, contact.contact_id])
+      .filter((id) => id !== userId && !userContactIds.includes(id))
 
-    if (contactRidesError) throw contactRidesError;
+    const uniqueMutualContactIds = Array.from(new Set(mutualContactIds))
 
-    // Process mutual contacts
-    const mutualContactsMap = new Map();
-    contactsOfContacts?.forEach(contact => {
-      if (!mutualContactsMap.has(contact.contact_id)) {
-        mutualContactsMap.set(contact.contact_id, { count: 1, users: [contact.user_id] });
-      } else {
-        const data = mutualContactsMap.get(contact.contact_id);
-        data.count++;
-        data.users.push(contact.user_id);
-        mutualContactsMap.set(contact.contact_id, data);
-      }
-    });
-
-    // Process users with common rides through contacts
-    const commonRidesMap = new Map();
-    contactRides?.forEach(ride => {
-      const otherUserId = ride.requester_id === userId ? ride.accepter_id : ride.requester_id;
-      if (!commonRidesMap.has(otherUserId) && !contactIds.includes(otherUserId) && otherUserId !== userId) {
-        commonRidesMap.set(otherUserId, 1);
-      } else if (commonRidesMap.has(otherUserId)) {
-        commonRidesMap.set(otherUserId, commonRidesMap.get(otherUserId) + 1);
-      }
-    });
-
-    // Fetch user details for suggested contacts
-    const suggestedUserIds = [...Array.from(mutualContactsMap.keys()), ...Array.from(commonRidesMap.keys())];
+    // 4. Fetch suggested user details
     const { data: suggestedUsers, error: suggestedUsersError } = await supabase
-      .from('users')
-      .select('id, name, phone')
-      .in('id', suggestedUserIds);
+      .from("users")
+      .select("*")
+      .in("id", uniqueMutualContactIds)
 
-    if (suggestedUsersError) throw suggestedUsersError;
+    if (suggestedUsersError) throw suggestedUsersError
 
-    // Combine all data
-    const suggestedContacts = suggestedUsers?.map(user => ({
+    // 5. Add mutual contacts count
+    const suggestedContacts = suggestedUsers.map((user) => ({
       ...user,
-      mutual_contacts: mutualContactsMap.get(user.id)?.count || 0,
-      mutual_contact_users: mutualContactsMap.get(user.id)?.users || [],
-      common_rides: commonRidesMap.get(user.id) || 0,
-    })) || [];
+      mutual_contacts: mutualContactIds.filter((id) => id === user.id).length,
+    }))
 
-    // Sort by mutual contacts count, then by common rides
-    suggestedContacts.sort((a, b) => {
-      if (b.mutual_contacts !== a.mutual_contacts) {
-        return b.mutual_contacts - a.mutual_contacts;
-      }
-      return b.common_rides - a.common_rides;
-    });
+    // 6. Sort suggestions by mutual contacts count
+    suggestedContacts.sort((a, b) => b.mutual_contacts - a.mutual_contacts)
 
-    return NextResponse.json({ suggestedContacts: suggestedContacts.slice(0, 10) });
+    return NextResponse.json({ suggestedContacts })
   } catch (error) {
-    console.error('Fetch suggested contacts error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Error fetching suggested contacts:", error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
 
