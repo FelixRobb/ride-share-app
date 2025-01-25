@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { ContactSuggestions } from "@/components/ContactSugestions"
 import type { User as BaseUser, Contact } from "@/types"
 import { addContact, acceptContact, deleteContact } from "@/utils/api"
 import { Loader, Search, UserPlus, Check, Phone, X } from "lucide-react"
@@ -22,7 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner"
 
 interface ExtendedUser extends BaseUser {
-  contactStatus?: string | null
+  contactStatus?: "pending" | "accepted" | null
   contactId?: string | null
 }
 
@@ -33,7 +33,7 @@ interface ContactDialogProps {
   fetchUserData: () => Promise<void>
 }
 
-export function ContactDialog({ currentUser, contacts, suggestedContacts, fetchUserData }: ContactDialogProps) {
+export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<ExtendedUser[]>([])
@@ -43,6 +43,8 @@ export function ContactDialog({ currentUser, contacts, suggestedContacts, fetchU
   const [isContactDetailsOpen, setIsContactDetailsOpen] = useState(false)
   const [addingUserId, setAddingUserId] = useState<string | null>(null)
   const [localSuggestedContacts, setLocalSuggestedContacts] = useState<any[]>([])
+  const [suggestedContacts, setSuggestedContacts] = useState<any[]>([])
+  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false)
   const isOnline = useOnlineStatus()
 
   useEffect(() => {
@@ -56,6 +58,28 @@ export function ContactDialog({ currentUser, contacts, suggestedContacts, fetchU
       setSearchResults([])
     }
   }, [searchQuery])
+
+  useEffect(() => {
+    const fetchSuggestedContacts = async () => {
+      if (!currentUser) return
+      setIsFetchingSuggestions(true)
+      try {
+        const response = await fetch(`/api/suggested-contacts?userId=${currentUser.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setSuggestedContacts(data.suggestedContacts || [])
+        } else {
+          throw new Error("Failed to fetch suggested contacts")
+        }
+      } catch (error) {
+        console.error("Error fetching suggested contacts:", error)
+        toast.error("Failed to load suggested contacts. Please try again later.")
+      } finally {
+        setIsFetchingSuggestions(false)
+      }
+    }
+    fetchSuggestedContacts()
+  }, [currentUser, toast])
 
   const searchUsers = async () => {
     if (searchQuery.length < 2) {
@@ -130,7 +154,7 @@ export function ContactDialog({ currentUser, contacts, suggestedContacts, fetchU
       }
       return user.status
     } else {
-      // This is an ExtendedUser object from search results
+      // This is a User object from search results
       return user.contactStatus || null
     }
   }
@@ -206,47 +230,13 @@ export function ContactDialog({ currentUser, contacts, suggestedContacts, fetchU
                 </ScrollArea>
               </PopoverContent>
             </Popover>
-            {localSuggestedContacts.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-lg font-medium mb-2">Suggested Contacts</h4>
-                <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-                  <div className="flex w-max space-x-4 p-4">
-                    {localSuggestedContacts.map((contact) => (
-                      <Card key={contact.id} className="w-[200px] flex flex-col justify-between">
-                        <CardHeader>
-                          <Avatar className="h-12 w-12 mx-auto">
-                            <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <CardTitle className="text-center">{contact.name}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm text-muted-foreground text-center">{contact.phone}</p>
-                          {contact.mutual_contacts > 0 && (
-                            <p className="text-xs text-muted-foreground text-center mt-1">
-                              {contact.mutual_contacts} mutual contact{contact.mutual_contacts > 1 ? "s" : ""}
-                            </p>
-                          )}
-                        </CardContent>
-                        <CardFooter className="flex justify-center">
-                          <Button
-                            size="sm"
-                            onClick={() => handleAddContact(contact)}
-                            disabled={addingUserId === contact.id || !isOnline}
-                          >
-                            {addingUserId === contact.id ? (
-                              <Loader className="animate-spin w-4 h-4 mr-2" />
-                            ) : (
-                              <UserPlus className="w-4 h-4 mr-2" />
-                            )}
-                            Add Contact
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
+            <ContactSuggestions
+              suggestedContacts={suggestedContacts}
+              isFetchingSuggestions={isFetchingSuggestions}
+              handleAddContact={handleAddContact}
+              currentUser={currentUser}
+              isOnline={isOnline}
+            />
             <div className="mt-4">
               <h4 className="text-lg font-medium mb-2 px-6">Your Contacts</h4>
               <ScrollArea className="h-[300px] w-full rounded-md">
