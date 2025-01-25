@@ -8,8 +8,6 @@ import { toast } from "sonner";
 import { User, AssociatedPerson } from "@/types";
 import { fetchUserData } from "@/utils/api";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
-import { TutorialProvider } from '@/contexts/TutorialContext'
-import { Loader } from 'lucide-react';
 
 const CreateRidePage = dynamic(() => import('@/components/CreateRidePage'), { ssr: false });
 
@@ -69,7 +67,6 @@ export default function CreateRide() {
   };
 
   return (
-    <TutorialProvider>
       <Layout currentUser={currentUser} logout={logout}>
         <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
           {currentUser && (
@@ -82,7 +79,6 @@ export default function CreateRide() {
           )}
         </Suspense>
       </Layout>
-    </TutorialProvider>
   );
 }
 
