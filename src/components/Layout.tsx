@@ -42,7 +42,7 @@ import { toast } from "sonner"
 import PushNotificationHandler from "./PushNotificationHandler"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { TutorialOverlay } from "./TutorialOverlay"
-import { TutorialProvider, useTutorial } from "@/contexts/TutorialContext"
+import { useTutorial } from "@/contexts/TutorialContext"
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -151,7 +151,7 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
       }
     }
     setIsNotificationDialogOpen(false)
-  }, [currentUser, notifications, toast])
+  }, [currentUser, notifications])
 
   // Toggle between "system", "dark", and "light"
   const toggleTheme = () => {
@@ -341,12 +341,10 @@ export default function Layout({ children, currentUser, logout }: LayoutProps) {
         </div>
       </header>
 
-      <TutorialProvider>
-        <main className="flex-grow container mx-auto px-4 py-8">
-          {children}
-          <TutorialOverlay />
-        </main>
-      </TutorialProvider>
+      <main className="flex-grow container mx-auto px-4 py-8">
+        {children}
+        <TutorialOverlay />
+      </main>
 
       <footer className="bg-background py-8 text-center text-sm text-zinc-500">
         <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
