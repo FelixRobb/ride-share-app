@@ -172,7 +172,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
             Manage Contacts
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[500px] p-0 max-h-[80vh] overflow-auto rounded-lg">
+        <DialogContent className="sm:max-w-[550px] w-full p-0 max-h-[80vh] overflow-auto rounded-lg">
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle className="text-lg font-medium">Contacts</DialogTitle>
             <DialogDescription>Manage your contacts and add new ones.</DialogDescription>
@@ -230,13 +230,15 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
                 </ScrollArea>
               </PopoverContent>
             </Popover>
-            <ContactSuggestions
-              suggestedContacts={suggestedContacts}
-              isFetchingSuggestions={isFetchingSuggestions}
-              handleAddContact={handleAddContact}
-              currentUser={currentUser}
-              isOnline={isOnline}
-            />
+            <div className="w-full max-w-[500px] overflow-hidden">
+              <ContactSuggestions
+                suggestedContacts={suggestedContacts}
+                isFetchingSuggestions={isFetchingSuggestions}
+                handleAddContact={handleAddContact}
+                currentUser={currentUser}
+                isOnline={isOnline}
+              />
+            </div>
             <div className="mt-4">
               <h4 className="text-lg font-medium mb-2 px-6">Your Contacts</h4>
               <ScrollArea className="h-[300px] w-full rounded-md">
