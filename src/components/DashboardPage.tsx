@@ -473,7 +473,7 @@ export default function DashboardPage({
                 <TabsContent key={tab} value={tab}>
                   <ScrollArea className="h-[calc(100vh-300px)] pr-3">
                     {isInitialLoading ? (
-                      Array(3)
+                      Array(7)
                         .fill(0)
                         .map((_, i) => <RideCardSkeleton key={i} />)
                     ) : (
