@@ -59,15 +59,9 @@ export default function CreateRide() {
     }
   }, [currentUser, isOnline]);
 
-  const logout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem("currentUser");
-    }
-    router.push('/');
-  };
 
   return (
-      <Layout currentUser={currentUser} logout={logout}>
+    <Layout currentUser={currentUser}>
         <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
           {currentUser && (
             <CreateRidePage

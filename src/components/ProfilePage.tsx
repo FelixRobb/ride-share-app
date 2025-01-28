@@ -11,11 +11,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { LucideUser, Mail, Phone, Car, MapPin, Loader } from "lucide-react"
+import { LucideUser, Mail, Phone, Car, MapPin, Loader, Moon, Sun, Monitor } from "lucide-react"
 import { toast } from "sonner"
 import type { User, Contact, AssociatedPerson } from "../types"
 import {
@@ -33,6 +39,7 @@ import { Switch } from "@/components/ui/switch"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import "react-phone-number-input/style.css"
 import { ContactDialog } from "./ContactDialog"
+import { useTheme } from "next-themes"
 
 interface ProfilePageProps {
   currentUser: User
@@ -66,6 +73,27 @@ export default function ProfilePage({
   const [suggestedContacts, setSuggestedContacts] = useState<any[]>([])
   const router = useRouter()
   const isOnline = useOnlineStatus()
+
+  const { theme, setTheme } = useTheme()
+  const [currentMode, setCurrentMode] = useState<"system" | "light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("theme") as "system" | "light" | "dark") || "system"
+    }
+    return "system"
+  })
+
+
+  useEffect(() => {
+    localStorage.setItem("theme", currentMode)
+    setTheme(currentMode)
+  }, [currentMode, setTheme])
+
+  // Replace the toggleTheme function with this one that takes a specific theme
+  const toggleTheme = (newMode: "system" | "light" | "dark") => {
+    setCurrentMode(newMode)
+    localStorage.setItem("theme", newMode)
+  }
+
 
   useEffect(() => {
     const fetchPushPreference = async () => {
@@ -385,6 +413,43 @@ export default function ProfilePage({
             <Button onClick={handleAddAssociatedPerson} className="w-full" disabled={!isOnline}>
               Add Associated Person
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-2xl">Theme Settings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <span>Current theme:</span>
+            <div className="relative inline-flex items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
+              <button
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
+                  }`}
+                onClick={() => toggleTheme("system")}
+                aria-label="System theme"
+              >
+                <Monitor className="h-4 w-4" />
+              </button>
+              <button
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "light" ?  "bg-accent" : "hover:bg-accent/50"
+                  }`}
+                onClick={() => toggleTheme("light")}
+                aria-label="Light theme"
+              >
+                <Sun className="h-4 w-4" />
+              </button>
+              <button
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
+                  }`}
+                onClick={() => toggleTheme("dark")}
+                aria-label="Dark theme"
+              >
+                <Moon className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </CardContent>
       </Card>

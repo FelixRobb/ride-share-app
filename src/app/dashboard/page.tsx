@@ -72,13 +72,8 @@ export default function Dashboard() {
     }
   }, [currentUser, isOnline])
 
-  const logout = () => {
-    localStorage.removeItem("currentUser")
-    router.push('/')
-  }
-
   return (
-    <Layout currentUser={currentUser} logout={logout}>
+    <Layout currentUser={currentUser}>
       <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your dashboard</div>}>
         {currentUser && ( // Check if currentUser is loaded before rendering DashboardPage
           <DashboardPage

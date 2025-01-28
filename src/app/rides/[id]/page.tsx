@@ -89,13 +89,9 @@ export default function RideDetails() {
     }
   }, [currentUser, id, isOnline]);
 
-  const logout = () => {
-    localStorage.removeItem("currentUser")
-    router.push('/')
-  }
   
   return (
-    <Layout currentUser={currentUser} logout={logout}>
+   <Layout currentUser={currentUser}>
       <Button type="button" variant="ghost" onClick={() => router.push(`/dashboard?tab=${fromTab}`)} className='mb-2'><ArrowBigLeft />Go Back to Dashboard</Button>
       <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
         {ride && currentUser && (
