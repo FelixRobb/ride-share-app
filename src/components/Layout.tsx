@@ -44,6 +44,7 @@ import PushNotificationHandler from "./PushNotificationHandler"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { TutorialOverlay } from "./TutorialOverlay"
 import { useTutorial } from "@/contexts/TutorialContext"
+import { useNotifications } from "../contexts/NotificationContext"
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -81,28 +82,12 @@ interface LayoutProps {
 export default function Layout({ children, currentUser }: LayoutProps) {
   const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const { unreadCount, markAsRead } = useNotifications()
   const router = useRouter()
   const pathname = usePathname()
 
   const isOnline = useOnlineStatus()
   const [wasPreviouslyOffline, setWasPreviouslyOffline] = useState(false)
-
-  const fetchUserNotifications = useCallback(async () => {
-    if (currentUser && isOnline) {
-      try {
-        const fetchedNotifications = await fetchNotifications(currentUser.id)
-        setNotifications(fetchedNotifications)
-      } catch (error) {
-        console.error("Error fetching notifications:", error)
-      }
-    }
-  }, [currentUser, isOnline])
-
-  useEffect(() => {
-    fetchUserNotifications()
-    const intervalId = setInterval(fetchUserNotifications, 10000)
-    return () => clearInterval(intervalId)
-  }, [fetchUserNotifications])
 
   useEffect(() => {
     if (!isOnline) {
@@ -114,8 +99,21 @@ export default function Layout({ children, currentUser }: LayoutProps) {
     }
   }, [isOnline, wasPreviouslyOffline])
 
+  const fetchUserNotifications = useCallback(async () => {
+    if (currentUser && isOnline) {
+      try {
+        const fetchedNotifications = await fetchNotifications(currentUser.id)
+        setNotifications(fetchedNotifications)
+      } catch (error) {
+        console.error("Error fetching notifications:", error)
+        toast.error("Failed to fetch notifications.")
+      }
+    }
+  }, [currentUser, isOnline])
 
-  const unreadNotificationsCount = notifications.filter((n) => !n.is_read).length
+  useEffect(() => {
+    fetchUserNotifications()
+  }, [fetchUserNotifications])
 
   const handleOpenNotificationDialog = useCallback(() => {
     setIsNotificationDialogOpen(true)
@@ -138,7 +136,6 @@ export default function Layout({ children, currentUser }: LayoutProps) {
     setIsNotificationDialogOpen(false)
   }, [currentUser, notifications])
 
-
   const TutorialButton = () => {
     const { restartTutorial } = useTutorial()
     return (
@@ -149,7 +146,60 @@ export default function Layout({ children, currentUser }: LayoutProps) {
     )
   }
 
-  if (!currentUser) return children
+  const NotificationButton = ({ isMobile = false }) => (
+    <Dialog open={isNotificationDialogOpen} onOpenChange={handleCloseNotificationDialog}>
+      <Button
+        variant={isMobile ? "outline" : "ghost"}
+        size="icon"
+        className={cn("rounded-full relative", isMobile ? "" : "px-4 py-2", "hover:bg-accent")}
+        onClick={handleOpenNotificationDialog}
+      >
+        <Bell className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
+        {unreadCount > 0 && (
+          <span
+            className={cn(
+              "absolute bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center",
+              isMobile ? "-top-1 -right-1" : "top-0 right-0",
+            )}
+          >
+            {unreadCount}
+          </span>
+        )}
+      </Button>
+      {isNotificationDialogOpen && (
+        <Dialog open={isNotificationDialogOpen} onOpenChange={handleCloseNotificationDialog}>
+          <DialogContent className="sm:max-w-md rounded-lg w-md bg-background text-foreground">
+            <DialogHeader>
+              <DialogTitle>Notifications</DialogTitle>
+              <DialogDescription>Your recent notifications</DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="h-[300px] w-full pr-4">
+              {notifications.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">No notifications</p>
+              ) : (
+                notifications.map((notification) => (
+                  <Card key={notification.id} className={`mb-4 ${notification.is_read ? "opacity-60" : ""}`}>
+                    <CardHeader className="p-4 pb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          {getNotificationIcon(notification.type)}
+                          <CardTitle className="text-sm font-medium">{notification.type}</CardTitle>
+                        </div>
+                        <CardDescription className="text-xs">{formatDate(notification.created_at)}</CardDescription>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <p className="text-sm">{notification.message}</p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      )}
+    </Dialog>
+  )
 
   if (!currentUser) return children
 
@@ -162,6 +212,11 @@ export default function Layout({ children, currentUser }: LayoutProps) {
             <Link href="/dashboard" className="text-2xl font-bold text-primary">
               RideShare
             </Link>
+          </div>
+
+          {/* Mobile Notification Button */}
+          <div className="md:hidden">
+            <NotificationButton isMobile={true} />
           </div>
 
           {/* Desktop Navigation */}
@@ -183,55 +238,14 @@ export default function Layout({ children, currentUser }: LayoutProps) {
               </Button>
             ))}
 
-            <Dialog open={isNotificationDialogOpen} onOpenChange={handleCloseNotificationDialog}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full px-4 py-2 relative hover:bg-accent"
-                onClick={handleOpenNotificationDialog}
-              >
-                <Bell className="h-4 w-4" />
-                {unreadNotificationsCount > 0 && (
-                  <span className="absolute top-0 right-0 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                    {unreadNotificationsCount}
-                  </span>
-                )}
-              </Button>
-              <DialogContent className="sm:max-w-md rounded-lg w-md bg-background text-foreground">
-                <DialogHeader>
-                  <DialogTitle>Notifications</DialogTitle>
-                  <DialogDescription>Your recent notifications</DialogDescription>
-                </DialogHeader>
-                <ScrollArea className="h-[300px] w-full pr-4">
-                  {notifications.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-4">No notifications</p>
-                  ) : (
-                    notifications.map((notification) => (
-                      <Card key={notification.id} className={`mb-4 ${notification.is_read ? "opacity-60" : ""}`}>
-                        <CardHeader className="p-4 pb-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              {getNotificationIcon(notification.type)}
-                              <CardTitle className="text-sm font-medium">{notification.type}</CardTitle>
-                            </div>
-                            <CardDescription className="text-xs">{formatDate(notification.created_at)}</CardDescription>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0">
-                          <p className="text-sm">{notification.message}</p>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </ScrollArea>
-              </DialogContent>
-            </Dialog>
+            {/* Desktop Notification Button */}
+            <NotificationButton />
           </nav>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow container mx-auto px-4 py-8 pb-20 md:pb-8">
+      <main className="flex-grow container mx-auto px-4 py-8 pb-7 md:pb-8">
         {children}
         <TutorialOverlay />
       </main>
@@ -243,50 +257,24 @@ export default function Layout({ children, currentUser }: LayoutProps) {
             { icon: Home, label: "Dashboard", href: "/dashboard" },
             { icon: Car, label: "Create Ride", href: "/create-ride" },
             { icon: Users, label: "Profile", href: "/profile" },
-            { 
-              icon: Bell, 
-              label: "Notifications", 
-              href: "#",
-              onClick: handleOpenNotificationDialog,
-              badge: unreadNotificationsCount
-            },
           ].map((item) => (
             <div key={item.href} className="flex-1">
-              {item.onClick ? (
-                <button
-                  onClick={item.onClick}
-                  className={cn(
-                    "w-full flex flex-col items-center p-2 relative",
-                    "text-muted-foreground hover:text-foreground transition-colors"
-                  )}
-                >
-                  <item.icon className="h-6 w-6" />
-                  <span className="text-xs mt-1">{item.label}</span>
-                  {item.badge > 0 && (
-                    <span className="absolute top-1 right-1/4 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              ) : (
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex flex-col items-center p-2",
-                    pathname === item.href ? "text-primary" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <item.icon className="h-6 w-6" />
-                  <span className="text-xs mt-1">{item.label}</span>
-                </Link>
-              )}
+              <Link
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center p-2",
+                  pathname === item.href ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <item.icon className="h-6 w-6" />
+                <span className="text-xs mt-1">{item.label}</span>
+              </Link>
             </div>
           ))}
         </div>
       </nav>
 
-      {/* Footer - Hidden on Mobile */}
-      <footer className="bg-background py-8 text-center text-sm text-zinc-500 md:block hidden">
+      <footer className="bg-background text-center text-sm text-zinc-500 block mb-20">
         <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
         <div className="mt-2 space-x-4">
           <Link href="/privacy-policy" className="hover:text-orange-500 transition-colors duration-300">
@@ -307,3 +295,4 @@ export default function Layout({ children, currentUser }: LayoutProps) {
     </div>
   )
 }
+
