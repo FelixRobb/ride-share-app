@@ -59,13 +59,9 @@ export default function Profile() {
     }
   }, [currentUser, fetchUserDataCallback])
 
-  const logout = () => {
-    localStorage.removeItem("currentUser")
-    router.push('/')
-  }
 
   return (
-    <Layout currentUser={currentUser} logout={logout}>
+    <Layout currentUser={currentUser}>
       <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your profile</div>}>
         {currentUser && (
           <ProfilePage
