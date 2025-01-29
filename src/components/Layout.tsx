@@ -44,6 +44,7 @@ import PushNotificationHandler from "./PushNotificationHandler"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { TutorialOverlay } from "./TutorialOverlay"
 import { useTutorial } from "@/contexts/TutorialContext"
+import { Badge } from "@/components/ui/badge"
 import { useNotifications } from "../contexts/NotificationContext"
 
 const getNotificationIcon = (type: string) => {
@@ -146,61 +147,6 @@ export default function Layout({ children, currentUser }: LayoutProps) {
     )
   }
 
-  const NotificationButton = ({ isMobile = false }) => (
-    <Dialog open={isNotificationDialogOpen} onOpenChange={handleCloseNotificationDialog}>
-      <Button
-        variant={isMobile ? "outline" : "ghost"}
-        size="icon"
-        className={cn("rounded-full relative", isMobile ? "" : "px-4 py-2", "hover:bg-accent")}
-        onClick={handleOpenNotificationDialog}
-      >
-        <Bell className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
-        {unreadCount > 0 && (
-          <span
-            className={cn(
-              "absolute bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center",
-              isMobile ? "-top-1 -right-1" : "top-0 right-0",
-            )}
-          >
-            {unreadCount}
-          </span>
-        )}
-      </Button>
-      {isNotificationDialogOpen && (
-        <Dialog open={isNotificationDialogOpen} onOpenChange={handleCloseNotificationDialog}>
-          <DialogContent className="sm:max-w-md rounded-lg w-md bg-background text-foreground">
-            <DialogHeader>
-              <DialogTitle>Notifications</DialogTitle>
-              <DialogDescription>Your recent notifications</DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="h-[300px] w-full pr-4">
-              {notifications.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4">No notifications</p>
-              ) : (
-                notifications.map((notification) => (
-                  <Card key={notification.id} className={`mb-4 ${notification.is_read ? "opacity-60" : ""}`}>
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          {getNotificationIcon(notification.type)}
-                          <CardTitle className="text-sm font-medium">{notification.type}</CardTitle>
-                        </div>
-                        <CardDescription className="text-xs">{formatDate(notification.created_at)}</CardDescription>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <p className="text-sm">{notification.message}</p>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-      )}
-    </Dialog>
-  )
-
   if (!currentUser) return children
 
   return (
@@ -212,11 +158,6 @@ export default function Layout({ children, currentUser }: LayoutProps) {
             <Link href="/dashboard" className="text-2xl font-bold text-primary">
               RideShare
             </Link>
-          </div>
-
-          {/* Mobile Notification Button */}
-          <div className="md:hidden">
-            <NotificationButton isMobile={true} />
           </div>
 
           {/* Desktop Navigation */}
@@ -238,8 +179,23 @@ export default function Layout({ children, currentUser }: LayoutProps) {
               </Button>
             ))}
 
-            {/* Desktop Notification Button */}
-            <NotificationButton />
+            {/* Notification Button (Desktop and Mobile) */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative rounded-full hover:bg-accent"
+              onClick={handleOpenNotificationDialog}
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {unreadCount}
+                </Badge>
+              )}
+            </Button>
           </nav>
         </div>
       </header>
@@ -257,22 +213,80 @@ export default function Layout({ children, currentUser }: LayoutProps) {
             { icon: Home, label: "Dashboard", href: "/dashboard" },
             { icon: Car, label: "Create Ride", href: "/create-ride" },
             { icon: Users, label: "Profile", href: "/profile" },
+            {
+              icon: Bell,
+              label: "Notifications",
+              onClick: handleOpenNotificationDialog,
+              badge: unreadCount > 0 ? unreadCount : null,
+            },
           ].map((item) => (
-            <div key={item.href} className="flex-1">
-              <Link
-                href={item.href}
-                className={cn(
-                  "flex flex-col items-center p-2",
-                  pathname === item.href ? "text-primary" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <item.icon className="h-6 w-6" />
-                <span className="text-xs mt-1">{item.label}</span>
-              </Link>
+            <div key={item.label} className="flex-1">
+              {item.href ? (
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex flex-col items-center p-2",
+                    pathname === item.href ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <item.icon className="h-6 w-6" />
+                  <span className="text-xs mt-1">{item.label}</span>
+                </Link>
+              ) : (
+                <button
+                  onClick={item.onClick}
+                  className="flex flex-col items-center p-2 w-full text-muted-foreground hover:text-foreground"
+                >
+                  <div className="relative">
+                    <item.icon className="h-6 w-6" />
+                    {item.badge && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]"
+                      >
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </div>
+                  <span className="text-xs mt-1">{item.label}</span>
+                </button>
+              )}
             </div>
           ))}
         </div>
       </nav>
+
+      {/* Notification Dialog */}
+      <Dialog open={isNotificationDialogOpen} onOpenChange={handleCloseNotificationDialog}>
+        <DialogContent className="sm:max-w-md rounded-lg w-md bg-background text-foreground">
+          <DialogHeader>
+            <DialogTitle>Notifications</DialogTitle>
+            <DialogDescription>Your recent notifications</DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[300px] w-full pr-4">
+            {notifications.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">No notifications</p>
+            ) : (
+              notifications.map((notification) => (
+                <Card key={notification.id} className={`mb-4 ${notification.is_read ? "opacity-60" : ""}`}>
+                  <CardHeader className="p-4 pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        {getNotificationIcon(notification.type)}
+                        <CardTitle className="text-sm font-medium">{notification.type}</CardTitle>
+                      </div>
+                      <CardDescription className="text-xs">{formatDate(notification.created_at)}</CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <p className="text-sm">{notification.message}</p>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       <footer className="bg-background text-center text-sm text-zinc-500 block mb-20">
         <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>

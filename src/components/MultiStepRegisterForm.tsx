@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle, Loader } from 'lucide-react'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 
@@ -244,7 +244,7 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                       >
-                        ◌
+                        <Loader />
                       </motion.div>
                       Registering...
                     </>
