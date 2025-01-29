@@ -3,7 +3,6 @@ import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
-  Bell,
   Home,
   Car,
   Users,
@@ -17,7 +16,6 @@ import { cn } from "@/lib/utils"
 import PushNotificationHandler from "./PushNotificationHandler"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { useTutorial, TutorialProvider } from "@/contexts/TutorialContext"
-import { Badge } from "@/components/ui/badge"
 import { useNotifications } from "../contexts/NotificationContext"
 
 interface LayoutProps {
