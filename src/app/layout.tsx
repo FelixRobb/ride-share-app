@@ -1,13 +1,12 @@
 import "./globals.css"
 import { Toaster } from "sonner"
 import { ThemeProvider } from "next-themes"
-import { TutorialProvider } from "@/contexts/TutorialContext"
 import { NotificationProvider } from "@/contexts/NotificationContext"
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rideshareappweb.netlify.app" // Fallback URL
 const ogImageUrl = `${siteUrl}/og-image.png`
 const twitterImageUrl = `${siteUrl}/twitter-image.png`
-;<meta name="apple-mobile-web-app-title" content="RideShare" />
+  ; <meta name="apple-mobile-web-app-title" content="RideShare" />
 
 export const metadata = {
   title: "RideShare",
@@ -54,14 +53,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <TutorialProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NotificationProvider currentUser={null}>
             {children}
             <Toaster richColors closeButton theme="dark" />
-            </NotificationProvider>
-          </ThemeProvider>
-        </TutorialProvider>
+          </NotificationProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

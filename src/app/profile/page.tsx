@@ -9,7 +9,6 @@ import { Loader } from 'lucide-react'
 import { User, Contact, AssociatedPerson, UserStats, Notification } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
-import { TutorialProvider } from '@/contexts/TutorialContext'
 
 const ProfilePage = dynamic(() => import('@/components/ProfilePage'), { ssr: false });
 
