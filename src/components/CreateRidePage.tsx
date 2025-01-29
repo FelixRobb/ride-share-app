@@ -71,7 +71,8 @@ export default function CreateRidePage({
     const storedRideData = localStorage.getItem("rideData")
     if (storedRideData) {
       const parsedData: RideData = JSON.parse(storedRideData)
-      if (Object.values(parsedData).some((value) => value !== "" && value !== null && value !== 0)) {
+      const { rider_name, rider_phone, ...rest } = parsedData
+      if (Object.values(rest).some((value) => value !== "" && value !== null && value !== 0)) {
         setShowRestoreDialog(true)
         setRideData(parsedData)
       }
@@ -282,11 +283,6 @@ export default function CreateRidePage({
             {rideData.time && (
               <p>
                 <strong>Time:</strong> {new Date(rideData.time).toLocaleString()}
-              </p>
-            )}
-            {rideData.rider_name && (
-              <p>
-                <strong>Rider:</strong> {rideData.rider_name}
               </p>
             )}
           </div>
