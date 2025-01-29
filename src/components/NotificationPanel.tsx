@@ -329,7 +329,7 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
     <>
       <NotificationButton />
       <Drawer open={isOpen} onOpenChange={handleOpenChange}>
-        <DrawerContent className="max-h-[90vh]">
+        <DrawerContent className="max-h-[90svh]">
           <DrawerHeader>
             <DrawerTitle>Notifications</DrawerTitle>
             <DrawerDescription>Your recent notifications</DrawerDescription>
