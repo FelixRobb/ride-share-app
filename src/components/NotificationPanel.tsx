@@ -242,7 +242,7 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
 
   useEffect(() => {
     fetchNotifications()
-    const interval = setInterval(fetchNotifications, 30000)
+    const interval = setInterval(fetchNotifications, 15000)
     return () => clearInterval(interval)
   }, [fetchNotifications])
 
@@ -269,7 +269,7 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
     <Button
       variant="ghost"
       size="icon"
-      className="relative rounded-full hover:bg-accent"
+      className="relative rounded-full hover:bg-accent border"
       onClick={() => handleOpenChange(true)}
     >
       <Bell className="h-5 w-5" />
@@ -324,7 +324,7 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
     <>
       <NotificationButton />
       <Drawer open={isOpen} onOpenChange={handleOpenChange}>
-        <DrawerContent>
+        <DrawerContent className="max-h-[90vh]">
           <DrawerHeader>
             <DrawerTitle>Notifications</DrawerTitle>
             <DrawerDescription>Your recent notifications</DrawerDescription>
