@@ -3,16 +3,6 @@ import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import {
   Bell,
   LogOut,
   Home,
@@ -29,6 +19,7 @@ import {
 } from "lucide-react"
 import type { User, Notification } from "../types"
 import { markNotificationsAsRead, fetchNotifications } from "../utils/api"
+import { NotificationPanel } from "@/components/NotificationPanel"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import PushNotificationHandler from "./PushNotificationHandler"
@@ -37,34 +28,6 @@ import { TutorialOverlay } from "./TutorialOverlay"
 import { useTutorial } from "@/contexts/TutorialContext"
 import { Badge } from "@/components/ui/badge"
 import { useNotifications } from "../contexts/NotificationContext"
-
-const getNotificationIcon = (type: string) => {
-  switch (type) {
-    case "newNote":
-      return <MessageSquare className="h-4 w-4 text-blue-500" />
-    case "contactRequest":
-    case "contactAccepted":
-      return <UserPlus className="h-4 w-4 text-green-500" />
-    case "newRide":
-    case "rideAccepted":
-    case "rideCancelled":
-      return <Car className="h-4 w-4 text-orange-500" />
-    case "rideCompleted":
-      return <CheckCircle className="h-4 w-4 text-purple-500" />
-    default:
-      return <Bell className="h-4 w-4 text-zinc-500" />
-  }
-}
-
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
 
 interface LayoutProps {
   children: React.ReactNode
@@ -111,22 +74,6 @@ export default function Layout({ children, currentUser }: LayoutProps) {
     setIsNotificationDialogOpen(true)
   }, [])
 
-  const handleCloseNotificationDialog = useCallback(async () => {
-    const unreadNotifications = notifications.filter((n) => !n.is_read)
-    if (unreadNotifications.length > 0 && currentUser) {
-      try {
-        await markNotificationsAsRead(
-          currentUser.id,
-          unreadNotifications.map((n) => n.id),
-        )
-        setNotifications((prevNotifications) => prevNotifications.map((n) => ({ ...n, is_read: true })))
-      } catch (error) {
-        console.error("Error marking notifications as read:", error)
-        toast.error("Failed to mark notifications as read.")
-      }
-    }
-    setIsNotificationDialogOpen(false)
-  }, [currentUser, notifications])
 
   const TutorialButton = () => {
     const { restartTutorial } = useTutorial()
@@ -189,12 +136,20 @@ export default function Layout({ children, currentUser }: LayoutProps) {
               </Button>
             ))}
             <div className="h-6 w-px bg-border mx-2" />
-            <NotificationButton />
+            <NotificationPanel 
+              userId={currentUser.id}
+              onNotificationsRead={() => {
+              }}
+            />
           </nav>
 
           {/* Mobile Notification Button */}
           <div className="md:hidden">
-            <NotificationButton />
+            <NotificationPanel 
+              userId={currentUser.id}
+              onNotificationsRead={() => {
+              }}
+            />
           </div>
         </div>
       </header>
@@ -229,39 +184,7 @@ export default function Layout({ children, currentUser }: LayoutProps) {
         </div>
       </nav>
 
-      {/* Notification Dialog */}
-      <Dialog open={isNotificationDialogOpen} onOpenChange={handleCloseNotificationDialog}>
-        <DialogContent className="sm:max-w-md rounded-lg w-md bg-background text-foreground">
-          <DialogHeader>
-            <DialogTitle>Notifications</DialogTitle>
-            <DialogDescription>Your recent notifications</DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="h-[300px] w-full pr-4">
-            {notifications.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">No notifications</p>
-            ) : (
-              notifications.map((notification) => (
-                <Card key={notification.id} className={`mb-4 ${notification.is_read ? "opacity-60" : ""}`}>
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        {getNotificationIcon(notification.type)}
-                        <CardTitle className="text-sm font-medium">{notification.type}</CardTitle>
-                      </div>
-                      <CardDescription className="text-xs">{formatDate(notification.created_at)}</CardDescription>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-sm">{notification.message}</p>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-
-      <footer className="bg-background text-center text-sm text-zinc-500 block mb-20">
+      <footer className="bg-background text-center text-sm text-zinc-500 block mb-20 md:mb-6">
         <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
         <div className="mt-2 space-x-4">
           <Link href="/privacy-policy" className="hover:text-orange-500 transition-colors duration-300">
