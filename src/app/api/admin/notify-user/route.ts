@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 
   try {
     // Send the push notification without adding to the database
-    await sendImmediateNotification(userId, title, body, false)
+    await sendImmediateNotification(userId, title, body)
 
     // Create a notification in the database
     const { error: notificationError } = await supabase
