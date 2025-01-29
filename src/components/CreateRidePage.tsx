@@ -1,85 +1,141 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { User, RideData, AssociatedPerson } from "../types";
-import { createRide } from "../utils/api";
-import dynamic from 'next/dynamic';
-import { Loader } from 'lucide-react'
-import { useOnlineStatus } from "@/utils/useOnlineStatus";
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "sonner"
+import type { User, RideData, AssociatedPerson } from "../types"
+import { createRide } from "../utils/api"
+import dynamic from "next/dynamic"
+import { Loader } from "lucide-react"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
-const LocationSearch = dynamic(() => import('./LocationSearch'), { ssr: false });
-const MapDialog = dynamic(() => import('./MapDialog'), { ssr: false });
-
-
-interface CreateRidePageProps {
-  currentUser: User;
-  fetchUserData: (userId: string) => Promise<void>;
-  setCurrentPage: (page: string) => void;
-  associatedPeople: AssociatedPerson[];
+const initialRideData: RideData = {
+  from_location: "",
+  to_location: "",
+  from_lat: 0,
+  from_lon: 0,
+  to_lat: 0,
+  to_lon: 0,
+  time: "",
+  rider_name: "",
+  rider_phone: null,
+  note: null,
 }
 
-export default function CreateRidePage({ currentUser, fetchUserData, setCurrentPage, associatedPeople }: CreateRidePageProps) {
+const LocationSearch = dynamic(() => import("./LocationSearch"), { ssr: false })
+const MapDialog = dynamic(() => import("./MapDialog"), { ssr: false })
+
+interface CreateRidePageProps {
+  currentUser: User
+  fetchUserData: (userId: string) => Promise<void>
+  setCurrentPage: (page: string) => void
+  associatedPeople: AssociatedPerson[]
+}
+
+export default function CreateRidePage({
+  currentUser,
+  fetchUserData,
+  setCurrentPage,
+  associatedPeople,
+}: CreateRidePageProps) {
   const [rideData, setRideData] = useState<RideData>({
-    from_location: "",
-    to_location: "",
-    from_lat: 0,
-    from_lon: 0,
-    to_lat: 0,
-    to_lon: 0,
-    time: "",
+    ...initialRideData,
     rider_name: currentUser?.name || "",
     rider_phone: currentUser?.phone || null,
-    note: null,
-  });
-  const [riderType, setRiderType] = useState("self");
-  const [isFromMapOpen, setIsFromMapOpen] = useState(false);
-  const [isToMapOpen, setIsToMapOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false); // Add state for mounted check
-  const [isSubmitting, setIsSubmitting] = useState(false); // Added loading state
-  const isOnline = useOnlineStatus();
+  })
+
+  const [riderType, setRiderType] = useState("self")
+  const [isFromMapOpen, setIsFromMapOpen] = useState(false)
+  const [isToMapOpen, setIsToMapOpen] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false)
+  const isOnline = useOnlineStatus()
 
   useEffect(() => {
-    setIsMounted(true); // Set mounted to true when component mounts
-    return () => setIsMounted(false); // Set mounted to false when component unmounts
-  }, []);
+    setIsMounted(true)
+    return () => setIsMounted(false)
+  }, [])
+
+  useEffect(() => {
+    const storedRideData = localStorage.getItem("rideData")
+    if (storedRideData) {
+      const parsedData: RideData = JSON.parse(storedRideData)
+      if (Object.values(parsedData).some((value) => value !== "" && value !== null && value !== 0)) {
+        setShowRestoreDialog(true)
+        setRideData(parsedData)
+      }
+    }
+  }, [])
+
+  const handleRestoreData = () => {
+    setShowRestoreDialog(false)
+    const storedRideData = localStorage.getItem("rideData")
+    if (storedRideData) {
+      const parsedRideData: RideData = JSON.parse(storedRideData)
+      setRideData(parsedRideData)
+    }
+    localStorage.removeItem("rideData")
+  }
+
+  const handleDiscardData = () => {
+    setShowRestoreDialog(false)
+    localStorage.removeItem("rideData")
+    setRideData(initialRideData)
+    setRiderType("self")
+  }
+
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem("rideData", JSON.stringify(rideData))
+    }
+  }, [rideData, isMounted])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isMounted) return;
+    e.preventDefault()
+    if (!isMounted) return
     if (rideData.from_lat === 0 || rideData.from_lon === 0 || rideData.to_lat === 0 || rideData.to_lon === 0) {
-      if (!isMounted) return;
-      toast.error("Please select both 'From' and 'To' locations.");
-      return;
+      if (!isMounted) return
+      toast.error("Please select both 'From' and 'To' locations.")
+      return
     }
     try {
-      setIsSubmitting(true);
-      await createRide(rideData, currentUser.id);
-      if (!isMounted) return;
-      toast.success("Your ride request has been created successfully.");
-      setCurrentPage("dashboard");
-      void fetchUserData(currentUser.id);
+      setIsSubmitting(true)
+      await createRide(rideData, currentUser.id)
+      if (!isMounted) return
+      toast.success("Your ride request has been created successfully.")
+      localStorage.removeItem("rideData") // Clear stored data after successful submission
+      setCurrentPage("dashboard")
+      void fetchUserData(currentUser.id)
     } catch (error) {
-      if (!isMounted) return;
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.");
+      if (!isMounted) return
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.")
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
-  const handleLocationSelect = (type: 'from' | 'to') => (location: { lat: number; lon: number; display_name: string }) => {
-    setRideData(prev => ({
-      ...prev,
-      [`${type}_location`]: location.display_name,
-      [`${type}_lat`]: location.lat,
-      [`${type}_lon`]: location.lon,
-    }));
-  };
+  const handleLocationSelect =
+    (type: "from" | "to") => (location: { lat: number; lon: number; display_name: string }) => {
+      setRideData((prev) => ({
+        ...prev,
+        [`${type}_location`]: location.display_name,
+        [`${type}_lat`]: location.lat,
+        [`${type}_lon`]: location.lon,
+      }))
+    }
 
-  const isClient = typeof window !== 'undefined';
+  const isClient = typeof window !== "undefined"
 
   return (
     <Card className="w-full max-w-[350px] mx-auto" data-tutorial="ride-form">
@@ -88,7 +144,7 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
         <CardDescription>Fill in the details for your ride request.</CardDescription>
       </CardHeader>
       <CardContent>
-      {!isOnline && (
+        {!isOnline && (
           <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded">
             You are currently offline. Ride creation is disabled.
           </div>
@@ -99,7 +155,11 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="from_location">From</Label>
                 <LocationSearch
-                  selectedLocation={rideData.from_location ? { lat: rideData.from_lat, lon: rideData.from_lon, display_name: rideData.from_location } : null}
+                  selectedLocation={
+                    rideData.from_location
+                      ? { lat: rideData.from_lat, lon: rideData.from_lon, display_name: rideData.from_location }
+                      : null
+                  }
                   label="From Location"
                   onOpenMap={() => setIsFromMapOpen(true)}
                 />
@@ -107,7 +167,11 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="to_location">To</Label>
                 <LocationSearch
-                  selectedLocation={rideData.to_location ? { lat: rideData.to_lat, lon: rideData.to_lon, display_name: rideData.to_location } : null}
+                  selectedLocation={
+                    rideData.to_location
+                      ? { lat: rideData.to_lat, lon: rideData.to_lon, display_name: rideData.to_location }
+                      : null
+                  }
                   label="To Location"
                   onOpenMap={() => setIsToMapOpen(true)}
                 />
@@ -182,19 +246,61 @@ export default function CreateRidePage({ currentUser, fetchUserData, setCurrentP
           <MapDialog
             isOpen={isFromMapOpen}
             onClose={() => setIsFromMapOpen(false)}
-            onSelectLocation={handleLocationSelect('from')}
-            initialLocation={rideData.from_lat && rideData.from_lon ? { lat: rideData.from_lat, lon: rideData.from_lon } : undefined}
+            onSelectLocation={handleLocationSelect("from")}
+            initialLocation={
+              rideData.from_lat && rideData.from_lon ? { lat: rideData.from_lat, lon: rideData.from_lon } : undefined
+            }
           />
           <MapDialog
             isOpen={isToMapOpen}
             onClose={() => setIsToMapOpen(false)}
-            onSelectLocation={handleLocationSelect('to')}
-            initialLocation={rideData.to_lat && rideData.to_lon ? { lat: rideData.to_lat, lon: rideData.to_lon } : undefined}
+            onSelectLocation={handleLocationSelect("to")}
+            initialLocation={
+              rideData.to_lat && rideData.to_lon ? { lat: rideData.to_lat, lon: rideData.to_lon } : undefined
+            }
           />
-
         </>
       )}
+
+      <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Restore Previous Ride Data</DialogTitle>
+            <DialogDescription>It seems you have unsaved ride data. Would you like to restore it?</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {rideData.from_location && (
+              <p>
+                <strong>From:</strong> {rideData.from_location}
+              </p>
+            )}
+            {rideData.to_location && (
+              <p>
+                <strong>To:</strong> {rideData.to_location}
+              </p>
+            )}
+            {rideData.time && (
+              <p>
+                <strong>Time:</strong> {new Date(rideData.time).toLocaleString()}
+              </p>
+            )}
+            {rideData.rider_name && (
+              <p>
+                <strong>Rider:</strong> {rideData.rider_name}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleDiscardData}>
+              Discard
+            </Button>
+            <Button type="button" onClick={handleRestoreData}>
+              Restore
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
-  );
+  )
 }
 
