@@ -277,7 +277,7 @@ export default function CreateRidePage({
         )}
   
         <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px] rounded-lg">
             <DialogHeader>
               <DialogTitle>Restore Previous Ride Data</DialogTitle>
               <DialogDescription>It seems you have unsaved ride data. Would you like to restore it?</DialogDescription>

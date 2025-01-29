@@ -11,25 +11,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LucideUser, Mail, Phone, Car, MapPin, Loader, Moon, Sun, Monitor } from "lucide-react"
 import { toast } from "sonner"
 import type { User, Contact, AssociatedPerson } from "../types"
 import {
   updateProfile,
   changePassword,
-  addContact,
-  acceptContact,
-  deleteContact,
   addAssociatedPerson,
   deleteAssociatedPerson,
   deleteUser,
@@ -71,6 +59,7 @@ export default function ProfilePage({
   const [isPushLoading, setIsPushLoading] = useState(true)
   const [userStats, setUserStats] = useState<{ ridesOffered: number; ridesRequested: number } | null>(null)
   const [suggestedContacts, setSuggestedContacts] = useState<any[]>([])
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const router = useRouter()
   const isOnline = useOnlineStatus()
 
@@ -94,6 +83,19 @@ export default function ProfilePage({
     localStorage.setItem("theme", newMode)
   }
 
+  const logout = () => {
+    localStorage.removeItem("currentUser")
+    router.push('/')
+  }
+
+  const handleLogout = () => {
+    setIsLogoutDialogOpen(true);
+  };
+
+  const confirmLogout = () => {
+    setIsLogoutDialogOpen(false);
+    logout();
+  };
 
   useEffect(() => {
     const fetchPushPreference = async () => {
@@ -434,7 +436,7 @@ export default function ProfilePage({
                 <Monitor className="h-4 w-4" />
               </button>
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "light" ?  "bg-accent" : "hover:bg-accent/50"
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
                   }`}
                 onClick={() => toggleTheme("light")}
                 aria-label="Light theme"
@@ -450,6 +452,18 @@ export default function ProfilePage({
                 <Moon className="h-4 w-4" />
               </button>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-2xl text-destructive">Logout</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between space-x-2">
+            <p>Logout of your account.</p>
+          <Button variant="destructive" onClick={handleLogout} disabled={!isOnline}>Logout</Button>
           </div>
         </CardContent>
       </Card>
@@ -585,6 +599,21 @@ export default function ProfilePage({
             <Button className="mb-2" variant="destructive" onClick={confirmDeleteUser} disabled={!isOnline}>
               Delete Account
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <DialogContent className="rounded-lg w-11/12">
+          <DialogHeader>
+            <DialogTitle>Confirm Logout</DialogTitle>
+            <DialogDescription>Are you sure you want to log out?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button className="mb-4" variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="mb-4" onClick={confirmLogout}>Logout</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

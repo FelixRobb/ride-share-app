@@ -152,7 +152,7 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="rounded-lg">
           <DialogHeader>
             <DialogTitle>Enable Push Notifications</DialogTitle>
             <DialogDescription>

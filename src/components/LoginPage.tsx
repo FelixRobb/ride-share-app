@@ -209,7 +209,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading, quot
       </footer>
 
       <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] rounded-lg">
           <DialogHeader>
             <DialogTitle>Reset Password</DialogTitle>
             <DialogDescription>Enter your email to receive a password reset link.</DialogDescription>
