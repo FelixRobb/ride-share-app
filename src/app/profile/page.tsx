@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import Layout from '@/components/Layout'
 import { toast } from "sonner"
-import { Loader } from 'lucide-react'
-import { User, Contact, AssociatedPerson, UserStats, Notification } from "@/types"
+import { User, Contact, AssociatedPerson } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 

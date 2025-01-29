@@ -24,7 +24,6 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
-  const searchResultsRef = useRef<HTMLDivElement | null>(null); // Added ref for search results
   const [isLoading, setIsLoading] = useState(false);
 
   const handleMapClick = (e: maplibregl.MapMouseEvent) => {

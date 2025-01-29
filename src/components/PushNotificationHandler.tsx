@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { toast } from "sonner" // Import toast directly
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,

@@ -77,7 +77,6 @@ export default function ProfilePage({
     setTheme(currentMode)
   }, [currentMode, setTheme])
 
-  // Replace the toggleTheme function with this one that takes a specific theme
   const toggleTheme = (newMode: "system" | "light" | "dark") => {
     setCurrentMode(newMode)
     localStorage.setItem("theme", newMode)

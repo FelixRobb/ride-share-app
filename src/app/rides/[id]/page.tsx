@@ -19,7 +19,6 @@ export default function RideDetails() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [ride, setRide] = useState<Ride | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [etag, setEtag] = useState<string | null>(null)
 
   const router = useRouter()
@@ -74,8 +73,6 @@ export default function RideDetails() {
       } catch (error) {
         console.error("Error fetching ride details:", error);
         toast.error("Failed to fetch ride details, or you don't have permission to see this ride. Please go back."); // Update: Replaced toast call
-      } finally {
-        setIsLoading(false);
       }
     }
   };
@@ -89,9 +86,9 @@ export default function RideDetails() {
     }
   }, [currentUser, id, isOnline]);
 
-  
+
   return (
-   <Layout currentUser={currentUser}>
+    <Layout currentUser={currentUser}>
       <Button type="button" variant="ghost" onClick={() => router.push(`/dashboard?tab=${fromTab}`)} className='mb-2'><ArrowBigLeft />Go Back to Dashboard</Button>
       <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
         {ride && currentUser && (

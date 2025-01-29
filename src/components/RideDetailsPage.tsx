@@ -226,7 +226,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   };
 
   const handleAcceptRide = async () => {
-    setIsLoading(true); 
+    setIsLoading(true);
     try {
       await acceptRide(ride.id, currentUser.id);
       await fetchUserData();
@@ -265,7 +265,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
 
   const confirmCancelOffer = async () => {
     try {
-      setIsLoading(true); 
+      setIsLoading(true);
       setIsCancelOfferDialogOpen(false);
       await cancelOffer(ride.id, currentUser.id);
       await fetchUserData();
@@ -279,7 +279,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
   }
 
   const handleFinishRide = async () => {
-    setIsLoading(true); 
+    setIsLoading(true);
     setIsFinishRideDialogOpen(false);
     try {
       await finishRide(ride.id, currentUser.id);
@@ -290,7 +290,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
       console.error("Error finishing ride:", error);
       toast.error("Failed to finish ride. Please try again.");
     } finally {
-      setIsLoading(false); 
+      setIsLoading(false);
     }
   };
 
@@ -391,7 +391,7 @@ export default function RideDetailsPage({ ride: initialRide, currentUser, contac
               <LucideUser className="w-5 h-5 text-primary" />
               <Label className="font-semibold">Requester</Label>
             </div>
-            <p className="ml-7">{getRequesterName(ride)}</p> 
+            <p className="ml-7">{getRequesterName(ride)}</p>
           </div>
           <div className="space-y-2">
             <div className="flex items-center space-x-2">

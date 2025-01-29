@@ -14,7 +14,6 @@ export default function WelcomePage() {
   const carX = useTransform(scrollY, [0, 500], [0, 1000])
   const carScale = useTransform(scrollY, [0, 200], [1, 0.8])
   const carOpacity = useTransform(scrollY, [0, 300], [1, 0])
-  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0])
 
   // Add a new state to track user authentication status
   const [isAuthenticated, setIsAuthenticated] = useState(false)

@@ -37,7 +37,6 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<ExtendedUser[]>([])
   const [isSearching, setIsSearching] = useState(false)
-  const [isAddingContact, setIsAddingContact] = useState(false)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [isContactDetailsOpen, setIsContactDetailsOpen] = useState(false)
   const [addingUserId, setAddingUserId] = useState<string | null>(null)
@@ -60,6 +59,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
 
   const fetchUserNotifications = useCallback(async () => {
     if (isOnline) {
+      setIsFetchingSuggestions(true)
       try {
         const response = await fetch(`/api/suggested-contacts?userId=${currentUser.id}`)
         if (response.ok) {
@@ -73,6 +73,8 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
         if (isOnline) {
           toast.error("Failed to load suggested contacts. Please try again later.")
         }
+      } finally {
+        setIsFetchingSuggestions(false)
       }
     }
   }, [currentUser.id, isOnline])
