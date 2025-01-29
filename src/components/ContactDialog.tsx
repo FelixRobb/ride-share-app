@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -59,10 +58,8 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
     }
   }, [searchQuery])
 
-  useEffect(() => {
-    const fetchSuggestedContacts = async () => {
-      if (!currentUser) return
-      setIsFetchingSuggestions(true)
+  const fetchUserNotifications = useCallback(async () => {
+    if (isOnline) {
       try {
         const response = await fetch(`/api/suggested-contacts?userId=${currentUser.id}`)
         if (response.ok) {
@@ -73,13 +70,16 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
         }
       } catch (error) {
         console.error("Error fetching suggested contacts:", error)
-        toast.error("Failed to load suggested contacts. Please try again later.")
-      } finally {
-        setIsFetchingSuggestions(false)
+        if (isOnline) {
+          toast.error("Failed to load suggested contacts. Please try again later.")
+        }
       }
     }
-    fetchSuggestedContacts()
-  }, [currentUser, toast])
+  }, [currentUser.id, isOnline])
+
+  useEffect(() => {
+    fetchUserNotifications()
+  }, [fetchUserNotifications])
 
   const searchUsers = async () => {
     if (searchQuery.length < 2) {
@@ -107,6 +107,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
   }
 
   const handleAddContact = async (user: ExtendedUser) => {
+    if (!isOnline) return
     setAddingUserId(user.id)
     try {
       await addContact(currentUser.id, user.phone, user.country_code || "")
@@ -114,34 +115,41 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
       setSearchQuery("")
       setSearchResults([])
       toast.success("Contact request sent successfully!")
-      // Remove the added contact from suggested contacts
       setLocalSuggestedContacts(localSuggestedContacts.filter((contact) => contact.id !== user.id))
     } catch (error) {
       console.error("Error adding contact:", error)
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+      if (isOnline) {
+        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+      }
     } finally {
       setAddingUserId(null)
     }
   }
 
   const handleAcceptContact = async (contactId: string) => {
+    if (!isOnline) return
     try {
       await acceptContact(contactId, currentUser.id)
       await fetchUserData()
       toast.success("Contact accepted successfully!")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+      if (isOnline) {
+        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+      }
     }
   }
 
   const handleDeleteContact = async (contactId: string) => {
+    if (!isOnline) return
     try {
       await deleteContact(contactId, currentUser.id)
       await fetchUserData()
       setIsContactDetailsOpen(false)
       toast.success("Contact deleted successfully!")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+      if (isOnline) {
+        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+      }
     }
   }
 
@@ -173,6 +181,12 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[550px] w-full p-0 max-h-[80vh] overflow-auto rounded-lg">
+          {!isOnline && (
+            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
+              <p className="font-bold">You are offline</p>
+              <p>Some features may be limited. Please check your internet connection.</p>
+            </div>
+          )}
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle className="text-lg font-medium">Contacts</DialogTitle>
             <DialogDescription>Manage your contacts and add new ones.</DialogDescription>

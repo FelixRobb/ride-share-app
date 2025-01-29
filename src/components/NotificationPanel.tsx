@@ -29,6 +29,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { MessageSquare, UserPlus, Car, CheckCircle } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
 interface Notification {
   id: string
@@ -82,22 +83,22 @@ const formatDate = (dateString: string) => {
   })
 }
 
-const NotificationList = ({ 
+const NotificationList = ({
   notifications,
   searchQuery,
   selectedType,
-  selectedFilter 
-}: { 
+  selectedFilter
+}: {
   notifications: Notification[]
   searchQuery: string
   selectedType: string
-  selectedFilter: string 
+  selectedFilter: string
 }) => {
   const filteredNotifications = notifications
     .filter(notification => {
       const matchesSearch = notification.message.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesType = selectedType === "all" || notification.type === selectedType
-      const matchesFilter = selectedFilter === "all" || 
+      const matchesFilter = selectedFilter === "all" ||
         (selectedFilter === "unread" && !notification.is_read) ||
         (selectedFilter === "read" && notification.is_read)
       return matchesSearch && matchesType && matchesFilter
@@ -116,11 +117,10 @@ const NotificationList = ({
         </div>
       ) : (
         filteredNotifications.map((notification) => (
-          <Card 
-            key={notification.id} 
-            className={`mb-4 transition-all duration-200 hover:shadow-md ${
-              notification.is_read ? "opacity-60" : ""
-            }`}
+          <Card
+            key={notification.id}
+            className={`mb-4 transition-all duration-200 hover:shadow-md ${notification.is_read ? "opacity-60" : ""
+              }`}
           >
             <CardHeader className="p-4 pb-2">
               <div className="flex items-center justify-between">
@@ -213,37 +213,42 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
   const [selectedFilter, setSelectedFilter] = useState("all")
   const [etag, setEtag] = useState<string | null>(null)
   const isDesktop = useMediaQuery("(min-width: 768px)")
+  const isOnline = useOnlineStatus()
 
   const fetchNotifications = useCallback(async () => {
-    try {
-      const headers: HeadersInit = {}
-      if (etag) {
-        headers["If-None-Match"] = etag
-      }
+    if (isOnline) {
+      try {
+        const headers: HeadersInit = {}
+        if (etag) {
+          headers["If-None-Match"] = etag
+        }
 
-      const response = await fetch(`/api/notifications?userId=${userId}`, { headers })
-      
-      if (response.status === 304) {
-        return // No changes, use cached data
-      }
+        const response = await fetch(`/api/notifications?userId=${userId}`, { headers })
 
-      const newEtag = response.headers.get("ETag")
-      if (newEtag) {
-        setEtag(newEtag)
-      }
+        if (response.status === 304) {
+          return // No changes, use cached data
+        }
 
-      const data = await response.json()
-      setNotifications(data.notifications)
-      setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length)
-    } catch (error) {
-      console.error("Error fetching notifications:", error)
+        const newEtag = response.headers.get("ETag")
+        if (newEtag) {
+          setEtag(newEtag)
+        }
+
+        const data = await response.json()
+        setNotifications(data.notifications)
+        setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length)
+      } catch (error) {
+        console.error("Error fetching notifications:", error)
+      }
     }
   }, [userId, etag])
 
   useEffect(() => {
-    fetchNotifications()
-    const interval = setInterval(fetchNotifications, 15000)
-    return () => clearInterval(interval)
+    if (isOnline) {
+      fetchNotifications()
+      const interval = setInterval(fetchNotifications, 15000)
+      return () => clearInterval(interval)
+    }
   }, [fetchNotifications])
 
   const handleOpenChange = useCallback(async (open: boolean) => {

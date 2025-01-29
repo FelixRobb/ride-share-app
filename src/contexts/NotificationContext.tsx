@@ -3,6 +3,7 @@ import type React from "react"
 import { createContext, useState, useContext, useCallback, useEffect } from "react"
 import type { Notification, User } from "../types"
 import { fetchNotifications, markNotificationsAsRead } from "../utils/api"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { toast } from "sonner"
 
 interface NotificationContextType {
@@ -27,9 +28,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode; current
   currentUser,
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const isOnline = useOnlineStatus()
 
   const fetchUserNotifications = useCallback(async () => {
-    if (currentUser) {
+    if (currentUser && isOnline) {
       try {
         const fetchedNotifications = await fetchNotifications(currentUser.id)
         setNotifications(fetchedNotifications)

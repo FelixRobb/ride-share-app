@@ -57,7 +57,11 @@ export function ContactSuggestions({
   }
 
   if (suggestedContacts.length === 0) {
-    return <p className="text-center text-muted-foreground py-4">No suggestions at the moment.</p>
+    return (
+      <p className="text-center text-muted-foreground py-4">
+        {isOnline ? "No suggestions at the moment." : "Suggestions unavailable while offline."}
+      </p>
+    )
   }
 
   return (
