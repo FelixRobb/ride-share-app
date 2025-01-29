@@ -136,167 +136,179 @@ export default function CreateRidePage({
       }))
     }
 
-  const isClient = typeof window !== "undefined"
+    const isClient = typeof window !== "undefined"
 
-  return (
-    <Card className="w-full max-w-[350px] mx-auto" data-tutorial="ride-form">
-      <CardHeader>
-        <CardTitle>Create a Ride</CardTitle>
-        <CardDescription>Fill in the details for your ride request.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {!isOnline && (
-          <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded">
-            You are currently offline. Ride creation is disabled.
-          </div>
-        )}
-        {isClient && (
-          <form onSubmit={handleSubmit}>
-            <div className="grid w-full items-center gap-4">
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="from_location">From</Label>
-                <LocationSearch
-                  selectedLocation={
-                    rideData.from_location
-                      ? { lat: rideData.from_lat, lon: rideData.from_lon, display_name: rideData.from_location }
-                      : null
-                  }
-                  label="From Location"
-                  onOpenMap={() => setIsFromMapOpen(true)}
-                />
-              </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="to_location">To</Label>
-                <LocationSearch
-                  selectedLocation={
-                    rideData.to_location
-                      ? { lat: rideData.to_lat, lon: rideData.to_lon, display_name: rideData.to_location }
-                      : null
-                  }
-                  label="To Location"
-                  onOpenMap={() => setIsToMapOpen(true)}
-                />
-              </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="time">Time</Label>
-                <Input
-                  id="time"
-                  type="datetime-local"
-                  value={rideData.time}
-                  onChange={(e) => setRideData((prev) => ({ ...prev, time: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="rider_type">Rider</Label>
-                <Select name="rider_type" value={riderType} onValueChange={setRiderType}>
-                  <SelectTrigger id="rider_type">
-                    <SelectValue placeholder="Select rider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="self">Myself</SelectItem>
-                    {associatedPeople.map((person) => (
-                      <SelectItem key={person.id} value={`associated_${person.id}`}>
-                        {person.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {riderType === "other" && (
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="rider_name">Rider Name</Label>
-                  <Input
-                    id="rider_name"
-                    value={rideData.rider_name}
-                    onChange={(e) => setRideData((prev) => ({ ...prev, rider_name: e.target.value }))}
-                    placeholder="Enter rider's name"
-                    required
-                  />
-                </div>
-              )}
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="rider_phone">Rider Phone (optional)</Label>
-                <Input
-                  id="rider_phone"
-                  value={rideData.rider_phone || ""}
-                  onChange={(e) => setRideData((prev) => ({ ...prev, rider_phone: e.target.value }))}
-                  placeholder="Enter rider's phone number"
-                />
-              </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="note">Note (optional)</Label>
-                <Input
-                  id="note"
-                  value={rideData.note || ""}
-                  onChange={(e) => setRideData((prev) => ({ ...prev, note: e.target.value }))}
-                  placeholder="Add a note for the driver"
-                />
-              </div>
+    return (
+      <Card className="w-full max-w-4xl mx-auto" data-tutorial="ride-form">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Create a Ride</CardTitle>
+          <CardDescription>Fill in the details for your ride request.</CardDescription>
+        </CardHeader>
+        <CardContent className="px-6">
+          {!isOnline && (
+            <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded">
+              You are currently offline. Ride creation is disabled.
             </div>
-            <Button className="w-full mt-4" type="submit" disabled={isSubmitting || !isOnline}>
-              {isSubmitting ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
-              {isSubmitting ? "Creating..." : "Create Ride"}
-            </Button>
-          </form>
+          )}
+          {isClient && (
+            <form onSubmit={handleSubmit}>
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Left Column - Location and Time */}
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="from_location">From</Label>
+                    <LocationSearch
+                      selectedLocation={
+                        rideData.from_location
+                          ? { lat: rideData.from_lat, lon: rideData.from_lon, display_name: rideData.from_location }
+                          : null
+                      }
+                      label="From Location"
+                      onOpenMap={() => setIsFromMapOpen(true)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="to_location">To</Label>
+                    <LocationSearch
+                      selectedLocation={
+                        rideData.to_location
+                          ? { lat: rideData.to_lat, lon: rideData.to_lon, display_name: rideData.to_location }
+                          : null
+                      }
+                      label="To Location"
+                      onOpenMap={() => setIsToMapOpen(true)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="time">Time</Label>
+                    <Input
+                      id="time"
+                      type="datetime-local"
+                      value={rideData.time}
+                      onChange={(e) => setRideData((prev) => ({ ...prev, time: e.target.value }))}
+                      required
+                    />
+                  </div>
+                </div>
+  
+                {/* Right Column - Rider Details */}
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="rider_type">Rider</Label>
+                    <Select name="rider_type" value={riderType} onValueChange={setRiderType}>
+                      <SelectTrigger id="rider_type">
+                        <SelectValue placeholder="Select rider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="self">Myself</SelectItem>
+                        {associatedPeople.map((person) => (
+                          <SelectItem key={person.id} value={`associated_${person.id}`}>
+                            {person.name}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {riderType === "other" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="rider_name">Rider Name</Label>
+                      <Input
+                        id="rider_name"
+                        value={rideData.rider_name}
+                        onChange={(e) => setRideData((prev) => ({ ...prev, rider_name: e.target.value }))}
+                        placeholder="Enter rider's name"
+                        required
+                      />
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="rider_phone">Rider Phone (optional)</Label>
+                    <Input
+                      id="rider_phone"
+                      value={rideData.rider_phone || ""}
+                      onChange={(e) => setRideData((prev) => ({ ...prev, rider_phone: e.target.value }))}
+                      placeholder="Enter rider's phone number"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="note">Note (optional)</Label>
+                    <Input
+                      id="note"
+                      value={rideData.note || ""}
+                      onChange={(e) => setRideData((prev) => ({ ...prev, note: e.target.value }))}
+                      placeholder="Add a note for the driver"
+                    />
+                  </div>
+                </div>
+              </div>
+  
+              {/* Submit Button - Full Width */}
+              <div className="mt-6">
+                <Button className="w-full md:w-auto md:min-w-[200px] mx-auto block" type="submit" disabled={isSubmitting || !isOnline}>
+                  {isSubmitting ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
+                  {isSubmitting ? "Creating..." : "Create Ride"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </CardContent>
+  
+        {/* Keeping the dialogs the same */}
+        {isMounted && (
+          <>
+            <MapDialog
+              isOpen={isFromMapOpen}
+              onClose={() => setIsFromMapOpen(false)}
+              onSelectLocation={handleLocationSelect("from")}
+              initialLocation={
+                rideData.from_lat && rideData.from_lon ? { lat: rideData.from_lat, lon: rideData.from_lon } : undefined
+              }
+            />
+            <MapDialog
+              isOpen={isToMapOpen}
+              onClose={() => setIsToMapOpen(false)}
+              onSelectLocation={handleLocationSelect("to")}
+              initialLocation={
+                rideData.to_lat && rideData.to_lon ? { lat: rideData.to_lat, lon: rideData.to_lon } : undefined
+              }
+            />
+          </>
         )}
-      </CardContent>
-      {isMounted && (
-        <>
-          <MapDialog
-            isOpen={isFromMapOpen}
-            onClose={() => setIsFromMapOpen(false)}
-            onSelectLocation={handleLocationSelect("from")}
-            initialLocation={
-              rideData.from_lat && rideData.from_lon ? { lat: rideData.from_lat, lon: rideData.from_lon } : undefined
-            }
-          />
-          <MapDialog
-            isOpen={isToMapOpen}
-            onClose={() => setIsToMapOpen(false)}
-            onSelectLocation={handleLocationSelect("to")}
-            initialLocation={
-              rideData.to_lat && rideData.to_lon ? { lat: rideData.to_lat, lon: rideData.to_lon } : undefined
-            }
-          />
-        </>
-      )}
-
-      <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Restore Previous Ride Data</DialogTitle>
-            <DialogDescription>It seems you have unsaved ride data. Would you like to restore it?</DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {rideData.from_location && (
-              <p>
-                <strong>From:</strong> {rideData.from_location}
-              </p>
-            )}
-            {rideData.to_location && (
-              <p>
-                <strong>To:</strong> {rideData.to_location}
-              </p>
-            )}
-            {rideData.time && (
-              <p>
-                <strong>Time:</strong> {new Date(rideData.time).toLocaleString()}
-              </p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleDiscardData}>
-              Discard
-            </Button>
-            <Button type="button" onClick={handleRestoreData}>
-              Restore
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  )
-}
-
+  
+        <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Restore Previous Ride Data</DialogTitle>
+              <DialogDescription>It seems you have unsaved ride data. Would you like to restore it?</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              {rideData.from_location && (
+                <p>
+                  <strong>From:</strong> {rideData.from_location}
+                </p>
+              )}
+              {rideData.to_location && (
+                <p>
+                  <strong>To:</strong> {rideData.to_location}
+                </p>
+              )}
+              {rideData.time && (
+                <p>
+                  <strong>Time:</strong> {new Date(rideData.time).toLocaleString()}
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleDiscardData}>
+                Discard
+              </Button>
+              <Button type="button" onClick={handleRestoreData}>
+                Restore
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Card>
+    )
+  }
