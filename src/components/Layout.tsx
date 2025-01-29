@@ -27,17 +27,8 @@ import {
   CheckCircle,
   HelpCircle,
 } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import type { User, Notification } from "../types"
 import { markNotificationsAsRead, fetchNotifications } from "../utils/api"
-import { useTheme } from "next-themes"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import PushNotificationHandler from "./PushNotificationHandler"
@@ -147,20 +138,39 @@ export default function Layout({ children, currentUser }: LayoutProps) {
     )
   }
 
+  const NotificationButton = () => (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="relative rounded-full hover:bg-accent"
+      onClick={handleOpenNotificationDialog}
+    >
+      <Bell className="h-5 w-5" />
+      {unreadCount > 0 && (
+        <Badge
+          variant="destructive"
+          className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+        >
+          {unreadCount}
+        </Badge>
+      )}
+    </Button>
+  )
+
   if (!currentUser) return children
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground relative">
       <PushNotificationHandler userId={currentUser!.id} />
       <header className="bg-background/80 backdrop-blur-sm shadow-md border-b border-border sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex-shrink-0 mr-4">
             <Link href="/dashboard" className="text-2xl font-bold text-primary">
               RideShare
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation with Notification Button */}
           <nav className="hidden md:flex items-center space-x-2 rounded-full p-1 border">
             {[
               { icon: Home, label: "Dashboard", href: "/dashboard" },
@@ -178,25 +188,14 @@ export default function Layout({ children, currentUser }: LayoutProps) {
                 </Link>
               </Button>
             ))}
-
-            {/* Notification Button (Desktop and Mobile) */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative rounded-full hover:bg-accent"
-              onClick={handleOpenNotificationDialog}
-            >
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {unreadCount}
-                </Badge>
-              )}
-            </Button>
+            <div className="h-6 w-px bg-border mx-2" />
+            <NotificationButton />
           </nav>
+
+          {/* Mobile Notification Button */}
+          <div className="md:hidden">
+            <NotificationButton />
+          </div>
         </div>
       </header>
 
@@ -213,44 +212,18 @@ export default function Layout({ children, currentUser }: LayoutProps) {
             { icon: Home, label: "Dashboard", href: "/dashboard" },
             { icon: Car, label: "Create Ride", href: "/create-ride" },
             { icon: Users, label: "Profile", href: "/profile" },
-            {
-              icon: Bell,
-              label: "Notifications",
-              onClick: handleOpenNotificationDialog,
-              badge: unreadCount > 0 ? unreadCount : null,
-            },
           ].map((item) => (
             <div key={item.label} className="flex-1">
-              {item.href ? (
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex flex-col items-center p-2",
-                    pathname === item.href ? "text-primary" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <item.icon className="h-6 w-6" />
-                  <span className="text-xs mt-1">{item.label}</span>
-                </Link>
-              ) : (
-                <button
-                  onClick={item.onClick}
-                  className="flex flex-col items-center p-2 w-full text-muted-foreground hover:text-foreground"
-                >
-                  <div className="relative">
-                    <item.icon className="h-6 w-6" />
-                    {item.badge && (
-                      <Badge
-                        variant="destructive"
-                        className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]"
-                      >
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </div>
-                  <span className="text-xs mt-1">{item.label}</span>
-                </button>
-              )}
+              <Link
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center p-2",
+                  pathname === item.href ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <item.icon className="h-6 w-6" />
+                <span className="text-xs mt-1">{item.label}</span>
+              </Link>
             </div>
           ))}
         </div>
@@ -309,4 +282,3 @@ export default function Layout({ children, currentUser }: LayoutProps) {
     </div>
   )
 }
-
