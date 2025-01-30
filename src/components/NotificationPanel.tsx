@@ -1,29 +1,11 @@
 import { useEffect, useState, useCallback } from "react"
 import { useMediaQuery } from "@/hooks/use-media-query"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet"
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-} from "@/components/ui/drawer"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Bell, Search, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -52,7 +34,7 @@ const notificationTypes = {
   newRide: "New Rides",
   rideAccepted: "Accepted Rides",
   rideCancelled: "Cancelled Rides",
-  rideCompleted: "Completed Rides"
+  rideCompleted: "Completed Rides",
 }
 
 const getNotificationIcon = (type: string) => {
@@ -87,18 +69,21 @@ const NotificationList = ({
   notifications,
   searchQuery,
   selectedType,
-  selectedFilter
+  selectedFilter,
+  isDesktop,
 }: {
   notifications: Notification[]
   searchQuery: string
   selectedType: string
   selectedFilter: string
+  isDesktop: boolean
 }) => {
   const filteredNotifications = notifications
-    .filter(notification => {
+    .filter((notification) => {
       const matchesSearch = notification.message.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesType = selectedType === "all" || notification.type === selectedType
-      const matchesFilter = selectedFilter === "all" ||
+      const matchesFilter =
+        selectedFilter === "all" ||
         (selectedFilter === "unread" && !notification.is_read) ||
         (selectedFilter === "read" && notification.is_read)
       return matchesSearch && matchesType && matchesFilter
@@ -106,21 +91,20 @@ const NotificationList = ({
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   return (
-    <ScrollArea className="h-[calc(100vh-16rem)] w-full pr-4">
+    <ScrollArea
+      className={`${isDesktop ? "h-[calc(100vh-16rem)]" : "h-[60svh]"} w-full p-2 pr-4 mb-4 border rounded-lg`}
+    >
       {filteredNotifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <Bell className="h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-lg font-medium">No notifications found</p>
-          <p className="text-sm text-muted-foreground">
-            Try adjusting your search or filters
-          </p>
+          <p className="text-sm text-muted-foreground">Try adjusting your search or filters</p>
         </div>
       ) : (
         filteredNotifications.map((notification) => (
           <Card
             key={notification.id}
-            className={`mb-4 transition-all duration-200 hover:shadow-md ${notification.is_read ? "opacity-60" : ""
-              }`}
+            className={`mb-4 transition-all duration-200 hover:shadow-md ${notification.is_read ? "opacity-60" : ""}`}
           >
             <CardHeader className="p-4 pb-2">
               <div className="flex items-center justify-between">
@@ -130,9 +114,7 @@ const NotificationList = ({
                     {notificationTypes[notification.type as keyof typeof notificationTypes]}
                   </CardTitle>
                 </div>
-                <CardDescription className="text-xs">
-                  {formatDate(notification.created_at)}
-                </CardDescription>
+                <CardDescription className="text-xs">{formatDate(notification.created_at)}</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-0">
@@ -151,7 +133,7 @@ const NotificationFilters = ({
   selectedType,
   setSelectedType,
   selectedFilter,
-  setSelectedFilter
+  setSelectedFilter,
 }: {
   searchQuery: string
   setSearchQuery: (query: string) => void
@@ -230,18 +212,23 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
         }
 
         const newEtag = response.headers.get("ETag")
-        if (newEtag) {
-          setEtag(newEtag)
-        }
-
         const data = await response.json()
-        setNotifications(data.notifications)
-        setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length)
+
+        // Check for new notifications before updating state and ETag
+        if (newEtag && newEtag !== etag) {
+          setEtag(newEtag)
+          if (JSON.stringify(data.notifications) !== JSON.stringify(notifications)) {
+            setNotifications(data.notifications)
+            setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length)
+          } else {
+            console.log("Received same notifications, skipping update.")
+          }
+        }
       } catch (error) {
         console.error("Error fetching notifications:", error)
       }
     }
-  }, [userId, etag])
+  }, [userId, etag, notifications, isOnline])
 
   useEffect(() => {
     if (isOnline) {
@@ -249,26 +236,29 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
       const interval = setInterval(fetchNotifications, 15000)
       return () => clearInterval(interval)
     }
-  }, [fetchNotifications])
+  }, [fetchNotifications, isOnline]) // Added isOnline to dependencies
 
-  const handleOpenChange = useCallback(async (open: boolean) => {
-    setIsOpen(open)
-    if (!open && unreadCount > 0) {
-      const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id)
-      try {
-        await fetch("/api/notifications", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, notificationIds: unreadIds }),
-        })
-        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
-        setUnreadCount(0)
-        onNotificationsRead?.()
-      } catch (error) {
-        console.error("Error marking notifications as read:", error)
+  const handleOpenChange = useCallback(
+    async (open: boolean) => {
+      setIsOpen(open)
+      if (!open && unreadCount > 0) {
+        const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id)
+        try {
+          await fetch("/api/notifications", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, notificationIds: unreadIds }),
+          })
+          setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
+          setUnreadCount(0)
+          onNotificationsRead?.()
+        } catch (error) {
+          console.error("Error marking notifications as read:", error)
+        }
       }
-    }
-  }, [userId, notifications, unreadCount, onNotificationsRead])
+    },
+    [userId, notifications, unreadCount, onNotificationsRead],
+  )
 
   const NotificationButton = () => (
     <Button
@@ -304,6 +294,7 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
         searchQuery={searchQuery}
         selectedType={selectedType}
         selectedFilter={selectedFilter}
+        isDesktop={isDesktop}
       />
     </>
   )
@@ -329,7 +320,7 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
     <>
       <NotificationButton />
       <Drawer open={isOpen} onOpenChange={handleOpenChange}>
-        <DrawerContent className="max-h-[90svh]">
+        <DrawerContent className="h-[90svh]">
           <DrawerHeader>
             <DrawerTitle>Notifications</DrawerTitle>
             <DrawerDescription>Your recent notifications</DrawerDescription>
@@ -342,3 +333,4 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
     </>
   )
 }
+
