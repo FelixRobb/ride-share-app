@@ -182,19 +182,21 @@ export default function WelcomePage() {
           transition={{ delay: 0.5 }}
         >
           {isAuthenticated ? (
-            <Button
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-black px-8 py-6 text-lg rounded-full group relative overflow-hidden"
-            >
-              <Link href="/dashboard">Go to Dashboard</Link>
-              <motion.div
-                className="absolute inset-0 bg-white/20"
-                initial={{ x: "-100%" }}
-                whileHover={{ x: "100%" }}
-                transition={{ duration: 0.5 }}
-              />
-              <ArrowRight className="w-6 h-6 ml-2 inline-block group-hover:translate-x-1 transition-transform" />
-            </Button>
+            <Link href="/dashboard">
+              <Button
+                size="lg"
+                className="bg-primary hover:bg-primary/90 text-black px-8 py-6 text-lg rounded-full group relative overflow-hidden"
+              >
+                <span className="relative z-10">Go to Dashboard</span>
+                <motion.div
+                  className="absolute inset-0 bg-white/20"
+                  initial={{ x: "-100%" }}
+                  whileHover={{ x: "100%" }}
+                  transition={{ duration: 0.5 }}
+                />
+                <ArrowRight className="w-6 h-6 ml-2 inline-block group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
           ) : (
             <Button
               size="lg"
