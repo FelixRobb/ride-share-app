@@ -324,26 +324,6 @@ export default function RideDetailsPage({
     }
   }
 
-  const getDisplayStatus = () => {
-    if (ride.status === "accepted" && ride.accepter_id === currentUser?.id) {
-      return "Offered"
-    }
-    return ride.status.charAt(0).toUpperCase() + ride.status.slice(1)
-  }
-
-  const getStatusColor = () => {
-    switch (ride.status) {
-      case "accepted":
-        return "text-green-500"
-      case "cancelled":
-        return "text-red-500"
-      case "completed":
-        return "text-blue-500"
-      default:
-        return "text-yellow-500"
-    }
-  }
-
   const getUserName = (userId: string) => {
     if (userId === currentUser.id) {
       return currentUser.name

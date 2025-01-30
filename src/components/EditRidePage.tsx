@@ -195,9 +195,6 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
     }
   }
 
-  if (!rideData) {
-    return <div>Loading...</div>
-  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-fit bg-background px-4 py-4">
@@ -287,13 +284,13 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
         isOpen={isFromMapOpen}
         onClose={() => setIsFromMapOpen(false)}
         onSelectLocation={handleLocationSelect("from")}
-        initialLocation={{ lat: rideData?.from_lat, lon: rideData?.from_lon }}
+        initialLocation={{ lat: rideData?.from_lat ?? 0, lon: rideData?.from_lon ?? 0 }}
       />
       <MapDialog
         isOpen={isToMapOpen}
         onClose={() => setIsToMapOpen(false)}
         onSelectLocation={handleLocationSelect("to")}
-        initialLocation={{ lat: rideData?.to_lat, lon: rideData?.to_lon }}
+        initialLocation={{ lat: rideData?.to_lat ?? 0, lon: rideData?.to_lon ?? 0 }}
       />
     </div>
   )
