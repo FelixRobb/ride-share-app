@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { MessageSquare, UserPlus, Car, CheckCircle } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import { markNotificationsAsRead, fetchNotifications } from "@/utils/api"
 
 interface Notification {
   id: string
@@ -197,7 +198,7 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const isOnline = useOnlineStatus()
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotificationsCallback = useCallback(async () => {
     if (isOnline) {
       try {
         const headers: HeadersInit = {}
@@ -208,35 +209,31 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
         const response = await fetch(`/api/notifications?userId=${userId}`, { headers })
 
         if (response.status === 304) {
-          return // No changes, use cached data
+          return null // Data hasn't changed
         }
 
-        const newEtag = response.headers.get("ETag")
-        const data = await response.json()
-
-        // Check for new notifications before updating state and ETag
-        if (newEtag && newEtag !== etag) {
-          setEtag(newEtag)
-          if (JSON.stringify(data.notifications) !== JSON.stringify(notifications)) {
+        if (response.ok) {
+          const newEtag = response.headers.get("ETag")
+          const data = await response.json()
+          if (newEtag !== etag) {
+            setEtag(newEtag)
             setNotifications(data.notifications)
             setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length)
-          } else {
-            console.log("Received same notifications, skipping update.")
           }
         }
       } catch (error) {
         console.error("Error fetching notifications:", error)
       }
     }
-  }, [userId, etag, notifications, isOnline])
+  }, [userId, etag, isOnline])
 
   useEffect(() => {
     if (isOnline) {
-      fetchNotifications()
-      const interval = setInterval(fetchNotifications, 15000)
+      void fetchNotificationsCallback()
+      const interval = setInterval(() => void fetchNotificationsCallback(), 15000)
       return () => clearInterval(interval)
     }
-  }, [fetchNotifications, isOnline]) // Added isOnline to dependencies
+  }, [fetchNotificationsCallback, isOnline])
 
   const handleOpenChange = useCallback(
     async (open: boolean) => {
@@ -244,11 +241,7 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
       if (!open && unreadCount > 0) {
         const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id)
         try {
-          await fetch("/api/notifications", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, notificationIds: unreadIds }),
-          })
+          await markNotificationsAsRead(userId, unreadIds)
           setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
           setUnreadCount(0)
           onNotificationsRead?.()
