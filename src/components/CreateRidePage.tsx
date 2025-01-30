@@ -420,10 +420,10 @@ export default function CreateRidePage({
             )}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleDiscardData}>
+            <Button className="mb-2" type="button" variant="outline" onClick={handleDiscardData}>
               Discard
             </Button>
-            <Button type="button" onClick={handleRestoreData}>
+            <Button className="mb-2" type="button" onClick={handleRestoreData}>
               Restore
             </Button>
           </DialogFooter>

@@ -614,10 +614,10 @@ export default function ProfilePage({
             <DialogDescription>Are you sure you want to log out?</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="mb-4" variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
+            <Button className="mb-2" variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
               Cancel
             </Button>
-            <Button className="mb-4" onClick={confirmLogout}>Logout</Button>
+            <Button className="mb-2" variant="destructive" onClick={confirmLogout}>Logout</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

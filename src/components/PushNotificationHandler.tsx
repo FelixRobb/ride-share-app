@@ -152,7 +152,7 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
           }
         }}
       >
-        <DialogContent className="rounded-lg">
+        <DialogContent className="rounded-lg w-11/12">
           <DialogHeader>
             <DialogTitle>Enable Push Notifications</DialogTitle>
             <DialogDescription>
@@ -164,7 +164,7 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
             <Button className="mb-2" variant="outline" onClick={() => setShowPermissionPopup(false)}>
               Cancel
             </Button>
-            <Button onClick={handlePermissionRequest}>Allow Notifications</Button>
+            <Button className="mb-2" onClick={handlePermissionRequest}>Allow Notifications</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
