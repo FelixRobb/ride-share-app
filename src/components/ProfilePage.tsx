@@ -25,6 +25,7 @@ import {
 } from "../utils/api"
 import { Switch } from "@/components/ui/switch"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import { cleanupPushSubscription, unregisterServiceWorker } from "@/utils/cleanupService"
 import "react-phone-number-input/style.css"
 import { ContactDialog } from "./ContactDialog"
 import { useTheme } from "next-themes"
@@ -82,7 +83,11 @@ export default function ProfilePage({
     localStorage.setItem("theme", newMode)
   }
 
-  const logout = () => {
+  const logout = async () => {
+    if (currentUser) {
+      await cleanupPushSubscription(currentUser.id)
+      await unregisterServiceWorker()
+    }
     localStorage.removeItem("currentUser")
     router.push('/')
   }
