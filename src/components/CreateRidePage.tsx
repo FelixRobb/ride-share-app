@@ -216,7 +216,6 @@ export default function CreateRidePage({
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="time">Pick Date & Time</Label>
               <InlineDateTimePicker
                 value={rideData.time ? new Date(rideData.time) : new Date()}
                 onChange={(date) => setRideData((prev) => ({
