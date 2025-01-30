@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
-import type { User, RideData, AssociatedPerson } from "../types"
+import type { RideData, AssociatedPerson, User } from "../types"
 import { createRide } from "../utils/api"
 import dynamic from "next/dynamic"
-import { Loader } from "lucide-react"
+import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight } from "lucide-react"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import {
   Dialog,
@@ -18,6 +19,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { InlineDateTimePicker } from "@/components/InlineDateTimePicker"
+import { motion } from "framer-motion"
+import { cn } from "@/lib/utils"
 
 const initialRideData: RideData = {
   from_location: "",
@@ -60,6 +64,7 @@ export default function CreateRidePage({
   const [isMounted, setIsMounted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showRestoreDialog, setShowRestoreDialog] = useState(false)
+  const [currentStep, setCurrentStep] = useState(0)
   const isOnline = useOnlineStatus()
 
   useEffect(() => {
@@ -71,7 +76,7 @@ export default function CreateRidePage({
     const storedRideData = localStorage.getItem("rideData")
     if (storedRideData) {
       const parsedData: RideData = JSON.parse(storedRideData)
-      const { rider_name, rider_phone, ...rest } = parsedData
+      const { rider_name, rider_phone, time, ...rest } = parsedData
       if (Object.values(rest).some((value) => value !== "" && value !== null && value !== 0)) {
         setShowRestoreDialog(true)
         setRideData(parsedData)
@@ -102,12 +107,31 @@ export default function CreateRidePage({
     }
   }, [rideData, isMounted])
 
+  const validateForm = () => {
+    if (!rideData.from_location) {
+      toast.error("Please select a from location.")
+      return false
+    }
+    if (!rideData.to_location) {
+      toast.error("Please select a to location.")
+      return false
+    }
+    if (!rideData.time) {
+      toast.error("Please select a time.")
+      return false
+    }
+    return true
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isMounted) return
     if (rideData.from_lat === 0 || rideData.from_lon === 0 || rideData.to_lat === 0 || rideData.to_lon === 0) {
       if (!isMounted) return
       toast.error("Please select both 'From' and 'To' locations.")
+      return
+    }
+    if (!validateForm()) {
       return
     }
     try {
@@ -138,179 +162,275 @@ export default function CreateRidePage({
 
   const isClient = typeof window !== "undefined"
 
+  const steps = [
+    { title: "Location", icon: MapPin },
+    { title: "Time", icon: Clock },
+    { title: "Rider", icon: UserIcon },
+    { title: "Details", icon: FileText },
+  ]
+
+  const nextStep = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1)
+    }
+  }
+
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1)
+    }
+  }
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="from_location">From</Label>
+              <LocationSearch
+                selectedLocation={
+                  rideData.from_location
+                    ? { lat: rideData.from_lat, lon: rideData.from_lon, display_name: rideData.from_location }
+                    : null
+                }
+                label="From Location"
+                onOpenMap={() => setIsFromMapOpen(true)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="to_location">To</Label>
+              <LocationSearch
+                selectedLocation={
+                  rideData.to_location
+                    ? { lat: rideData.to_lat, lon: rideData.to_lon, display_name: rideData.to_location }
+                    : null
+                }
+                label="To Location"
+                onOpenMap={() => setIsToMapOpen(true)}
+              />
+            </div>
+          </div>
+        )
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="time">Pick Date & Time</Label>
+              <InlineDateTimePicker
+                value={rideData.time ? new Date(rideData.time) : new Date()}
+                onChange={(date) => setRideData((prev) => ({
+                  ...prev,
+                  time: date.toISOString()
+                }))}
+              />
+            </div>
+          </div>
+        )
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="rider_type">Rider</Label>
+              <Select name="rider_type" value={riderType} onValueChange={setRiderType}>
+                <SelectTrigger id="rider_type">
+                  <SelectValue placeholder="Select rider" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="self">Myself</SelectItem>
+                  {associatedPeople.map((person) => (
+                    <SelectItem key={person.id} value={`associated_${person.id}`}>
+                      {person.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {riderType === "other" && (
+              <div className="space-y-2">
+                <Label htmlFor="rider_name">Rider Name</Label>
+                <Input
+                  id="rider_name"
+                  value={rideData.rider_name}
+                  onChange={(e) => setRideData((prev) => ({ ...prev, rider_name: e.target.value }))}
+                  placeholder="Enter rider's name"
+                  required
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="rider_phone">Rider Phone (optional)</Label>
+              <Input
+                id="rider_phone"
+                value={rideData.rider_phone || ""}
+                onChange={(e) => setRideData((prev) => ({ ...prev, rider_phone: e.target.value }))}
+                placeholder="Enter rider's phone number"
+              />
+            </div>
+          </div>
+        )
+      case 3:
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="note">Note (optional)</Label>
+              <Textarea
+                id="note"
+                value={rideData.note || ""}
+                onChange={(e) => setRideData((prev) => ({ ...prev, note: e.target.value }))}
+                placeholder="Add a note for the driver"
+                rows={4}
+              />
+            </div>
+          </div>
+        )
+      default:
+        return null
+    }
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center h-80svh">
-      <Card className="w-full max-w-4xl mx-auto" data-tutorial="ride-form">
+    <div className="flex flex-col items-center justify-center min-h-fit bg-background px-4 py-4">
+      <Card className="w-full max-w-xl mx-auto shadow-lg" data-tutorial="ride-form">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Create a Ride</CardTitle>
+          <CardTitle className="text-3xl font-bold">Create a Ride</CardTitle>
           <CardDescription>Fill in the details for your ride request.</CardDescription>
         </CardHeader>
-        <CardContent className="px-6">
+        <CardContent className="px-6 py-4">
           {!isOnline && (
-            <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded">
+            <div className="mb-6 p-3 bg-yellow-100 text-yellow-800 rounded-md text-sm">
               You are currently offline. Ride creation is disabled.
             </div>
           )}
           {isClient && (
             <form onSubmit={handleSubmit}>
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Left Column - Location and Time */}
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="from_location">From</Label>
-                    <LocationSearch
-                      selectedLocation={
-                        rideData.from_location
-                          ? { lat: rideData.from_lat, lon: rideData.from_lon, display_name: rideData.from_location }
-                          : null
-                      }
-                      label="From Location"
-                      onOpenMap={() => setIsFromMapOpen(true)}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="to_location">To</Label>
-                    <LocationSearch
-                      selectedLocation={
-                        rideData.to_location
-                          ? { lat: rideData.to_lat, lon: rideData.to_lon, display_name: rideData.to_location }
-                          : null
-                      }
-                      label="To Location"
-                      onOpenMap={() => setIsToMapOpen(true)}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="time">Time</Label>
-                    <Input
-                      id="time"
-                      type="datetime-local"
-                      value={rideData.time}
-                      onChange={(e) => setRideData((prev) => ({ ...prev, time: e.target.value }))}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Right Column - Rider Details */}
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="rider_type">Rider</Label>
-                    <Select name="rider_type" value={riderType} onValueChange={setRiderType}>
-                      <SelectTrigger id="rider_type">
-                        <SelectValue placeholder="Select rider" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="self">Myself</SelectItem>
-                        {associatedPeople.map((person) => (
-                          <SelectItem key={person.id} value={`associated_${person.id}`}>
-                            {person.name}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {riderType === "other" && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="rider_name">Rider Name</Label>
-                      <Input
-                        id="rider_name"
-                        value={rideData.rider_name}
-                        onChange={(e) => setRideData((prev) => ({ ...prev, rider_name: e.target.value }))}
-                        placeholder="Enter rider's name"
-                        required
-                      />
+              <div className="mb-8">
+                <div className="flex justify-between items-center mb-4">
+                  {steps.map((step, index) => (
+                    <div
+                      key={step.title}
+                      className={cn(
+                        "flex flex-col items-center space-y-2",
+                        index <= currentStep ? "text-primary" : "text-muted-foreground",
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center",
+                          index <= currentStep ? "bg-primary text-primary-foreground" : "bg-muted",
+                        )}
+                      >
+                        <step.icon className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-medium">{step.title}</span>
                     </div>
-                  )}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="rider_phone">Rider Phone (optional)</Label>
-                    <Input
-                      id="rider_phone"
-                      value={rideData.rider_phone || ""}
-                      onChange={(e) => setRideData((prev) => ({ ...prev, rider_phone: e.target.value }))}
-                      placeholder="Enter rider's phone number"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="note">Note (optional)</Label>
-                    <Input
-                      id="note"
-                      value={rideData.note || ""}
-                      onChange={(e) => setRideData((prev) => ({ ...prev, note: e.target.value }))}
-                      placeholder="Add a note for the driver"
-                    />
-                  </div>
+                  ))}
+                </div>
+                <div className="h-2 bg-muted rounded-full">
+                  <motion.div
+                    className="h-full bg-primary rounded-full"
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+                    transition={{ duration: 0.3 }}
+                  />
                 </div>
               </div>
 
-              {/* Submit Button - Full Width */}
-              <div className="mt-6">
-                <Button className="w-full md:w-auto md:min-w-[200px] mx-auto block" type="submit" disabled={isSubmitting || !isOnline}>
-                  {isSubmitting ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
-                  {isSubmitting ? "Creating..." : "Create Ride"}
-                </Button>
-              </div>
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="mb-6"
+              >
+                {renderStepContent()}
+              </motion.div>
             </form>
           )}
         </CardContent>
-
-        {/* Keeping the dialogs the same */}
-        {isMounted && (
-          <>
-            <MapDialog
-              isOpen={isFromMapOpen}
-              onClose={() => setIsFromMapOpen(false)}
-              onSelectLocation={handleLocationSelect("from")}
-              initialLocation={
-                rideData.from_lat && rideData.from_lon ? { lat: rideData.from_lat, lon: rideData.from_lon } : undefined
-              }
-            />
-            <MapDialog
-              isOpen={isToMapOpen}
-              onClose={() => setIsToMapOpen(false)}
-              onSelectLocation={handleLocationSelect("to")}
-              initialLocation={
-                rideData.to_lat && rideData.to_lon ? { lat: rideData.to_lat, lon: rideData.to_lon } : undefined
-              }
-            />
-          </>
-        )}
-
-        <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
-          <DialogContent className="sm:max-w-[425px] rounded-lg">
-            <DialogHeader>
-              <DialogTitle>Restore Previous Ride Data</DialogTitle>
-              <DialogDescription>It seems you have unsaved ride data. Would you like to restore it?</DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              {rideData.from_location && (
-                <p>
-                  <strong>From:</strong> {rideData.from_location}
-                </p>
+        <CardFooter className="flex justify-between px-6 py-4">
+          <Button type="button" onClick={prevStep} disabled={currentStep === 0} variant="outline">
+            Previous
+          </Button>
+          {currentStep < steps.length - 1 ? (
+            <Button type="button" onClick={nextStep}>
+              Next
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              onClick={handleSubmit}
+              disabled={isSubmitting || !isOnline}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {isSubmitting ? (
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowRight className="mr-2 h-4 w-4" />
               )}
-              {rideData.to_location && (
-                <p>
-                  <strong>To:</strong> {rideData.to_location}
-                </p>
-              )}
-              {rideData.time && (
-                <p>
-                  <strong>Time:</strong> {new Date(rideData.time).toLocaleString()}
-                </p>
-              )}
-            </div>
-            <DialogFooter>
-              <Button  type="button" variant="outline" onClick={handleDiscardData}>
-                Discard
-              </Button>
-              <Button type="button" onClick={handleRestoreData}>
-                Restore
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              {isSubmitting ? "Creating..." : "Create Ride"}
+            </Button>
+          )}
+        </CardFooter>
       </Card>
+
+      {isMounted && (
+        <>
+          <MapDialog
+            isOpen={isFromMapOpen}
+            onClose={() => setIsFromMapOpen(false)}
+            onSelectLocation={handleLocationSelect("from")}
+            initialLocation={
+              rideData.from_lat && rideData.from_lon ? { lat: rideData.from_lat, lon: rideData.from_lon } : undefined
+            }
+          />
+          <MapDialog
+            isOpen={isToMapOpen}
+            onClose={() => setIsToMapOpen(false)}
+            onSelectLocation={handleLocationSelect("to")}
+            initialLocation={
+              rideData.to_lat && rideData.to_lon ? { lat: rideData.to_lat, lon: rideData.to_lon } : undefined
+            }
+          />
+        </>
+      )}
+
+      <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
+        <DialogContent className="sm:max-w-[425px] rounded-lg">
+          <DialogHeader>
+            <DialogTitle>Restore Previous Ride Data</DialogTitle>
+            <DialogDescription>It seems you have unsaved ride data. Would you like to restore it?</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {rideData.from_location && (
+              <p>
+                <strong>From:</strong> {rideData.from_location}
+              </p>
+            )}
+            {rideData.to_location && (
+              <p>
+                <strong>To:</strong> {rideData.to_location}
+              </p>
+            )}
+            {rideData.note && (
+              <p>
+                <strong>Notes:</strong> {rideData.note}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleDiscardData}>
+              Discard
+            </Button>
+            <Button type="button" onClick={handleRestoreData}>
+              Restore
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
+
