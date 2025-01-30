@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,7 @@ import { toast } from "sonner"
 import { User } from "../types"
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
-import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react'
+import { Loader2, Mail, ArrowRight } from 'lucide-react'
 
 interface LoginPageProps {
   setCurrentUser: (user: User) => void

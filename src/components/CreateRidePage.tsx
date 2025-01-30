@@ -136,9 +136,10 @@ export default function CreateRidePage({
       }))
     }
 
-    const isClient = typeof window !== "undefined"
+  const isClient = typeof window !== "undefined"
 
-    return (
+  return (
+    <div className="flex flex-col items-center justify-center h-80svh">
       <Card className="w-full max-w-4xl mx-auto" data-tutorial="ride-form">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Create a Ride</CardTitle>
@@ -190,7 +191,7 @@ export default function CreateRidePage({
                     />
                   </div>
                 </div>
-  
+
                 {/* Right Column - Rider Details */}
                 <div className="space-y-4">
                   <div className="space-y-1.5">
@@ -242,7 +243,7 @@ export default function CreateRidePage({
                   </div>
                 </div>
               </div>
-  
+
               {/* Submit Button - Full Width */}
               <div className="mt-6">
                 <Button className="w-full md:w-auto md:min-w-[200px] mx-auto block" type="submit" disabled={isSubmitting || !isOnline}>
@@ -253,7 +254,7 @@ export default function CreateRidePage({
             </form>
           )}
         </CardContent>
-  
+
         {/* Keeping the dialogs the same */}
         {isMounted && (
           <>
@@ -275,7 +276,7 @@ export default function CreateRidePage({
             />
           </>
         )}
-  
+
         <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
           <DialogContent className="sm:max-w-[425px] rounded-lg">
             <DialogHeader>
@@ -300,7 +301,7 @@ export default function CreateRidePage({
               )}
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleDiscardData}>
+              <Button  type="button" variant="outline" onClick={handleDiscardData}>
                 Discard
               </Button>
               <Button type="button" onClick={handleRestoreData}>
@@ -310,5 +311,6 @@ export default function CreateRidePage({
           </DialogContent>
         </Dialog>
       </Card>
-    )
-  }
+    </div>
+  )
+}
