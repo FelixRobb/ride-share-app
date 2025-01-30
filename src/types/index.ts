@@ -21,6 +21,7 @@ export type Ride = {
   rider_name: string;
   rider_phone: string | null;
   note: string | null;
+  is_edited: boolean;
 };
 
 export type Contact = {
