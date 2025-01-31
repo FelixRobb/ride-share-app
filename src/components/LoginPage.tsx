@@ -75,7 +75,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading, quot
     e.preventDefault();
     setError(null);
     try {
-      let formattedIdentifier = loginMethod === 'email' ? email : phone;
+      const formattedIdentifier = loginMethod === 'email' ? email : phone;
       await handleLogin(formattedIdentifier, password, loginMethod);
     } catch (error) {
       console.error('Login error in component:', error);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -65,7 +65,6 @@ export default function RideDetailsPage({
   const [newNote, setNewNote] = useState("")
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [editedNoteContent, setEditedNoteContent] = useState("")
-  const [loading, setLoading] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const [isCancelRequestDialogOpen, setIsCancelRequestDialogOpen] = useState(false)
@@ -75,7 +74,6 @@ export default function RideDetailsPage({
   const mapRef = useRef<HTMLDivElement | null>(null)
   const [map, setMap] = useState<maplibregl.Map | null>(null)
   const [isLoadingMap, setIsLoadingMap] = useState(true)
-  const searchParams = useSearchParams()
   const isOnline = useOnlineStatus()
 
   const scrollToBottom = useCallback(() => {
@@ -126,13 +124,11 @@ export default function RideDetailsPage({
   const refreshRideData = useCallback(async () => {
     if (isOnline) {
       try {
-        setLoading(true)
         const updatedRide = await fetchRideDetails(currentUser.id, ride.id)
         setRide(updatedRide)
       } catch (error) {
         console.error("Error refreshing ride data:", error)
       } finally {
-        setLoading(false)
       }
     }
   }, [currentUser.id, ride.id, isOnline])

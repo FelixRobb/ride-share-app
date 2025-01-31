@@ -8,7 +8,6 @@ export default function Home() {
 
   useEffect(() => {
 
-
     // Register service worker
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker
