@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from "react"
 import { useRouter } from 'next/navigation'
-import RegisterPage from '@/components/RegisterPage'
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { User } from "@/types"
+
+import RegisterPage from '@/components/RegisterPage'
 import { register, fetchUserData } from "@/utils/api"
 
 export default function Register() {
@@ -32,7 +32,7 @@ export default function Register() {
 
   useEffect(() => {
     setQuoteIndex(Math.floor(Math.random() * quotes.length));
-  }, []);
+  }, [quotes.length]);
 
   if (quoteIndex === null) return null;
 
@@ -64,9 +64,6 @@ export default function Register() {
 
   return (
     <RegisterPage
-      setCurrentUser={(user: User) => {
-        localStorage.setItem("currentUser", JSON.stringify(user))
-      }}
       handleRegister={handleRegister}
       isLoading={isLoading}
       quoteIndex={quoteIndex}

@@ -1,10 +1,11 @@
+import { UserPlus, Check, Users } from "lucide-react"
 import React from "react"
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
-import { UserPlus, Check, Users, MapPin } from "lucide-react"
 import type { User } from "@/types"
 
 interface SuggestedContact extends User {
@@ -24,7 +25,6 @@ export function ContactSuggestions({
   suggestedContacts,
   isFetchingSuggestions,
   handleAddContact,
-  currentUser,
   isOnline,
 }: ContactSuggestionsProps) {
   if (isFetchingSuggestions) {

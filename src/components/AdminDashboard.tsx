@@ -1,23 +1,31 @@
 import { useState, useEffect } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { toast } from 'sonner'
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
+import { User } from "@/types"
 
 interface AdminDashboardProps {
   onLogout: () => void
 }
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
-  const [stats, setStats] = useState<any>(null)
-  const [users, setUsers] = useState<any[]>([])
+  interface Stats {
+    totalUsers: number;
+    totalRides: number;
+    totalContacts: number;
+  }
+
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [users, setUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedUser, setSelectedUser] = useState<any>(null)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false)
   const [isNotifyUserDialogOpen, setIsNotifyUserDialogOpen] = useState(false)
@@ -82,6 +90,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   const handleEditUser = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!selectedUser) return;
     try {
       const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
         method: 'PUT',
@@ -91,7 +100,9 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         body: JSON.stringify(selectedUser),
       })
       if (response.ok) {
-        setUsers(users.map(user => user.id === selectedUser.id ? selectedUser : user))
+        if (selectedUser) {
+          setUsers(users.map(user => user.id === selectedUser.id ? selectedUser : user))
+        }
         setIsEditDialogOpen(false)
         toast.success("User updated successfully");
       } else {
@@ -136,7 +147,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: selectedUser.id,
+          userId: selectedUser?.id || '',
           title: notificationTitle,
           body: notificationBody
         }),
@@ -145,7 +156,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setIsNotifyUserDialogOpen(false)
         setNotificationTitle('')
         setNotificationBody('')
-        toast.success(`Notification sent to ${selectedUser.name}`);
+        toast.success(`Notification sent to ${selectedUser?.name}`);
       } else {
         throw new Error('Failed to send notification')
       }
@@ -313,7 +324,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
-              Make changes to the user's information here.
+              Make changes to the user&#39;s information here.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditUser}>
@@ -325,7 +336,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <Input
                   id="name"
                   value={selectedUser?.name || ''}
-                  onChange={(e) => setSelectedUser({ ...selectedUser, name: e.target.value })}
+                  onChange={(e) => setSelectedUser(selectedUser ? { ...selectedUser, name: e.target.value } : null)}
                   className="col-span-3"
                 />
               </div>
@@ -336,7 +347,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <Input
                   id="email"
                   value={selectedUser?.email || ''}
-                  onChange={(e) => setSelectedUser({ ...selectedUser, email: e.target.value })}
+                  onChange={(e) => setSelectedUser(selectedUser ? { ...selectedUser, email: e.target.value } : null)}
                   className="col-span-3"
                 />
               </div>
@@ -347,7 +358,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <Input
                   id="phone"
                   value={selectedUser?.phone || ''}
-                  onChange={(e) => setSelectedUser({ ...selectedUser, phone: e.target.value })}
+                  onChange={(e) => setSelectedUser(selectedUser ? { ...selectedUser, phone: e.target.value } : null)}
                   className="col-span-3"
                 />
               </div>

@@ -1,19 +1,13 @@
 "use client"
+import { motion, AnimatePresence } from "framer-motion"
+import { useRouter, usePathname } from "next/navigation"
 import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
-import { useRouter, usePathname } from "next/navigation"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { TutorialOverlay } from "@/components/TutorialOverlay"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+
 
 type TutorialStep = {
   key: string
@@ -298,7 +292,7 @@ const PopupDialog: React.FC<{
   open: boolean
   onOpenChange: (open: boolean) => void
   onChoice: (choice: boolean) => void
-}> = ({ open, onOpenChange, onChoice }) => {
+}> = ({ open, onChoice }) => {
   if (!open) return null
 
   return (

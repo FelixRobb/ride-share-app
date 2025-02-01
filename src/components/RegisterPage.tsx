@@ -1,15 +1,16 @@
-import { useState } from "react"
-import Link from 'next/link'
 import Image from 'next/image'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { User } from "../types"
-import { MultiStepRegisterForm } from "./MultiStepRegisterForm"
-import { useRouter } from "next/navigation"
+import Link from 'next/link'
+import { useState } from "react"
 import { toast } from "sonner"
 
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+
+
+import { MultiStepRegisterForm } from "./MultiStepRegisterForm"
+
+
 interface RegisterPageProps {
-  setCurrentUser: (user: User) => void
   handleRegister: (name: string, phone: string, email: string, password: string) => Promise<void>
   isLoading: boolean
   quoteIndex: number;
@@ -33,9 +34,8 @@ const quotes = [
   { quote: "A journey is best measured in friends rather than miles.", author: "Tim Cahill" },
 ];
 
-export default function RegisterPage({ setCurrentUser, handleRegister, isLoading, quoteIndex }: RegisterPageProps) {
+export default function RegisterPage({ handleRegister, isLoading, quoteIndex }: RegisterPageProps) {
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
   const randomQuote = quotes[quoteIndex];
 
   const onSubmit = async (name: string, phone: string, email: string, password: string) => {
@@ -100,7 +100,7 @@ export default function RegisterPage({ setCurrentUser, handleRegister, isLoading
             />
             {randomQuote && (
               <blockquote className="p-4 mt-4 text-center text-lg italic border-l-4 border-primary bg-muted/50 rounded-r-lg">
-                "{randomQuote.quote}"
+                &quot;{randomQuote.quote}&quot;
                 <footer className="mt-2 text-primary block font-semibold">
                   {randomQuote.author} {randomQuote.source && `- ${randomQuote.source}`}
                 </footer>

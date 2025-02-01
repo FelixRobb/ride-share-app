@@ -1,12 +1,14 @@
-import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle, Loader } from 'lucide-react'
+import { useState } from "react"
+import PhoneInput from 'react-phone-number-input'
+
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle, Loader } from 'lucide-react'
-import PhoneInput from 'react-phone-number-input'
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+
 import 'react-phone-number-input/style.css'
 
 interface MultiStepRegisterFormProps {

@@ -1,7 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -10,12 +12,81 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 
 export default function PushNotificationHandler({ userId }: { userId: string }) {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null)
   const [showPermissionPopup, setShowPermissionPopup] = useState(false)
   const [hasSeenPopup, setHasSeenPopup] = useState(false)
+
+  const handlePermissionGranted = useCallback(async (registration: ServiceWorkerRegistration) => {
+    const response = await fetch(`/api/users/${userId}/push-preference`)
+    const { enabled } = await response.json()
+
+    const saveSubscription = async (subscription: PushSubscription) => {
+      try {
+        const response = await fetch("/api/push-subscription", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            subscription: subscription.toJSON(),
+            userId,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to save push subscription")
+        }
+        console.log("Push subscription saved successfully")
+      } catch (error) {
+        console.error("Error saving push subscription:", error)
+      }
+    }
+
+    const deleteSubscription = async () => {
+      try {
+        const response = await fetch("/api/push-subscription", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to delete push subscription")
+        }
+        console.log("Push subscription deleted successfully")
+      } catch (error) {
+        console.error("Error deleting push subscription:", error)
+      }
+    }
+
+    if (enabled) {
+      let subscription = await registration.pushManager.getSubscription()
+
+      if (!subscription) {
+        console.log("No subscription found, creating new subscription")
+        const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        if (!publicKey) {
+          throw new Error("VAPID public key is not set")
+        }
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: publicKey,
+        })
+        await saveSubscription(subscription)
+      }
+
+      setSubscription(subscription)
+    } else if (!enabled && subscription) {
+      await subscription.unsubscribe()
+      await deleteSubscription()
+      setSubscription(null)
+    }
+  }, [userId, subscription])
+
 
   useEffect(() => {
     const setupPushNotifications = async () => {
@@ -41,48 +112,8 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
     }
 
     setupPushNotifications()
-  }, [userId, hasSeenPopup])
+  }, [userId, hasSeenPopup, handlePermissionGranted])
 
-  async function saveSubscription(subscription: PushSubscription) {
-    try {
-      const response = await fetch("/api/push-subscription", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          subscription: subscription.toJSON(),
-          userId,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to save push subscription")
-      }
-      console.log("Push subscription saved successfully")
-    } catch (error) {
-      console.error("Error saving push subscription:", error)
-    }
-  }
-
-  async function deleteSubscription() {
-    try {
-      const response = await fetch("/api/push-subscription", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to delete push subscription")
-      }
-      console.log("Push subscription deleted successfully")
-    } catch (error) {
-      console.error("Error deleting push subscription:", error)
-    }
-  }
 
   const handlePermissionRequest = async (event: React.MouseEvent<HTMLButtonElement> | boolean = true) => {
     if (typeof event !== "boolean") {
@@ -101,33 +132,6 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
     // If permission is already "granted" or "denied", do nothing
   }
 
-  const handlePermissionGranted = async (registration: ServiceWorkerRegistration) => {
-    const response = await fetch(`/api/users/${userId}/push-preference`)
-    const { enabled } = await response.json()
-
-    if (enabled) {
-      let subscription = await registration.pushManager.getSubscription()
-
-      if (!subscription) {
-        console.log("No subscription found, creating new subscription")
-        const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-        if (!publicKey) {
-          throw new Error("VAPID public key is not set")
-        }
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: publicKey,
-        })
-        await saveSubscription(subscription)
-      }
-
-      setSubscription(subscription)
-    } else if (!enabled && subscription) {
-      await subscription.unsubscribe()
-      await deleteSubscription()
-      setSubscription(null)
-    }
-  }
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {

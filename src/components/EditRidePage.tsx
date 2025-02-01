@@ -1,19 +1,24 @@
-import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
+import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight } from "lucide-react"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { toast } from "sonner"
+
+import { InlineDateTimePicker } from "@/components/InlineDateTimePicker"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "sonner"
-import type { RideData, User } from "../types"
-import { updateRide, fetchRideDetails } from "@/utils/api"
-import dynamic from "next/dynamic"
-import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight } from "lucide-react"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
-import { InlineDateTimePicker } from "@/components/InlineDateTimePicker"
-import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { updateRide, fetchRideDetails } from "@/utils/api"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
+
+import type { RideData, User } from "../types"
+
+
+
 
 const LocationSearch = dynamic(() => import("./LocationSearch"), { ssr: false })
 const MapDialog = dynamic(() => import("./MapDialog"), { ssr: false })

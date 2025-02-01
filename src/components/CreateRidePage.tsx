@@ -1,16 +1,12 @@
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { toast } from "sonner"
-import type { RideData, AssociatedPerson, User } from "../types"
-import { createRide } from "../utils/api"
-import dynamic from "next/dynamic"
+import { motion } from "framer-motion"
 import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight } from "lucide-react"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import dynamic from "next/dynamic"
+import { useState, useEffect } from "react"
+import { toast } from "sonner"
+
+import { InlineDateTimePicker } from "@/components/InlineDateTimePicker"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -19,9 +15,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { InlineDateTimePicker } from "@/components/InlineDateTimePicker"
-import { motion } from "framer-motion"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
+
+import type { RideData, AssociatedPerson, User } from "../types"
+import { createRide } from "../utils/api"
+
 
 const initialRideData: RideData = {
   from_location: "",
@@ -76,7 +79,7 @@ export default function CreateRidePage({
     const storedRideData = localStorage.getItem("rideData")
     if (storedRideData) {
       const parsedData: RideData = JSON.parse(storedRideData)
-      const { rider_name, rider_phone, time, ...rest } = parsedData
+      const { ...rest } = parsedData
       if (Object.values(rest).some((value) => value !== "" && value !== null && value !== 0)) {
         setShowRestoreDialog(true)
         setRideData(parsedData)

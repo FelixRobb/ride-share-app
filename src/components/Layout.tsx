@@ -1,21 +1,25 @@
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { NotificationProvider } from "@/contexts/NotificationContext"
-import { Button } from "@/components/ui/button"
 import {
   Home,
   Car,
   Users,
   HelpCircle,
 } from "lucide-react"
-import type { User } from "../types"
-import { NotificationPanel } from "@/components/NotificationPanel"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
-import PushNotificationHandler from "./PushNotificationHandler"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
+
+import { NotificationPanel } from "@/components/NotificationPanel"
+import { Button } from "@/components/ui/button"
+import { NotificationProvider } from "@/contexts/NotificationContext"
 import { useTutorial, TutorialProvider } from "@/contexts/TutorialContext"
+import { cn } from "@/lib/utils"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
+
+import type { User } from "../types"
+
+import PushNotificationHandler from "./PushNotificationHandler"
+
 
 interface LayoutProps {
   children: React.ReactNode

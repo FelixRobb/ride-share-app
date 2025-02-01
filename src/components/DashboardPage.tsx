@@ -1,15 +1,3 @@
-import { useState, useEffect, useMemo, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
 import {
   Search,
   Clock,
@@ -18,13 +6,27 @@ import {
   CalendarIcon,
   ArrowRight,
   CheckCircle,
-  Filter,
-  MoreHorizontal,
+  Filter
 } from "lucide-react"
-import type { User, Ride, Contact } from "../types"
 import Link from "next/link"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import { useRouter } from "next/navigation"
+import { useState, useEffect, useMemo } from "react"
 import { toast } from "sonner"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
+
+import type { User, Ride, Contact } from "../types"
+
 
 interface FilterPopoverProps {
   statusFilter: string | null
@@ -73,7 +75,7 @@ const FilterPopover: React.FC<FilterPopoverProps> = ({ statusFilter, setStatusFi
                 initialFocus
               />
             </div>
-            <Button className="w-full" onClick={() => {}}>
+            <Button className="w-full" onClick={() => { }}>
               Apply Filters
             </Button>
             {(statusFilter || dateFilter) && (

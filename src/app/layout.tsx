@@ -1,6 +1,6 @@
 import "./globals.css"
-import { Toaster } from "sonner"
 import { ThemeProvider } from "next-themes"
+import { Toaster } from "sonner"
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rideshareappweb.netlify.app" // Fallback URL
 const ogImageUrl = `${siteUrl}/og-image.png`

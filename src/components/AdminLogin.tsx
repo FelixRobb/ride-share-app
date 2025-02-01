@@ -1,7 +1,8 @@
 import { useState } from 'react'
+
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 
 interface AdminLoginProps {
   onLogin: (password: string) => void

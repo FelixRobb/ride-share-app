@@ -1,4 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from "react"
+import { Loader, Search, UserPlus, Check, Phone } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { toast } from "sonner"
+
+import { ContactSuggestions } from "@/components/ContactSugestions"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -7,28 +14,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { ContactSuggestions } from "@/components/ContactSugestions"
-import type { User as BaseUser, Contact } from "@/types"
-import { addContact, acceptContact, deleteContact } from "@/utils/api"
-import { Loader, Search, UserPlus, Check, Phone, X } from "lucide-react"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { toast } from "sonner"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import type { User, Contact } from "@/types"
+import { addContact, acceptContact, deleteContact } from "@/utils/api"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
-interface ExtendedUser extends BaseUser {
+
+interface ExtendedUser extends User {
   contactStatus?: "pending" | "accepted" | null
   contactId?: string | null
+}
+
+
+interface SuggestedContact extends User {
+  mutual_contacts: number
+  contactStatus?: "pending" | "accepted" | null
 }
 
 interface ContactDialogProps {
   currentUser: ExtendedUser
   contacts: Contact[]
-  suggestedContacts: any[]
+  suggestedContacts: ExtendedUser[]
   fetchUserData: () => Promise<void>
 }
 
@@ -40,22 +48,47 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [isContactDetailsOpen, setIsContactDetailsOpen] = useState(false)
   const [addingUserId, setAddingUserId] = useState<string | null>(null)
-  const [localSuggestedContacts, setLocalSuggestedContacts] = useState<any[]>([])
-  const [suggestedContacts, setSuggestedContacts] = useState<any[]>([])
+  const [localSuggestedContacts, setLocalSuggestedContacts] = useState<SuggestedContact[]>([])
+  const [suggestedContacts, setSuggestedContacts] = useState<SuggestedContact[]>([])
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false)
   const isOnline = useOnlineStatus()
 
   useEffect(() => {
-    setLocalSuggestedContacts(suggestedContacts)
-  }, [suggestedContacts])
+    const searchUsers = async () => {
+      if (searchQuery.length < 2) {
+        setSearchResults([])
+        return
+      }
+      setIsSearching(true)
+      try {
+        const response = await fetch(
+          `/api/users/search?query=${encodeURIComponent(searchQuery)}&currentUserId=${currentUser.id}`,
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setSearchResults(data.users)
+        } else {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to search users")
+        }
+      } catch (error) {
+        console.error("Error searching users:", error)
+        toast.error(error instanceof Error ? error.message : "Failed to search users. Please try again.")
+      } finally {
+        setIsSearching(false)
+      }
+    }
 
-  useEffect(() => {
     if (searchQuery.length >= 2) {
       searchUsers()
     } else {
       setSearchResults([])
     }
-  }, [searchQuery])
+  }, [searchQuery, currentUser.id])
+
+  useEffect(() => {
+    setLocalSuggestedContacts(suggestedContacts)
+  }, [suggestedContacts])
 
   const fetchUserNotifications = useCallback(async () => {
     if (isOnline) {
@@ -82,31 +115,6 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
   useEffect(() => {
     fetchUserNotifications()
   }, [fetchUserNotifications])
-
-  const searchUsers = async () => {
-    if (searchQuery.length < 2) {
-      setSearchResults([])
-      return
-    }
-    setIsSearching(true)
-    try {
-      const response = await fetch(
-        `/api/users/search?query=${encodeURIComponent(searchQuery)}&currentUserId=${currentUser.id}`,
-      )
-      if (response.ok) {
-        const data = await response.json()
-        setSearchResults(data.users)
-      } else {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to search users")
-      }
-    } catch (error) {
-      console.error("Error searching users:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to search users. Please try again.")
-    } finally {
-      setIsSearching(false)
-    }
-  }
 
   const handleAddContact = async (user: ExtendedUser) => {
     if (!isOnline) return
@@ -271,6 +279,13 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
                         key={contact.id}
                         className="flex items-center justify-between p-4 hover:bg-accent cursor-pointer border-b"
                         onClick={() => handleOpenContactDetails(contact)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            handleOpenContactDetails(contact)
+                          }
+                        }}
                       >
                         <div className="flex items-center space-x-3">
                           <Avatar>

@@ -1,8 +1,11 @@
-import { useState, useEffect, useCallback } from "react"
+import { LucideUser, Mail, Phone, Car, MapPin, Loader, Moon, Sun, Monitor } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
+import { useState, useEffect, useCallback } from "react"
+import { toast } from "sonner"
+
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -11,9 +14,12 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { LucideUser, Mail, Phone, Car, MapPin, Loader, Moon, Sun, Monitor } from "lucide-react"
-import { toast } from "sonner"
+import { Switch } from "@/components/ui/switch"
+import { cleanupPushSubscription, unregisterServiceWorker } from "@/utils/cleanupService"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
+
 import type { User, Contact, AssociatedPerson } from "../types"
 import {
   updateProfile,
@@ -23,12 +29,11 @@ import {
   deleteUser,
   fetchUserStats,
 } from "../utils/api"
-import { Switch } from "@/components/ui/switch"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
-import { cleanupPushSubscription, unregisterServiceWorker } from "@/utils/cleanupService"
+
+
 import "react-phone-number-input/style.css"
 import { ContactDialog } from "./ContactDialog"
-import { useTheme } from "next-themes"
+
 
 interface ProfilePageProps {
   currentUser: User
@@ -37,6 +42,12 @@ interface ProfilePageProps {
   associatedPeople: AssociatedPerson[]
   fetchUserData: (userId: string) => Promise<void>
 }
+
+interface SuggestedContact extends User {
+  mutual_contacts: number
+  contactStatus?: "pending" | "accepted" | null
+}
+
 
 export default function ProfilePage({
   currentUser,
@@ -59,12 +70,12 @@ export default function ProfilePage({
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [isPushLoading, setIsPushLoading] = useState(true)
   const [userStats, setUserStats] = useState<{ ridesOffered: number; ridesRequested: number } | null>(null)
-  const [suggestedContacts, setSuggestedContacts] = useState<any[]>([])
+  const [suggestedContacts, setSuggestedContacts] = useState<SuggestedContact[]>([])
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const router = useRouter()
   const isOnline = useOnlineStatus()
 
-  const { theme, setTheme } = useTheme()
+  const { setTheme } = useTheme()
   const [currentMode, setCurrentMode] = useState<"system" | "light" | "dark">(() => {
     if (typeof window !== "undefined") {
       return (localStorage.getItem("theme") as "system" | "light" | "dark") || "system"
@@ -236,7 +247,7 @@ export default function ProfilePage({
         toast.error("Failed to fetch user data. Please try again.")
       }
     }
-  }, [isOnline, currentUser, fetchUserData, toast])
+  }, [isOnline, currentUser, fetchUserData])
 
   const fetchSuggestedContacts = useCallback(async () => {
     if (isOnline && currentUser) {
@@ -253,7 +264,7 @@ export default function ProfilePage({
         toast.error("Failed to fetch suggested contacts. Please try again.")
       }
     }
-  }, [isOnline, currentUser, toast])
+  }, [isOnline, currentUser])
 
   useEffect(() => {
     fetchUserDataCallback()
@@ -281,7 +292,7 @@ export default function ProfilePage({
     fetchStats()
     const intervalId = setInterval(fetchStats, 60000) // Refresh every minute
     return () => clearInterval(intervalId)
-  }, [currentUser, isOnline, toast])
+  }, [currentUser, isOnline])
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -467,7 +478,7 @@ export default function ProfilePage({
         <CardContent>
           <div className="flex items-center justify-between space-x-2">
             <p>Logout of your account.</p>
-          <Button variant="destructive" onClick={handleLogout} disabled={!isOnline}>Logout</Button>
+            <Button variant="destructive" onClick={handleLogout} disabled={!isOnline}>Logout</Button>
           </div>
         </CardContent>
       </Card>

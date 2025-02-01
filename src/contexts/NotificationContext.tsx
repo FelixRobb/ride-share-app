@@ -1,10 +1,12 @@
 "use client"
 import type React from "react"
 import { createContext, useState, useContext, useCallback, useEffect } from "react"
+import { toast } from "sonner"
+
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
+
 import type { Notification, User } from "../types"
 import { fetchNotifications, markNotificationsAsRead } from "../utils/api"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
-import { toast } from "sonner"
 
 interface NotificationContextType {
   notifications: Notification[]
@@ -40,7 +42,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode; current
         toast.error("Failed to fetch notifications.")
       }
     }
-  }, [currentUser])
+  }, [currentUser, isOnline])
 
   const markAsRead = useCallback(
     async (notificationIds: string[]) => {

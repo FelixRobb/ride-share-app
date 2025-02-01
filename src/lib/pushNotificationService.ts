@@ -1,4 +1,5 @@
 import webpush from "web-push";
+
 import { supabase } from "./db";
 
 const vapidKeys = {

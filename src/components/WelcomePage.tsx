@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Car, Users, Shield, Zap, ChevronDown, Star, ArrowRight } from "lucide-react"
 import { motion, useScroll, useTransform } from "framer-motion"
+import { Car, Users, Shield, Zap, ChevronDown, Star, ArrowRight } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useState } from "react"
+
+import { Button } from "@/components/ui/button"
+
 
 export default function WelcomePage() {
   const [scrolled, setScrolled] = useState(false)

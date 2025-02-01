@@ -1,21 +1,23 @@
 "use client"
-import { useState } from "react"
-import Link from 'next/link'
-import Image from 'next/image'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { toast } from "sonner"
-import { User } from "../types"
-import PhoneInput from 'react-phone-number-input'
-import 'react-phone-number-input/style.css'
+
 import { Loader2, Mail, ArrowRight } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useState } from "react"
+import PhoneInput from 'react-phone-number-input'
+import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+
+import 'react-phone-number-input/style.css'
+
 
 interface LoginPageProps {
-  setCurrentUser: (user: User) => void
-  handleLogin: (identifier: string, password: string, method: 'email' | 'phone') => Promise<void>
+  handleLoginAction: (identifier: string, password: string, method: 'email' | 'phone') => Promise<void>
   isLoading: boolean
   quoteIndex: number;
 }
@@ -38,7 +40,7 @@ const quotes = [
   { quote: "A journey is best measured in friends rather than miles.", author: "Tim Cahill" },
 ];
 
-export default function LoginPage({ setCurrentUser, handleLogin, isLoading, quoteIndex }: LoginPageProps) {
+export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: LoginPageProps) {
   const [error, setError] = useState<string | null>(null)
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
@@ -76,7 +78,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading, quot
     setError(null);
     try {
       const formattedIdentifier = loginMethod === 'email' ? email : phone;
-      await handleLogin(formattedIdentifier, password, loginMethod);
+      await handleLoginAction(formattedIdentifier, password, loginMethod);
     } catch (error) {
       console.error('Login error in component:', error);
       setError("Invalid email/phone or password. Please try again.");
@@ -173,7 +175,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading, quot
             </CardContent>
             <CardFooter className="flex flex-col space-y-2">
               <Button variant="link" asChild className="w-full">
-                <Link href="/register">Don't have an account? Register</Link>
+                <Link href="/register">Don&#39;t have an account? Register</Link>
               </Button>
               <Button variant="link" onClick={() => setIsResetPasswordOpen(true)} className="w-full">
                 Forgot your password?
@@ -194,7 +196,7 @@ export default function LoginPage({ setCurrentUser, handleLogin, isLoading, quot
           />
           {randomQuote && (
             <blockquote className="p-4 mt-4 text-center text-lg italic border-l-4 border-primary bg-muted/50 rounded-r-lg">
-              "{randomQuote.quote}"
+              &#34;{randomQuote.quote}&#34;
               <footer className="mt-2 text-primary block font-semibold">
                 {randomQuote.author} {randomQuote.source && `- ${randomQuote.source}`}
               </footer>

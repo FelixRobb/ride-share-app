@@ -32,7 +32,7 @@ export const supabase = getSupabaseClient();
 
 export async function checkDatabaseConnection(): Promise<boolean> {
   try {
-    const { data, error } = await supabase.from('users').select('count').single();
+    const { error } = await supabase.from('users').select('count').single();
     
     if (error) {
       throw error;
@@ -47,7 +47,7 @@ export async function checkDatabaseConnection(): Promise<boolean> {
 }
 
 // Helper function for logging errors
-export function logError(context: string, error: any) {
+export function logError(context: string, error: unknown) {
   console.error(`Error in ${context}:`, error);
   console.error('Error details:', JSON.stringify(error, null, 2));
 }

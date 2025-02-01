@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect } from 'react';
+
 import WelcomePage from '@/components/WelcomePage';
-import { toast } from "sonner";
 
 export default function Home() {
 
@@ -14,7 +14,7 @@ export default function Home() {
         .register('/service-worker.js')
         .catch(error => console.error("Service Worker registration failed:", error));
     }
-  }, [toast]);
+  }, []);
 
   return <WelcomePage />;
 }

@@ -1,11 +1,13 @@
-import type React from "react"
-import { useEffect, useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useTutorial, tutorialSteps } from "@/contexts/TutorialContext"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronRight, ChevronLeft, X } from "lucide-react"
 import { usePathname } from "next/navigation"
+import type React from "react"
+import { useEffect, useState, useCallback } from "react"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useTutorial, tutorialSteps } from "@/contexts/TutorialContext"
+
 
 export const TutorialOverlay: React.FC = () => {
   const { currentStep, nextStep, prevStep, skipTutorial } = useTutorial()

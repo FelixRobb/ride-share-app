@@ -65,10 +65,7 @@ export default function Login() {
 
   return (
     <LoginPage
-      setCurrentUser={(user: User) => {
-        localStorage.setItem("currentUser", JSON.stringify(user))
-      }}
-      handleLogin={handleLogin}
+      handleLoginAction={handleLogin}
       isLoading={isLoading}
       quoteIndex={quoteIndex} // Pass the index as a prop
     />

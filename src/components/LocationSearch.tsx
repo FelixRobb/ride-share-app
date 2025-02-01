@@ -1,6 +1,7 @@
+import { MapPin } from 'lucide-react'
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { MapPin } from 'lucide-react'
 
 interface Location {
   lat: number;

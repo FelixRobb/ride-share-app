@@ -1,19 +1,3 @@
-import { useState, useEffect, useCallback, useRef } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import {
   MapPin,
   LucideUser,
@@ -28,7 +12,26 @@ import {
   Loader,
   Pencil,
 } from "lucide-react"
+import maplibregl from "maplibre-gl"
+import { useRouter } from "next/navigation"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
 import type { User, Ride, Contact, Note } from "@/types"
 import {
   acceptRide,
@@ -43,9 +46,9 @@ import {
   finishRide,
 } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
-import maplibregl from "maplibre-gl"
+
+
 import "maplibre-gl/dist/maplibre-gl.css"
-import { Badge } from "@/components/ui/badge"
 
 interface RideDetailsPageProps {
   ride: Ride
@@ -119,7 +122,7 @@ export default function RideDetailsPage({
         }
       }
     }
-  }, [ride.id, ride.status, currentUser.id, toast, notes.length, isOnline])
+  }, [isOnline, ride.status, ride.id, notes.length, currentUser.id, scrollToBottom])
 
   const refreshRideData = useCallback(async () => {
     if (isOnline) {
@@ -128,7 +131,6 @@ export default function RideDetailsPage({
         setRide(updatedRide)
       } catch (error) {
         console.error("Error refreshing ride data:", error)
-      } finally {
       }
     }
   }, [currentUser.id, ride.id, isOnline])
@@ -143,7 +145,7 @@ export default function RideDetailsPage({
       clearInterval(notesInterval)
       clearInterval(rideInterval)
     }
-  }, [loadNotes, refreshRideData])
+  }, [loadNotes, refreshRideData, scrollToBottom])
 
   useEffect(() => {
     const buildMap = async () => {

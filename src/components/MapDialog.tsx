@@ -1,13 +1,21 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { SearchIcon, MapPin, Crosshair, Loader, Copy, ExternalLink } from 'lucide-react';
+import maplibregl from 'maplibre-gl';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { SearchIcon, MapPin, Crosshair, Loader, Copy, ExternalLink } from 'lucide-react';
-import { toast } from "sonner";
-import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+
+
+interface SearchResult {
+  id: string;
+  place_name: string;
+  center: [number, number];
+}
 
 interface MapDialogProps {
   isOpen: boolean;
@@ -18,7 +26,7 @@ interface MapDialogProps {
 
 const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation, initialLocation }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedLocation, setSelectedLocation] = useState({ lat: 38.707490, lon: -9.136398 });
   const [address, setAddress] = useState('');
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -26,12 +34,12 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   const markerRef = useRef<maplibregl.Marker | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleMapClick = (e: maplibregl.MapMouseEvent) => {
+  const handleMapClick = useCallback((e: maplibregl.MapMouseEvent) => {
     const { lng, lat } = e.lngLat;
     setSelectedLocation({ lat, lon: lng });
     updateMarker(lat, lng);
     reverseGeocode(lat, lng);
-  };
+  }, []);
 
   useEffect(() => {
     if (initialLocation) {
@@ -92,7 +100,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
         mapInstanceRef.current = null;
       }
     };
-  }, [isOpen, initialLocation]);
+  }, [isOpen, initialLocation, selectedLocation.lat, selectedLocation.lon, handleMapClick]);
 
   const updateMarker = (lat: number, lon: number) => {
     if (!mapInstanceRef.current) return;
@@ -108,7 +116,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     mapInstanceRef.current.setCenter([lon, lat]);
   };
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     setSearchResults([]); // Clear previous results
     if (!searchQuery.trim()) return; // Don't search if query is empty
     try {
@@ -120,7 +128,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     } catch (error) {
       console.error("Error searching for location:", error);
     }
-  };
+  }, [searchQuery]);
 
   const reverseGeocode = async (lat: number, lon: number) => {
     try {
@@ -136,7 +144,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     }
   };
 
-  const handleSelectSearchResult = (result: any) => {
+  const handleSelectSearchResult = (result: SearchResult) => {
     const [lon, lat] = result.center;
     setSelectedLocation({ lat, lon });
     setAddress(result.place_name);
@@ -186,7 +194,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  }, [handleSearch, searchQuery]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -213,15 +221,14 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
                   <div className="absolute left-0 right-0 top-full mt-1 z-10 bg-background shadow-md rounded-md border border-input max-h-60 overflow-y-auto">
                     <ul>
                       {searchResults.map((result) => (
-                        <li
-                          key={result.id}
-                          onClick={() => handleSelectSearchResult(result)}
-                          className="p-2 hover:bg-accent cursor-pointer transition-colors"
-                        >
-                          <div className="flex items-start gap-2">
+                        <li key={result.id} className="p-2 hover:bg-accent cursor-pointer transition-colors">
+                          <button
+                            onClick={() => handleSelectSearchResult(result)}
+                            className="flex items-start gap-2 w-full text-left"
+                          >
                             <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
                             <span className="text-sm">{result.place_name}</span>
-                          </div>
+                          </button>
                         </li>
                       ))}
                     </ul>
