@@ -1,6 +1,7 @@
 import { Loader, Search, UserPlus, Check, Phone } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
+import { parsePhoneNumber } from "libphonenumber-js"
 
 import { ContactSuggestions } from "@/components/ContactSugestions"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -21,12 +22,10 @@ import type { User, Contact } from "@/types"
 import { addContact, acceptContact, deleteContact } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
-
 interface ExtendedUser extends User {
   contactStatus?: "pending" | "accepted" | null
   contactId?: string | null
 }
-
 
 interface SuggestedContact extends User {
   mutual_contacts: number
@@ -120,7 +119,12 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
     if (!isOnline) return
     setAddingUserId(user.id)
     try {
-      await addContact(currentUser.id, user.phone, user.country_code || "")
+      const phoneNumber = parsePhoneNumber(user.phone)
+      if (!phoneNumber || !phoneNumber.isValid()) {
+        throw new Error("Invalid phone number")
+      }
+      const e164PhoneNumber = phoneNumber.format("E.164")
+      await addContact(currentUser.id, e164PhoneNumber)
       await fetchUserData()
       setSearchQuery("")
       setSearchResults([])
@@ -256,7 +260,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
             </Popover>
             <div className="w-full max-w-[500px] overflow-hidden">
               <ContactSuggestions
-                suggestedContacts={suggestedContacts}
+                suggestedContacts={localSuggestedContacts}
                 isFetchingSuggestions={isFetchingSuggestions}
                 handleAddContact={handleAddContact}
                 currentUser={currentUser}
@@ -282,7 +286,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
                         role="button"
                         tabIndex={0}
                         onKeyPress={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
+                          if (e.key === "Enter" || e.key === " ") {
                             handleOpenContactDetails(contact)
                           }
                         }}

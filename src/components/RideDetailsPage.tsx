@@ -1,3 +1,4 @@
+import { parsePhoneNumber } from "libphonenumber-js"
 import {
   MapPin,
   LucideUser,
@@ -371,6 +372,17 @@ export default function RideDetailsPage({
     }
   }
 
+  // Update the component to format the phone number for display
+  const formatPhoneNumber = (phone: string | null) => {
+    if (!phone) return "Not provided"
+    try {
+      const phoneNumber = parsePhoneNumber(phone)
+      return phoneNumber ? phoneNumber.formatInternational() : phone
+    } catch {
+      return phone
+    }
+  }
+
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
@@ -437,7 +449,7 @@ export default function RideDetailsPage({
               <Phone className="w-5 h-5 text-primary" />
               <Label className="font-semibold">Contact Phone</Label>
             </div>
-            <p className="ml-7">{ride.rider_phone || "Not provided"}</p>
+            <p className="ml-7">{formatPhoneNumber(ride.rider_phone)}</p>
           </div>
         </div>
         <Separator />
@@ -494,12 +506,11 @@ export default function RideDetailsPage({
               <Label className="font-semibold">Messages</Label>
             </div>
             <ScrollArea className="h-[300px] w-full rounded-md border p-4" ref={scrollAreaRef}>
-                {notes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full">
-                  <MessageSquare className="w-10 h-10 text-muted-foreground mb-2" />
+              {notes.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
                   <p className="text-muted-foreground">No messages yet. Be the first to send a message!</p>
                 </div>
-                ) : (
+              ) : (
                 notes.map((note) => (
                   <div
                     key={note.id}

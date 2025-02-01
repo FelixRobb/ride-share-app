@@ -1,3 +1,5 @@
+import PhoneInput from "react-phone-number-input"
+import "react-phone-number-input/style.css"
 import { motion } from "framer-motion"
 import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight } from "lucide-react"
 import dynamic from "next/dynamic"
@@ -24,7 +26,6 @@ import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
 import type { RideData, AssociatedPerson, User } from "../types"
 import { createRide } from "../utils/api"
-
 
 const initialRideData: RideData = {
   from_location: "",
@@ -139,6 +140,9 @@ export default function CreateRidePage({
     }
     try {
       setIsSubmitting(true)
+      if (rideData.rider_phone && !rideData.rider_phone.startsWith("+")) {
+        throw new Error("Invalid phone number format. Please use the international format.")
+      }
       await createRide(rideData, currentUser.id)
       if (!isMounted) return
       toast.success("Your ride request has been created successfully.")
@@ -221,10 +225,12 @@ export default function CreateRidePage({
             <div className="space-y-2">
               <InlineDateTimePicker
                 value={rideData.time ? new Date(rideData.time) : new Date()}
-                onChange={(date) => setRideData((prev) => ({
-                  ...prev,
-                  time: date.toISOString()
-                }))}
+                onChange={(date) =>
+                  setRideData((prev) => ({
+                    ...prev,
+                    time: date.toISOString(),
+                  }))
+                }
               />
             </div>
           </div>
@@ -263,11 +269,14 @@ export default function CreateRidePage({
             )}
             <div className="space-y-2">
               <Label htmlFor="rider_phone">Rider Phone (optional)</Label>
-              <Input
+              <PhoneInput
                 id="rider_phone"
                 value={rideData.rider_phone || ""}
-                onChange={(e) => setRideData((prev) => ({ ...prev, rider_phone: e.target.value }))}
+                onChange={(value) => setRideData((prev) => ({ ...prev, rider_phone: value || null }))}
                 placeholder="Enter rider's phone number"
+                defaultCountry="PT"
+                international
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
           </div>

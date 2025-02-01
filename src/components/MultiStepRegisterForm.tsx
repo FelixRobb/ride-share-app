@@ -1,7 +1,8 @@
+import { parsePhoneNumber } from "libphonenumber-js"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle, Loader } from 'lucide-react'
+import { ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle, Loader } from "lucide-react"
 import { useState } from "react"
-import PhoneInput from 'react-phone-number-input'
+import PhoneInput from "react-phone-number-input"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -9,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import 'react-phone-number-input/style.css'
+import "react-phone-number-input/style.css"
 
 interface MultiStepRegisterFormProps {
   onSubmit: (name: string, phone: string, email: string, password: string) => Promise<void>
@@ -55,7 +56,12 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
       return
     }
     try {
-      await onSubmit(formData.name, formData.phone, formData.email, formData.password)
+      const phoneNumber = parsePhoneNumber(formData.phone)
+      if (!phoneNumber || !phoneNumber.isValid()) {
+        throw new Error("Invalid phone number")
+      }
+      const e164PhoneNumber = phoneNumber.format("E.164")
+      await onSubmit(formData.name, e164PhoneNumber, formData.email, formData.password)
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message)
@@ -116,9 +122,9 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
               value={formData.phone}
               onChange={(value) => {
                 if (value) {
-                  updateFormData("phone", value);
+                  updateFormData("phone", value)
                 } else {
-                  updateFormData("phone", "");
+                  updateFormData("phone", "")
                 }
               }}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -195,7 +201,14 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
               htmlFor="terms"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              I agree to the <a href="/terms-of-service" className="text-primary hover:underline">Terms of Service</a> and <a href="/privacy-policy" className="text-primary hover:underline">Privacy Policy</a>
+              I agree to the{" "}
+              <a href="/terms-of-service" className="text-primary hover:underline">
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a href="/privacy-policy" className="text-primary hover:underline">
+                Privacy Policy
+              </a>
             </Label>
           </div>
         </div>
@@ -241,11 +254,7 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
                 <Button type="submit" disabled={isLoading || !agreedToTerms} className="w-full sm:w-auto sm:ml-auto">
                   {isLoading ? (
                     <>
-                      <motion.div
-                        className="animate-spin mr-2"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                      >
+                      <motion.div className="animate-spin mr-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <Loader />
                       </motion.div>
                       Registering...

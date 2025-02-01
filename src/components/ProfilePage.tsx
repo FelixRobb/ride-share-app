@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
+import { parsePhoneNumber } from "libphonenumber-js"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +20,8 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { cleanupPushSubscription, unregisterServiceWorker } from "@/utils/cleanupService"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import PhoneInput from "react-phone-number-input"
+import "react-phone-number-input/style.css"
 
 import type { User, Contact, AssociatedPerson } from "../types"
 import {
@@ -30,10 +33,8 @@ import {
   fetchUserStats,
 } from "../utils/api"
 
-
 import "react-phone-number-input/style.css"
 import { ContactDialog } from "./ContactDialog"
-
 
 interface ProfilePageProps {
   currentUser: User
@@ -47,7 +48,6 @@ interface SuggestedContact extends User {
   mutual_contacts: number
   contactStatus?: "pending" | "accepted" | null
 }
-
 
 export default function ProfilePage({
   currentUser,
@@ -71,7 +71,7 @@ export default function ProfilePage({
   const [isPushLoading, setIsPushLoading] = useState(true)
   const [userStats, setUserStats] = useState<{ ridesOffered: number; ridesRequested: number } | null>(null)
   const [suggestedContacts, setSuggestedContacts] = useState<SuggestedContact[]>([])
-  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
   const router = useRouter()
   const isOnline = useOnlineStatus()
 
@@ -82,7 +82,6 @@ export default function ProfilePage({
     }
     return "system"
   })
-
 
   useEffect(() => {
     localStorage.setItem("theme", currentMode)
@@ -100,17 +99,17 @@ export default function ProfilePage({
       await unregisterServiceWorker()
     }
     localStorage.removeItem("currentUser")
-    router.push('/')
+    router.push("/")
   }
 
   const handleLogout = () => {
-    setIsLogoutDialogOpen(true);
-  };
+    setIsLogoutDialogOpen(true)
+  }
 
   const confirmLogout = () => {
-    setIsLogoutDialogOpen(false);
-    logout();
-  };
+    setIsLogoutDialogOpen(false)
+    logout()
+  }
 
   useEffect(() => {
     const fetchPushPreference = async () => {
@@ -144,9 +143,14 @@ export default function ProfilePage({
     if (editedUser) {
       try {
         setIsUpdatingProfile(true)
-        await updateProfile(currentUser.id, editedUser)
-        setCurrentUser(editedUser)
-        localStorage.setItem("currentUser", JSON.stringify(editedUser))
+        const phoneNumber = parsePhoneNumber(editedUser.phone)
+        if (!phoneNumber || !phoneNumber.isValid()) {
+          throw new Error("Invalid phone number")
+        }
+        const e164PhoneNumber = phoneNumber.format("E.164")
+        await updateProfile(currentUser.id, { ...editedUser, phone: e164PhoneNumber })
+        setCurrentUser({ ...currentUser, ...editedUser, phone: e164PhoneNumber })
+        localStorage.setItem("currentUser", JSON.stringify({ ...currentUser, ...editedUser, phone: e164PhoneNumber }))
         toast.success("Profile updated successfully!")
         setIsEditProfileOpen(false)
         void fetchUserData(currentUser.id)
@@ -443,24 +447,27 @@ export default function ProfilePage({
             <span>Current theme:</span>
             <div className="relative inline-flex items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
-                  }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                  currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
+                }`}
                 onClick={() => toggleTheme("system")}
                 aria-label="System theme"
               >
                 <Monitor className="h-4 w-4" />
               </button>
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
-                  }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                  currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
+                }`}
                 onClick={() => toggleTheme("light")}
                 aria-label="Light theme"
               >
                 <Sun className="h-4 w-4" />
               </button>
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
-                  }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                  currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
+                }`}
                 onClick={() => toggleTheme("dark")}
                 aria-label="Dark theme"
               >
@@ -478,7 +485,9 @@ export default function ProfilePage({
         <CardContent>
           <div className="flex items-center justify-between space-x-2">
             <p>Logout of your account.</p>
-            <Button variant="destructive" onClick={handleLogout} disabled={!isOnline}>Logout</Button>
+            <Button variant="destructive" onClick={handleLogout} disabled={!isOnline}>
+              Logout
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -514,15 +523,13 @@ export default function ProfilePage({
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="edit-phone">Phone</Label>
-                <Input
+                <PhoneInput
                   id="edit-phone"
                   value={editedUser?.phone || ""}
-                  onChange={(e) => {
-                    const phoneNumber = e.target.value
-                    setEditedUser((prev) => (prev ? { ...prev, phone: phoneNumber } : null))
-                  }}
-                  placeholder="Enter your phone number"
-                  required
+                  onChange={(value) => setEditedUser((prev) => (prev ? { ...prev, phone: value || "" } : null))}
+                  defaultCountry="PT"
+                  international
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -628,7 +635,9 @@ export default function ProfilePage({
             <Button className="mb-2" variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
               Cancel
             </Button>
-            <Button className="mb-2" variant="destructive" onClick={confirmLogout}>Logout</Button>
+            <Button className="mb-2" variant="destructive" onClick={confirmLogout}>
+              Logout
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

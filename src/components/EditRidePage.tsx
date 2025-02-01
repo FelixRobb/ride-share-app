@@ -1,3 +1,4 @@
+import { parsePhoneNumber } from "libphonenumber-js"
 import { motion } from "framer-motion"
 import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight } from "lucide-react"
 import dynamic from "next/dynamic"
@@ -16,9 +17,6 @@ import { updateRide, fetchRideDetails } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
 import type { RideData, User } from "../types"
-
-
-
 
 const LocationSearch = dynamic(() => import("./LocationSearch"), { ssr: false })
 const MapDialog = dynamic(() => import("./MapDialog"), { ssr: false })
@@ -68,6 +66,13 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
 
     try {
       setIsSubmitting(true)
+      if (rideData.rider_phone) {
+        const phoneNumber = parsePhoneNumber(rideData.rider_phone)
+        if (!phoneNumber || !phoneNumber.isValid()) {
+          throw new Error("Invalid rider phone number")
+        }
+        rideData.rider_phone = phoneNumber.format("E.164")
+      }
       await updateRide(rideId, rideData, currentUser.id)
       toast.success("Your ride has been updated successfully.")
       router.push(`/rides/${rideId}`)
@@ -199,7 +204,6 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
         return null
     }
   }
-
 
   return (
     <div className="flex flex-col items-center justify-center min-h-fit bg-background px-4 py-4">
