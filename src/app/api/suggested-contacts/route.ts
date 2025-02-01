@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { supabase } from "@/lib/db"
-import type { User } from "@/types"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -11,34 +10,31 @@ export async function GET(request: Request) {
   }
 
   try {
-
-    // 1. Get the user's accepted contacts
+    // 1. Get the user's accepted and pending contacts
     const { data: userContacts, error: userContactsError } = await supabase
       .from("contacts")
-      .select("user_id, contact_id")
+      .select("user_id, contact_id, status")
       .or(`user_id.eq.${userId},contact_id.eq.${userId}`)
-      .eq("status", "accepted")
 
     if (userContactsError) throw userContactsError
 
-    // Extract the IDs of the user's contacts
-    const userContactIds = userContacts.map((contact) =>
-      contact.user_id === userId ? contact.contact_id : contact.user_id,
-    )
+    // Extract the IDs of the user's contacts (both accepted and pending)
+    const userContactIds = userContacts.flatMap((contact) => [contact.user_id, contact.contact_id])
+    const uniqueUserContactIds = Array.from(new Set(userContactIds)).filter((id) => id !== userId)
 
     // 2. Find contacts of contacts (potential mutual contacts)
     const { data: contactsOfContacts, error: contactsOfContactsError } = await supabase
       .from("contacts")
       .select("user_id, contact_id")
-      .or(`user_id.in.(${userContactIds.join(",")}),contact_id.in.(${userContactIds.join(",")})`)
       .eq("status", "accepted")
+      .or(`user_id.in.(${uniqueUserContactIds.join(",")}),contact_id.in.(${uniqueUserContactIds.join(",")})`)
 
     if (contactsOfContactsError) throw contactsOfContactsError
 
     // 3. Identify mutual contacts
     const mutualContactIds = contactsOfContacts
       .flatMap((contact) => [contact.user_id, contact.contact_id])
-      .filter((id) => id !== userId && !userContactIds.includes(id))
+      .filter((id) => id !== userId && !uniqueUserContactIds.includes(id))
 
     const uniqueMutualContactIds = Array.from(new Set(mutualContactIds))
 

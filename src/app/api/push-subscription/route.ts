@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   const { subscription, userId } = await request.json();
 
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('push_subscriptions')
       .upsert({ user_id: userId, subscription: JSON.stringify(subscription) })
       .select();

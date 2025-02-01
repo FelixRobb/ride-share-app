@@ -1,10 +1,10 @@
 console.log('Service Worker: File loaded');
 
-self.addEventListener('install', function(event) {
+self.addEventListener('install', function() {
   console.log('Service Worker: Installed');
 });
 
-self.addEventListener('activate', function(event) {
+self.addEventListener('activate', function() {
   console.log('Service Worker: Activated');
 });
 
@@ -26,7 +26,7 @@ self.addEventListener('notificationclick', function(event) {
   console.log('Service Worker: Notification click event');
   event.notification.close();
   event.waitUntil(
-    clients.openWindow('/dashboard')
+    self.clients.openWindow('/dashboard')
   );
 });
 

@@ -1,57 +1,47 @@
-import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/db';
-import bcrypt from 'bcrypt';
-import { sendEmail, getWelcomeEmailContent } from '@/lib/emailService';
-import { parsePhoneNumber } from 'libphonenumber-js';
+import { NextResponse } from "next/server";
+import { supabase } from "@/lib/db";
+import bcrypt from "bcrypt";
+import { sendEmail, getWelcomeEmailContent } from "@/lib/emailService";
+import { parsePhoneNumber } from "libphonenumber-js";
 
 export async function POST(request: Request) {
   const { name, phone, email, password } = await request.json();
 
   try {
-    // Parse the phone number
+    // Parse and validate the phone number
     const phoneNumber = parsePhoneNumber(phone);
     if (!phoneNumber || !phoneNumber.isValid()) {
-      return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 });
+      return NextResponse.json({ error: "Invalid phone number" }, { status: 400 });
     }
 
-    const countryCode = phoneNumber.countryCallingCode;
-    const nationalNumber = phoneNumber.nationalNumber;
+    const e164PhoneNumber = phoneNumber.format("E.164");
 
     // Check if email already exists
-    const { data: existingEmail } = await supabase
-      .from('users')
-      .select('email')
-      .eq('email', email.toLowerCase())
-      .single();
+    const { data: existingEmail } = await supabase.from("users").select("email").eq("email", email.toLowerCase()).single();
 
     if (existingEmail) {
-      return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
+      return NextResponse.json({ error: "Email already registered" }, { status: 409 });
     }
 
     // Check if phone already exists
-    const { data: existingPhone } = await supabase
-      .from('users')
-      .select('phone')
-      .eq('phone', nationalNumber)
-      .single();
+    const { data: existingPhone } = await supabase.from("users").select("phone").eq("phone", e164PhoneNumber).single();
 
     if (existingPhone) {
-      return NextResponse.json({ error: 'Phone number already registered' }, { status: 409 });
+      return NextResponse.json({ error: "Phone number already registered" }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const lowerCaseEmail = email.toLowerCase();
 
     const { data: newUser, error: insertError } = await supabase
-      .from('users')
+      .from("users")
       .insert({
         name,
-        phone: nationalNumber,
-        country_code: `+${countryCode}`,
+        phone: e164PhoneNumber,
         email: lowerCaseEmail,
-        password: hashedPassword
+        password: hashedPassword,
       })
-      .select('id, name, phone, country_code, email')
+      .select("id, name, phone, email")
       .single();
 
     if (insertError) throw insertError;
@@ -59,16 +49,15 @@ export async function POST(request: Request) {
     // Send welcome email
     try {
       const welcomeEmailContent = getWelcomeEmailContent(newUser.name);
-      await sendEmail(newUser.email, 'Welcome to RideShare!', welcomeEmailContent);
+      await sendEmail(newUser.email, "Welcome to RideShare!", welcomeEmailContent);
     } catch (emailError) {
-      console.error('Error sending welcome email:', emailError);
+      console.error("Error sending welcome email:", emailError);
       // Don't throw an error here, as we don't want to prevent successful registration
     }
 
     return NextResponse.json({ user: newUser });
   } catch (error) {
-    console.error('Registration error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Registration error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

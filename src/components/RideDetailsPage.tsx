@@ -1,3 +1,4 @@
+import { parsePhoneNumber } from "libphonenumber-js"
 import {
   MapPin,
   LucideUser,
@@ -46,7 +47,6 @@ import {
   finishRide,
 } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
-
 
 import "maplibre-gl/dist/maplibre-gl.css"
 
@@ -372,6 +372,17 @@ export default function RideDetailsPage({
     }
   }
 
+  // Update the component to format the phone number for display
+  const formatPhoneNumber = (phone: string | null) => {
+    if (!phone) return "Not provided"
+    try {
+      const phoneNumber = parsePhoneNumber(phone)
+      return phoneNumber ? phoneNumber.formatInternational() : phone
+    } catch {
+      return phone
+    }
+  }
+
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
@@ -438,7 +449,7 @@ export default function RideDetailsPage({
               <Phone className="w-5 h-5 text-primary" />
               <Label className="font-semibold">Contact Phone</Label>
             </div>
-            <p className="ml-7">{ride.rider_phone || "Not provided"}</p>
+            <p className="ml-7">{formatPhoneNumber(ride.rider_phone)}</p>
           </div>
         </div>
         <Separator />
@@ -483,7 +494,7 @@ export default function RideDetailsPage({
               {ride.accepter_id === currentUser?.id
                 ? "Me"
                 : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact
-                  ?.name || "Unknown"}
+                    ?.name || "Unknown"}
             </p>
           </div>
         )}
@@ -495,55 +506,69 @@ export default function RideDetailsPage({
               <Label className="font-semibold">Messages</Label>
             </div>
             <ScrollArea className="h-[300px] w-full rounded-md border p-4" ref={scrollAreaRef}>
-              {notes.map((note) => (
-                <div key={note.id} className={`mb-4 ${note.user_id === currentUser?.id ? "text-right" : "text-left"}`}>
+              {notes.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground">No messages yet. Be the first to send a message!</p>
+                </div>
+              ) : (
+                notes.map((note) => (
                   <div
-                    className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? "bg-primary text-primary-foreground" : "bg-muted"} rounded-lg p-3`}
+                    key={note.id}
+                    className={`mb-4 ${note.user_id === currentUser?.id ? "text-right" : "text-left"}`}
                   >
-                    {editingNoteId === note.id ? (
-                      <div>
-                        <Input
-                          value={editedNoteContent}
-                          onChange={(e) => setEditedNoteContent(e.target.value)}
-                          className="mb-2"
-                        />
-                        <Button onClick={handleSaveEdit} size="sm" className="mr-2" disabled={!isOnline}>
-                          Save
+                    <div
+                      className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? "bg-primary text-primary-foreground" : "bg-muted"} rounded-lg p-3`}
+                    >
+                      {editingNoteId === note.id ? (
+                        <div>
+                          <Input
+                            value={editedNoteContent}
+                            onChange={(e) => setEditedNoteContent(e.target.value)}
+                            className="mb-2"
+                          />
+                          <Button onClick={handleSaveEdit} size="sm" className="mr-2" disabled={!isOnline}>
+                            Save
+                          </Button>
+                          <Button
+                            onClick={() => setEditingNoteId(null)}
+                            size="sm"
+                            variant="outline"
+                            disabled={!isOnline}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm mb-1 break-words">{note.note}</p>
+                          <div className="flex justify-between items-center text-xs mt-2">
+                            <span>
+                              {getUserName(note.user_id)} - {new Date(note.created_at).toLocaleString()}
+                            </span>
+                          </div>
+                          {note.is_edited && <span className="text-xs text-muted-foreground">(edited)</span>}
+                        </>
+                      )}
+                    </div>
+                    {note.user_id === currentUser?.id && !editingNoteId && (
+                      <div className="mt-1">
+                        <Button
+                          onClick={() => handleEditNote(note.id)}
+                          size="sm"
+                          variant="ghost"
+                          className="p-1"
+                          disabled={!isOnline}
+                        >
+                          <Edit className="h-4 w-4" />
                         </Button>
-                        <Button onClick={() => setEditingNoteId(null)} size="sm" variant="outline" disabled={!isOnline}>
-                          Cancel
+                        <Button onClick={() => handleDeleteNote(note.id)} size="sm" variant="ghost" className="p-1">
+                          <Trash className="h-4 w-4" />
                         </Button>
                       </div>
-                    ) : (
-                      <>
-                        <p className="text-sm mb-1 break-words">{note.note}</p>
-                        <div className="flex justify-between items-center text-xs mt-2">
-                          <span>
-                            {getUserName(note.user_id)} - {new Date(note.created_at).toLocaleString()}
-                          </span>
-                        </div>
-                        {note.is_edited && <span className="text-xs text-muted-foreground">(edited)</span>}
-                      </>
                     )}
                   </div>
-                  {note.user_id === currentUser?.id && !editingNoteId && (
-                    <div className="mt-1">
-                      <Button
-                        onClick={() => handleEditNote(note.id)}
-                        size="sm"
-                        variant="ghost"
-                        className="p-1"
-                        disabled={!isOnline}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button onClick={() => handleDeleteNote(note.id)} size="sm" variant="ghost" className="p-1">
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                ))
+              )}
             </ScrollArea>
             {(ride.status === "accepted" || ride.status === "completed") && (
               <div className="flex items-center space-x-2">

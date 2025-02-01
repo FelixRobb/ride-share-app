@@ -108,7 +108,7 @@ export async function DELETE(request: Request) {
   const { noteId, userId } = await request.json();
 
   try {
-    const { data: deletedNote, error: deleteError } = await supabase
+    const { error: deleteError } = await supabase
       .from('ride_notes')
       .update({ is_deleted: true })
       .eq('id', noteId)

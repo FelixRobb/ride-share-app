@@ -1,19 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import nodemailer from 'nodemailer'
 import bcrypt from 'bcrypt'
 import crypto from 'crypto'
 import { sendEmail, getResetPasswordEmailContent } from '@/lib/emailService';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
-})
 
 export async function POST(request: Request) {
   const { email } = await request.json();

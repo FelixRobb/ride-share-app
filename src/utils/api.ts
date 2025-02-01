@@ -109,7 +109,6 @@ export const updateRide = async (rideId: string, rideData: RideData, userId: str
   return await response.json()
 }
 
-
 export const addNote = async (rideId: string, userId: string, note: string): Promise<Note> => {
   const response = await fetch(`/api/rides/${rideId}/notes`, {
     method: "POST",
@@ -182,11 +181,11 @@ export const markNoteAsSeen = async (noteId: string, userId: string): Promise<vo
   }
 }
 
-export const addContact = async (userId: string, contactPhone: string, countryCode: string): Promise<Contact> => {
+export const addContact = async (userId: string, contactPhone: string): Promise<Contact> => {
   const response = await fetch("/api/contacts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, contactPhone, countryCode }),
+    body: JSON.stringify({ userId, contactPhone }),
   })
   const data = await response.json()
   if (response.ok && data.contact) {
@@ -222,7 +221,7 @@ export const deleteContact = async (contactId: string, userId: string) => {
   }
 }
 
-export const updateProfile = async (userId: string, updatedUser: User) => {
+export const updateProfile = async (userId: string, updatedUser: Partial<User>) => {
   const response = await fetch(`/api/users/${userId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -232,6 +231,7 @@ export const updateProfile = async (userId: string, updatedUser: User) => {
     const errorData = await response.json()
     throw new Error(errorData.error || "Failed to update profile")
   }
+  return await response.json()
 }
 
 export const changePassword = async (userId: string, currentPassword: string, newPassword: string) => {
@@ -372,3 +372,4 @@ export const fetchUserStats = async (userId: string): Promise<{ ridesOffered: nu
   }
   return await response.json()
 }
+

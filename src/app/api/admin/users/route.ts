@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/db'
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const { data: users, error } = await supabase
       .from('users')
