@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { supabase } from "@/lib/db"
-import type { User } from "@/types"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)

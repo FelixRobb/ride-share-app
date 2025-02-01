@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 import bcrypt from 'bcrypt';
 import { sendEmail, getWelcomeEmailContent } from '@/lib/emailService';
-import { parsePhoneNumber } from 'libphonenumber-js';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
 export async function POST(request: Request) {
   const { name, phone, email, password } = await request.json();
 
   try {
     // Parse the phone number
-    const phoneNumber = parsePhoneNumber(phone);
+    const phoneNumber = parsePhoneNumberFromString(phone);
     if (!phoneNumber || !phoneNumber.isValid()) {
       return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 });
     }

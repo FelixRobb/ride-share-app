@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { toast } from "sonner"
+import { debounce } from "lodash"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -87,6 +88,7 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
     }
   }, [userId, subscription])
 
+  const debouncedHandlePermissionGranted = debounce(handlePermissionGranted, 10000)
 
   useEffect(() => {
     const setupPushNotifications = async () => {
@@ -144,6 +146,18 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
       })
     }
   }, [])
+
+  useEffect(() => {
+    const checkPermission = async () => {
+      const permission = Notification.permission
+      if (permission === "granted") {
+        const registration = await navigator.serviceWorker.ready
+        await debouncedHandlePermissionGranted(registration)
+      }
+    }
+
+    checkPermission()
+  }, [debouncedHandlePermissionGranted])
 
   return (
     <>

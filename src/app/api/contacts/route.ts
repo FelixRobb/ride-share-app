@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Contact user not found' }, { status: 404 });
     }
 
-    const { data: existingContact, error: existingContactError } = await supabase
+    const { data: existingContact } = await supabase
       .from('contacts')
       .select('*')
       .or(`and(user_id.eq.${userId},contact_id.eq.${contactUser.id}),and(user_id.eq.${contactUser.id},contact_id.eq.${userId})`)

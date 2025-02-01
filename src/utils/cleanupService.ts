@@ -1,5 +1,3 @@
-// cleanupService.ts
-
 export async function unregisterServiceWorker() {
     if ('serviceWorker' in navigator) {
       const registrations = await navigator.serviceWorker.getRegistrations()

@@ -48,9 +48,9 @@ export async function POST(request: Request) {
     }
 
     // Don't send the password back to the client
-    const { password: _, ...userWithoutPassword } = user;
+    const { ...userWithoutPassword } = user;
     return NextResponse.json({ user: userWithoutPassword });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
