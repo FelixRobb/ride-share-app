@@ -63,8 +63,6 @@ body {
   }
 }
 
-
-
 @layer base {
   * {
     @apply border-border;
@@ -120,12 +118,20 @@ body {
 
 /* Hide scrollbar for all browsers */
 * {
-  scrollbar-width: none;  /* Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
 *::-webkit-scrollbar {
   display: none;
+}
+
+/* Theme transition */
+body,
+.bg-background,
+.text-foreground,
+.border-border {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
