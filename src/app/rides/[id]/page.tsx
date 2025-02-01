@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { ArrowBigLeft } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useParams } from 'next/navigation'
-import Layout from '@/components/Layout'
+import { useState, useEffect, Suspense, useCallback } from 'react'
 import { toast } from "sonner"
-import { Loader } from 'lucide-react'
-import { User, Ride, Contact, Notification } from "@/types"
-import { fetchUserData, fetchRideDetails } from "@/utils/api"
-import dynamic from 'next/dynamic';
+
+import Layout from '@/components/Layout'
 import { Button } from "@/components/ui/button";
-import { ArrowBigLeft } from 'lucide-react';
+import { User, Ride, Contact } from "@/types"
+import { fetchUserData, fetchRideDetails } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
 const RideDetailsPage = dynamic(() => import('@/components/RideDetailsPage'), { ssr: false });
@@ -27,26 +27,7 @@ export default function RideDetails() {
   const fromTab = searchParams.get('from') || 'available'
   const isOnline = useOnlineStatus()
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const user = localStorage.getItem('currentUser');
-      if (user) {
-        const parsedUser = JSON.parse(user) as User;
-        setCurrentUser(parsedUser);
-        void fetchUserDataCallback(parsedUser.id);
-      } else {
-        router.push('/');
-      }
-    }
-  }, [router]);
-
-  useEffect(() => {
-    if (currentUser && id) {
-      void fetchRideDetailsCallback(id as string)
-    }
-  }, [currentUser, id])
-
-  const fetchUserDataCallback = async (userId: string) => {
+  const fetchUserDataCallback = useCallback(async (userId: string) => {
     if (isOnline) {
       try {
         const result = await fetchUserData(userId, etag)
@@ -60,9 +41,9 @@ export default function RideDetails() {
         toast.error("Failed to fetch user data. Please try again."); // Update: Replaced toast call
       }
     }
-  }
+  }, [isOnline, etag]);
 
-  const fetchRideDetailsCallback = async (rideId: string) => {
+  const fetchRideDetailsCallback = useCallback(async (rideId: string) => {
     if (isOnline) {
       try {
         if (!currentUser) {
@@ -75,7 +56,26 @@ export default function RideDetails() {
         toast.error("Failed to fetch ride details, or you don't have permission to see this ride. Please go back."); // Update: Replaced toast call
       }
     }
-  };
+  }, [isOnline, currentUser]);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const user = localStorage.getItem('currentUser');
+      if (user) {
+        const parsedUser = JSON.parse(user) as User;
+        setCurrentUser(parsedUser);
+        void fetchUserDataCallback(parsedUser.id);
+      } else {
+        router.push('/');
+      }
+    }
+  }, [fetchUserDataCallback, router]);
+
+  useEffect(() => {
+    if (currentUser && id) {
+      void fetchRideDetailsCallback(id as string)
+    }
+  }, [currentUser, fetchRideDetailsCallback, id])
 
   useEffect(() => {
     if (currentUser && id) {
@@ -84,7 +84,7 @@ export default function RideDetails() {
       }, 10000);
       return () => clearInterval(intervalId);
     }
-  }, [currentUser, id, isOnline]);
+  }, [currentUser, fetchRideDetailsCallback, id, isOnline]);
 
 
   return (

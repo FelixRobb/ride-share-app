@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
 import { Loader } from 'lucide-react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { Suspense } from 'react'
 import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 function ResetPasswordForm() {
   const [newPassword, setNewPassword] = useState('')
@@ -37,7 +38,7 @@ function ResetPasswordForm() {
         } else {
           setErrorMessage(data.message || 'Invalid or expired token')
         }
-      } catch (error) {
+      } catch {
         setErrorMessage('An error occurred while checking the token')
       }
 

@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useParams } from "next/navigation"
-import Layout from "@/components/Layout"
+import { useState, useEffect, Suspense } from "react"
 import { toast } from "sonner"
+
+import Layout from "@/components/Layout"
 import type { User, Ride } from "@/types"
 import { fetchRideDetails } from "@/utils/api"
-import dynamic from "next/dynamic"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
 const EditRidePage = dynamic(() => import("@/components/EditRidePage"), { ssr: false })
@@ -21,6 +22,23 @@ export default function EditRide() {
     const isOnline = useOnlineStatus()
 
     useEffect(() => {
+        const fetchRideDetailsCallback = async (userId: string, rideId: string) => {
+            if (isOnline) {
+                try {
+                    const rideDetails = await fetchRideDetails(userId, rideId)
+                    setRide(rideDetails)
+                    if (rideDetails.status !== "pending" || rideDetails.requester_id !== userId) {
+                        toast.error("You can't edit this ride.")
+                        router.push(`/rides/${rideId}`)
+                    }
+                } catch (error) {
+                    console.error("Error fetching ride details:", error)
+                    toast.error("Failed to fetch ride details. Please try again.")
+                    router.push("/dashboard")
+                }
+            }
+        }
+
         const user = localStorage.getItem("currentUser")
         if (user) {
             const parsedUser = JSON.parse(user) as User
@@ -29,24 +47,9 @@ export default function EditRide() {
         } else {
             router.push("/")
         }
-    }, [router, id])
+    }, [router, id, isOnline])
 
-    const fetchRideDetailsCallback = async (userId: string, rideId: string) => {
-        if (isOnline) {
-            try {
-                const rideDetails = await fetchRideDetails(userId, rideId)
-                setRide(rideDetails)
-                if (rideDetails.status !== "pending" || rideDetails.requester_id !== userId) {
-                    toast.error("You can't edit this ride.")
-                    router.push(`/rides/${rideId}`)
-                }
-            } catch (error) {
-                console.error("Error fetching ride details:", error)
-                toast.error("Failed to fetch ride details. Please try again.")
-                router.push("/dashboard")
-            }
-        }
-    }
+
 
     return (
         <Layout currentUser={currentUser}>

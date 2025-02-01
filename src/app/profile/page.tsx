@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import Layout from '@/components/Layout'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { toast } from "sonner"
+
+import Layout from '@/components/Layout'
 import { User, Contact, AssociatedPerson } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
@@ -35,7 +36,7 @@ export default function Profile() {
         toast.error("Failed to fetch user data. Please try again.");
       }
     }
-  }, [etag, toast, isOnline])
+  }, [etag, isOnline])
 
   useEffect(() => {
     const user = localStorage.getItem("currentUser")

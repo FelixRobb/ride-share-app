@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from "react"
 import { useRouter } from 'next/navigation'
-import LoginPage from '@/components/LoginPage'
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { User } from "@/types"
+
+import LoginPage from '@/components/LoginPage'
 import { fetchUserData } from "@/utils/api"
 
 export default function Login() {
@@ -31,7 +31,7 @@ export default function Login() {
 
   useEffect(() => {
     setQuoteIndex(Math.floor(Math.random() * quotes.length));
-  }, []);
+  }, [quotes.length]);
 
   if (quoteIndex === null) return null;
 

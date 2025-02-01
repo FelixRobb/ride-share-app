@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import Layout from '@/components/Layout';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { toast } from "sonner";
+
+import Layout from '@/components/Layout';
 import { User, AssociatedPerson } from "@/types";
 import { fetchUserData } from "@/utils/api";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
@@ -14,12 +15,27 @@ const CreateRidePage = dynamic(() => import('@/components/CreateRidePage'), { ss
 export default function CreateRide() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [etag, setEtag] = useState<string | null>(null);
 
   const router = useRouter();
   const isOnline = useOnlineStatus();
 
+  const fetchUserDataCallback = useCallback(async (userId: string) => {
+    if (isOnline) {
+      try {
+        const result = await fetchUserData(userId, etag);
+        if (result) {
+          const { data, newEtag } = result;
+          setEtag(newEtag);
+          setAssociatedPeople(data.associatedPeople);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        toast.error("Failed to fetch user data. Please try again.");
+      }
+    }
+  }, [etag, isOnline]);
+  
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const user = localStorage.getItem("currentUser");
@@ -31,24 +47,7 @@ export default function CreateRide() {
         router.push('/');
       }
     }
-  }, [router]);
-
-  const fetchUserDataCallback = async (userId: string) => {
-    if (isOnline) {
-      try {
-        const result = await fetchUserData(userId, etag);
-        if (result) {
-          const { data, newEtag } = result;
-          setEtag(newEtag);
-          setAssociatedPeople(data.associatedPeople);
-        }
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        toast.error("Failed to fetch user data. Please try again.");
-      }
-    }
-  };
+  }, [fetchUserDataCallback, router]);
 
   useEffect(() => {
     if (currentUser) {
@@ -57,7 +56,7 @@ export default function CreateRide() {
       }, 10000);
       return () => clearInterval(intervalId);
     }
-  }, [currentUser, isOnline]);
+  }, [currentUser, fetchUserDataCallback, isOnline]);
 
 
   return (

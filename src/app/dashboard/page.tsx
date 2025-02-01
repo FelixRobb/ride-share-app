@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import Layout from '@/components/Layout'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense, useCallback } from 'react'
 import { toast } from "sonner"
+
+import Layout from '@/components/Layout'
 import { User, Ride, Contact } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
@@ -22,27 +23,7 @@ export default function Dashboard() {
   const router = useRouter()
   const isOnline = useOnlineStatus()
 
-  useEffect(() => {
-    const search = new URLSearchParams(window.location.search)
-    if (search) {
-      setActiveTab(search.get('tab') || 'active')
-    }
-  }, [])
-
-  useEffect(() => {
-    const user = localStorage.getItem("currentUser")
-    if (user) {
-      const parsedUser = JSON.parse(user) as User
-      setCurrentUser(parsedUser)
-
-      // Fetch initial data on mount
-      void fetchUserDataCallback(parsedUser.id)
-    } else {
-      router.push('/')
-    }
-  }, [router])
-
-  const fetchUserDataCallback = async (userId: string) => {
+  const fetchUserDataCallback = useCallback(async (userId: string) => {
     if (isOnline) {
       try {
         const result = await fetchUserData(userId, etag)
@@ -61,7 +42,27 @@ export default function Dashboard() {
         toast.error("Failed to fetch user data. Please try again.");
       }
     }
-  }
+  }, [etag, isOnline])
+  
+  useEffect(() => {
+    const search = new URLSearchParams(window.location.search)
+    if (search) {
+      setActiveTab(search.get('tab') || 'active')
+    }
+  }, [])
+
+  useEffect(() => {
+    const user = localStorage.getItem("currentUser")
+    if (user) {
+      const parsedUser = JSON.parse(user) as User
+      setCurrentUser(parsedUser)
+
+      // Fetch initial data on mount
+      void fetchUserDataCallback(parsedUser.id)
+    } else {
+      router.push('/')
+    }
+  }, [fetchUserDataCallback, router])
 
   useEffect(() => {
     if (currentUser) {
@@ -70,7 +71,7 @@ export default function Dashboard() {
       }, 10000)
       return () => clearInterval(intervalId)
     }
-  }, [currentUser, isOnline])
+  }, [currentUser, fetchUserDataCallback, isOnline])
 
   return (
     <Layout currentUser={currentUser}>
