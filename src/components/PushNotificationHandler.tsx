@@ -9,19 +9,20 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog"
 
 export default function PushNotificationHandler({ userId }: { userId: string }) {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null)
   const [showPermissionPopup, setShowPermissionPopup] = useState(false)
   const [hasSeenPopup, setHasSeenPopup] = useState(false)
+  const [pushEnabled, setPushEnabled] = useState<boolean | null>(null) // Store push preference
+  const [isPushLoading, setIsPushLoading] = useState(true)
 
   const handlePermissionGranted = useCallback(async (registration: ServiceWorkerRegistration) => {
-    const response = await fetch(`/api/users/${userId}/push-preference`)
-    const { enabled } = await response.json()
+    if (pushEnabled === null) return // Don't do anything if push preference hasn't been loaded yet
 
     const saveSubscription = async (subscription: PushSubscription) => {
       try {
@@ -64,31 +65,33 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
       }
     }
 
-    if (enabled) {
-      let subscription = await registration.pushManager.getSubscription()
+    if (pushEnabled) {
+      let currentSubscription = await registration.pushManager.getSubscription()
 
-      if (!subscription) {
+      if (!currentSubscription) {
         console.log("No subscription found, creating new subscription")
         const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
         if (!publicKey) {
           throw new Error("VAPID public key is not set")
         }
-        subscription = await registration.pushManager.subscribe({
+        currentSubscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: publicKey,
         })
-        await saveSubscription(subscription)
+        if (currentSubscription) {
+          await saveSubscription(currentSubscription)
+        }
       }
 
-      setSubscription(subscription)
-    } else if (!enabled && subscription) {
+      setSubscription(currentSubscription)
+    } else if (!pushEnabled && subscription) {
       await subscription.unsubscribe()
       await deleteSubscription()
       setSubscription(null)
     }
-  }, [userId, subscription])
+  }, [userId, subscription, pushEnabled])
 
-  const debouncedHandlePermissionGranted = debounce(handlePermissionGranted, 10000)
+  const debouncedHandlePermissionGranted = debounce(handlePermissionGranted, 1000)
 
   useEffect(() => {
     const setupPushNotifications = async () => {
@@ -102,7 +105,7 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
           if (currentPermission === "default" && !hasSeenPopup) {
             setShowPermissionPopup(true)
           } else if (currentPermission === "granted") {
-            await handlePermissionGranted(registration)
+            await debouncedHandlePermissionGranted(registration)
           }
           // If permission is "denied", do nothing
         } catch (error) {
@@ -114,8 +117,31 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
     }
 
     setupPushNotifications()
-  }, [userId, hasSeenPopup, handlePermissionGranted])
+  }, [userId, hasSeenPopup, debouncedHandlePermissionGranted])
 
+  useEffect(() => {
+    const getPushPreference = async () => {
+      try {
+        const response = await fetch(`/api/users/${userId}/push-preference`)
+        const { enabled } = await response.json()
+        setPushEnabled(enabled)
+      } catch (error) {
+        console.error("Error getting push preference:", error)
+      } finally {
+        setIsPushLoading(false)
+      }
+    }
+
+    getPushPreference()
+  }, [userId])
+
+  useEffect(() => {
+    if (!isPushLoading && "serviceWorker" in navigator && "PushManager" in window && pushEnabled !== null) {
+      navigator.serviceWorker.ready.then((registration) => {
+        void debouncedHandlePermissionGranted(registration)
+      })
+    }
+  }, [isPushLoading, pushEnabled, debouncedHandlePermissionGranted])
 
   const handlePermissionRequest = async (event: React.MouseEvent<HTMLButtonElement> | boolean = true) => {
     if (typeof event !== "boolean") {
@@ -134,7 +160,6 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
     // If permission is already "granted" or "denied", do nothing
   }
 
-
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("message", (event) => {
@@ -146,18 +171,6 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
       })
     }
   }, [])
-
-  useEffect(() => {
-    const checkPermission = async () => {
-      const permission = Notification.permission
-      if (permission === "granted") {
-        const registration = await navigator.serviceWorker.ready
-        await debouncedHandlePermissionGranted(registration)
-      }
-    }
-
-    checkPermission()
-  }, [debouncedHandlePermissionGranted])
 
   return (
     <>
