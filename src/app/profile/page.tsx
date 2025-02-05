@@ -39,14 +39,24 @@ export default function Profile() {
   }, [etag, isOnline])
 
   useEffect(() => {
-    const user = localStorage.getItem("currentUser")
-    if (user) {
-      const parsedUser = JSON.parse(user) as User
-      setCurrentUser(parsedUser)
-      void fetchUserDataCallback(parsedUser.id)
-    } else {
-      router.push('/')
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch("/api/user")
+        if (response.ok) {
+          const userData = await response.json()
+          setCurrentUser(userData)
+          void fetchUserDataCallback(userData.id) // Fetch initial data after getting user data from /api/user
+        } else {
+          throw new Error("Failed to fetch user data")
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+        toast.error("Failed to load user data. Please try logging in again.")
+        router.push("/")
+      }
     }
+
+    fetchUserData()
   }, [router, fetchUserDataCallback])
 
   useEffect(() => {
@@ -60,7 +70,7 @@ export default function Profile() {
 
 
   return (
-    <Layout currentUser={currentUser}>
+    <Layout>
       <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your profile</div>}>
         {currentUser && (
           <ProfilePage

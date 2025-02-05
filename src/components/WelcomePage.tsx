@@ -35,19 +35,25 @@ export default function WelcomePage() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  // Add an effect to check authentication status
   useEffect(() => {
-    const checkAuth = () => {
-      const user = localStorage.getItem("currentUser")
-      setIsAuthenticated(!!user)
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/user")
+        if (response.ok) {
+          const userData = await response.json()
+          localStorage.setItem("currentUser", JSON.stringify(userData))
+          setIsAuthenticated(true)
+        } else if (response.status === 401) {
+          setIsAuthenticated(false)
+        } else {
+          throw new Error("Failed to fetch user data")
+        }
+      } catch (error) {
+        console.error("Error checking authentication:", error)
+      }
     }
 
     checkAuth()
-    window.addEventListener("storage", checkAuth)
-
-    return () => {
-      window.removeEventListener("storage", checkAuth)
-    }
   }, [])
 
   const handleAcceptCookies = () => {

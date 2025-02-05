@@ -1,13 +1,9 @@
-import {
-  Home,
-  Car,
-  Users,
-  HelpCircle,
-} from "lucide-react"
+import { Home, Car, Users, HelpCircle } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 import { NotificationPanel } from "@/components/NotificationPanel"
 import { Button } from "@/components/ui/button"
@@ -19,17 +15,50 @@ import type { User } from "../types"
 
 import PushNotificationHandler from "./PushNotificationHandler"
 
-
 interface LayoutProps {
   children: React.ReactNode
-  currentUser: User | null
 }
 
-export default function Layout({ children, currentUser }: LayoutProps) {
+export default function Layout({ children }: LayoutProps) {
   const pathname = usePathname()
+  const router = useRouter()
 
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const isOnline = useOnlineStatus()
   const [wasPreviouslyOffline, setWasPreviouslyOffline] = useState(false)
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch("/api/user")
+        if (response.ok) {
+          const userData = await response.json()
+          setCurrentUser(userData)
+
+          // Register service worker and set up push notifications
+
+          if ("serviceWorker" in navigator) {
+            try {
+              const registration = await navigator.serviceWorker.register("/service-worker.js")
+              console.log("Service Worker registered with scope:", registration.scope)
+
+  
+            } catch (error) {
+              console.error("Error setting service-worker", error)
+            }
+          }
+        } else {
+          throw new Error("Failed to fetch user data")
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+        toast.error("Failed to load user data. Please try logging in again.")
+        router.push("/")
+      }
+    }
+
+    fetchUserData()
+  }, [router, pathname])
 
   useEffect(() => {
     if (!isOnline) {
@@ -41,7 +70,6 @@ export default function Layout({ children, currentUser }: LayoutProps) {
     }
   }, [isOnline, wasPreviouslyOffline])
 
-
   const TutorialButton = () => {
     const { restartTutorial } = useTutorial()
     return (
@@ -51,6 +79,7 @@ export default function Layout({ children, currentUser }: LayoutProps) {
       </Button>
     )
   }
+
 
   if (!currentUser) return children
 
@@ -85,29 +114,18 @@ export default function Layout({ children, currentUser }: LayoutProps) {
                 </Button>
               ))}
               <div className="h-6 w-px bg-border mx-2" />
-              <NotificationPanel
-                userId={currentUser.id}
-                onNotificationsRead={() => {
-                }}
-              />
+              <NotificationPanel userId={currentUser.id} onNotificationsRead={() => { }} />
             </nav>
 
             {/* Mobile Notification Button */}
             <div className="md:hidden">
-              <NotificationPanel
-                userId={currentUser.id}
-                onNotificationsRead={() => {
-                }}
-              />
+              <NotificationPanel userId={currentUser.id} onNotificationsRead={() => { }} />
             </div>
           </div>
         </header>
 
         {/* Main Content */}
-        <main className="flex-grow container mx-auto px-4 py-8 pb-7 md:pb-8">
-          {children}
-
-        </main>
+        <main className="flex-grow container mx-auto px-4 py-8 pb-7 md:pb-8">{children}</main>
 
         {/* Mobile Navigation Bar */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t z-50">
@@ -155,3 +173,4 @@ export default function Layout({ children, currentUser }: LayoutProps) {
     </div>
   )
 }
+

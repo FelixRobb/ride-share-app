@@ -18,7 +18,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { cleanupPushSubscription, unregisterServiceWorker } from "@/utils/cleanupService"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
@@ -93,13 +92,8 @@ export default function ProfilePage({
     localStorage.setItem("theme", newMode)
   }
 
-  const logout = async () => {
-    if (currentUser) {
-      await cleanupPushSubscription(currentUser.id)
-      await unregisterServiceWorker()
-    }
-    localStorage.removeItem("currentUser")
-    router.push("/")
+  const logout = () => {
+    router.push("/logout")
   }
 
   const handleLogout = () => {
