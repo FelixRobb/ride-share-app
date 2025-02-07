@@ -135,7 +135,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contact
 
-Félix Robb - [rideshareapp.mail@gmail.com]
+Félix Robb - [rideshareapp.mail@gmail.com](rideshareapp.mail@gmail.com)
 
-Project Link: [https://github.com/FelixRobb/ride-share-app/](https://github.com/FelixRobb/ride-share-app/))
+Project Link: [https://github.com/FelixRobb/ride-share-app/](https://github.com/FelixRobb/ride-share-app/)
 
