@@ -1,72 +1,141 @@
-# Ride Sharing App for Parents
+# RideShare
 
+RideShare is a modern, user-friendly web application that facilitates ride-sharing among users. It allows people to connect, offer, and request rides within their trusted network of contacts.
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/3c958cfa-2c19-4c63-9cdb-d5a09d003b81/deploy-status)](https://app.netlify.com/sites/rideshareappweb/deploys)
+![RideShare Logo](/public/icon.svg)
 
+## Table of Contents
 
-This is a simplified ride-sharing app designed specifically for parents to coordinate and share rides for their children. The app connects parents based on phone numbers, allowing for easy ride requests, notifications, and a user-friendly interface.
+- [Features](#features)
+- [Technologies Used](#technologies-used)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [API Endpoints](#api-endpoints)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
 
 ## Features
 
-- **User Accounts**: Parents can create and manage their accounts.
-- **Contact Matching**: Connect with other parents based on their phone numbers.
-- **Ride Requests**: Request and manage lifts from other parents.
-- **Notifications**: Receive notifications for ride requests, confirmations, and updates.
-- **User-Friendly Design**: Simple and intuitive interface for quick access to key functionalities.
+- User authentication and registration
+- Create, edit, and manage ride requests
+- Offer rides to other users
+- Real-time notifications for ride updates
+- User profile management
+- Contact list and suggestions
+- Interactive map for location selection
+- Responsive design for mobile and desktop
+- Dark mode support
+- Offline capabilities
+- Push notifications (on supported browsers)
 
-## Technology Stack
+## Technologies Used
 
-- **Framework**: Next.js
-- **Database**: Supabase Postgressql
-- **Styling**: Shadcn/UI
+- [Next.js 13](https://nextjs.org/) with App Router
+- [React](https://reactjs.org/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Supabase](https://supabase.io/) for database and authentication
+- [MapTiler](https://www.maptiler.com/) for map services
+- [Framer Motion](https://www.framer.com/motion/) for animations
+- [Lucide React](https://lucide.dev/) for icons
+- [next-themes](https://github.com/pacocoursey/next-themes) for theming
+- [Vercel](https://vercel.com/) for deployment
 
-## Installation
+## Getting Started
 
-1. **Clone the repository**:
+### Prerequisites
 
-   ```bash
-   git clone https://github.com/FelixRobb/ride-share-app
-   cd ride-sharing-app
-   ```
+- Node.js (v14 or later)
+- npm or yarn
+- Supabase account
+- MapTiler API key
+- Vercel account (for deployment)
 
-2. **Install dependencies**:
+### Installation
 
-   ```bash
+1. Clone the repository:
+   \`\`\`
+   git clone https://github.com/your-username/rideshare.git
+   cd rideshare
+   \`\`\`
+
+2. Install dependencies:
+   \`\`\`
    npm install
-   ```
+   \`\`\`
 
-3. **Set up SQLite database**:
+3. Set up environment variables:
+   Create a `.env.local` file in the root directory and add the following variables:
+   \`\`\`
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   NEXT_PUBLIC_MAPTILER_KEY=your_maptiler_api_key
+   JWT_SECRET=your_jwt_secret
+   NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_vapid_public_key
+   VAPID_PRIVATE_KEY=your_vapid_private_key
+   \`\`\`
 
-   - Make sure SQLite is properly configured for the app.
-   - Run any necessary database migrations or initial setup scripts provided.
-
-4. **Run the development server**:
-
-   ```bash
+4. Run the development server:
+   \`\`\`
    npm run dev
-   ```
+   \`\`\`
 
-   The app will be available at `http://localhost:3000`.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
 ## Usage
 
-1. **Create an Account**: Register with your phone number to connect with other parents.
-2. **Connect with Contacts**: Automatically find and connect with other parents based on their phone numbers.
-3. **Request a Ride**: Choose a date and time for the ride and submit a request to other parents.
-4. **Manage Notifications**: Stay updated with incoming ride requests and responses through notifications.
+1. Register for an account or log in if you already have one.
+2. Set up your profile and add contacts.
+3. Create a ride request by specifying the start and end locations, date, and time.
+4. Browse available rides and offer rides to others.
+5. Manage your rides from the dashboard.
+6. Receive notifications for ride updates and new requests.
+
+## Project Structure
+
+- `app/`: Next.js 13 app directory containing page components and API routes
+- `components/`: Reusable React components
+- `contexts/`: React context providers
+- `hooks/`: Custom React hooks
+- `lib/`: Utility functions and configuration files
+- `public/`: Static assets
+- `styles/`: Global styles and Tailwind CSS configuration
+- `types/`: TypeScript type definitions
+- `utils/`: Helper functions and API calls
+
+## API Endpoints
+
+- `/api/login`: User login
+- `/api/register`: User registration
+- `/api/user`: Get current user data
+- `/api/rides`: CRUD operations for rides
+- `/api/contacts`: Manage user contacts
+- `/api/notifications`: Handle user notifications
+- `/api/users`: User-related operations
+
+For a complete list of API endpoints and their usage, please refer to the API documentation.
 
 ## Contributing
 
-1. Fork the repository.
-2. Create a new branch for your feature (`git checkout -b feature-name`).
-3. Commit your changes (`git commit -m 'Add new feature'`).
-4. Push to the branch (`git push origin feature-name`).
-5. Open a pull request.
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for more details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Contact
 
-For any questions or support, please reach out to Félix Robb (felix.nunes.robb@gmail.com).
+Félix Robb - [Your Email]
+
+Project Link: [https://github.com/your-username/rideshare](https://github.com/your-username/rideshare)
+
