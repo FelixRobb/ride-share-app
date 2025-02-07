@@ -59,8 +59,8 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 
 1. Clone the repository:
    ```
-   git clone https://github.com/your-username/rideshare.git
-   cd rideshare
+   git clone https://github.com/FelixRobb/ride-share-app/
+   cd ride-share-app
    ```
 
 2. Install dependencies:
