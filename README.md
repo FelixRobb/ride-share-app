@@ -58,31 +58,31 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 ### Installation
 
 1. Clone the repository:
-   \`\`\`
+   ```
    git clone https://github.com/your-username/rideshare.git
    cd rideshare
-   \`\`\`
+   ```
 
 2. Install dependencies:
-   \`\`\`
+   ```
    npm install
-   \`\`\`
+   ```
 
 3. Set up environment variables:
    Create a `.env.local` file in the root directory and add the following variables:
-   \`\`\`
+   ```
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    NEXT_PUBLIC_MAPTILER_KEY=your_maptiler_api_key
    JWT_SECRET=your_jwt_secret
    NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_vapid_public_key
    VAPID_PRIVATE_KEY=your_vapid_private_key
-   \`\`\`
+   ```
 
 4. Run the development server:
-   \`\`\`
+   ```
    npm run dev
-   \`\`\`
+   ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
@@ -135,7 +135,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contact
 
-Félix Robb - [Your Email]
+Félix Robb - [rideshareapp.mail@gmail.com]
 
-Project Link: [https://github.com/your-username/rideshare](https://github.com/your-username/rideshare)
+Project Link: [https://github.com/FelixRobb/ride-share-app/](https://github.com/FelixRobb/ride-share-app/))
 
