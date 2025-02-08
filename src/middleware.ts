@@ -3,6 +3,8 @@ import type { NextRequest } from "next/server"
 import { jwtVerify } from "jose"
 import type { JwtPayload } from "@/types/jwt"
 
+const secret = new TextEncoder().encode(process.env.JWT_SECRET)
+
 // List of public routes that don't require authentication
 const publicRoutes = [
   "/",
@@ -12,14 +14,24 @@ const publicRoutes = [
   "/terms-of-service",
   "/admin",
   "/reset-password",
-  "/logout",
   "/api/login",
   "/api/register",
   "/api/auth/reset-password",
   "/api/admin/login",
+  "/api/admin/logout",
+  "/api/admin/check-auth",
   "/api/check-user",
   "/api/suggested-contacts",
   "/api/users/search",
+]
+
+// List of admin routes that require admin authentication
+const adminRoutes = [
+  "/api/admin/stats",
+  "/api/admin/users",
+  "/api/admin/notify-all",
+  "/api/admin/notify-user",
+  "/api/admin/users/",
 ]
 
 export async function middleware(request: NextRequest) {
@@ -27,6 +39,25 @@ export async function middleware(request: NextRequest) {
 
   if (publicRoutes.includes(path)) {
     return NextResponse.next()
+  }
+
+  if (adminRoutes.some((route) => path.startsWith(route))) {
+    const adminJwt = request.cookies.get("admin_jwt")?.value
+
+    if (!adminJwt) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    try {
+      const { payload } = await jwtVerify(adminJwt, secret)
+      if (payload.role !== "admin") {
+        throw new Error("Not an admin")
+      }
+      return NextResponse.next()
+    } catch (error) {
+      console.error("Invalid admin token:", error)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
   }
 
   const jwt = request.cookies.get("jwt")?.value
@@ -40,7 +71,6 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET)
     const { payload } = (await jwtVerify(jwt, secret)) as { payload: JwtPayload }
 
     // Securely attach user data to request
@@ -59,8 +89,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|service-worker.js|api/login|api/register|api/auth/reset-password|api/admin/login|api/check-user|api/suggested-contacts|logout|api/users/search).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|service-worker.js).*)"],
 }
 

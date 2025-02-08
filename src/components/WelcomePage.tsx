@@ -40,8 +40,6 @@ export default function WelcomePage() {
       try {
         const response = await fetch("/api/user")
         if (response.ok) {
-          const userData = await response.json()
-          localStorage.setItem("currentUser", JSON.stringify(userData))
           setIsAuthenticated(true)
         } else if (response.status === 401) {
           setIsAuthenticated(false)
