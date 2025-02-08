@@ -79,7 +79,7 @@ html {
 }
 
 body {
-  @apply bg-black text-white;
+  @apply bg-black;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
