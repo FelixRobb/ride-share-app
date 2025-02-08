@@ -19,10 +19,7 @@ const publicRoutes = [
   "/api/auth/reset-password",
   "/api/admin/login",
   "/api/admin/logout",
-  "/api/admin/check-auth",
-  "/api/check-user",
-  "/api/suggested-contacts",
-  "/api/users/search",
+  "/api/admin/check-auth"
 ]
 
 // List of admin routes that require admin authentication
