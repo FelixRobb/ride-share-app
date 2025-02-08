@@ -202,7 +202,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
             </div>
           )}
           <DialogHeader className="px-6 py-4 border-b">
-            <DialogTitle className="text-lg font-medium">Contacts</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">Contacts</DialogTitle>
             <DialogDescription>Manage your contacts and add new ones.</DialogDescription>
           </DialogHeader>
           <div className="p-6">
