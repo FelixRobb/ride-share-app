@@ -12,8 +12,18 @@ export default function NotFound() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
-    const user = localStorage.getItem("currentUser")
-    setIsLoggedIn(!!user)
+    const checkAuth = async () => {
+      const response = await fetch("/api/user")
+      if (response.ok) {
+        setIsLoggedIn(true)
+      } else if (response.status === 401) {
+        setIsLoggedIn(false)
+      } else {
+        throw new Error("Failed to fetch user data")
+      }
+    }
+
+    checkAuth()
   }, [])
 
   const carVariants = {

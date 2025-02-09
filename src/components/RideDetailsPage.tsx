@@ -115,8 +115,7 @@ export default function RideDetailsPage({
         if (notes.length === 0 && fetchedNotes.length > 0) {
           scrollToBottom()
         }
-      } catch (error) {
-        console.error("Error fetching notes:", error)
+      } catch {
         if (isOnline) {
           toast.error("Failed to load notes. Please try again.")
         }
@@ -126,12 +125,8 @@ export default function RideDetailsPage({
 
   const refreshRideData = useCallback(async () => {
     if (isOnline) {
-      try {
-        const updatedRide = await fetchRideDetails(currentUser.id, ride.id)
-        setRide(updatedRide)
-      } catch (error) {
-        console.error("Error refreshing ride data:", error)
-      }
+      const updatedRide = await fetchRideDetails(currentUser.id, ride.id)
+      setRide(updatedRide)
     }
   }, [currentUser.id, ride.id, isOnline])
 
@@ -172,7 +167,6 @@ export default function RideDetailsPage({
 
           newMap.on("load", () => {
             if (ride) {
-              try {
                 // Add markers for the starting and ending points
                 new maplibregl.Marker().setLngLat([ride.from_lon, ride.from_lat]).addTo(newMap)
                 new maplibregl.Marker().setLngLat([ride.to_lon, ride.to_lat]).addTo(newMap)
@@ -185,14 +179,10 @@ export default function RideDetailsPage({
                   ],
                   { padding: 50 },
                 )
-              } catch (markerError) {
-                console.error("Error adding markers or fitting bounds:", markerError)
-              }
             }
             setIsLoadingMap(false)
           })
-        } catch (error) {
-          console.error("Error initializing map:", error)
+        } catch {
           setIsLoadingMap(false)
         }
       }
@@ -212,8 +202,7 @@ export default function RideDetailsPage({
           scrollToBottom()
           toast.success("Message sent successfully.")
         }
-      } catch (error) {
-        console.error("Error adding note:", error)
+      } catch {
         toast.error("Failed to send message. Please try again.")
       }
     }
@@ -235,8 +224,7 @@ export default function RideDetailsPage({
         setEditingNoteId(null)
         setEditedNoteContent("")
         toast.success("Message edited successfully.")
-      } catch (error) {
-        console.error("Error editing note:", error)
+      } catch {
         toast.error("Failed to edit message. Please try again.")
       }
     }
@@ -247,8 +235,7 @@ export default function RideDetailsPage({
       await deleteNote(noteId, currentUser.id)
       setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId))
       toast.success("Message deleted successfully.")
-    } catch (error) {
-      console.error("Error deleting note:", error)
+    } catch {
       toast.error("Failed to delete message. Please try again.")
     }
   }
@@ -260,8 +247,7 @@ export default function RideDetailsPage({
       await fetchUserData()
       await refreshRideData()
       toast.success("Ride offered successfully.")
-    } catch (error) {
-      console.error("Error offering ride:", error)
+    } catch {
       toast.error("Failed to accept ride. Please try again.")
     } finally {
       setIsLoading(false)
@@ -281,8 +267,7 @@ export default function RideDetailsPage({
       toast.success("Ride request cancelled successfully.")
       setIsCancelRequestDialogOpen(false)
       router.push("/dashboard")
-    } catch (error) {
-      console.error("Error cancelling request:", error)
+    } catch {
       toast.error("Failed to cancel request. Please try again.")
     }
   }
@@ -300,8 +285,7 @@ export default function RideDetailsPage({
       toast.success("Ride offer cancelled successfully.")
       setIsCancelOfferDialogOpen(false)
       router.push("/dashboard")
-    } catch (error) {
-      console.error("Error cancelling offer:", error)
+    } catch {
       toast.error("Failed to cancel offer. Please try again.")
     }
   }
@@ -314,8 +298,7 @@ export default function RideDetailsPage({
       await fetchUserData()
       await refreshRideData()
       toast.success("Ride marked as completed.")
-    } catch (error) {
-      console.error("Error finishing ride:", error)
+    } catch {
       toast.error("Failed to finish ride. Please try again.")
     } finally {
       setIsLoading(false)
@@ -330,16 +313,14 @@ export default function RideDetailsPage({
     return contact ? (contact.user_id === userId ? contact.user.name : contact.contact.name) : "Unknown User"
   }
 
-  const copyToClipboard = (text: string) => {
-    if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(text).then(
-        () => {
-          toast.success("The address has been copied to your clipboard.")
-        },
-        (err) => {
-          console.error("Could not copy text: ", err)
-        },
-      )
+  const copyToClipboard = async (text: string) => {
+    if (typeof window !== "undefined" && window.navigator?.clipboard) {
+      try {
+        await window.navigator.clipboard.writeText(text)
+        toast.success("The address has been copied to your clipboard.")
+      } catch {
+        toast.error("Failed to copy the address to your clipboard.")
+      }
     }
   }
 
@@ -494,7 +475,7 @@ export default function RideDetailsPage({
               {ride.accepter_id === currentUser?.id
                 ? "Me"
                 : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact
-                    ?.name || "Unknown"}
+                  ?.name || "Unknown"}
             </p>
           </div>
         )}

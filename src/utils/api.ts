@@ -339,15 +339,6 @@ export const fetchRideDetails = async (userId: string, rideId: string): Promise<
   }
 }
 
-export const checkUser = async (userId: string): Promise<boolean> => {
-  const response = await fetch(`/api/check-user?userId=${userId}`)
-  if (response.ok) {
-    const data = await response.json()
-    return data.exists
-  } else {
-    throw new Error("Failed to check user existence")
-  }
-}
 
 export const finishRide = async (rideId: string, userId: string) => {
   const response = await fetch(`/api/rides/${rideId}/finish`, {

@@ -79,8 +79,7 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
     try {
       const formattedIdentifier = loginMethod === 'email' ? email : phone;
       await handleLoginAction(formattedIdentifier, password, loginMethod);
-    } catch (error) {
-      console.error('Login error in component:', error);
+    } catch {
       setError("Invalid email/phone or password. Please try again.");
     }
   };
@@ -191,7 +190,7 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
             height={0}
             sizes="50vw"
             className="w-full lg:w-7/12 h-auto lg:rounded-l-lg"
-            placeholder = 'blur'
+            placeholder='blur'
             blurDataURL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkqAcAAIUAgUW0RjgAAAAASUVORK5CYII="
           />
           {randomQuote && (

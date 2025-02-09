@@ -3,6 +3,7 @@ import { supabase } from "@/lib/db";
 import bcrypt from "bcrypt";
 import { sendEmail, getWelcomeEmailContent } from "@/lib/emailService";
 import { parsePhoneNumber } from "libphonenumber-js";
+import { SignJWT } from "jose";
 
 export async function POST(request: Request) {
   const { name, phone, email, password } = await request.json();
@@ -46,18 +47,25 @@ export async function POST(request: Request) {
 
     if (insertError) throw insertError;
 
-    // Send welcome email
-    try {
-      const welcomeEmailContent = getWelcomeEmailContent(newUser.name);
-      await sendEmail(newUser.email, "Welcome to RideShare!", welcomeEmailContent);
-    } catch (emailError) {
-      console.error("Error sending welcome email:", emailError);
-      // Don't throw an error here, as we don't want to prevent successful registration
-    }
+    // Create JWT
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const token = await new SignJWT({ userId: newUser.id }).setProtectedHeader({ alg: "HS256" }).setExpirationTime("1d").sign(secret);
 
-    return NextResponse.json({ user: newUser });
-  } catch (error) {
-    console.error("Registration error:", error);
+    // Send welcome email
+
+    const welcomeEmailContent = getWelcomeEmailContent(newUser.name);
+    await sendEmail(newUser.email, "Welcome to RideShare!", welcomeEmailContent);
+
+    const response = NextResponse.json({ user: newUser });
+    response.cookies.set("jwt", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+    });
+
+    return response;
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

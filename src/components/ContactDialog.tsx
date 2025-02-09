@@ -71,7 +71,6 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
           throw new Error(errorData.error || "Failed to search users")
         }
       } catch (error) {
-        console.error("Error searching users:", error)
         toast.error(error instanceof Error ? error.message : "Failed to search users. Please try again.")
       } finally {
         setIsSearching(false)
@@ -100,8 +99,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
         } else {
           throw new Error("Failed to fetch suggested contacts")
         }
-      } catch (error) {
-        console.error("Error fetching suggested contacts:", error)
+      } catch {
         if (isOnline) {
           toast.error("Failed to load suggested contacts. Please try again later.")
         }
@@ -131,7 +129,6 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
       toast.success("Contact request sent successfully!")
       setLocalSuggestedContacts(localSuggestedContacts.filter((contact) => contact.id !== user.id))
     } catch (error) {
-      console.error("Error adding contact:", error)
       if (isOnline) {
         toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
       }
@@ -202,7 +199,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
             </div>
           )}
           <DialogHeader className="px-6 py-4 border-b">
-            <DialogTitle className="text-lg font-medium">Contacts</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">Contacts</DialogTitle>
             <DialogDescription>Manage your contacts and add new ones.</DialogDescription>
           </DialogHeader>
           <div className="p-6">

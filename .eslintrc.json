@@ -24,7 +24,7 @@
     "react/react-in-jsx-scope": "off",
     "react/prop-types": "off",
     "@typescript-eslint/no-unused-vars": "warn",
-    "no-console": "off"
+    "no-console": "warn"
   },
   "settings": {
     "react": {

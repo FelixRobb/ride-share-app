@@ -1,16 +1,16 @@
-'use client'
+"use client"
 
-import dynamic from 'next/dynamic'
-import { useRouter } from 'next/navigation'
-import { useState, useEffect, Suspense, useCallback } from 'react'
+import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense, useCallback } from "react"
 import { toast } from "sonner"
 
-import Layout from '@/components/Layout'
-import { User, Ride, Contact } from "@/types"
+import Layout from "@/components/Layout"
+import type { User, Ride, Contact } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
-const DashboardPage = dynamic(() => import('@/components/DashboardPage'), { ssr: false });
+const DashboardPage = dynamic(() => import("@/components/DashboardPage"), { ssr: false })
 
 export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -18,51 +18,60 @@ export default function Dashboard() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [etag, setEtag] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState('active') // default tab
+  const [activeTab, setActiveTab] = useState("active") // default tab
 
   const router = useRouter()
   const isOnline = useOnlineStatus()
 
-  const fetchUserDataCallback = useCallback(async (userId: string) => {
-    if (isOnline) {
-      try {
-        const result = await fetchUserData(userId, etag)
-        if (result) {
-          const { data, newEtag } = result
+  const fetchUserDataCallback = useCallback(
+    async (userId: string) => {
+      if (isOnline) {
+        try {
+          const result = await fetchUserData(userId, etag)
+          if (result) {
+            const { data, newEtag } = result
 
-          // Conditionally update the states to avoid unnecessary re-renders.
-          if (newEtag !== etag) {
-            setEtag(newEtag)
-            setRides(data.rides)
-            setContacts(data.contacts)
+            // Conditionally update the states to avoid unnecessary re-renders.
+            if (newEtag !== etag) {
+              setEtag(newEtag)
+              setRides(data.rides)
+              setContacts(data.contacts)
+            }
           }
+        } catch {
+          toast.error("Failed to fetch user data. Please try again.")
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error)
-        toast.error("Failed to fetch user data. Please try again.");
       }
-    }
-  }, [etag, isOnline])
-  
+    },
+    [etag, isOnline],
+  )
+
   useEffect(() => {
     const search = new URLSearchParams(window.location.search)
     if (search) {
-      setActiveTab(search.get('tab') || 'active')
+      setActiveTab(search.get("tab") || "active")
     }
   }, [])
 
   useEffect(() => {
-    const user = localStorage.getItem("currentUser")
-    if (user) {
-      const parsedUser = JSON.parse(user) as User
-      setCurrentUser(parsedUser)
-
-      // Fetch initial data on mount
-      void fetchUserDataCallback(parsedUser.id)
-    } else {
-      router.push('/')
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch("/api/user")
+        if (response.ok) {
+          const userData = await response.json()
+          setCurrentUser(userData)
+          void fetchUserDataCallback(userData.id) // Fetch initial data after getting user data from /api/user
+        } else {
+          throw new Error("Failed to fetch user data")
+        }
+      } catch {
+        toast.error("Failed to load user data. Please try logging in again.")
+        router.push("/")
+      }
     }
-  }, [fetchUserDataCallback, router])
+
+    fetchUserData()
+  }, [router, fetchUserDataCallback])
 
   useEffect(() => {
     if (currentUser) {
@@ -71,10 +80,10 @@ export default function Dashboard() {
       }, 10000)
       return () => clearInterval(intervalId)
     }
-  }, [currentUser, fetchUserDataCallback, isOnline])
+  }, [currentUser, fetchUserDataCallback])
 
   return (
-    <Layout currentUser={currentUser}>
+    <Layout>
       <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your dashboard</div>}>
         {currentUser && ( // Check if currentUser is loaded before rendering DashboardPage
           <DashboardPage

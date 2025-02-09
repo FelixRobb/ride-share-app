@@ -40,8 +40,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ ride });
-  } catch (error) {
-    console.error("Fetch ride details error:", error);
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

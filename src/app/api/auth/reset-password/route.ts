@@ -43,8 +43,7 @@ export async function POST(request: Request) {
     await sendEmail(email, 'Reset your password', resetEmailContent);
 
     return NextResponse.json({ message: 'Password reset email sent' });
-  } catch (error) {
-    console.error('Password reset error:', error);
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -81,8 +80,7 @@ export async function PUT(request: Request) {
     if (deleteError) throw deleteError;
 
     return NextResponse.json({ message: 'Password reset successful' });
-  } catch (error) {
-    console.error('Password reset error:', error);
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

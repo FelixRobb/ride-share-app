@@ -42,8 +42,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       const response = await fetch('/api/admin/stats')
       const data = await response.json()
       setStats(data)
-    } catch (error) {
-      console.error('Error fetching stats:', error)
+    } catch {
       toast.error("Failed to fetch statistics");
     }
   }
@@ -53,8 +52,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       const response = await fetch('/api/admin/users')
       const data = await response.json()
       setUsers(data)
-    } catch (error) {
-      console.error('Error fetching users:', error)
+    } catch {
       toast.error("Failed to fetch users");
     }
   }
@@ -63,11 +61,11 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     setSearchTerm(e.target.value)
   }
 
-  const filteredUsers = users.filter(user =>
+  const filteredUsers = Array.isArray(users) ? users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.phone.includes(searchTerm)
-  )
+  ) : [];
 
   const handleDeleteUser = async (userId: string) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
@@ -81,8 +79,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         } else {
           throw new Error('Failed to delete user')
         }
-      } catch (error) {
-        console.error('Error deleting user:', error)
+      } catch {
         toast.error("Failed to delete user");
       }
     }
@@ -108,8 +105,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       } else {
         throw new Error('Failed to update user')
       }
-    } catch (error) {
-      console.error('Error updating user:', error)
+    } catch {
       toast.error("Failed to update user");
     }
   }
@@ -132,8 +128,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       } else {
         throw new Error('Failed to send notification')
       }
-    } catch (error) {
-      console.error('Error sending notification:', error)
+    } catch {
       toast.error("Failed to send notification");
     }
   }
@@ -160,8 +155,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       } else {
         throw new Error('Failed to send notification')
       }
-    } catch (error) {
-      console.error('Error sending notification:', error)
+    } catch {
       toast.error("Failed to send notification");
     }
   }

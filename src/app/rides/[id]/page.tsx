@@ -36,8 +36,7 @@ export default function RideDetails() {
           setEtag(newEtag)
           setContacts(data.contacts)
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error)
+      } catch {
         toast.error("Failed to fetch user data. Please try again."); // Update: Replaced toast call
       }
     }
@@ -51,25 +50,31 @@ export default function RideDetails() {
         }
         const rideDetails = await fetchRideDetails(currentUser.id, rideId);
         setRide(rideDetails);
-      } catch (error) {
-        console.error("Error fetching ride details:", error);
+      } catch {
         toast.error("Failed to fetch ride details, or you don't have permission to see this ride. Please go back."); // Update: Replaced toast call
       }
     }
   }, [isOnline, currentUser]);
-  
+
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const user = localStorage.getItem('currentUser');
-      if (user) {
-        const parsedUser = JSON.parse(user) as User;
-        setCurrentUser(parsedUser);
-        void fetchUserDataCallback(parsedUser.id);
-      } else {
-        router.push('/');
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch("/api/user")
+        if (response.ok) {
+          const userData = await response.json()
+          setCurrentUser(userData)
+          void fetchUserDataCallback(userData.id) // Fetch initial data after getting user data from /api/user
+        } else {
+          throw new Error("Failed to fetch user data")
+        }
+      } catch {
+        toast.error("Failed to load user data. Please try logging in again.")
+        router.push("/")
       }
     }
-  }, [fetchUserDataCallback, router]);
+
+    fetchUserData()
+  }, [router, fetchUserDataCallback])
 
   useEffect(() => {
     if (currentUser && id) {
@@ -88,7 +93,7 @@ export default function RideDetails() {
 
 
   return (
-    <Layout currentUser={currentUser}>
+    <Layout>
       <Button type="button" variant="ghost" onClick={() => router.push(`/dashboard?tab=${fromTab}`)} className='mb-2'><ArrowBigLeft />Go Back to Dashboard</Button>
       <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
         {ride && currentUser && (

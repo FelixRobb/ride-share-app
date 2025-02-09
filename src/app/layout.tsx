@@ -10,7 +10,7 @@ const twitterImageUrl = `${siteUrl}/twitter-image.png`
 export const metadata = {
   title: "RideShare",
   description: "Connect with friends, share rides, and travel together safely.",
-  manifest: "/manifest.json",
+  manifest: "/manifest.webmanifest",
 
   appleWebApp: {
     capable: true,

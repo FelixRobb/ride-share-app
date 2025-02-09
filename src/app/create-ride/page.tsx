@@ -29,25 +29,31 @@ export default function CreateRide() {
           setEtag(newEtag);
           setAssociatedPeople(data.associatedPeople);
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
+      } catch {
         toast.error("Failed to fetch user data. Please try again.");
       }
     }
   }, [etag, isOnline]);
-  
+
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const user = localStorage.getItem("currentUser");
-      if (user) {
-        const parsedUser = JSON.parse(user) as User;
-        setCurrentUser(parsedUser);
-        void fetchUserDataCallback(parsedUser.id);
-      } else {
-        router.push('/');
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch("/api/user")
+        if (response.ok) {
+          const userData = await response.json()
+          setCurrentUser(userData)
+          void fetchUserDataCallback(userData.id) // Fetch initial data after getting user data from /api/user
+        } else {
+          throw new Error("Failed to fetch user data")
+        }
+      } catch {
+        toast.error("Failed to load user data. Please try logging in again.")
+        router.push("/")
       }
     }
-  }, [fetchUserDataCallback, router]);
+
+    fetchUserData()
+  }, [router, fetchUserDataCallback])
 
   useEffect(() => {
     if (currentUser) {
@@ -60,18 +66,18 @@ export default function CreateRide() {
 
 
   return (
-    <Layout currentUser={currentUser}>
-        <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
-          {currentUser && (
-            <CreateRidePage
-              currentUser={currentUser}
-              fetchUserData={() => fetchUserDataCallback(currentUser.id)}
-              setCurrentPage={(page) => router.push(`/${page}`)}
-              associatedPeople={associatedPeople}
-            />
-          )}
-        </Suspense>
-      </Layout>
+    <Layout>
+      <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
+        {currentUser && (
+          <CreateRidePage
+            currentUser={currentUser}
+            fetchUserData={() => fetchUserDataCallback(currentUser.id)}
+            setCurrentPage={(page) => router.push(`/${page}`)}
+            associatedPeople={associatedPeople}
+          />
+        )}
+      </Suspense>
+    </Layout>
   );
 }
 

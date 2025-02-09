@@ -1,7 +1,7 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: "gmail",
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS,
@@ -9,18 +9,12 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendEmail(to: string, subject: string, html: string) {
-  try {
-    await transporter.sendMail({
-      from: process.env.GMAIL_USER,
-      to,
-      subject,
-      html,
-    });
-    console.log('Email sent successfully');
-  } catch (error) {
-    console.error('Error sending email:', error);
-    throw error;
-  }
+  await transporter.sendMail({
+    from: process.env.GMAIL_USER,
+    to,
+    subject,
+    html,
+  });
 }
 
 export function getWelcomeEmailContent(name: string): string {
@@ -263,4 +257,3 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
     </html>
   `;
 }
-

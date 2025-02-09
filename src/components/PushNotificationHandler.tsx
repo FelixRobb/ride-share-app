@@ -25,43 +25,34 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
     if (pushEnabled === null) return // Don't do anything if push preference hasn't been loaded yet
 
     const saveSubscription = async (subscription: PushSubscription) => {
-      try {
-        const response = await fetch("/api/push-subscription", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            subscription: subscription.toJSON(),
-            userId,
-          }),
-        })
+      const response = await fetch("/api/push-subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subscription: subscription.toJSON(),
+          userId,
+        }),
+      })
 
-        if (!response.ok) {
-          throw new Error("Failed to save push subscription")
-        }
-        console.log("Push subscription saved successfully")
-      } catch (error) {
-        console.error("Error saving push subscription:", error)
+      if (!response.ok) {
+        throw new Error("Failed to save push subscription")
       }
+
     }
 
     const deleteSubscription = async () => {
-      try {
-        const response = await fetch("/api/push-subscription", {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId }),
-        })
+      const response = await fetch("/api/push-subscription", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+      })
 
-        if (!response.ok) {
-          throw new Error("Failed to delete push subscription")
-        }
-        console.log("Push subscription deleted successfully")
-      } catch (error) {
-        console.error("Error deleting push subscription:", error)
+      if (!response.ok) {
+        throw new Error("Failed to delete push subscription")
       }
     }
 
@@ -69,7 +60,6 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
       let currentSubscription = await registration.pushManager.getSubscription()
 
       if (!currentSubscription) {
-        console.log("No subscription found, creating new subscription")
         const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
         if (!publicKey) {
           throw new Error("VAPID public key is not set")
@@ -96,23 +86,18 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
   useEffect(() => {
     const setupPushNotifications = async () => {
       if ("serviceWorker" in navigator && "PushManager" in window) {
-        try {
-          const registration = await navigator.serviceWorker.ready
+        const registration = await navigator.serviceWorker.ready
 
-          // Check the current permission status
-          const currentPermission = Notification.permission
+        // Check the current permission status
+        const currentPermission = Notification.permission
 
-          if (currentPermission === "default" && !hasSeenPopup) {
-            setShowPermissionPopup(true)
-          } else if (currentPermission === "granted") {
-            await debouncedHandlePermissionGranted(registration)
-          }
-          // If permission is "denied", do nothing
-        } catch (error) {
-          console.error("Error setting up push notifications:", error)
+        if (currentPermission === "default" && !hasSeenPopup) {
+          setShowPermissionPopup(true)
+        } else if (currentPermission === "granted") {
+          await debouncedHandlePermissionGranted(registration)
         }
-      } else {
-        console.log("Push notifications are not supported")
+        // If permission is "denied", do nothing
+
       }
     }
 
@@ -125,8 +110,6 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
         const response = await fetch(`/api/users/${userId}/push-preference`)
         const { enabled } = await response.json()
         setPushEnabled(enabled)
-      } catch (error) {
-        console.error("Error getting push preference:", error)
       } finally {
         setIsPushLoading(false)
       }
@@ -143,7 +126,7 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
     }
   }, [isPushLoading, pushEnabled, debouncedHandlePermissionGranted])
 
-  const handlePermissionRequest = async (event: React.MouseEvent<HTMLButtonElement> | boolean = true) => {
+  const handlePermissionRequest: (event?: React.MouseEvent<HTMLButtonElement> | boolean) => Promise<void> = async (event = true) => {
     if (typeof event !== "boolean") {
       setShowPermissionPopup(false)
     }

@@ -31,28 +31,34 @@ export default function EditRide() {
                         toast.error("You can't edit this ride.")
                         router.push(`/rides/${rideId}`)
                     }
-                } catch (error) {
-                    console.error("Error fetching ride details:", error)
+                } catch {
                     toast.error("Failed to fetch ride details. Please try again.")
                     router.push("/dashboard")
                 }
             }
         }
 
-        const user = localStorage.getItem("currentUser")
-        if (user) {
-            const parsedUser = JSON.parse(user) as User
-            setCurrentUser(parsedUser)
-            void fetchRideDetailsCallback(parsedUser.id, id as string)
-        } else {
-            router.push("/")
+        const fetchUserData = async () => {
+            try {
+                const response = await fetch("/api/user")
+                if (response.ok) {
+                    const userData = await response.json()
+                    setCurrentUser(userData)
+                    void fetchRideDetailsCallback(userData.id, id as string)
+                } else {
+                    throw new Error("Failed to fetch user data")
+                }
+            } catch {
+                toast.error("Failed to load user data. Please try logging in again.")
+                router.push("/")
+            }
         }
+
+        fetchUserData()
     }, [router, id, isOnline])
 
-
-
     return (
-        <Layout currentUser={currentUser}>
+        <Layout>
             <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
                 {ride && currentUser && (
                     <EditRidePage currentUser={currentUser} rideId={id as string} />

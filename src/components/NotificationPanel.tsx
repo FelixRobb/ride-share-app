@@ -201,29 +201,25 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
 
   const fetchNotificationsCallback = useCallback(async () => {
     if (isOnline) {
-      try {
-        const headers: HeadersInit = {}
-        if (etag) {
-          headers["If-None-Match"] = etag
-        }
+      const headers: HeadersInit = {}
+      if (etag) {
+        headers["If-None-Match"] = etag
+      }
 
-        const response = await fetch(`/api/notifications?userId=${userId}`, { headers })
+      const response = await fetch(`/api/notifications?userId=${userId}`, { headers })
 
-        if (response.status === 304) {
-          return null // Data hasn't changed
-        }
+      if (response.status === 304) {
+        return null // Data hasn't changed
+      }
 
-        if (response.ok) {
-          const newEtag = response.headers.get("ETag")
-          const data = await response.json()
-          if (newEtag !== etag) {
-            setEtag(newEtag)
-            setNotifications(data.notifications)
-            setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length)
-          }
+      if (response.ok) {
+        const newEtag = response.headers.get("ETag")
+        const data = await response.json()
+        if (newEtag !== etag) {
+          setEtag(newEtag)
+          setNotifications(data.notifications)
+          setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length)
         }
-      } catch (error) {
-        console.error("Error fetching notifications:", error)
       }
     }
   }, [userId, etag, isOnline])
@@ -241,14 +237,11 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
       setIsOpen(open)
       if (!open && unreadCount > 0) {
         const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id)
-        try {
-          await markNotificationsAsRead(userId, unreadIds)
-          setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
-          setUnreadCount(0)
-          onNotificationsRead?.()
-        } catch (error) {
-          console.error("Error marking notifications as read:", error)
-        }
+
+        await markNotificationsAsRead(userId, unreadIds)
+        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
+        setUnreadCount(0)
+        onNotificationsRead?.()
       }
     },
     [userId, notifications, unreadCount, onNotificationsRead],
