@@ -80,8 +80,21 @@ export default function CreateRidePage({
     const storedRideData = localStorage.getItem("rideData")
     if (storedRideData) {
       const parsedData: RideData = JSON.parse(storedRideData)
-      const { ...rest } = parsedData
-      if (Object.values(rest).some((value) => value !== "" && value !== null && value !== 0)) {
+      
+      // Check if there's significant data to restore by excluding specified fields
+      const hasSignificantData = Object.entries(parsedData).some(([key, value]) => {
+        // Skip checking these fields
+        if (key === 'time' || key === 'rider_name' || key === 'rider_phone') {
+          return false
+        }
+        // Check if the value is non-empty and not the default value
+        return value !== "" && 
+               value !== null && 
+               value !== 0 && 
+               JSON.stringify(value) !== JSON.stringify(initialRideData[key as keyof RideData])
+      })
+
+      if (hasSignificantData) {
         setShowRestoreDialog(true)
         setRideData(parsedData)
       }
