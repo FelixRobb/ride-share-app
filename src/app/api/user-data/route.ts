@@ -1,6 +1,6 @@
 // src/app/api/user-data/route.ts
 import { NextResponse } from "next/server";
-import { supabase, logError } from "@/lib/db";
+import { supabase } from "@/lib/db";
 import crypto from "crypto";
 
 export async function GET(request: Request) {
@@ -76,7 +76,6 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    logError("user data fetch", error);
     return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 });
   }
 }

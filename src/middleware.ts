@@ -25,6 +25,8 @@ const publicRoutes = [
   "/api/check-user",
   "/api/suggested-contacts",
   "/api/users/search",
+  "/api/logout",
+  "/logout"
 ];
 
 // List of static files and directories that should be publicly accessible
