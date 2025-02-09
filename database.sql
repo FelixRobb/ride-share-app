@@ -15,6 +15,7 @@ CREATE TABLE public.contacts (
   contact_id uuid NOT NULL,
   status character varying(20) NOT NULL,
   created_at timestamp with time zone NULL DEFAULT CURRENT_TIMESTAMP,
+  country_code character varying(5) NULL,
   CONSTRAINT contacts_pkey PRIMARY KEY (id),
   CONSTRAINT contacts_user_id_contact_id_key UNIQUE (user_id, contact_id),
   CONSTRAINT contacts_contact_id_fkey FOREIGN KEY (contact_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -32,7 +33,6 @@ CREATE TABLE public.notifications (
   related_id uuid NULL,
   is_read boolean NULL DEFAULT false,
   created_at timestamp with time zone NULL DEFAULT CURRENT_TIMESTAMP,
-  is_sent boolean NULL DEFAULT false,
   CONSTRAINT notifications_pkey PRIMARY KEY (id),
   CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -92,6 +92,7 @@ CREATE TABLE public.rides (
   from_lon numeric(11,8) NOT NULL,
   to_lat numeric(10,8) NOT NULL,
   to_lon numeric(11,8) NOT NULL,
+  is_edited boolean NULL DEFAULT false,
   CONSTRAINT rides_pkey PRIMARY KEY (id),
   CONSTRAINT rides_accepter_id_fkey FOREIGN KEY (accepter_id) REFERENCES users(id) ON DELETE SET NULL,
   CONSTRAINT rides_requester_id_fkey FOREIGN KEY (requester_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -99,17 +100,6 @@ CREATE TABLE public.rides (
 );
 CREATE INDEX IF NOT EXISTS idx_rides_requester_id ON public.rides USING btree (requester_id);
 CREATE INDEX IF NOT EXISTS idx_rides_accepter_id ON public.rides USING btree (accepter_id);
-
-CREATE TABLE public.user_stats (
-  user_id uuid NOT NULL,
-  rides_offered integer NULL DEFAULT 0,
-  rides_taken integer NULL DEFAULT 0,
-  total_distance double precision NULL DEFAULT 0,
-  rating double precision NULL DEFAULT 0,
-  last_updated timestamp with time zone NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT user_stats_pkey PRIMARY KEY (user_id),
-  CONSTRAINT user_stats_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
 
 CREATE TABLE public.users (
   id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
@@ -122,3 +112,4 @@ CREATE TABLE public.users (
   CONSTRAINT users_pkey PRIMARY KEY (id),
   CONSTRAINT users_email_key UNIQUE (email)
 );
+CREATE INDEX IF NOT EXISTS idx_users_phone ON public.users USING btree (phone);
