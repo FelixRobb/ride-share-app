@@ -1,26 +1,24 @@
-import { NextResponse } from "next/server"
-import { jwtVerify } from "jose"
-import { cookies } from "next/headers"
+import { NextResponse } from "next/server";
+import { jwtVerify } from "jose";
+import { cookies } from "next/headers";
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET)
+const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
 export async function GET() {
-    const cookieStore = await cookies();
-    const adminJwt = cookieStore.get("admin_jwt")?.value;
+  const cookieStore = await cookies();
+  const adminJwt = cookieStore.get("admin_jwt")?.value;
 
   if (!adminJwt) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const { payload } = await jwtVerify(adminJwt, secret)
+    const { payload } = await jwtVerify(adminJwt, secret);
     if (payload.role !== "admin") {
-      throw new Error("Not an admin")
+      throw new Error("Not an admin");
     }
-    return NextResponse.json({ authenticated: true })
-  } catch (error) {
-    console.error("Invalid admin token:", error)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ authenticated: true });
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
-

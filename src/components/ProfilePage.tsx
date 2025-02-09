@@ -92,7 +92,7 @@ export default function ProfilePage({
     localStorage.setItem("theme", newMode)
   }
 
-  const logout = () => {
+  const logout = async () => {
     router.push("/logout")
   }
 
@@ -110,18 +110,13 @@ export default function ProfilePage({
       setIsPushLoading(true)
       try {
         if (!isOnline) {
-          console.log("User is offline. Skipping push preference fetch.")
           return
         }
         const response = await fetch(`/api/users/${currentUser.id}/push-preference`)
         if (response.ok) {
           const data = await response.json()
           setIsPushEnabled(data.enabled)
-        } else {
-          console.error("Failed to fetch push preference:", response.statusText)
         }
-      } catch (error) {
-        console.error("Error fetching push notification preference:", error)
       } finally {
         setIsPushLoading(false)
       }
@@ -227,8 +222,7 @@ export default function ProfilePage({
         throw new Error("Failed to update push notification preference")
       }
       toast.success(checked ? "Push notifications enabled" : "Push notifications disabled")
-    } catch (error) {
-      console.error("Error updating push notification preference:", error)
+    } catch {
       toast.error("Failed to update push notification preference. Please try again.")
       setIsPushEnabled(!checked)
     }
@@ -238,8 +232,7 @@ export default function ProfilePage({
     if (isOnline && currentUser) {
       try {
         await fetchUserData(currentUser.id)
-      } catch (error) {
-        console.error("Error fetching user data:", error)
+      } catch {
         toast.error("Failed to fetch user data. Please try again.")
       }
     }
@@ -255,8 +248,7 @@ export default function ProfilePage({
         } else {
           throw new Error("Failed to fetch suggested contacts")
         }
-      } catch (error) {
-        console.error("Error fetching suggested contacts:", error)
+      } catch {
         toast.error("Failed to fetch suggested contacts. Please try again.")
       }
     }
@@ -278,8 +270,7 @@ export default function ProfilePage({
         try {
           const stats = await fetchUserStats(currentUser.id)
           setUserStats(stats)
-        } catch (error) {
-          console.error("Error fetching user stats:", error)
+        } catch {
           toast.error("Failed to fetch user statistics. Please try again.")
         }
       }
@@ -439,27 +430,24 @@ export default function ProfilePage({
             <span>Current theme:</span>
             <div className="relative inline-flex items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
-                  currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
-                }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
+                  }`}
                 onClick={() => toggleTheme("system")}
                 aria-label="System theme"
               >
                 <Monitor className="h-4 w-4" />
               </button>
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
-                  currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
-                }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
+                  }`}
                 onClick={() => toggleTheme("light")}
                 aria-label="Light theme"
               >
                 <Sun className="h-4 w-4" />
               </button>
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
-                  currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
-                }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
+                  }`}
                 onClick={() => toggleTheme("dark")}
                 aria-label="Dark theme"
               >

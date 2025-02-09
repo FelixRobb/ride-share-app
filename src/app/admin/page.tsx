@@ -25,8 +25,7 @@ export default function AdminPage() {
         } else {
           setIsAuthenticated(false)
         }
-      } catch (error) {
-        console.error("Auth check error:", error)
+      } catch {
         setIsAuthenticated(false)
       }
     }
@@ -49,8 +48,7 @@ export default function AdminPage() {
       } else {
         toast.error("Invalid password")
       }
-    } catch (error) {
-      console.error("Login error:", error)
+    } catch {
       toast.error("An error occurred during login")
     }
   }
@@ -65,8 +63,7 @@ export default function AdminPage() {
       })
       setIsAuthenticated(false)
       router.push("/")
-    } catch (error) {
-      console.error("Logout error:", error)
+    } catch {
       toast.error("An error occurred during logout")
     }
   }

@@ -13,17 +13,13 @@ export default function NotFound() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      try {
-        const response = await fetch("/api/user")
-        if (response.ok) {
-          setIsLoggedIn(true)
-        } else if (response.status === 401) {
-          setIsLoggedIn(false)
-        } else {
-          throw new Error("Failed to fetch user data")
-        }
-      } catch (error) {
-        console.error("Error checking authentication:", error)
+      const response = await fetch("/api/user")
+      if (response.ok) {
+        setIsLoggedIn(true)
+      } else if (response.status === 401) {
+        setIsLoggedIn(false)
+      } else {
+        throw new Error("Failed to fetch user data")
       }
     }
 

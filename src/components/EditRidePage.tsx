@@ -51,8 +51,7 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
           rider_phone: ride.rider_phone,
           note: ride.note,
         })
-      } catch (error) {
-        console.error("Error fetching ride details:", error)
+      } catch {
         toast.error("Failed to fetch ride details. Please try again.")
       }
     }
@@ -88,11 +87,11 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
       setRideData((prev) =>
         prev
           ? {
-              ...prev,
-              [`${type}_location`]: location.display_name,
-              [`${type}_lat`]: location.lat,
-              [`${type}_lon`]: location.lon,
-            }
+            ...prev,
+            [`${type}_location`]: location.display_name,
+            [`${type}_lat`]: location.lat,
+            [`${type}_lon`]: location.lon,
+          }
           : null,
       )
     }

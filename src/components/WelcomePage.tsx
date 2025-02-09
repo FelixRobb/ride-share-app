@@ -37,7 +37,6 @@ export default function WelcomePage() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      try {
         const response = await fetch("/api/user")
         if (response.ok) {
           setIsAuthenticated(true)
@@ -46,9 +45,6 @@ export default function WelcomePage() {
         } else {
           throw new Error("Failed to fetch user data")
         }
-      } catch (error) {
-        console.error("Error checking authentication:", error)
-      }
     }
 
     checkAuth()

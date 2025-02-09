@@ -83,8 +83,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
         newMap.on('click', handleMapClick);
         mapInstanceRef.current = newMap;
 
-      } catch (error) {
-        console.error("Error initializing map:", error);
+      } catch {
         setIsLoading(false);
       }
     };
@@ -125,8 +124,8 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
       );
       const data = await response.json();
       setSearchResults(data.features || []);
-    } catch (error) {
-      console.error("Error searching for location:", error);
+    } catch {
+      toast.error("Error searching for location:");
     }
   }, [searchQuery]);
 
@@ -139,8 +138,8 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
       if (data?.features?.[0]?.place_name) {
         setAddress(data.features[0].place_name);
       }
-    } catch (error) {
-      console.error("Error reverse geocoding:", error);
+    } catch {
+      toast.error("An error ocurred, please try again.");
     }
   };
 
@@ -154,7 +153,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
 
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
-      console.error("Geolocation is not supported by this browser.");
+      toast.error("Geolocation is not supported by this browser.");
       return;
     }
 
@@ -165,22 +164,22 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
         updateMarker(latitude, longitude);
         reverseGeocode(latitude, longitude);
       },
-      (error) => {
-        console.error("Error getting current location:", error);
+      () => {
+        toast.error("Error getting current location:");
       }
     );
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(
-      () => {
-        toast.success("The address has been copied to your clipboard.");
-      },
-      (error) => {
-        console.error("Could not copy text to clipboard:", error);
+  const copyToClipboard = async (text: string) => {
+    if (typeof window !== "undefined" && window.navigator?.clipboard) {
+      try {
+        await window.navigator.clipboard.writeText(text)
+        toast.success("The address has been copied to your clipboard.")
+      } catch {
+        toast.error("Failed to copy the address to your clipboard.")
       }
-    );
-  };
+    }
+  }
 
   const openInGoogleMaps = (lat: number, lon: number) => {
     window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, "_blank");

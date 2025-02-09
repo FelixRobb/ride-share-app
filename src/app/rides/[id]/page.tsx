@@ -36,8 +36,7 @@ export default function RideDetails() {
           setEtag(newEtag)
           setContacts(data.contacts)
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error)
+      } catch {
         toast.error("Failed to fetch user data. Please try again."); // Update: Replaced toast call
       }
     }
@@ -51,13 +50,12 @@ export default function RideDetails() {
         }
         const rideDetails = await fetchRideDetails(currentUser.id, rideId);
         setRide(rideDetails);
-      } catch (error) {
-        console.error("Error fetching ride details:", error);
+      } catch {
         toast.error("Failed to fetch ride details, or you don't have permission to see this ride. Please go back."); // Update: Replaced toast call
       }
     }
   }, [isOnline, currentUser]);
-  
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -69,8 +67,7 @@ export default function RideDetails() {
         } else {
           throw new Error("Failed to fetch user data")
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error)
+      } catch {
         toast.error("Failed to load user data. Please try logging in again.")
         router.push("/")
       }

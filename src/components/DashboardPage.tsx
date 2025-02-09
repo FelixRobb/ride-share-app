@@ -135,8 +135,7 @@ export default function DashboardPage({
       if (isOnline) {
         try {
           await fetchUserData()
-        } catch (error) {
-          console.error("Error fetching user data:", error)
+        } catch {
           toast.error("Failed to fetch user data. Please try again.")
         } finally {
           setIsInitialLoading(false)

@@ -70,8 +70,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
           const errorData = await response.json()
           throw new Error(errorData.error || "Failed to search users")
         }
-      } catch (error) {
-        console.error("Error searching users:", error)
+      } catch {
         toast.error(error instanceof Error ? error.message : "Failed to search users. Please try again.")
       } finally {
         setIsSearching(false)
@@ -100,8 +99,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
         } else {
           throw new Error("Failed to fetch suggested contacts")
         }
-      } catch (error) {
-        console.error("Error fetching suggested contacts:", error)
+      } catch {
         if (isOnline) {
           toast.error("Failed to load suggested contacts. Please try again later.")
         }
@@ -130,8 +128,7 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
       setSearchResults([])
       toast.success("Contact request sent successfully!")
       setLocalSuggestedContacts(localSuggestedContacts.filter((contact) => contact.id !== user.id))
-    } catch (error) {
-      console.error("Error adding contact:", error)
+    } catch {
       if (isOnline) {
         toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
       }

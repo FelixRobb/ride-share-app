@@ -38,8 +38,7 @@ export default function Dashboard() {
               setContacts(data.contacts)
             }
           }
-        } catch (error) {
-          console.error("Error fetching user data:", error)
+        } catch {
           toast.error("Failed to fetch user data. Please try again.")
         }
       }
@@ -65,8 +64,7 @@ export default function Dashboard() {
         } else {
           throw new Error("Failed to fetch user data")
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error)
+      } catch {
         toast.error("Failed to load user data. Please try logging in again.")
         router.push("/")
       }

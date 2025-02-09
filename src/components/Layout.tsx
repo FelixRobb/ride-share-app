@@ -35,23 +35,22 @@ export default function Layout({ children }: LayoutProps) {
           const userData = await response.json()
           setCurrentUser(userData)
 
-          // Register service worker and set up push notifications
-
+          // Register service worker only if not already active
           if ("serviceWorker" in navigator) {
-            try {
-              const registration = await navigator.serviceWorker.register("/service-worker.js")
-              console.log("Service Worker registered with scope:", registration.scope)
 
-  
-            } catch (error) {
-              console.error("Error setting service-worker", error)
+            // Check for existing registration
+            const existingReg = await navigator.serviceWorker.getRegistration()
+
+            if (!existingReg || existingReg.active === null) {
+              // Register service worker
+              await navigator.serviceWorker.register("/service-worker.js")
             }
+
           }
         } else {
           throw new Error("Failed to fetch user data")
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error)
+      } catch {
         toast.error("Failed to load user data. Please try logging in again.")
         router.push("/")
       }

@@ -31,8 +31,7 @@ export default function EditRide() {
                         toast.error("You can't edit this ride.")
                         router.push(`/rides/${rideId}`)
                     }
-                } catch (error) {
-                    console.error("Error fetching ride details:", error)
+                } catch {
                     toast.error("Failed to fetch ride details. Please try again.")
                     router.push("/dashboard")
                 }
@@ -49,8 +48,7 @@ export default function EditRide() {
                 } else {
                     throw new Error("Failed to fetch user data")
                 }
-            } catch (error) {
-                console.error("Error fetching user data:", error)
+            } catch {
                 toast.error("Failed to load user data. Please try logging in again.")
                 router.push("/")
             }
