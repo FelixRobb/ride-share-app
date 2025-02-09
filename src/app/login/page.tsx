@@ -29,12 +29,25 @@ export default function Login() {
       })
 
       if (!response.ok) {
-        throw new Error("Login failed")
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Login failed")
       }
 
       router.push("/dashboard")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+      if (error instanceof Error) {
+        if (error.message.includes("Invalid credentials")) {
+          toast.error("Invalid email/phone or password. Please try again.")
+        } else if (error.message.includes("Please verify your email")) {
+          toast.error(
+            "Please verify your email before logging in. Check your inbox or request a new verification email.",
+          )
+        } else {
+          toast.error(`Login failed: ${error.message}`)
+        }
+      } else {
+        toast.error("An unexpected error occurred. Please try again.")
+      }
     } finally {
       setIsLoading(false)
     }

@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import nodemailer from "nodemailer"
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS,
   },
-});
+})
 
 export async function sendEmail(to: string, subject: string, html: string) {
   await transporter.sendMail({
@@ -14,7 +14,7 @@ export async function sendEmail(to: string, subject: string, html: string) {
     to,
     subject,
     html,
-  });
+  })
 }
 
 export function getWelcomeEmailContent(name: string): string {
@@ -145,7 +145,51 @@ export function getWelcomeEmailContent(name: string): string {
       </div>
     </body>
     </html>
-  `;
+  `
+}
+
+export function getVerificationEmailContent(name: string, verificationUrl: string): string {
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Verify Your Email for RideShare</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .button {
+          display: inline-block;
+          padding: 10px 20px;
+          background-color: #f97316;
+          color: #ffffff;
+          text-decoration: none;
+          border-radius: 5px;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>Verify Your Email for RideShare</h1>
+      <p>Hello ${name},</p>
+      <p>Thank you for registering with RideShare. To complete your registration and start using our service, please verify your email address by clicking the button below:</p>
+      <p>
+        <a href="${verificationUrl}" class="button">Verify Email</a>
+      </p>
+      <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
+      <p>${verificationUrl}</p>
+      <p>This link will expire in 24 hours for security reasons.</p>
+      <p>If you didn't create an account with RideShare, please ignore this email.</p>
+      <p>Best regards,<br>The RideShare Team</p>
+    </body>
+    </html>
+  `
 }
 
 export function getResetPasswordEmailContent(resetUrl: string): string {
@@ -255,5 +299,6 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
       </div>
     </body>
     </html>
-  `;
+  `
 }
+
