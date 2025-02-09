@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-
 interface SearchResult {
   id: string;
   place_name: string;
@@ -34,19 +33,29 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   const markerRef = useRef<maplibregl.Marker | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const initialCoordinatesRef = useRef({ 
+    lat: initialLocation?.lat || 38.707490, 
+    lon: initialLocation?.lon || -9.136398 
+  });
+
   const handleMapClick = useCallback((e: maplibregl.MapMouseEvent) => {
     const { lng, lat } = e.lngLat;
     setSelectedLocation({ lat, lon: lng });
-    updateMarker(lat, lng);
+    if (markerRef.current) {
+      markerRef.current.setLngLat([lng, lat]);
+    }
     reverseGeocode(lat, lng);
   }, []);
 
+  // Update initial coordinates when initialLocation prop changes
   useEffect(() => {
     if (initialLocation) {
+      initialCoordinatesRef.current = initialLocation;
       setSelectedLocation(initialLocation);
     }
   }, [initialLocation]);
 
+  // Map initialization effect now uses initialCoordinatesRef
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
@@ -60,8 +69,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
           mapInstanceRef.current = null;
         }
 
-        const lat = initialLocation?.lat || selectedLocation.lat;
-        const lon = initialLocation?.lon || selectedLocation.lon;
+        const { lat, lon } = initialCoordinatesRef.current;
 
         const newMap = new maplibregl.Map({
           container: mapRef.current,
@@ -99,9 +107,9 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
         mapInstanceRef.current = null;
       }
     };
-  }, [isOpen, initialLocation, selectedLocation.lat, selectedLocation.lon, handleMapClick]);
+  }, [isOpen, handleMapClick]); // Removed selectedLocation from dependencies
 
-  const updateMarker = (lat: number, lon: number) => {
+  const updateMarker = (lat: number, lon: number, shouldCenter: boolean = false) => {
     if (!mapInstanceRef.current) return;
 
     if (markerRef.current) {
@@ -112,12 +120,15 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
         .addTo(mapInstanceRef.current);
       markerRef.current = newMarker;
     }
-    mapInstanceRef.current.setCenter([lon, lat]);
+
+    if (shouldCenter && mapInstanceRef.current) {
+      mapInstanceRef.current.setCenter([lon, lat]);
+    }
   };
 
   const handleSearch = useCallback(async () => {
-    setSearchResults([]); // Clear previous results
-    if (!searchQuery.trim()) return; // Don't search if query is empty
+    setSearchResults([]);
+    if (!searchQuery.trim()) return;
     try {
       const response = await fetch(
         `https://api.maptiler.com/geocoding/${encodeURIComponent(searchQuery)}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
@@ -148,7 +159,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     setSelectedLocation({ lat, lon });
     setAddress(result.place_name);
     setSearchResults([]);
-    updateMarker(lat, lon);
+    updateMarker(lat, lon, true);
   };
 
   const handleUseCurrentLocation = () => {
@@ -161,7 +172,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
       ({ coords }) => {
         const { latitude, longitude } = coords;
         setSelectedLocation({ lat: latitude, lon: longitude });
-        updateMarker(latitude, longitude);
+        updateMarker(latitude, longitude, true);
         reverseGeocode(latitude, longitude);
       },
       () => {
