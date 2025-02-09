@@ -9,17 +9,27 @@ const secret = new TextEncoder().encode(process.env.JWT_SECRET)
 const publicRoutes = [
   "/",
   "/login",
-  "/register",
+  "/register", 
   "/privacy-policy",
   "/terms-of-service",
   "/admin",
   "/reset-password",
   "/api/login",
-  "/api/register",
+  "/api/register", 
   "/api/auth/reset-password",
   "/api/admin/login",
-  "/api/admin/logout",
-  "/api/admin/check-auth"
+  "/api/admin/logout", 
+  "/api/admin/check-auth",
+  "/manifest.webmanifest",
+  // Add public directory files
+  "icon-192x192.png",
+  "icon.svg",
+  "web-app-manifest-192x192.png",
+  "web-app-manifest-512x512.png",
+  "wide-pwa.png",
+  "narrow-pwa.png",
+  // Catch all route for public assets
+  "/assets/"
 ]
 
 // List of admin routes that require admin authentication

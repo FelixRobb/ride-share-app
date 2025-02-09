@@ -2,8 +2,6 @@
 
 RideShare is a modern, user-friendly web application that facilitates ride-sharing among users. It allows people to connect, offer, and request rides within their trusted network of contacts.
 
-![RideShare Logo](/public/icon.svg)
-
 ## Table of Contents
 
 - [Features](#features)
@@ -137,5 +135,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 Félix Robb - [rideshareapp.mail@gmail.com](rideshareapp.mail@gmail.com)
 
-Project Link: [https://github.com/FelixRobb/ride-share-app/](https://github.com/FelixRobb/ride-share-app/)
+Github Project Link: [https://github.com/FelixRobb/ride-share-app/](https://github.com/FelixRobb/ride-share-app/)
 
