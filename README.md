@@ -32,7 +32,7 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 
 ## Technologies Used
 
-- [Next.js 13](https://nextjs.org/) with App Router
+- [Next.js 15](https://nextjs.org/) with App Router
 - [React](https://reactjs.org/)
 - [TypeScript](https://www.typescriptlang.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
@@ -47,11 +47,11 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 
 ### Prerequisites
 
-- Node.js (v14 or later)
+- Node.js (v18 or later)
 - npm or yarn
 - Supabase account
 - MapTiler API key
-- Vercel account (for deployment)
+- Vercel account or netlifly account (for deployment)
 
 ### Installation
 
