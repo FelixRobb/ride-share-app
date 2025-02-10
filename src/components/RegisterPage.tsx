@@ -1,8 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
-import { toast } from "sonner"
-import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -30,10 +28,10 @@ const quotes = [
   { quote: "Kilometers are shorter than miles. Save gas, take your next trip in kilometers.", author: "George Carlin" },
   {
     quote:
-      "The journey is part of the experience—an expression of the seriousness of one’s intent. One doesn’t take the A train to Mecca.",
+      "The journey is part of the experience—an expression of the seriousness of one's intent. One doesn't take the A train to Mecca.",
     author: "Anthony Bourdain",
   },
-  { quote: "Road trips aren’t measured by mile markers, but by moments.", author: "Unknown" },
+  { quote: "Road trips aren't measured by mile markers, but by moments.", author: "Unknown" },
   { quote: "The road must eventually lead to the whole world.", author: "Jack Kerouac", source: "On the Road" },
   {
     quote: "The open road is a beckoning, a strangeness, a place where a man can lose himself.",
@@ -42,7 +40,7 @@ const quotes = [
   },
   { quote: "Stop worrying about the potholes in the road and enjoy the journey.", author: "Babs Hoffman" },
   { quote: "Every journey begins with a single tank of gas.", author: "Unknown" },
-  { quote: "You can’t have a great day without driving a great distance.", author: "Unknown" },
+  { quote: "You can't have a great day without driving a great distance.", author: "Unknown" },
   { quote: "Sometimes the best therapy is a long drive and good music.", author: "Unknown" },
   { quote: "No road is long with good company.", author: "Turkish Proverb" },
   { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
@@ -50,41 +48,19 @@ const quotes = [
 ]
 
 export default function RegisterPage({ handleRegister, isLoading, quoteIndex }: RegisterPageProps) {
-  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const randomQuote = quotes[quoteIndex]
 
   const onSubmit = async (name: string, phone: string, email: string, password: string) => {
+    setError(null)
     try {
       await handleRegister(name, phone, email, password)
     } catch (error) {
-      if (error instanceof Error && error.message.includes("User already exists")) {
-        setError("This phone number or email is already registered. Please use a different one or login.")
+      if (error instanceof Error) {
+        setError(error.message)
       } else {
-        setError("Registration failed. Please try again.")
-        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+        setError("An unexpected error occurred")
       }
-      throw error
-    }
-  }
-
-  const handleSubmit = async (name: string, phone: string, email: string, password: string) => {
-    try {
-      setIsSubmitting(true)
-      await onSubmit(name, phone, email, password)
-      toast.success("Registration successful! Please check your email to verify your account.")
-      router.push("/login")
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("User already exists")) {
-        setError("This phone number or email is already registered. Please use a different one or login.")
-      } else {
-        setError("Registration failed. Please try again.")
-        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
-      }
-      throw error
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
@@ -111,7 +87,7 @@ export default function RegisterPage({ handleRegister, isLoading, quoteIndex }: 
               <CardDescription>Join RideShare and start sharing rides today!</CardDescription>
             </CardHeader>
             <CardContent>
-              <MultiStepRegisterForm onSubmit={handleSubmit} isLoading={isSubmitting} />
+              <MultiStepRegisterForm onSubmit={onSubmit} isLoading={isLoading} />
             </CardContent>
             {error && <p className="text-destructive text-center mt-2">{error}</p>}
             <CardFooter className="flex justify-center">

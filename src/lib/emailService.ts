@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer"
+import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS,
   },
-})
+});
 
 export async function sendEmail(to: string, subject: string, html: string) {
   await transporter.sendMail({
@@ -14,291 +14,325 @@ export async function sendEmail(to: string, subject: string, html: string) {
     to,
     subject,
     html,
-  })
+  });
 }
 
 export function getWelcomeEmailContent(name: string): string {
   return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Welcome to RideShare</title>
-      <style>
-  :root {
-    --background: 20 0% 0%;
-    --foreground: 60 9.1% 97.8%;
-    --card: 20 29.18% 4.76%;
-    --card-foreground: 60 9.1% 97.8%;
-    --popover: 20 14.3% 4.1%;
-    --popover-foreground: 60 9.1% 97.8%;
-    --primary: 20.5 90.2% 48.2%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 12 6.5% 15.1%;
-    --secondary-foreground: 60 9.1% 97.8%;
-    --muted: 12 6.5% 15.1%;
-    --muted-foreground: 24 5.4% 63.9%;
-    --accent: 12 6.5% 15.1%;
-    --accent-foreground: 60 9.1% 97.8%;
-    --destructive: 0 72.2% 50.6%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 12 6.5% 15.1%;
-    --input: 12 6.5% 15.1%;
-    --ring: 20.5 90.2% 48.2%;
-  }
-  body {
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
-    color: #f2f2f2;
-    background-color: #000000;
-    margin: 0;
-    padding: 0;
-  }
-  .container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  h1 {
-    color: #f97316;
-    font-size: 24px;
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  .cta-button {
-    display: inline-block;
-    padding: 12px 24px;
-    background-color: #f97316;
-    color: #ffffff;
-    text-decoration: none;
-    border-radius: 0.5rem;
-    font-weight: bold;
-    margin-top: 20px;
-    text-align: center;
-  }
-  .feature {
-    margin-bottom: 20px;
-    padding: 20px;
-    background-color: #0c0a09;
-    border-radius: 0.5rem;
-    border: 1px solid #27272a;
-  }
-  .feature h2 {
-    color: #f97316;
-    font-size: 18px;
-    margin-top: 0;
-  }
-  .footer {
-    margin-top: 30px;
-    text-align: center;
-    font-size: 12px;
-    color: #a1a1aa;
-  }
-  .warning {
-    background-color: rgba(239, 68, 68, 0.1);
-    border: 1px solid #ef4444;
-    color: #fecaca;
-    padding: 15px;
-    border-radius: 0.5rem;
-    margin-top: 20px;
-  }
-</style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>Welcome to RideShare, ${name}!</h1>
-        <p>We're thrilled to have you join our community of ride-sharers. Get ready for a smoother, more connected way to travel!</p>
-        
-        <div class="feature">
-          <h2>Discover Rides</h2>
-          <p>Find or offer rides with ease. Our intuitive interface makes connecting with fellow travelers a breeze.</p>
-        </div>
-        
-        <div class="feature">
-          <h2>Build Your Network</h2>
-          <p>Connect with friends and colleagues to create a trusted circle of ride-sharing partners.</p>
-        </div>
-        
-        <div class="feature">
-          <h2>Stay Updated</h2>
-          <p>Receive real-time notifications about your rides, ensuring you're always in the loop.</p>
-        </div>
-        
-        <div class="feature">
-          <h2>Go Green</h2>
-          <p>By sharing rides, you're reducing your carbon footprint. Every trip makes a difference!</p>
-        </div>
-        
-        <p style="text-align: center;">Ready to hit the road? Click below to start your RideShare journey!</p>
-        
-        <div style="text-align: center;">
-          <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="cta-button">Start Sharing Rides</a>
-        </div>
-        
-        <p style="text-align: center; margin-top: 20px;">Questions? Reach out to our support team at <a href="${process.env.GMAIL_USER}" style="color: #f97316;">support@rideshare.com</a>.</p>
-        
-        <div class="footer">
-          <p>© ${new Date().getFullYear()} RideShare. All rights reserved.</p>
-          <p>You're receiving this email because you signed up for RideShare. If this wasn't you, please let us know.</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `
+   <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to RideShare</title>
+  <style>
+    :root {
+      --background: #ffffff;
+      --foreground: #0c0a09;
+      --muted: #f5f5f4;
+      --muted-foreground: #78716c;
+      --card: #ffffff;
+      --card-foreground: #0c0a09;
+      --border: #e7e5e4;
+      --primary: #f97316;
+      --primary-foreground: #fafaf9;
+      --secondary: #f5f5f4;
+      --secondary-foreground: #1c1917;
+      --accent: #f5f5f4;
+      --accent-foreground: #1c1917;
+      --destructive: #ef4444;
+      --destructive-foreground: #fafaf9;
+      --ring: #f97316;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--foreground);
+      background-color: var(--background);
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    h1 {
+      color: var(--primary);
+      font-size: 1.875rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .feature {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .feature h2 {
+      color: var(--primary);
+      font-size: 1.25rem;
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      text-decoration: none;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      text-align: center;
+      transition: background-color 0.2s;
+    }
+    .cta-button:hover {
+      background-color: #ea580c;
+    }
+    .footer {
+      margin-top: 2rem;
+      text-align: center;
+      color: var(--muted-foreground);
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to RideShare, ${name}!</h1>
+    <p>We're thrilled to have you join our community of ride-sharers. Get ready for a smoother, more connected way to travel!</p>
+    
+    <div class="feature">
+      <h2>Discover Rides</h2>
+      <p>Find or offer rides with ease. Our intuitive interface makes connecting with fellow travelers a breeze.</p>
+    </div>
+    
+    <div class="feature">
+      <h2>Build Your Network</h2>
+      <p>Connect with friends and colleagues to create a trusted circle of ride-sharing partners.</p>
+    </div>
+    
+    <div class="feature">
+      <h2>Stay Updated</h2>
+      <p>Receive real-time notifications about your rides, ensuring you're always in the loop.</p>
+    </div>
+    
+    <div class="feature">
+      <h2>Go Green</h2>
+      <p>By sharing rides, you're reducing your carbon footprint. Every trip makes a difference!</p>
+    </div>
+    
+    <div style="text-align: center; margin-top: 2rem;">
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="cta-button">Start Sharing Rides</a>
+    </div>
+    
+    <div class="footer">
+      <p>Questions? Contact our support team at <a href="mailto:${process.env.GMAIL_USER}" style="color: var(--primary);">support@rideshare.com</a></p>
+      <p>© ${new Date().getFullYear()} RideShare. All rights reserved.</p>
+      <p>You're receiving this email because you signed up for RideShare.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
 }
 
 export function getVerificationEmailContent(name: string, verificationUrl: string): string {
   return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Verify Your Email for RideShare</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          line-height: 1.6;
-          color: #333;
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 20px;
-        }
-        .button {
-          display: inline-block;
-          padding: 10px 20px;
-          background-color: #f97316;
-          color: #ffffff;
-          text-decoration: none;
-          border-radius: 5px;
-        }
-      </style>
-    </head>
-    <body>
-      <h1>Verify Your Email for RideShare</h1>
-      <p>Hello ${name},</p>
-      <p>Thank you for registering with RideShare. To complete your registration and start using our service, please verify your email address by clicking the button below:</p>
-      <p>
-        <a href="${verificationUrl}" class="button">Verify Email</a>
-      </p>
-      <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
-      <p>${verificationUrl}</p>
-      <p>This link will expire in 24 hours for security reasons.</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your Email for RideShare</title>
+  <style>
+    :root {
+      --background: #ffffff;
+      --foreground: #0c0a09;
+      --muted: #f5f5f4;
+      --muted-foreground: #78716c;
+      --card: #ffffff;
+      --card-foreground: #0c0a09;
+      --border: #e7e5e4;
+      --primary: #f97316;
+      --primary-foreground: #fafaf9;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--foreground);
+      background-color: var(--background);
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    h1 {
+      color: var(--primary);
+      font-size: 1.875rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .verify-button {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      text-decoration: none;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      text-align: center;
+      transition: background-color 0.2s;
+    }
+    .verify-button:hover {
+      background-color: #ea580c;
+    }
+    .link-text {
+      word-break: break-all;
+      color: var(--primary);
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Verify Your Email</h1>
+    <p>Hello ${name},</p>
+    <p>Thank you for registering with RideShare. To complete your registration and start using our service, please verify your email address by clicking the button below:</p>
+    
+    <div style="text-align: center; margin: 2rem 0;">
+      <a href="${verificationUrl}" class="verify-button">Verify Email</a>
+    </div>
+    
+    <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+    <p class="link-text">${verificationUrl}</p>
+    
+    <p style="color: var(--muted-foreground);">This link will expire in 24 hours for security reasons.</p>
+    
+    <div style="margin-top: 2rem; text-align: center; color: var(--muted-foreground); font-size: 0.875rem;">
       <p>If you didn't create an account with RideShare, please ignore this email.</p>
-      <p>Best regards,<br>The RideShare Team</p>
-    </body>
-    </html>
-  `
+      <p>© ${new Date().getFullYear()} RideShare. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
 }
 
 export function getResetPasswordEmailContent(resetUrl: string): string {
   return `
     <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Reset Your RideShare Password</title>
-      <style>
-  :root {
-    --background: 20 0% 0%;
-    --foreground: 60 9.1% 97.8%;
-    --card: 20 29.18% 4.76%;
-    --card-foreground: 60 9.1% 97.8%;
-    --popover: 20 14.3% 4.1%;
-    --popover-foreground: 60 9.1% 97.8%;
-    --primary: 20.5 90.2% 48.2%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 12 6.5% 15.1%;
-    --secondary-foreground: 60 9.1% 97.8%;
-    --muted: 12 6.5% 15.1%;
-    --muted-foreground: 24 5.4% 63.9%;
-    --accent: 12 6.5% 15.1%;
-    --accent-foreground: 60 9.1% 97.8%;
-    --destructive: 0 72.2% 50.6%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 12 6.5% 15.1%;
-    --input: 12 6.5% 15.1%;
-    --ring: 20.5 90.2% 48.2%;
-  }
-  body {
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
-    color: #f2f2f2;
-    background-color: #000000;
-    margin: 0;
-    padding: 0;
-  }
-  .container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  h1 {
-    color: #f97316;
-    font-size: 24px;
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  .cta-button {
-    display: inline-block;
-    padding: 12px 24px;
-    background-color: #f97316;
-    color: #ffffff;
-    text-decoration: none;
-    border-radius: 0.5rem;
-    font-weight: bold;
-    margin-top: 20px;
-    text-align: center;
-  }
-  .warning {
-    background-color: rgba(239, 68, 68, 0.1);
-    border: 1px solid #ef4444;
-    color: #fecaca;
-    padding: 15px;
-    border-radius: 0.5rem;
-    margin-top: 20px;
-  }
-  .footer {
-    margin-top: 30px;
-    text-align: center;
-    font-size: 12px;
-    color: #a1a1aa;
-  }
-</style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>Reset Your RideShare Password</h1>
-        <p>We received a request to reset the password for your RideShare account. If you didn't make this request, you can safely ignore this email.</p>
-        
-        <div style="text-align: center;">
-          <a href="${resetUrl}" class="cta-button">Reset My Password</a>
-        </div>
-        
-        <p style="text-align: center; margin-top: 20px;">This link will expire in 1 hour for security reasons.</p>
-        
-        <div class="warning">
-          <p><strong>Important:</strong> If you didn't request a password reset, please contact our support team immediately at <a href="mailto:rideshareapp.mail@gmail.com" style="color: #ef4444;">rideshareapp.mail@gmail.com</a>.</p>
-        </div>
-        
-        <h2 style="color: #f97316; font-size: 18px; margin-top: 30px;">Keeping Your Account Secure</h2>
-        <ul>
-          <li>Never share your password with anyone.</li>
-          <li>Use a strong, unique password for your RideShare account.</li>
-          <li>Regularly update your password to maintain account safety.</li>
-        </ul>
-        
-        <p style="text-align: center; margin-top: 20px;">Need help? Our support team is always here to assist you. contact us at ${process.env.GMAIL_USER}</p>
-        
-        <div class="footer">
-          <p>© ${new Date().getFullYear()} RideShare. All rights reserved.</p>
-          <p>This is an automated message. Please do not reply directly to this email.</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Your RideShare Password</title>
+  <style>
+    :root {
+      --background: #ffffff;
+      --foreground: #0c0a09;
+      --muted: #f5f5f4;
+      --muted-foreground: #78716c;
+      --card: #ffffff;
+      --card-foreground: #0c0a09;
+      --border: #e7e5e4;
+      --primary: #f97316;
+      --primary-foreground: #fafaf9;
+      --destructive: #ef4444;
+      --destructive-foreground: #fafaf9;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--foreground);
+      background-color: var(--background);
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    h1 {
+      color: var(--primary);
+      font-size: 1.875rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .reset-button {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      text-decoration: none;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      text-align: center;
+      transition: background-color 0.2s;
+    }
+    .reset-button:hover {
+      background-color: #ea580c;
+    }
+    .warning {
+      background-color: #fef2f2;
+      border: 1px solid var(--destructive);
+      color: var(--destructive);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1.5rem 0;
+    }
+    .security-tips {
+      background-color: var(--muted);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1.5rem 0;
+    }
+    .security-tips h2 {
+      color: var(--primary);
+      font-size: 1.25rem;
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Reset Your Password</h1>
+    <p>We received a request to reset the password for your RideShare account. If you didn't make this request, you can safely ignore this email.</p>
+    
+    <div style="text-align: center; margin: 2rem 0;">
+      <a href="${resetUrl}" class="reset-button">Reset My Password</a>
+    </div>
+    
+    <p style="text-align: center; color: var(--muted-foreground);">This link will expire in 1 hour for security reasons.</p>
+    
+    <div class="warning">
+      <strong>Important:</strong> If you didn't request a password reset, please contact our support team immediately at <a href="mailto:${process.env.GMAIL_USER}" style="color: var(--destructive);">${process.env.GMAIL_USER}</a>
+    </div>
+    
+    <div class="security-tips">
+      <h2>Keeping Your Account Secure</h2>
+      <ul>
+        <li>Never share your password with anyone</li>
+        <li>Use a strong, unique password for your RideShare account</li>
+        <li>Regularly update your password to maintain account safety</li>
+      </ul>
+    </div>
+    
+    <div style="margin-top: 2rem; text-align: center; color: var(--muted-foreground); font-size: 0.875rem;">
+      <p>Need help? Our support team is always here to assist you.</p>
+      <p>© ${new Date().getFullYear()} RideShare. All rights reserved.</p>
+      <p>This is an automated message. Please do not reply directly to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
 }
-

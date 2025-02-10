@@ -3,9 +3,10 @@
 import { Loader2, Mail, ArrowRight } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useState } from "react" // Added ReactElement import
+import { useState } from "react"
 import PhoneInput from "react-phone-number-input"
 import { toast } from "sonner"
+import type React from "react" // Added import for React
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -63,7 +64,6 @@ const quotes = [
 ]
 
 export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: LoginPageProps) {
-  const [error, setError] = useState<string | null>(null)
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
   const [isResetLoading, setIsResetLoading] = useState(false)
@@ -71,8 +71,8 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
   const [password, setPassword] = useState("")
   const [phone, setPhone] = useState("")
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
-  const [isResendingVerification, setIsResendingVerification] = useState(false)
   const randomQuote = quotes[quoteIndex]
+
   const handleResetPassword = async () => {
     try {
       setIsResetLoading(true)
@@ -97,45 +97,8 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
-    try {
-      const formattedIdentifier = loginMethod === "email" ? email : phone
-      await handleLoginAction(formattedIdentifier, password, loginMethod)
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message)
-        if (error.message.includes("Please verify your email")) {
-          setError("Please verify your email before logging in. Check your inbox or request a new verification email.")
-        } else if (error.message.includes("Invalid credentials")) {
-          setError("Invalid email/phone or password. Please try again.")
-        } else {
-          setError(`Login failed: ${error.message}`)
-        }
-      } else {
-        setError("An unexpected error occurred. Please try again.")
-      }
-    }
-  }
-
-  const handleResendVerification = async () => {
-    setIsResendingVerification(true)
-    try {
-      const response = await fetch("/api/resend-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      })
-      if (response.ok) {
-        toast.success("Verification email sent. Please check your inbox.")
-      } else {
-        const data = await response.json()
-        throw new Error(data.error || "Failed to resend verification email")
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
-    } finally {
-      setIsResendingVerification(false)
-    }
+    const formattedIdentifier = loginMethod === "email" ? email : phone
+    await handleLoginAction(formattedIdentifier, password, loginMethod)
   }
 
   return (
@@ -219,22 +182,6 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
                     />
                   </div>
                 </div>
-                {error && (
-                  <div className="text-destructive text-sm mt-2">
-                    <p>{error}</p>
-                    {error.includes("Please verify your email") && (
-                      <Button
-                        type="button"
-                        variant="link"
-                        onClick={handleResendVerification}
-                        disabled={isResendingVerification}
-                        className="p-0 h-auto font-normal text-sm text-blue-500 hover:text-blue-700"
-                      >
-                        {isResendingVerification ? "Sending..." : "Resend verification email"}
-                      </Button>
-                    )}
-                  </div>
-                )}
                 <Button className="w-full" type="submit" disabled={isLoading}>
                   {isLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
