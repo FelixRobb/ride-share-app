@@ -1,36 +1,59 @@
 "use client"
 
-import { Loader2, Mail, ArrowRight } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
+import { Loader2, Mail, ArrowRight } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
 import { useState } from "react"
-import PhoneInput from 'react-phone-number-input'
+import PhoneInput from "react-phone-number-input"
 import { toast } from "sonner"
+import type React from "react" // Added import for React
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import 'react-phone-number-input/style.css'
-
+import "react-phone-number-input/style.css"
 
 interface LoginPageProps {
-  handleLoginAction: (identifier: string, password: string, method: 'email' | 'phone') => Promise<void>
+  handleLoginAction: (identifier: string, password: string, method: "email" | "phone") => Promise<void>
   isLoading: boolean
-  quoteIndex: number;
+  quoteIndex: number
 }
 
 const quotes = [
-  { quote: "The freedom of the open road is seductive, serendipitous, and absolutely liberating.", author: "Aaron Lauritsen", source: "100 Days Drive" },
+  {
+    quote: "The freedom of the open road is seductive, serendipitous, and absolutely liberating.",
+    author: "Aaron Lauritsen",
+    source: "100 Days Drive",
+  },
   { quote: "Driving at night is about communicating with lights.", author: "Lukhman Pambra" },
-  { quote: "All he needed was a wheel in his hand and four on the road.", author: "Jack Kerouac", source: "On the Road" },
+  {
+    quote: "All he needed was a wheel in his hand and four on the road.",
+    author: "Jack Kerouac",
+    source: "On the Road",
+  },
   { quote: "Kilometers are shorter than miles. Save gas, take your next trip in kilometers.", author: "George Carlin" },
-  { quote: "The journey is part of the experience—an expression of the seriousness of one’s intent. One doesn’t take the A train to Mecca.", author: "Anthony Bourdain" },
+  {
+    quote:
+      "The journey is part of the experience—an expression of the seriousness of one’s intent. One doesn’t take the A train to Mecca.",
+    author: "Anthony Bourdain",
+  },
   { quote: "Road trips aren’t measured by mile markers, but by moments.", author: "Unknown" },
   { quote: "The road must eventually lead to the whole world.", author: "Jack Kerouac", source: "On the Road" },
-  { quote: "The open road is a beckoning, a strangeness, a place where a man can lose himself.", author: "William Least Heat-Moon", source: "Blue Highways" },
+  {
+    quote: "The open road is a beckoning, a strangeness, a place where a man can lose himself.",
+    author: "William Least Heat-Moon",
+    source: "Blue Highways",
+  },
   { quote: "Stop worrying about the potholes in the road and enjoy the journey.", author: "Babs Hoffman" },
   { quote: "Every journey begins with a single tank of gas.", author: "Unknown" },
   { quote: "You can’t have a great day without driving a great distance.", author: "Unknown" },
@@ -38,51 +61,45 @@ const quotes = [
   { quote: "No road is long with good company.", author: "Turkish Proverb" },
   { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
   { quote: "A journey is best measured in friends rather than miles.", author: "Tim Cahill" },
-];
+]
 
 export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: LoginPageProps) {
-  const [error, setError] = useState<string | null>(null)
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
-  const [isResetLoading, setIsResetLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
-  const randomQuote = quotes[quoteIndex];
+  const [isResetLoading, setIsResetLoading] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [phone, setPhone] = useState("")
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
+  const randomQuote = quotes[quoteIndex]
+
   const handleResetPassword = async () => {
     try {
-      setIsResetLoading(true);
-      const response = await fetch("/api/auth/reset-password",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: resetEmail }),
-        });
+      setIsResetLoading(true)
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      })
       if (response.ok) {
-        toast.success("Password reset email sent. Please check your inbox.");
-        setIsResetPasswordOpen(false);
+        toast.success("Password reset email sent. Please check your inbox.")
+        setIsResetPasswordOpen(false)
       } else {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to send reset email");
+        const data = await response.json()
+        throw new Error(data.error || "Failed to send reset email")
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
     } finally {
-      setIsResetLoading(false);
+      setIsResetLoading(false)
     }
-  };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    try {
-      const formattedIdentifier = loginMethod === 'email' ? email : phone;
-      await handleLoginAction(formattedIdentifier, password, loginMethod);
-    } catch {
-      setError("Invalid email/phone or password. Please try again.");
-    }
-  };
+    e.preventDefault()
+    const formattedIdentifier = loginMethod === "email" ? email : phone
+    await handleLoginAction(formattedIdentifier, password, loginMethod)
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -112,22 +129,22 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
                   <div className="flex justify-center space-x-2 mb-4">
                     <Button
                       type="button"
-                      onClick={() => setLoginMethod('email')}
-                      variant={loginMethod === 'email' ? 'default' : 'outline'}
+                      onClick={() => setLoginMethod("email")}
+                      variant={loginMethod === "email" ? "default" : "outline"}
                       className="w-full"
                     >
                       <Mail className="mr-2 h-4 w-4" /> Email
                     </Button>
                     <Button
                       type="button"
-                      onClick={() => setLoginMethod('phone')}
-                      variant={loginMethod === 'phone' ? 'default' : 'outline'}
+                      onClick={() => setLoginMethod("phone")}
+                      variant={loginMethod === "phone" ? "default" : "outline"}
                       className="w-full"
                     >
                       Phone
                     </Button>
                   </div>
-                  {loginMethod === 'email' ? (
+                  {loginMethod === "email" ? (
                     <div className="space-y-1">
                       <Label htmlFor="email">Email</Label>
                       <Input
@@ -165,9 +182,12 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
                     />
                   </div>
                 </div>
-                {error && <p className="text-destructive text-sm mt-2">{error}</p>}
                 <Button className="w-full" type="submit" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
+                  {isLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                  )}
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
               </form>
@@ -190,7 +210,7 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
             height={0}
             sizes="50vw"
             className="w-full lg:w-7/12 h-auto lg:rounded-l-lg"
-            placeholder='blur'
+            placeholder="blur"
             blurDataURL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkqAcAAIUAgUW0RjgAAAAASUVORK5CYII="
           />
           {randomQuote && (
@@ -220,7 +240,12 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
               <Label htmlFor="reset-email" className="text-right">
                 Email
               </Label>
-              <Input id="reset-email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="col-span-3" />
+              <Input
+                id="reset-email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                className="col-span-3"
+              />
             </div>
           </div>
           <DialogFooter>

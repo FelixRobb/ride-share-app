@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import Link from 'next/link'
 
 function ResetPasswordForm() {
   const [newPassword, setNewPassword] = useState('')
@@ -51,7 +52,7 @@ function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match") 
+      toast.error("Passwords do not match")
       return
     }
 
@@ -63,14 +64,14 @@ function ResetPasswordForm() {
       })
 
       if (response.ok) {
-        toast.success("Your password has been reset successfully") 
+        toast.success("Your password has been reset successfully")
         router.push('/')
       } else {
         const data = await response.json()
         throw new Error(data.error || 'Failed to reset password')
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred") 
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
     }
   }
 
@@ -106,42 +107,58 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-black">
-      <Card className="w-full max-w-[350px]">
-        <CardHeader>
-          <CardTitle>Reset Password</CardTitle>
-          <CardDescription>Enter your new password below.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <div className="grid w-full items-center gap-4">
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="new-password">New Password</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                />
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+      <header className="bg-background/80 backdrop-blur-sm shadow-md border-b border-border sticky top-0 z-40">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex-shrink-0 mr-4">
+            <Link href="/dashboard" className="text-2xl font-bold text-primary">
+              RideShare
+            </Link>
+          </div>
+        </div>
+      </header>
+      <main className="flex-1 flex items-center justify-center bg-background">
+        <Card className="w-full max-w-[350px]">
+          <CardHeader>
+            <CardTitle>Reset Password</CardTitle>
+            <CardDescription>Enter your new password below.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit}>
+              <div className="grid w-full items-center gap-4">
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <Button className="w-full mt-4" type="submit">
-              Reset Password
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <Button className="w-full mt-4" type="submit">
+                Reset Password
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </main>
+      <footer className="bg-background p-4 border-t">
+        <div className="container mx-auto text-center text-sm text-muted-foreground">
+          © {new Date().getFullYear()} RideShare. All rights reserved.
+        </div>
+      </footer>
     </div>
   )
 }

@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   const { identifier, password, loginMethod } = await request.json();
 
   if (!identifier || !password) {
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    return NextResponse.json({ error: "INVALID_CREDENTIALS" }, { status: 400 });
   }
 
   try {
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     } else {
       const phoneNumber = parsePhoneNumber(identifier);
       if (!phoneNumber || !phoneNumber.isValid()) {
-        return NextResponse.json({ error: "Invalid phone number" }, { status: 400 });
+        return NextResponse.json({ error: "INVALID_PHONE_NUMBER" }, { status: 400 });
       }
       const e164PhoneNumber = phoneNumber.format("E.164");
 
@@ -28,13 +28,17 @@ export async function POST(request: Request) {
     const { data: user, error } = await query;
 
     if (error || !user) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json({ error: "USER_NOT_FOUND" }, { status: 404 });
+    }
+
+    if (!user.is_verified) {
+      return NextResponse.json({ error: "EMAIL_NOT_VERIFIED", email: user.email }, { status: 403 });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json({ error: "INVALID_PASSWORD" }, { status: 401 });
     }
 
     // Create JWT
@@ -54,6 +58,6 @@ export async function POST(request: Request) {
 
     return response;
   } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "INTERNAL_SERVER_ERROR" }, { status: 500 });
   }
 }
