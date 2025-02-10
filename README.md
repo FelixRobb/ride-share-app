@@ -1,4 +1,4 @@
-# RideShare
+# RideShare  [![Netlify Status](https://api.netlify.com/api/v1/badges/3c958cfa-2c19-4c63-9cdb-d5a09d003b81/deploy-status)](https://app.netlify.com/sites/rideshareappweb/deploys)
 
 RideShare is a modern, user-friendly web application that facilitates ride-sharing among users. It allows people to connect, offer, and request rides within their trusted network of contacts.
 
