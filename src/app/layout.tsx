@@ -1,13 +1,13 @@
 import "./globals.css"
 import { ThemeProvider } from "next-themes"
 import { Toaster } from "sonner"
+import type { Metadata } from 'next'
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rideshareappweb.netlify.app" // Fallback URL
 const ogImageUrl = `${siteUrl}/og-image.png`
-const twitterImageUrl = `${siteUrl}/twitter-image.png`
-  ; <meta name="apple-mobile-web-app-title" content="RideShare" />
+const twitterImageUrl = `${siteUrl}/twitter-image.png`;
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "RideShare",
   description: "Connect with friends, share rides, and travel together safely.",
   manifest: "/manifest.webmanifest",
@@ -40,8 +40,12 @@ export const metadata = {
     description: "Connect with friends, share rides, and travel together safely.",
     images: [twitterImageUrl],
   },
-
+  
   metadataBase: new URL(siteUrl),
+
+  other: {
+    "google-site-verification": "W9GFmL7Uxf4V2KqhH-IFNgbJHdrHziVtC95mXXGPwI0",
+  },
 }
 
 export default function RootLayout({
@@ -51,7 +55,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <meta name="google-site-verification" content="W9GFmL7Uxf4V2KqhH-IFNgbJHdrHziVtC95mXXGPwI0" />
       <body className="min-h-screen bg-background font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             {children}
