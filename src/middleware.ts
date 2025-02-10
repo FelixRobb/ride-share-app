@@ -33,7 +33,7 @@ const publicRoutes = [
 ];
 
 // List of static files and directories that should be publicly accessible
-const publicFiles = ["/_next", "/favicon.ico", "/manifest.webmanifest", "/icon-192x192.png", "/icon-256x256.png", "/icon-384x384.png", "/icon-512x512.png", "/service-worker.js", "/wide-pwa.png", "/narrow-pwa.png"];
+const publicFiles = ["/_next", "/favicon.ico", "/manifest.webmanifest", "/robots.txt", "/sitemap.xml", "/icon-192x192.png", "/icon-256x256.png", "/icon-384x384.png", "/icon-512x512.png", "/service-worker.js", "/wide-pwa.png", "/narrow-pwa.png"];
 
 // List of admin routes that require admin authentication
 const adminRoutes = ["/api/admin/stats", "/api/admin/users", "/api/admin/notify-all", "/api/admin/notify-user"];
