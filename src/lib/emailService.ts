@@ -27,14 +27,14 @@ export function getWelcomeEmailContent(name: string): string {
   <title>Welcome to RideShare</title>
   <style>
     :root {
-      --background: #ffffff;
-      --foreground: #0c0a09;
+      --background: #080808;
+      --foreground: #dadada;
       --muted: #f5f5f4;
       --muted-foreground: #78716c;
-      --card: #ffffff;
+      --card: #0f0f0f;
       --card-foreground: #0c0a09;
       --border: #e7e5e4;
-      --primary: #f97316;
+      --primary: #dd5d02;
       --primary-foreground: #fafaf9;
       --secondary: #f5f5f4;
       --secondary-foreground: #1c1917;
@@ -149,14 +149,14 @@ export function getVerificationEmailContent(name: string, verificationUrl: strin
   <title>Verify Your Email for RideShare</title>
   <style>
     :root {
-      --background: #ffffff;
-      --foreground: #0c0a09;
+      --background: #080808;
+      --foreground: #dadada;
       --muted: #f5f5f4;
       --muted-foreground: #78716c;
       --card: #ffffff;
       --card-foreground: #0c0a09;
       --border: #e7e5e4;
-      --primary: #f97316;
+      --primary: #dd5d02;
       --primary-foreground: #fafaf9;
     }
     body {
@@ -235,17 +235,17 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
   <title>Reset Your RideShare Password</title>
   <style>
     :root {
-      --background: #ffffff;
-      --foreground: #0c0a09;
+      --background: #080808;
+      --foreground: #dadada;
       --muted: #f5f5f4;
       --muted-foreground: #78716c;
-      --card: #ffffff;
+      --card: #0f0f0f;
       --card-foreground: #0c0a09;
       --border: #e7e5e4;
-      --primary: #f97316;
+      --primary: #dd5d02;
       --primary-foreground: #fafaf9;
       --destructive: #ef4444;
-      --destructive-foreground: #fafaf9;
+      --destructive-foreground: #6c6c6c;
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -282,7 +282,7 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
       background-color: #ea580c;
     }
     .warning {
-      background-color: #fef2f2;
+      background-color: #000000;
       border: 1px solid var(--destructive);
       color: var(--destructive);
       padding: 1rem;
@@ -290,10 +290,11 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
       margin: 1.5rem 0;
     }
     .security-tips {
-      background-color: var(--muted);
+      background-color: var(--background);
       padding: 1rem;
       border-radius: 0.5rem;
       margin: 1.5rem 0;
+      box-shadow: #ef4444 0px 0px 10px inset;
     }
     .security-tips h2 {
       color: var(--primary);
