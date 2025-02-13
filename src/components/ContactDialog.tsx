@@ -1,187 +1,224 @@
+import React, { useState, useEffect, useCallback } from "react"
 import { Loader, Search, UserPlus, Check, Phone } from "lucide-react"
-import { useState, useEffect, useCallback } from "react"
-import { toast } from "sonner"
 import { parsePhoneNumber } from "libphonenumber-js"
+import { toast } from "sonner"
 
 import { ContactSuggestions } from "@/components/ContactSugestions"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { User, Contact } from "@/types"
-import { addContact, acceptContact, deleteContact } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import { addContact, acceptContact, deleteContact } from "@/utils/api"
 
-interface ExtendedUser extends User {
-  contactStatus?: "pending" | "accepted" | null
-  contactId?: string | null
+// Components
+const ContactSearchResult = ({ user, onAddContact, addingUserId, isOnline, getContactStatus }) => (
+  <div className="flex items-center justify-between p-2 hover:bg-accent">
+    <div className="flex items-center space-x-3">
+      <Avatar>
+        <AvatarImage src="/placeholder.svg" alt={user.name} />
+        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+      </Avatar>
+      <div>
+        <p className="font-medium">{user.name}</p>
+        <p className="text-sm text-muted-foreground">{user.phone}</p>
+      </div>
+    </div>
+    <Button
+      size="sm"
+      onClick={() => onAddContact(user)}
+      disabled={user.contactStatus === "accepted" || addingUserId === user.id || !isOnline}
+    >
+      {addingUserId === user.id ? (
+        <Loader className="animate-spin w-4 h-4 mr-2" />
+      ) : user.contactStatus === "accepted" ? (
+        <Check className="w-4 h-4 mr-2" />
+      ) : user.contactStatus === "pending" ? (
+        <span>Pending</span>
+      ) : (
+        <UserPlus className="w-4 h-4 mr-2" />
+      )}
+      {addingUserId === user.id ? "Adding..." : getContactStatus(user) || "Add"}
+    </Button>
+  </div>
+)
+
+const ContactCard = ({ contact, currentUser, onOpenDetails, getContactStatus }) => {
+  const isCurrentUserRequester = contact.user_id === currentUser.id
+  const contactUser = isCurrentUserRequester ? contact.contact : contact.user
+  const contactStatus = getContactStatus(contact)
+
+  return (
+    <div
+      className="flex items-center justify-between p-4 hover:bg-accent cursor-pointer border-b"
+      onClick={() => onOpenDetails(contact)}
+      role="button"
+      tabIndex={0}
+      onKeyPress={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          onOpenDetails(contact)
+        }
+      }}
+    >
+      <div className="flex items-center space-x-3">
+        <Avatar>
+          <AvatarImage src="/placeholder.svg" alt={contactUser.name} />
+          <AvatarFallback>{contactUser.name.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div>
+          <p className="font-medium">{contactUser.name}</p>
+          <p className="text-sm text-muted-foreground">{contactUser.phone}</p>
+        </div>
+      </div>
+      {contactStatus && (
+        <Badge variant={contactStatus === "Accepted" ? "default" : "secondary"}>
+          {contactStatus}
+        </Badge>
+      )}
+    </div>
+  )
 }
 
-interface SuggestedContact extends User {
-  mutual_contacts: number
-  contactStatus?: "pending" | "accepted" | null
+const ContactDetails = ({ contact, currentUser, onAccept, onDelete, isOnline, getContactStatus }) => {
+  const contactUser = contact.user_id === currentUser.id ? contact.contact : contact.user
+
+  return (
+    <div className="grid gap-4 py-4">
+      <div className="flex items-center gap-4">
+        <Avatar className="w-16 h-16">
+          <AvatarImage src="/placeholder.svg" alt={contactUser.name} />
+          <AvatarFallback>{contactUser.name.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div>
+          <h3 className="text-lg font-semibold">{contactUser.name}</h3>
+          <p className="text-sm text-muted-foreground">{getContactStatus(contact)}</p>
+        </div>
+      </div>
+      <div className="grid gap-2">
+        <div className="flex items-center gap-2">
+          <Phone className="w-4 h-4" />
+          <p>{contactUser.phone}</p>
+        </div>
+      </div>
+      <div className="flex justify-end gap-2 mt-4">
+        {contact.status === "pending" && contact.contact_id === currentUser.id && (
+          <Button onClick={() => onAccept(contact.id)} disabled={!isOnline}>
+            Accept Contact
+          </Button>
+        )}
+        <Button variant="destructive" onClick={() => onDelete(contact.id)} disabled={!isOnline}>
+          Remove Contact
+        </Button>
+      </div>
+    </div>
+  )
 }
 
-interface ContactDialogProps {
-  currentUser: ExtendedUser
-  contacts: Contact[]
-  suggestedContacts: ExtendedUser[]
-  fetchUserData: () => Promise<void>
-}
-
-export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactDialogProps) {
+// Main Component
+export function ContactDialog({ currentUser, contacts, fetchUserData }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<ExtendedUser[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  const [searchState, setSearchState] = useState({
+    query: "",
+    results: [],
+    isSearching: false
+  })
+  const [selectedContact, setSelectedContact] = useState(null)
   const [isContactDetailsOpen, setIsContactDetailsOpen] = useState(false)
-  const [addingUserId, setAddingUserId] = useState<string | null>(null)
-  const [localSuggestedContacts, setLocalSuggestedContacts] = useState<SuggestedContact[]>([])
-  const [suggestedContacts, setSuggestedContacts] = useState<SuggestedContact[]>([])
-  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false)
+  const [addingUserId, setAddingUserId] = useState(null)
+  const [suggestionsState, setSuggestionsState] = useState({
+    suggestions: [],
+    localSuggestions: [],
+    isFetching: false
+  })
+  
   const isOnline = useOnlineStatus()
 
-  useEffect(() => {
-    const searchUsers = async () => {
-      if (searchQuery.length < 2) {
-        setSearchResults([])
-        return
+  const getContactStatus = useCallback((user) => {
+    if ("status" in user) {
+      if (user.status === "accepted") return "Accepted"
+      if (user.status === "pending") {
+        return user.user_id === currentUser.id ? "Pending" : "Pending their approval"
       }
-      setIsSearching(true)
-      try {
-        const response = await fetch(
-          `/api/users/search?query=${encodeURIComponent(searchQuery)}&currentUserId=${currentUser.id}`,
-        )
-        if (response.ok) {
-          const data = await response.json()
-          setSearchResults(data.users)
-        } else {
-          const errorData = await response.json()
-          throw new Error(errorData.error || "Failed to search users")
-        }
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to search users. Please try again.")
-      } finally {
-        setIsSearching(false)
-      }
+      return user.status
     }
+    return user.contactStatus || null
+  }, [currentUser.id])
 
-    if (searchQuery.length >= 2) {
-      searchUsers()
-    } else {
-      setSearchResults([])
+  const handleSearch = useCallback(async (query) => {
+    if (query.length < 2) {
+      setSearchState(prev => ({ ...prev, results: [] }))
+      return
     }
-  }, [searchQuery, currentUser.id])
-
-  useEffect(() => {
-    setLocalSuggestedContacts(suggestedContacts)
-  }, [suggestedContacts])
-
-  const fetchUserNotifications = useCallback(async () => {
-    if (isOnline) {
-      setIsFetchingSuggestions(true)
-      try {
-        const response = await fetch(`/api/suggested-contacts?userId=${currentUser.id}`)
-        if (response.ok) {
-          const data = await response.json()
-          setSuggestedContacts(data.suggestedContacts || [])
-        } else {
-          throw new Error("Failed to fetch suggested contacts")
-        }
-      } catch {
-        if (isOnline) {
-          toast.error("Failed to load suggested contacts. Please try again later.")
-        }
-      } finally {
-        setIsFetchingSuggestions(false)
-      }
+    setSearchState(prev => ({ ...prev, isSearching: true }))
+    try {
+      const response = await fetch(`/api/users/search?query=${encodeURIComponent(query)}&currentUserId=${currentUser.id}`)
+      if (!response.ok) throw new Error("Failed to search users")
+      const data = await response.json()
+      setSearchState(prev => ({ ...prev, results: data.users }))
+    } catch (error) {
+      toast.error(error.message || "Failed to search users")
+    } finally {
+      setSearchState(prev => ({ ...prev, isSearching: false }))
     }
-  }, [currentUser.id, isOnline])
+  }, [currentUser.id])
 
-  useEffect(() => {
-    fetchUserNotifications()
-  }, [fetchUserNotifications])
-
-  const handleAddContact = async (user: ExtendedUser) => {
+  const handleAddContact = async (user) => {
     if (!isOnline) return
     setAddingUserId(user.id)
     try {
       const phoneNumber = parsePhoneNumber(user.phone)
-      if (!phoneNumber || !phoneNumber.isValid()) {
-        throw new Error("Invalid phone number")
-      }
-      const e164PhoneNumber = phoneNumber.format("E.164")
-      await addContact(currentUser.id, e164PhoneNumber)
+      if (!phoneNumber?.isValid()) throw new Error("Invalid phone number")
+      
+      await addContact(currentUser.id, phoneNumber.format("E.164"))
       await fetchUserData()
-      setSearchQuery("")
-      setSearchResults([])
+      setSearchState(prev => ({ ...prev, query: "", results: [] }))
       toast.success("Contact request sent successfully!")
-      setLocalSuggestedContacts(localSuggestedContacts.filter((contact) => contact.id !== user.id))
+      setSuggestionsState(prev => ({
+        ...prev,
+        localSuggestions: prev.localSuggestions.filter(contact => contact.id !== user.id)
+      }))
     } catch (error) {
       if (isOnline) {
-        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+        toast.error(error.message || "An unexpected error occurred")
       }
     } finally {
       setAddingUserId(null)
     }
   }
 
-  const handleAcceptContact = async (contactId: string) => {
-    if (!isOnline) return
-    try {
-      await acceptContact(contactId, currentUser.id)
-      await fetchUserData()
-      toast.success("Contact accepted successfully!")
-    } catch (error) {
-      if (isOnline) {
-        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchState.query) handleSearch(searchState.query)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchState.query, handleSearch])
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!isOnline) return
+      setSuggestionsState(prev => ({ ...prev, isFetching: true }))
+      try {
+        const response = await fetch(`/api/suggested-contacts?userId=${currentUser.id}`)
+        if (!response.ok) throw new Error("Failed to fetch suggested contacts")
+        const data = await response.json()
+        setSuggestionsState(prev => ({
+          ...prev,
+          suggestions: data.suggestedContacts || [],
+          localSuggestions: data.suggestedContacts || []
+        }))
+      } catch (error) {
+        if (isOnline) {
+          toast.error("Failed to load suggested contacts")
+        }
+      } finally {
+        setSuggestionsState(prev => ({ ...prev, isFetching: false }))
       }
     }
-  }
-
-  const handleDeleteContact = async (contactId: string) => {
-    if (!isOnline) return
-    try {
-      await deleteContact(contactId, currentUser.id)
-      await fetchUserData()
-      setIsContactDetailsOpen(false)
-      toast.success("Contact deleted successfully!")
-    } catch (error) {
-      if (isOnline) {
-        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
-      }
-    }
-  }
-
-  const getContactStatus = (user: ExtendedUser | Contact): string | null => {
-    if ("status" in user) {
-      // This is a Contact object
-      if (user.status === "accepted") return "Accepted"
-      if (user.status === "pending") {
-        return user.user_id === currentUser.id ? "Pending" : "Pending their approval"
-      }
-      return user.status
-    } else {
-      // This is a User object from search results
-      return user.contactStatus || null
-    }
-  }
-
-  const handleOpenContactDetails = (contact: Contact) => {
-    setSelectedContact(contact)
-    setIsContactDetailsOpen(true)
-  }
+    fetchSuggestions()
+  }, [currentUser.id, isOnline])
 
   return (
     <div>
@@ -202,18 +239,19 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
             <DialogTitle className="text-xl font-semibold">Contacts</DialogTitle>
             <DialogDescription>Manage your contacts and add new ones.</DialogDescription>
           </DialogHeader>
+          
           <div className="p-6">
-            <Popover open={searchResults.length > 0}>
+            <Popover open={searchState.results.length > 0}>
               <PopoverTrigger asChild>
                 <div className="relative mb-4">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     placeholder="Search by name or phone"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    value={searchState.query}
+                    onChange={(e) => setSearchState(prev => ({ ...prev, query: e.target.value }))}
                     className="pl-10 pr-4 py-2 w-full rounded-md border border-input"
                   />
-                  {isSearching && (
+                  {searchState.isSearching && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       <Loader className="h-4 w-4 animate-spin text-primary" />
                     </div>
@@ -222,151 +260,95 @@ export function ContactDialog({ currentUser, contacts, fetchUserData }: ContactD
               </PopoverTrigger>
               <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" sideOffset={5}>
                 <ScrollArea className="h-fit w-full rounded-md border">
-                  {searchResults.map((user: ExtendedUser) => (
-                    <div key={user.id} className="flex items-center justify-between p-2 hover:bg-accent">
-                      <div className="flex items-center space-x-3">
-                        <Avatar>
-                          <AvatarImage src="/placeholder.svg" alt="Avatar" />
-                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground">{user.phone}</p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleAddContact(user)}
-                        disabled={user.contactStatus === "accepted" || addingUserId === user.id || !isOnline}
-                      >
-                        {addingUserId === user.id ? (
-                          <Loader className="animate-spin w-4 h-4 mr-2" />
-                        ) : user.contactStatus === "accepted" ? (
-                          <Check className="w-4 h-4 mr-2" />
-                        ) : user.contactStatus === "pending" ? (
-                          <span>Pending</span>
-                        ) : (
-                          <UserPlus className="w-4 h-4 mr-2" />
-                        )}
-                        {addingUserId === user.id ? "Adding..." : getContactStatus(user) || "Add"}
-                      </Button>
-                    </div>
+                  {searchState.results.map((user) => (
+                    <ContactSearchResult
+                      key={user.id}
+                      user={user}
+                      onAddContact={handleAddContact}
+                      addingUserId={addingUserId}
+                      isOnline={isOnline}
+                      getContactStatus={getContactStatus}
+                    />
                   ))}
                 </ScrollArea>
               </PopoverContent>
             </Popover>
+
             <div className="w-full max-w-[500px] overflow-hidden">
               <ContactSuggestions
-                suggestedContacts={localSuggestedContacts}
-                isFetchingSuggestions={isFetchingSuggestions}
+                suggestedContacts={suggestionsState.localSuggestions}
+                isFetchingSuggestions={suggestionsState.isFetching}
                 handleAddContact={handleAddContact}
                 currentUser={currentUser}
                 isOnline={isOnline}
               />
             </div>
+
             <div className="mt-4">
               <h4 className="text-lg font-medium mb-2 px-6">Your Contacts</h4>
               <ScrollArea className="h-[300px] w-full rounded-md">
                 {contacts.length === 0 ? (
                   <p className="text-center text-muted-foreground py-4">No contacts yet.</p>
                 ) : (
-                  contacts.map((contact) => {
-                    const isCurrentUserRequester = contact.user_id === currentUser.id
-                    const contactUser = isCurrentUserRequester ? contact.contact : contact.user
-                    const contactStatus = getContactStatus(contact)
-
-                    return (
-                      <div
-                        key={contact.id}
-                        className="flex items-center justify-between p-4 hover:bg-accent cursor-pointer border-b"
-                        onClick={() => handleOpenContactDetails(contact)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyPress={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            handleOpenContactDetails(contact)
-                          }
-                        }}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <Avatar>
-                            <AvatarImage src="/placeholder.svg" alt="Avatar" />
-                            <AvatarFallback>{contactUser.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{contactUser.name}</p>
-                            <p className="text-sm text-muted-foreground">{contactUser.phone}</p>
-                          </div>
-                        </div>
-                        {contactStatus && (
-                          <Badge variant={contactStatus === "Accepted" ? "default" : "secondary"}>
-                            {contactStatus}
-                          </Badge>
-                        )}
-                      </div>
-                    )
-                  })
+                  contacts.map((contact) => (
+                    <ContactCard
+                      key={contact.id}
+                      contact={contact}
+                      currentUser={currentUser}
+                      onOpenDetails={(contact) => {
+                        setSelectedContact(contact)
+                        setIsContactDetailsOpen(true)
+                      }}
+                      getContactStatus={getContactStatus}
+                    />
+                  ))
                 )}
               </ScrollArea>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
       <Dialog open={isContactDetailsOpen} onOpenChange={setIsContactDetailsOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-lg">
           <DialogHeader>
             <DialogTitle>Contact Details</DialogTitle>
           </DialogHeader>
           {selectedContact && (
-            <div className="grid gap-4 py-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="w-16 h-16">
-                  <AvatarImage src="/placeholder.svg" alt="Avatar" />
-                  <AvatarFallback>
-                    {(selectedContact.user_id === currentUser.id
-                      ? selectedContact.contact.name
-                      : selectedContact.user.name
-                    ).charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    {selectedContact.user_id === currentUser.id
-                      ? selectedContact.contact.name
-                      : selectedContact.user.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{getContactStatus(selectedContact)}</p>
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  <p>
-                    {selectedContact.user_id === currentUser.id
-                      ? selectedContact.contact.phone
-                      : selectedContact.user.phone}
-                  </p>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 mt-4">
-                {selectedContact.status === "pending" && selectedContact.contact_id === currentUser.id ? (
-                  <Button onClick={() => handleAcceptContact(selectedContact.id)} disabled={!isOnline}>
-                    Accept Contact
-                  </Button>
-                ) : null}
-                <Button
-                  variant="destructive"
-                  onClick={() => handleDeleteContact(selectedContact.id)}
-                  disabled={!isOnline}
-                >
-                  Remove Contact
-                </Button>
-              </div>
-            </div>
+            <ContactDetails
+              contact={selectedContact}
+              currentUser={currentUser}
+              onAccept={async (contactId) => {
+                if (!isOnline) return
+                try {
+                  await acceptContact(contactId, currentUser.id)
+                  await fetchUserData()
+                  toast.success("Contact accepted successfully!")
+                } catch (error) {
+                  if (isOnline) {
+                    toast.error(error.message || "An unexpected error occurred")
+                  }
+                }
+              }}
+              onDelete={async (contactId) => {
+                if (!isOnline) return
+                try {
+                  await deleteContact(contactId, currentUser.id)
+                  await fetchUserData()
+                  setIsContactDetailsOpen(false)
+                  toast.success("Contact deleted successfully!")
+                } catch (error) {
+                  if (isOnline) {
+                    toast.error(error.message || "An unexpected error occurred")
+                  }
+                }
+              }}
+              isOnline={isOnline}
+              getContactStatus={getContactStatus}
+            />
           )}
         </DialogContent>
       </Dialog>
     </div>
   )
 }
-
