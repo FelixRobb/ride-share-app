@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import type { User, Contact } from "@/types";
@@ -59,6 +59,7 @@ export function ContactDialog({
   >([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const isOnline = useOnlineStatus();
+  const [deletingContactId, setDeletingContactId] = useState<string | null>(null);
 
   useEffect(() => {
     const searchUsers = async () => {
@@ -159,6 +160,7 @@ export function ContactDialog({
 
   const handleAcceptContact = async (contactId: string) => {
     if (!isOnline) return;
+    setAddingUserId(contactId);
     try {
       await acceptContact(contactId, currentUser.id);
       await fetchUserData();
@@ -171,11 +173,14 @@ export function ContactDialog({
             : "An unexpected error occurred"
         );
       }
+    } finally {
+      setAddingUserId(null);
     }
   };
 
   const handleDeleteContact = async (contactId: string) => {
     if (!isOnline) return;
+    setDeletingContactId(contactId);
     try {
       await deleteContact(contactId, currentUser.id);
       await fetchUserData();
@@ -189,6 +194,8 @@ export function ContactDialog({
             : "An unexpected error occurred"
         );
       }
+    } finally {
+      setDeletingContactId(null);
     }
   };
 
@@ -221,7 +228,7 @@ export function ContactDialog({
             Manage Contacts
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[800px] w-full p-0 max-h-[90vh] overflow-hidden rounded-lg">
+        <DialogContent className="sm:max-w-[800px] w-full p-0 h-[90vh] flex flex-col overflow-hidden rounded-md">
           {!isOnline && (
             <div
               className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4"
@@ -234,226 +241,257 @@ export function ContactDialog({
               </p>
             </div>
           )}
-          <DialogHeader className="px-6 py-4 border-b">
+          <DialogHeader className="px-6 py-4 border-b shrink-0">
             <DialogTitle className="text-xl font-semibold flex items-center justify-between">
               Contacts
             </DialogTitle>
           </DialogHeader>
 
-          <Tabs defaultValue="all" className="w-full">
+          <ScrollArea className="flex-1">
             <div className="px-6 pt-4">
-              <TabsList className="w-full grid grid-cols-3 mb-4">
-                <TabsTrigger value="all">All Contacts</TabsTrigger>
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
-              </TabsList>
-
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search contacts by name or phone"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full"
-                />
-                {isSearching && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Loader className="h-4 w-4 animate-spin text-primary" />
-                  </div>
-                )}
+              <div className="relative">
+                <div className="flex items-center h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+                  <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
+                  <Input
+                    placeholder="Search contacts by name or phone"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
+                  />
+                  {isSearching && (
+                    <Loader className="h-4 w-4 animate-spin text-primary shrink-0 ml-2" />
+                  )}
+                </div>
                 {searchResults.length > 0 && (
-                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-background border rounded-lg shadow-lg overflow-hidden">
-                    <ScrollArea className="max-h-[300px]">
-                      {searchResults.map((user: ExtendedUser) => (
-                        <div
-                          key={user.id}
-                          className="flex items-center justify-between p-3 hover:bg-accent border-b last:border-b-0"
-                        >
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src="/placeholder.svg" alt="Avatar" />
-                              <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{user.name}</p>
-                              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                                <Phone className="h-3 w-3" />
-                                {user.phone}
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => handleAddContact(user)}
-                            disabled={
-                              user.contactStatus === "accepted" ||
-                              addingUserId === user.id ||
-                              !isOnline
-                            }
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-background border rounded-lg shadow-lg">
+                    <ScrollArea className="max-h-[300px] h-fit overflow-y-auto">
+                      <div className="p-1">
+                        {searchResults.map((user: ExtendedUser) => (
+                          <div
+                            key={user.id}
+                            className="flex items-center justify-between p-3 rounded-md hover:bg-accent/50 transition-colors"
                           >
-                            {addingUserId === user.id ? (
-                              <Loader className="animate-spin w-4 h-4 mr-2" />
-                            ) : user.contactStatus === "accepted" ? (
-                              <Check className="w-4 h-4 mr-2" />
-                            ) : user.contactStatus === "pending" ? (
-                              <span>Pending</span>
-                            ) : (
-                              <UserPlus className="w-4 h-4 mr-2" />
-                            )}
-                            {addingUserId === user.id
-                              ? "Adding..."
-                              : getContactStatus(user) || "Add"}
-                          </Button>
-                        </div>
-                      ))}
+                            <div className="flex items-center space-x-3 min-w-0">
+                              <Avatar className="h-10 w-10 shrink-0">
+                                <AvatarImage src="/placeholder.svg" alt={`${user.name}'s avatar`} />
+                                <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <p className="font-medium truncate">{user.name}</p>
+                                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                  <Phone className="h-3 w-3 shrink-0" />
+                                  <span className="truncate">{user.phone}</span>
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant={user.contactStatus === "accepted" ? "secondary" : "default"}
+                              onClick={() => handleAddContact(user)}
+                              disabled={
+                                user.contactStatus === "accepted" ||
+                                addingUserId === user.id ||
+                                !isOnline
+                              }
+                              className="ml-4 shrink-0"
+                            >
+                              {addingUserId === user.id ? (
+                                <>
+                                  <Loader className="animate-spin w-4 h-4 mr-2" />
+                                  <span>Adding...</span>
+                                </>
+                              ) : user.contactStatus === "accepted" ? (
+                                <>
+                                  <Check className="w-4 h-4 mr-2" />
+                                  <span>Added</span>
+                                </>
+                              ) : user.contactStatus === "pending" ? (
+                                <span>Pending</span>
+                              ) : (
+                                <>
+                                  <UserPlus className="w-4 h-4 mr-2" />
+                                  <span>Add</span>
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <ScrollBar />
                     </ScrollArea>
                   </div>
                 )}
               </div>
+
+              <div className="my-6">
+                <h3 className="text-sm font-medium mb-3">Suggested Contacts</h3>
+                <ScrollArea className="w-full">
+                  <div className="flex gap-4 pb-4">
+                    <ContactSuggestions
+                      suggestedContacts={localSuggestedContacts}
+                      isFetchingSuggestions={isFetchingSuggestions}
+                      handleAddContact={handleAddContact}
+                      currentUser={currentUser}
+                      isOnline={isOnline}
+                    />
+                  </div>
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+              </div>
             </div>
 
-            <TabsContent value="all" className="mt-0">
-              <ScrollArea className="h-[500px] w-full">
-                <div className="p-6 grid gap-4">
-                  {contacts.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">
-                      No contacts yet. Start by adding some contacts!
-                    </p>
-                  ) : (
-                    contacts.map((contact) => {
-                      const isCurrentUserRequester =
-                        contact.user_id === currentUser.id;
-                      const contactUser = isCurrentUserRequester
-                        ? contact.contact
-                        : contact.user;
-                      const contactStatus = getContactStatus(contact);
+            <Tabs defaultValue="all" className="w-full">
+              <div className="px-6">
+                <TabsList className="w-full grid grid-cols-2 mb-4">
+                  <TabsTrigger value="all">All Contacts</TabsTrigger>
+                  <TabsTrigger value="pending">Pending</TabsTrigger>
+                </TabsList>
+              </div>
 
-                      return (
-                        <div
-                          key={contact.id}
-                          className="group flex items-center justify-between p-4 hover:bg-accent rounded-lg transition-colors cursor-pointer"
-                          onClick={() => handleOpenContactDetails(contact)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyPress={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              handleOpenContactDetails(contact);
-                            }
-                          }}
-                        >
-                          <div className="flex items-center space-x-4">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage src="/placeholder.svg" alt="Avatar" />
-                              <AvatarFallback>
-                                {contactUser.name.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{contactUser.name}</p>
-                              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                                <Phone className="h-3 w-3" />
-                                {contactUser.phone}
-                              </p>
+              <TabsContent value="all" className="mt-0">
+                <ScrollArea className="h-[400px]">
+                  <div className="px-6 py-4 grid gap-4">
+                    {contacts.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        No contacts yet. Start by adding some contacts!
+                      </p>
+                    ) : (
+                      contacts.map((contact) => {
+                        const isCurrentUserRequester =
+                          contact.user_id === currentUser.id;
+                        const contactUser = isCurrentUserRequester
+                          ? contact.contact
+                          : contact.user;
+                        const contactStatus = getContactStatus(contact);
+
+                        return (
+                          <div
+                            key={contact.id}
+                            className="group flex items-center justify-between p-4 hover:bg-accent rounded-lg transition-colors cursor-pointer"
+                            onClick={() => handleOpenContactDetails(contact)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                handleOpenContactDetails(contact);
+                              }
+                            }}
+                          >
+                            <div className="flex items-center space-x-4">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src="/placeholder.svg" alt="Avatar" />
+                                <AvatarFallback>
+                                  {contactUser.name.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{contactUser.name}</p>
+                                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                  <Phone className="h-3 w-3" />
+                                  {contactUser.phone}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {contactStatus && (
-                              <Badge
-                                variant={
-                                  contactStatus === "Accepted"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                              >
-                                {contactStatus}
-                              </Badge>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <Users className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="pending" className="mt-0">
-              <ScrollArea className="h-[500px] w-full">
-                <div className="p-6 grid gap-4">
-                  {contacts
-                    .filter((contact) => contact.status === "pending")
-                    .map((contact) => {
-                      const isCurrentUserRequester =
-                        contact.user_id === currentUser.id;
-                      const contactUser = isCurrentUserRequester
-                        ? contact.contact
-                        : contact.user;
-
-                      return (
-                        <div
-                          key={contact.id}
-                          className="flex items-center justify-between p-4 bg-accent/50 rounded-lg"
-                        >
-                          <div className="flex items-center space-x-4">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage src="/placeholder.svg" alt="Avatar" />
-                              <AvatarFallback>
-                                {contactUser.name.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{contactUser.name}</p>
-                              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                                <Phone className="h-3 w-3" />
-                                {contactUser.phone}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            {!isCurrentUserRequester && (
+                            <div className="flex items-center gap-3">
+                              {contactStatus && (
+                                <Badge
+                                  variant={
+                                    contactStatus === "Accepted"
+                                      ? "default"
+                                      : "secondary"
+                                  }
+                                >
+                                  {contactStatus}
+                                </Badge>
+                              )}
                               <Button
-                                onClick={() => handleAcceptContact(contact.id)}
-                                disabled={!isOnline}
+                                variant="ghost"
+                                size="icon"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
                               >
-                                Accept
+                                <Users className="h-4 w-4" />
                               </Button>
-                            )}
-                            <Button
-                              variant="destructive"
-                              onClick={() => handleDeleteContact(contact.id)}
-                              disabled={!isOnline}
-                            >
-                              Decline
-                            </Button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </ScrollArea>
-            </TabsContent>
+                        );
+                      })
+                    )}
+                  </div>
+                  <ScrollBar />
+                </ScrollArea>
+              </TabsContent>
 
-            <TabsContent value="suggestions" className="mt-0">
-              <ScrollArea className="h-[500px] w-full">
-                <div className="p-6">
-                  <ContactSuggestions
-                    suggestedContacts={localSuggestedContacts}
-                    isFetchingSuggestions={isFetchingSuggestions}
-                    handleAddContact={handleAddContact}
-                    currentUser={currentUser}
-                    isOnline={isOnline}
-                  />
-                </div>
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="pending" className="mt-0">
+                <ScrollArea className="h-[400px]">
+                  <div className="px-6 py-4 grid gap-4">
+                    {contacts
+                      .filter((contact) => contact.status === "pending")
+                      .map((contact) => {
+                        const isCurrentUserRequester =
+                          contact.user_id === currentUser.id;
+                        const contactUser = isCurrentUserRequester
+                          ? contact.contact
+                          : contact.user;
+
+                        return (
+                          <div
+                            key={contact.id}
+                            className="flex items-center justify-between p-4 bg-accent/50 rounded-lg"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src="/placeholder.svg" alt="Avatar" />
+                                <AvatarFallback>
+                                  {contactUser.name.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{contactUser.name}</p>
+                                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                  <Phone className="h-3 w-3" />
+                                  {contactUser.phone}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              {!isCurrentUserRequester && (
+                                <Button
+                                  onClick={() => handleAcceptContact(contact.id)}
+                                  disabled={!isOnline}
+                                >{addingUserId === contact.id ? (
+                                  <>
+                                    <Loader className="animate-spin w-4 h-4 mr-2" />
+                                    <span>Accepting...</span>
+                                  </>
+                                ) : (
+                                  <>Accept</>
+                                )}
+                                </Button>
+                              )}
+                              <Button
+                                variant="destructive"
+                                onClick={() => handleDeleteContact(contact.id)}
+                                disabled={!isOnline || deletingContactId === contact.id}
+                              >
+                                {deletingContactId === contact.id ? (
+                                  <>
+                                    <Loader className="animate-spin w-4 h-4 mr-2" />
+                                    <span>Deleting...</span>
+                                  </>
+                                ) : (
+                                  <span>{isCurrentUserRequester ? "Cancel Request" : "Decline"}</span>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                  <ScrollBar />
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
 

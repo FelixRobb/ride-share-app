@@ -1,10 +1,7 @@
-import { UserPlus, Check, Users } from "lucide-react"
+import { UserPlus, Loader} from "lucide-react"
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Skeleton } from "@/components/ui/skeleton"
 import type { User } from "@/types"
 
 interface SuggestedContact extends User {
@@ -28,84 +25,47 @@ export function ContactSuggestions({
 }: ContactSuggestionsProps) {
   if (isFetchingSuggestions) {
     return (
-      <div className="w-full overflow-hidden rounded-md border">
-        <ScrollArea className="w-full">
-          <div className="flex space-x-4 p-4">
-            {Array(3)
-              .fill(0)
-              .map((_, i) => (
-                <Card key={i} className="w-[200px] flex-shrink-0">
-                  <CardContent className="p-4">
-                    <div className="flex flex-col items-center space-y-3">
-                      <Skeleton className="h-20 w-20 rounded-full" />
-                      <div className="space-y-2 w-full">
-                        <Skeleton className="h-4 w-3/4 mx-auto" />
-                        <Skeleton className="h-3 w-1/2 mx-auto" />
-                      </div>
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-9 w-full" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+      <div className="flex items-center justify-center p-4 w-full">
+        <Loader className="h-6 w-6 animate-spin text-primary" />
       </div>
-    )
+    );
   }
 
   if (suggestedContacts.length === 0) {
     return (
-      <p className="text-center text-muted-foreground py-4">
-        {isOnline ? "No suggestions at the moment." : "Suggestions unavailable while offline."}
-      </p>
-    )
+      <div className="flex items-center justify-center p-4 min-w-[200px]">
+        <p className="text-sm text-muted-foreground">No suggestions available</p>
+      </div>
+    );
   }
 
   return (
-    <div className="w-full overflow-hidden rounded-md border">
-      <ScrollArea className="w-full">
-        <div className="flex space-x-4 p-4">
-          {suggestedContacts.map((contact) => (
-            <Card key={contact.id} className="w-[200px] flex-shrink-0">
-              <CardContent className="p-4">
-                <div className="flex flex-col items-center space-y-3">
-                  <Avatar className="h-20 w-20">
-                    <AvatarFallback className="text-2xl">{contact.name.charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="space-y-1 text-center">
-                    <h3 className="font-semibold">{contact.name}</h3>
-                    <p className="text-sm text-muted-foreground">{contact.phone}</p>
-                  </div>
-                  <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span>{contact.mutual_contacts} mutual contacts</span>
-                  </div>
-                  <Button
-                    className="w-full"
-                    onClick={() => handleAddContact(contact)}
-                    disabled={contact.contactStatus === "accepted" || !isOnline}
-                  >
-                    {contact.contactStatus === "accepted" ? (
-                      <Check className="mr-2 h-4 w-4" />
-                    ) : (
-                      <UserPlus className="mr-2 h-4 w-4" />
-                    )}
-                    {contact.contactStatus === "accepted"
-                      ? "Added"
-                      : contact.contactStatus === "pending"
-                        ? "Pending"
-                        : "Add Contact"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+    <>
+      {suggestedContacts.map((contact) => (
+        <div
+          key={contact.id}
+          className="flex flex-col items-center p-4 border rounded-lg min-w-[200px] hover:bg-accent"
+        >
+          <Avatar className="h-16 w-16 mb-2">
+            <AvatarImage src="/placeholder.svg" alt={contact.name} />
+            <AvatarFallback>{contact.name.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="text-center mb-2">
+            <p className="font-medium">{contact.name}</p>
+            <p className="text-sm text-muted-foreground">{contact.phone}</p>
+          </div>
+          <Button
+            size="sm"
+            className="w-full"
+            onClick={() => handleAddContact(contact)}
+            disabled={!isOnline}
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Add Contact
+          </Button>
         </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
-    </div>
-  )
+      ))}
+    </>
+  );
 }
 

@@ -1,10 +1,11 @@
 import { parsePhoneNumber } from "libphonenumber-js"
 import { motion } from "framer-motion"
-import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight } from "lucide-react"
+import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight, X } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import PhoneInput from 'react-phone-number-input'
 
 import { InlineDateTimePicker } from "@/components/InlineDateTimePicker"
 import { Button } from "@/components/ui/button"
@@ -115,6 +116,10 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
     }
   }
 
+  const handleCancel = () => {
+    router.push(`/rides/${rideId}`)
+  }
+
   const renderStepContent = () => {
     if (!rideData) return null
 
@@ -175,11 +180,15 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
             </div>
             <div className="space-y-2">
               <Label htmlFor="rider_phone">Rider Phone (optional)</Label>
-              <Input
+              <PhoneInput
                 id="rider_phone"
                 value={rideData.rider_phone || ""}
-                onChange={(e) => setRideData((prev) => (prev ? { ...prev, rider_phone: e.target.value } : null))}
+                onChange={(value) => setRideData((prev) => (prev ? { ...prev, rider_phone: value ? String(value) : null } : null))}
                 placeholder="Enter rider's phone number"
+                defaultCountry="PT"
+                international
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+
               />
             </div>
           </div>
@@ -207,9 +216,14 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
   return (
     <div className="flex flex-col items-center justify-center min-h-fit bg-background px-4 py-4">
       <Card className="w-full max-w-xl mx-auto shadow-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Edit Ride</CardTitle>
-          <CardDescription>Update the details for your ride request.</CardDescription>
+        <CardHeader className="flex flex-row justify-between">
+          <div>
+            <CardTitle className="text-3xl font-bold">Edit Ride</CardTitle>
+            <CardDescription>Update the details for your ride request.</CardDescription>
+          </div>
+          <Button type="button" onClick={handleCancel} variant="outline">
+            <X /> Cancel
+          </Button>
         </CardHeader>
         <CardContent className="px-6 py-4">
           {!isOnline && (
