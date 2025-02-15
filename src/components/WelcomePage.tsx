@@ -1,10 +1,12 @@
+"use client"
+
 import { motion, useScroll, useTransform } from "framer-motion"
 import { Car, Users, Shield, Zap, ChevronDown, Star, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
 
 import { Button } from "@/components/ui/button"
-
 
 export default function WelcomePage() {
   const [scrolled, setScrolled] = useState(false)
@@ -17,8 +19,7 @@ export default function WelcomePage() {
   const carScale = useTransform(scrollY, [0, 200], [1, 0.8])
   const carOpacity = useTransform(scrollY, [0, 300], [1, 0])
 
-  // Add a new state to track user authentication status
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { status } = useSession()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -33,21 +34,6 @@ export default function WelcomePage() {
 
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
-
-  useEffect(() => {
-    const checkAuth = async () => {
-        const response = await fetch("/api/user")
-        if (response.ok) {
-          setIsAuthenticated(true)
-        } else if (response.status === 401) {
-          setIsAuthenticated(false)
-        } else {
-          throw new Error("Failed to fetch user data")
-        }
-    }
-
-    checkAuth()
   }, [])
 
   const handleAcceptCookies = () => {
@@ -103,7 +89,7 @@ export default function WelcomePage() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">RideShare</h1>
           <nav>
-            {isAuthenticated ? (
+            {status === "authenticated" ? (
               <Button asChild variant="outline" size="lg" className="text-primary hover:text-primary px-2 py-1.5">
                 <Link href="/dashboard">Go to Dashboard</Link>
               </Button>
@@ -183,7 +169,7 @@ export default function WelcomePage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          {isAuthenticated ? (
+          {status === "authenticated" ? (
             <Link href="/dashboard">
               <Button
                 size="lg"
@@ -216,7 +202,7 @@ export default function WelcomePage() {
             </Button>
           )}
 
-          < motion.div
+          <motion.div
             animate={{
               y: [0, 10, 0],
             }}
@@ -377,7 +363,7 @@ export default function WelcomePage() {
             completely free to use!
           </p>
           <div className="space-x-4">
-            {isAuthenticated ? (
+            {status === "authenticated" ? (
               <Button
                 asChild
                 size="lg"
@@ -446,20 +432,18 @@ export default function WelcomePage() {
         </div>
       </footer>
 
-      {
-        showCookieNotice && (
-          <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 bg-card border border-zinc-700 rounded-lg p-4 shadow-lg max-w-xs mx-auto md:mx-0 z-40">
-            <p className="text-sm text-zinc-300 mb-3">
-              This website uses cookies to enhance your experience. By continuing to browse, you agree to our use of
-              cookies.
-            </p>
-            <Button onClick={handleAcceptCookies} size="sm" className="w-full bg-primary hover:bg-primary/90 text-black">
-              Accept
-            </Button>
-          </div>
-        )
-      }
-    </div >
+      {showCookieNotice && (
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 bg-card border border-zinc-700 rounded-lg p-4 shadow-lg max-w-xs mx-auto md:mx-0 z-40">
+          <p className="text-sm text-zinc-300 mb-3">
+            This website uses cookies to enhance your experience. By continuing to browse, you agree to our use of
+            cookies.
+          </p>
+          <Button onClick={handleAcceptCookies} size="sm" className="w-full bg-primary hover:bg-primary/90 text-black">
+            Accept
+          </Button>
+        </div>
+      )}
+    </div>
   )
 }
 

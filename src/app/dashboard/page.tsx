@@ -4,6 +4,7 @@ import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useState, useEffect, Suspense, useCallback } from "react"
 import { toast } from "sonner"
+import { useSession } from "next-auth/react"
 
 import Layout from "@/components/Layout"
 import type { User, Ride, Contact } from "@/types"
@@ -13,7 +14,6 @@ import { useOnlineStatus } from "@/utils/useOnlineStatus"
 const DashboardPage = dynamic(() => import("@/components/DashboardPage"), { ssr: false })
 
 export default function Dashboard() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [rides, setRides] = useState<Ride[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -22,6 +22,8 @@ export default function Dashboard() {
 
   const router = useRouter()
   const isOnline = useOnlineStatus()
+  const { data: session, status } = useSession()
+  const currentUser = session?.user as User | undefined
 
   const fetchUserDataCallback = useCallback(
     async (userId: string) => {
@@ -54,24 +56,12 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch("/api/user")
-        if (response.ok) {
-          const userData = await response.json()
-          setCurrentUser(userData)
-          void fetchUserDataCallback(userData.id) // Fetch initial data after getting user data from /api/user
-        } else {
-          throw new Error("Failed to fetch user data")
-        }
-      } catch {
-        toast.error("Failed to load user data. Please try logging in again.")
-        router.push("/")
-      }
+    if (status === "unauthenticated") {
+      router.push("/login")
+    } else if (status === "authenticated" && currentUser) {
+      void fetchUserDataCallback(currentUser.id)
     }
-
-    fetchUserData()
-  }, [router, fetchUserDataCallback])
+  }, [status, currentUser, router, fetchUserDataCallback])
 
   useEffect(() => {
     if (currentUser) {
@@ -82,21 +72,32 @@ export default function Dashboard() {
     }
   }, [currentUser, fetchUserDataCallback])
 
+  if (status === "loading") {
+    return <div>Loading...</div>
+  }
+
+  if (status === "unauthenticated") {
+    router.push("/login")
+    return null
+  }
+
+  if (!currentUser) {
+    return <div>Error: User not found</div>
+  }
+
   return (
     <Layout>
       <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your dashboard</div>}>
-        {currentUser && ( // Check if currentUser is loaded before rendering DashboardPage
-          <DashboardPage
-            currentUser={currentUser}
-            rides={rides}
-            contacts={contacts}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            fetchUserData={() => fetchUserDataCallback(currentUser.id)}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-          />
-        )}
+        <DashboardPage
+          currentUser={currentUser}
+          rides={rides}
+          contacts={contacts}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          fetchUserData={() => fetchUserDataCallback(currentUser.id)}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
       </Suspense>
     </Layout>
   )

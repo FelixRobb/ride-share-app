@@ -1,26 +1,15 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { supabase } from "@/lib/db";
-import { jwtVerify } from "jose";
+import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
 
-export async function GET(request: NextRequest) {
-  const jwt = request.cookies.get("jwt")?.value;
+export async function GET() {
+  const session = await getServerSession(authOptions)
 
-  if (!jwt) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  if (!session || !session.user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
   }
 
-  try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const { payload } = await jwtVerify(jwt, secret);
-    const userId = payload.userId as string;
-
-    const { data: user, error } = await supabase.from("users").select("id, name, email, phone").eq("id", userId).single();
-
-    if (error) throw error;
-
-    return NextResponse.json(user);
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+  // Return the user data from the session
+  return NextResponse.json(session.user)
 }
+

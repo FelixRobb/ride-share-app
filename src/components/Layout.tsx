@@ -1,9 +1,14 @@
+"use client"
+
+import type React from "react"
+
 import { Home, Car, Users, HelpCircle } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 
 import { NotificationPanel } from "@/components/NotificationPanel"
 import { Button } from "@/components/ui/button"
@@ -22,42 +27,10 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
-
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const { data: session, status } = useSession()
+  const currentUser = session?.user as User | null
   const isOnline = useOnlineStatus()
   const [wasPreviouslyOffline, setWasPreviouslyOffline] = useState(false)
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch("/api/user")
-        if (response.ok) {
-          const userData = await response.json()
-          setCurrentUser(userData)
-
-          // Register service worker only if not already active
-          if ("serviceWorker" in navigator) {
-
-            // Check for existing registration
-            const existingReg = await navigator.serviceWorker.getRegistration()
-
-            if (!existingReg || existingReg.active === null) {
-              // Register service worker
-              await navigator.serviceWorker.register("/service-worker.js")
-            }
-
-          }
-        } else {
-          throw new Error("Failed to fetch user data")
-        }
-      } catch {
-        toast.error("Failed to load user data. Please try logging in again.")
-        router.push("/")
-      }
-    }
-
-    fetchUserData()
-  }, [router, pathname])
 
   useEffect(() => {
     if (!isOnline) {
@@ -69,6 +42,12 @@ export default function Layout({ children }: LayoutProps) {
     }
   }, [isOnline, wasPreviouslyOffline])
 
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login")
+    }
+  }, [status, router])
+
   const TutorialButton = () => {
     const { restartTutorial } = useTutorial()
     return (
@@ -79,13 +58,14 @@ export default function Layout({ children }: LayoutProps) {
     )
   }
 
-
-  if (!currentUser) return children
+  if (status === "loading" || !currentUser) {
+    return <div>Loading...</div>
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground relative">
       <TutorialProvider>
-        <PushNotificationHandler userId={currentUser!.id} />
+        <PushNotificationHandler userId={currentUser.id} />
         <header className="bg-background/80 backdrop-blur-sm shadow-md border-b border-border sticky top-0 z-40">
           <div className="container mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex-shrink-0 mr-4">
@@ -113,12 +93,12 @@ export default function Layout({ children }: LayoutProps) {
                 </Button>
               ))}
               <div className="h-6 w-px bg-border mx-2" />
-              <NotificationPanel userId={currentUser.id} onNotificationsRead={() => { }} />
+              <NotificationPanel userId={currentUser.id} />
             </nav>
 
             {/* Mobile Notification Button */}
             <div className="md:hidden">
-              <NotificationPanel userId={currentUser.id} onNotificationsRead={() => { }} />
+              <NotificationPanel userId={currentUser.id} />
             </div>
           </div>
         </header>

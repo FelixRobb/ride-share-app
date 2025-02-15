@@ -1,61 +1,54 @@
-'use client'
+"use client"
 
-import dynamic from 'next/dynamic'
-import { useRouter } from 'next/navigation'
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { toast } from "sonner"
+import { useSession } from "next-auth/react"
 
-import Layout from '@/components/Layout'
-import { User, Contact, AssociatedPerson } from "@/types"
+import Layout from "@/components/Layout"
+import type { User, Contact, AssociatedPerson } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
-const ProfilePage = dynamic(() => import('@/components/ProfilePage'), { ssr: false });
+const ProfilePage = dynamic(() => import("@/components/ProfilePage"), { ssr: false })
 
 export default function Profile() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([])
   const [etag, setEtag] = useState<string | null>(null)
 
   const router = useRouter()
   const isOnline = useOnlineStatus()
+  const { data: session, status } = useSession()
+  const currentUser = session?.user as User | undefined
 
-  const fetchUserDataCallback = useCallback(async (userId: string) => {
-    if (isOnline) {
-      try {
-        const result = await fetchUserData(userId, etag)
-        if (result) {
-          const { data, newEtag } = result
-          setEtag(newEtag)
-          setContacts(data.contacts)
-          setAssociatedPeople(data.associatedPeople)
+  const fetchUserDataCallback = useCallback(
+    async (userId: string) => {
+      if (isOnline) {
+        try {
+          const result = await fetchUserData(userId, etag)
+          if (result) {
+            const { data, newEtag } = result
+            setEtag(newEtag)
+            setContacts(data.contacts)
+            setAssociatedPeople(data.associatedPeople)
+          }
+        } catch {
+          toast.error("Failed to fetch user data. Please try again.")
         }
-      } catch {
-        toast.error("Failed to fetch user data. Please try again.");
       }
-    }
-  }, [etag, isOnline])
+    },
+    [etag, isOnline],
+  )
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch("/api/user")
-        if (response.ok) {
-          const userData = await response.json()
-          setCurrentUser(userData)
-          void fetchUserDataCallback(userData.id) // Fetch initial data after getting user data from /api/user
-        } else {
-          throw new Error("Failed to fetch user data")
-        }
-      } catch {
-        toast.error("Failed to load user data. Please try logging in again.")
-        router.push("/")
-      }
+    if (status === "unauthenticated") {
+      router.push("/login")
+    } else if (status === "authenticated" && currentUser) {
+      void fetchUserDataCallback(currentUser.id)
     }
-
-    fetchUserData()
-  }, [router, fetchUserDataCallback])
+  }, [status, currentUser, router, fetchUserDataCallback])
 
   useEffect(() => {
     if (currentUser) {
@@ -66,19 +59,28 @@ export default function Profile() {
     }
   }, [currentUser, fetchUserDataCallback])
 
+  if (status === "loading") {
+    return <div>Loading...</div>
+  }
+
+  if (status === "unauthenticated") {
+    router.push("/login")
+    return null
+  }
+
+  if (!currentUser) {
+    return <div>Error: User not found</div>
+  }
 
   return (
     <Layout>
       <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your profile</div>}>
-        {currentUser && (
-          <ProfilePage
-            currentUser={currentUser}
-            setCurrentUser={setCurrentUser}
-            contacts={contacts}
-            associatedPeople={associatedPeople}
-            fetchUserData={fetchUserDataCallback}
-          />
-        )}
+        <ProfilePage
+          currentUser={currentUser}
+          contacts={contacts}
+          associatedPeople={associatedPeople}
+          fetchUserData={() => fetchUserDataCallback(currentUser.id)}
+        />
       </Suspense>
     </Layout>
   )

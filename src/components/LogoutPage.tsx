@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader } from "lucide-react"
-import type { User } from "@/types"
+import { signOut, useSession } from "next-auth/react"
 
 import { toast } from "sonner"
 
@@ -17,6 +17,7 @@ type LogoutState = {
 
 export default function LogoutPage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const [state, setState] = useState<LogoutState>({
     isLoading: true,
     error: null,
@@ -27,29 +28,15 @@ export default function LogoutPage() {
 
     const handleLogout = async () => {
       try {
-        // Fetch user data first
-        const userResponse = await fetch("/api/user")
-        if (!userResponse.ok) {
-          throw new Error("Failed to fetch user data")
-        }
+        const userData = session?.user
+        if (!userData || !userData.id) throw new Error("User not found or ID is missing")
 
-        const userData: User = await userResponse.json()
-
-        // Perform logout
-        const logoutResponse = await fetch("/api/logout", {
-          method: "POST",
-          credentials: "include"
-        })
-
-        if (!logoutResponse.ok) {
-          throw new Error("Logout failed")
-        }
-
-        // Cleanup operations
         await Promise.all([
           cleanupPushSubscription(userData.id),
           unregisterServiceWorker()
         ])
+
+        await signOut({ redirect: false })
 
       } catch (error) {
         if (isMounted) {
@@ -69,7 +56,7 @@ export default function LogoutPage() {
     return () => {
       isMounted = false
     }
-  }, [router])
+  }, [router, session])
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">

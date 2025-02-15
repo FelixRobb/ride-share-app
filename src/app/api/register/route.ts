@@ -1,56 +1,42 @@
-import { NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
-import bcrypt from "bcrypt";
-import { sendEmail, getVerificationEmailContent } from "@/lib/emailService";
-import { parsePhoneNumber } from "libphonenumber-js";
-import crypto from "crypto";
+import { NextResponse } from "next/server"
+import { supabase } from "@/lib/db"
+import bcrypt from "bcrypt"
+import { sendEmail, getWelcomeEmailContent } from "@/lib/emailService"
+import { parsePhoneNumber } from "libphonenumber-js"
+import { signIn } from "next-auth/react"
 
 export async function POST(request: Request) {
-  const { name, phone, email, password } = await request.json();
+  const { name, phone, email, password } = await request.json()
 
   try {
     // Parse and validate the phone number
-    const phoneNumber = parsePhoneNumber(phone);
+    const phoneNumber = parsePhoneNumber(phone)
     if (!phoneNumber || !phoneNumber.isValid()) {
-      return NextResponse.json({ error: "Invalid phone number", code: "INVALID_PHONE" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid phone number" }, { status: 400 })
     }
 
-    const e164PhoneNumber = phoneNumber.format("E.164");
+    const e164PhoneNumber = phoneNumber.format("E.164")
 
     // Check if email already exists
-    const { data: existingEmail } = await supabase.from("users").select("email, is_verified").eq("email", email.toLowerCase()).single();
+    const { data: existingEmail } = await supabase
+      .from("users")
+      .select("email")
+      .eq("email", email.toLowerCase())
+      .single()
 
     if (existingEmail) {
-      if (!existingEmail.is_verified) {
-        return NextResponse.json(
-          {
-            error: "Email already registered but not verified",
-            code: "EMAIL_REGISTERED_NOT_VERIFIED",
-          },
-          { status: 409 }
-        );
-      }
-      return NextResponse.json({ error: "Email already registered", code: "EMAIL_REGISTERED" }, { status: 409 });
+      return NextResponse.json({ error: "Email already registered" }, { status: 409 })
     }
 
     // Check if phone already exists
-    const { data: existingPhone } = await supabase.from("users").select("phone, is_verified").eq("phone", e164PhoneNumber).single();
+    const { data: existingPhone } = await supabase.from("users").select("phone").eq("phone", e164PhoneNumber).single()
 
     if (existingPhone) {
-      if (!existingPhone.is_verified) {
-        return NextResponse.json(
-          {
-            error: "Phone number already registered but not verified",
-            code: "PHONE_REGISTERED_NOT_VERIFIED",
-          },
-          { status: 409 }
-        );
-      }
-      return NextResponse.json({ error: "Phone number already registered", code: "PHONE_REGISTERED" }, { status: 409 });
+      return NextResponse.json({ error: "Phone number already registered" }, { status: 409 })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const lowerCaseEmail = email.toLowerCase();
+    const hashedPassword = await bcrypt.hash(password, 10)
+    const lowerCaseEmail = email.toLowerCase()
 
     const { data: newUser, error: insertError } = await supabase
       .from("users")
@@ -59,30 +45,30 @@ export async function POST(request: Request) {
         phone: e164PhoneNumber,
         email: lowerCaseEmail,
         password: hashedPassword,
-        is_verified: false,
       })
       .select("id, name, phone, email")
-      .single();
+      .single()
 
-    if (insertError) throw insertError;
+    if (insertError) throw insertError
 
-    // Generate verification token
-    const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24); // Token expires in 24 hours
+    // Send welcome email
+    const welcomeEmailContent = getWelcomeEmailContent(newUser.name)
+    await sendEmail(newUser.email, "Welcome to RideShare!", welcomeEmailContent)
 
-    // Store verification token
-    const { error: tokenError } = await supabase.from("email_verification_tokens").insert({ user_id: newUser.id, token, expires_at: expiresAt.toISOString() });
+    // Sign in the user
+    const result = await signIn("credentials", {
+      identifier: lowerCaseEmail,
+      password,
+      redirect: false,
+    })
 
-    if (tokenError) throw tokenError;
+    if (result?.error) {
+      return NextResponse.json({ error: result.error }, { status: 401 })
+    }
 
-    // Send verification email
-    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`;
-    const verificationEmailContent = getVerificationEmailContent(newUser.name, verificationUrl);
-    await sendEmail(newUser.email, "Verify your email for RideShare", verificationEmailContent);
-
-    return NextResponse.json({ message: "Registration successful. Please check your email to verify your account." });
-  } catch {
-    return NextResponse.json({ error: "Internal server error", code: "SERVER_ERROR" }, { status: 500 });
+    return NextResponse.json({ user: newUser })
+  } catch (error) {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+

@@ -6,7 +6,6 @@ import Link from "next/link"
 import { useState } from "react"
 import PhoneInput from "react-phone-number-input"
 import { toast } from "sonner"
-import type React from "react" // Added import for React
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -44,10 +43,10 @@ const quotes = [
   { quote: "Kilometers are shorter than miles. Save gas, take your next trip in kilometers.", author: "George Carlin" },
   {
     quote:
-      "The journey is part of the experience—an expression of the seriousness of one’s intent. One doesn’t take the A train to Mecca.",
+      "The journey is part of the experience—an expression of the seriousness of one's intent. One doesn't take the A train to Mecca.",
     author: "Anthony Bourdain",
   },
-  { quote: "Road trips aren’t measured by mile markers, but by moments.", author: "Unknown" },
+  { quote: "Road trips aren't measured by mile markers, but by moments.", author: "Unknown" },
   { quote: "The road must eventually lead to the whole world.", author: "Jack Kerouac", source: "On the Road" },
   {
     quote: "The open road is a beckoning, a strangeness, a place where a man can lose himself.",
@@ -56,7 +55,7 @@ const quotes = [
   },
   { quote: "Stop worrying about the potholes in the road and enjoy the journey.", author: "Babs Hoffman" },
   { quote: "Every journey begins with a single tank of gas.", author: "Unknown" },
-  { quote: "You can’t have a great day without driving a great distance.", author: "Unknown" },
+  { quote: "You can't have a great day without driving a great distance.", author: "Unknown" },
   { quote: "Sometimes the best therapy is a long drive and good music.", author: "Unknown" },
   { quote: "No road is long with good company.", author: "Turkish Proverb" },
   { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },

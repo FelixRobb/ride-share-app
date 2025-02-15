@@ -25,7 +25,6 @@ interface Notification {
 
 interface NotificationPanelProps {
   userId: string
-  onNotificationsRead?: () => void
 }
 
 const notificationTypes = {
@@ -129,6 +128,22 @@ const NotificationList = ({
   )
 }
 
+const useDebounce = (value: string, delay: number = 300) => {
+  const [debouncedValue, setDebouncedValue] = useState(value)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
+
 const NotificationFilters = ({
   searchQuery,
   setSearchQuery,
@@ -143,52 +158,80 @@ const NotificationFilters = ({
   setSelectedType: (type: string) => void
   selectedFilter: string
   setSelectedFilter: (filter: string) => void
-}) => (
-  <div className="space-y-4 my-4">
-    <div className="relative">
-      <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-      <Input
-        placeholder="Search notifications..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="pl-9 pr-4"
-      />
-      {searchQuery && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-2 top-2 h-5 w-5"
-          onClick={() => setSearchQuery("")}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      )}
-    </div>
-    <div className="flex gap-4">
-      <Select value={selectedType} onValueChange={setSelectedType}>
-        <SelectTrigger className="w-[200px]">
-          <SelectValue placeholder="Filter by type" />
-        </SelectTrigger>
-        <SelectContent>
-          {Object.entries(notificationTypes).map(([value, label]) => (
-            <SelectItem key={value} value={value}>
-              {label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Tabs value={selectedFilter} onValueChange={setSelectedFilter} className="w-[200px]">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="unread">Unread</TabsTrigger>
-          <TabsTrigger value="read">Read</TabsTrigger>
-        </TabsList>
-      </Tabs>
-    </div>
-  </div>
-)
+}) => {
+  // Internal state for the input
+  const [inputValue, setInputValue] = useState(searchQuery)
+  
+  // Debounce the input value
+  const debouncedSearchTerm = useDebounce(inputValue)
 
-export function NotificationPanel({ userId, onNotificationsRead }: NotificationPanelProps) {
+  // Only update parent's searchQuery when debounced value changes
+  useEffect(() => {
+    setSearchQuery(debouncedSearchTerm)
+  }, [debouncedSearchTerm, setSearchQuery])
+
+  // Sync with parent's searchQuery if it's changed externally
+  useEffect(() => {
+    if (searchQuery !== inputValue && searchQuery !== debouncedSearchTerm) {
+      setInputValue(searchQuery)
+    }
+  }, [debouncedSearchTerm, inputValue, searchQuery])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value)
+  }
+
+  const handleClear = () => {
+    setInputValue("")
+  }
+
+  return (
+    <div className="space-y-4 my-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search notifications..."
+          value={inputValue}
+          onChange={handleInputChange}
+          className="pl-9 pr-4"
+        />
+        {inputValue && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 top-2 h-5 w-5"
+            onClick={handleClear}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+      <div className="flex gap-4">
+        <Select value={selectedType} onValueChange={setSelectedType}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filter by type" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(notificationTypes).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Tabs value={selectedFilter} onValueChange={setSelectedFilter} className="w-[200px]">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="unread">Unread</TabsTrigger>
+            <TabsTrigger value="read">Read</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+    </div>
+  )
+}
+
+export function NotificationPanel({ userId }: NotificationPanelProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -241,10 +284,9 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
         await markNotificationsAsRead(userId, unreadIds)
         setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
         setUnreadCount(0)
-        onNotificationsRead?.()
       }
     },
-    [userId, notifications, unreadCount, onNotificationsRead],
+    [userId, notifications, unreadCount],
   )
 
   const NotificationButton = () => (
