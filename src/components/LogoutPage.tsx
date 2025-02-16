@@ -1,76 +1,58 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Loader } from "lucide-react"
-import { signOut, useSession } from "next-auth/react"
-
+import { Loader2 } from "lucide-react"
+import { signOut } from "next-auth/react"
 import { toast } from "sonner"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { cleanupPushSubscription, unregisterServiceWorker } from "@/utils/cleanupService"
-
-type LogoutState = {
-  isLoading: boolean
-  error: string | null
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { unregisterServiceWorker } from "@/utils/cleanupService"
 
 export default function LogoutPage() {
   const router = useRouter()
-  const { data: session } = useSession()
-  const [state, setState] = useState<LogoutState>({
-    isLoading: true,
-    error: null,
-  })
 
   useEffect(() => {
-    let isMounted = true
-
     const handleLogout = async () => {
       try {
-        const userData = session?.user
-        if (!userData || !userData.id) throw new Error("User not found or ID is missing")
+        // Call the logout API
+        const response = await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include",
+        })
 
-        await Promise.all([
-          cleanupPushSubscription(userData.id),
-          unregisterServiceWorker()
-        ])
+        if (!response.ok) {
+          throw new Error("Logout failed")
+        }
 
+        // Unregister service worker
+        await unregisterServiceWorker()
+
+        // Sign out using NextAuth
         await signOut({ redirect: false })
 
-      } catch (error) {
-        if (isMounted) {
-          setState(prev => ({ ...prev, error: String(error) }))
-          toast.error("An error occurred during logout")
-        }
-      } finally {
-        if (isMounted) {
-          setState(prev => ({ ...prev, isLoading: false }))
-          router.push("/")
-        }
+        toast.success("Logged out successfully")
+        router.push("/")
+      } catch {
+        toast.error("An error occurred during logout")
       }
     }
 
     handleLogout()
-
-    return () => {
-      isMounted = false
-    }
-  }, [router, session])
+  }, [router])
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-[350px]">
         <CardHeader>
-          <CardTitle className="text-center">
-            {state.error ? "Logout Failed" : "Logging Out"}
-          </CardTitle>
+          <CardTitle className="text-center">Logging Out</CardTitle>
+          <CardDescription className="text-center">Please wait while we log you out...</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
-          {state.isLoading && <Loader className="h-8 w-8 animate-spin" />}
-          {state.error && <p className="text-sm text-destructive text-center">{state.error}</p>}
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </CardContent>
       </Card>
     </div>
   )
 }
+

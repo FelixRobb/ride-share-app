@@ -1,6 +1,7 @@
 import type React from "react"
 import "./globals.css"
 import { Providers } from "./Providers"
+import { Toaster } from "@/components/ui/sonner"
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rideshareappweb.netlify.app" // Fallback URL
 const ogImageUrl = `${siteUrl}/og-image.png`
@@ -47,7 +48,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <Providers>{children}</Providers>
+        <Toaster />
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )

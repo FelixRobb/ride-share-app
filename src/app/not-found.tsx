@@ -3,28 +3,15 @@
 import { motion } from "framer-motion"
 import { Car, ArrowRight } from "lucide-react"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
 
 import { Button } from "@/components/ui/button"
 
 
 export default function NotFound() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const { status } = useSession()
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const response = await fetch("/api/user")
-      if (response.ok) {
-        setIsLoggedIn(true)
-      } else if (response.status === 401) {
-        setIsLoggedIn(false)
-      } else {
-        throw new Error("Failed to fetch user data")
-      }
-    }
-
-    checkAuth()
-  }, [])
+  const isLoggedIn = status === "authenticated"
 
   const carVariants = {
     initial: { x: "-100%" },
