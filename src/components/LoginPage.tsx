@@ -8,7 +8,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { toast } from "sonner"
 import { Loader2, ArrowRight, Mail, Phone } from "lucide-react"
-import { useSession, signIn } from "next-auth/react"
+import { signIn, useSession } from "next-auth/react"
 import PhoneInput from "react-phone-number-input"
 
 import { Button } from "@/components/ui/button"
@@ -45,12 +45,12 @@ export default function LoginPage({ quote }: LoginPageProps) {
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
   const [phone, setPhone] = useState("")
   const router = useRouter()
-  const { data: session } = useSession() // Replace with your session fetching logic
+  const { data: session } = useSession()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
     if (session && !isLoggedIn) {
-      toast("You're still logged in. Redirecting to dashboard")
+      toast.success("You're still logged in. Redirecting to dashboard")
       router.push("/dashboard")
     }
   }, [session, router, isLoggedIn])
@@ -108,7 +108,6 @@ export default function LoginPage({ quote }: LoginPageProps) {
         redirect: false,
         identifier: loginMethod === "email" ? email : phone,
         password,
-        loginMethod,
       })
 
       if (result?.error) {
@@ -123,8 +122,8 @@ export default function LoginPage({ quote }: LoginPageProps) {
           toast.error("Login failed. Please check your credentials and try again.")
         }
       } else {
-        toast.success("Login successful!")
         setIsLoggedIn(true)
+        toast.success("Login successful!")
         router.push("/dashboard")
       }
     } catch {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { toast } from "sonner"
+import { useSession } from "next-auth/react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -21,7 +22,14 @@ interface RegisterPageProps {
 
 export default function RegisterPage({ quote }: RegisterPageProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [isRegistered, setIsRegistered] = useState(false)
   const router = useRouter()
+  const { data: session } = useSession()
+
+  if (session) {
+    router.push("/dashboard")
+    return null
+  }
 
   const handleRegister = async (name: string, phone: string, email: string, password: string) => {
     setIsLoading(true)
@@ -35,13 +43,13 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
       const data = await response.json()
 
       if (response.ok) {
+        setIsRegistered(true)
         toast.success("Registration successful! Please check your email to verify your account.", {
           action: {
             label: "Resend Verification",
             onClick: () => handleResendVerification(),
           },
         })
-        router.push("/login")
       } else {
         if (data.error === "Email already registered") {
           toast.error("Email already registered. Please try logging in or use a different email.", {
@@ -111,7 +119,14 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
               <CardDescription>Join RideShare and start sharing rides today!</CardDescription>
             </CardHeader>
             <CardContent>
-              <MultiStepRegisterForm onSubmit={handleRegister} isLoading={isLoading} />
+              {isRegistered ? (
+                <div className="flex items-center justify-center flex-col"> 
+                  <p className="text-center">Please check your email to verify your account.</p>
+                  <Button onClick={handleResendVerification} className="mt-4">Resend Verification Email</Button>
+                </div>
+              ) : (
+                <MultiStepRegisterForm onSubmit={handleRegister} isLoading={isLoading} />
+              )}
             </CardContent>
 
             <CardFooter className="flex justify-center">
