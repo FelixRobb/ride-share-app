@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect, Suspense, useCallback } from "react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
+import { Loader } from "lucide-react"
 
 import Layout from "@/components/Layout"
 import type { User, AssociatedPerson } from "@/types"
@@ -21,6 +22,7 @@ export default function CreateRide() {
   const isOnline = useOnlineStatus()
   const { data: session, status } = useSession()
   const currentUser = session?.user as User | null
+  const [showLoader, setShowLoader] = useState(false)
 
   const fetchUserDataCallback = useCallback(
     async (userId: string) => {
@@ -57,8 +59,24 @@ export default function CreateRide() {
     }
   }, [currentUser, fetchUserDataCallback])
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoader(true)
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
   if (status === "loading") {
-    return <div>Loading...</div>
+    if (showLoader) {
+      return (
+        <div className="flex flex-col items-center justify-center h-screen bg-black">
+          <div className="flex items-center justify-center w-full"><Loader /></div>
+          <p className="mt-4 text-lg text-white">Please wait while we are checking your authentication status...</p>
+        </div>
+      )
+    }
+    return <div className="bg-black h-screen" /> // Show black screen initially
   }
 
   if (status === "unauthenticated") {

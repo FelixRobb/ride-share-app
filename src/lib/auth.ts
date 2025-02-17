@@ -18,10 +18,12 @@ export const authOptions: NextAuthOptions = {
         }
 
         let query
-        if (credentials.identifier.includes("@")) {
-          query = supabase.from("users").select("*").eq("email", credentials.identifier.toLowerCase()).single()
+        const identifier = credentials.identifier.toLowerCase();
+
+        if (identifier.includes("@")) {
+          query = supabase.from("users").select("*").eq("email", identifier).single()
         } else {
-          const phoneNumber = parsePhoneNumber(credentials.identifier)
+          const phoneNumber = parsePhoneNumber(identifier, { defaultCountry: "PT" })
           if (!phoneNumber || !phoneNumber.isValid()) {
             return null
           }

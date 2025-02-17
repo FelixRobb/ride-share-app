@@ -2,13 +2,13 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { signIn } from "next-auth/react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { toast } from "sonner"
-import { Loader2, Mail, ArrowRight } from "lucide-react"
+import { Loader2, ArrowRight, Mail, Phone } from "lucide-react"
+import { useSession, signIn } from "next-auth/react"
 import PhoneInput from "react-phone-number-input"
 
 import { Button } from "@/components/ui/button"
@@ -41,10 +41,19 @@ export default function LoginPage({ quote }: LoginPageProps) {
   const [isResetLoading, setIsResetLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [phone, setPhone] = useState("")
-  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
   const [isLoading, setIsLoading] = useState(false)
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
+  const [phone, setPhone] = useState("")
   const router = useRouter()
+  const { data: session } = useSession() // Replace with your session fetching logic
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    if (session && !isLoggedIn) {
+      toast("You're still logged in. Redirecting to dashboard")
+      router.push("/dashboard")
+    }
+  }, [session, router, isLoggedIn])
 
   const handleResetPassword = async () => {
     try {
@@ -68,25 +77,58 @@ export default function LoginPage({ quote }: LoginPageProps) {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleResendVerification = async () => {
+    try {
+      const identifier = loginMethod === "email" ? email : phone
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, loginMethod }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success("Verification email resent. Please check your inbox.")
+      } else {
+        toast.error(data.error || "Failed to resend verification email. Please try again.")
+      }
+    } catch {
+      toast.error("An error occurred. Please try again later.")
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
     setIsLoading(true)
+
     try {
-      const formattedIdentifier = loginMethod === "email" ? email : phone
       const result = await signIn("credentials", {
-        identifier: formattedIdentifier,
-        password,
         redirect: false,
+        identifier: loginMethod === "email" ? email : phone,
+        password,
+        loginMethod,
       })
 
       if (result?.error) {
-        setError("Invalid email/phone or password. Please try again.")
+        if (result.error === "Email not verified") {
+          toast.error("Email not verified. Please check your inbox for the verification email.", {
+            action: {
+              label: "Resend Verification",
+              onClick: () => handleResendVerification(),
+            },
+          })
+        } else {
+          toast.error("Login failed. Please check your credentials and try again.")
+        }
       } else {
+        toast.success("Login successful!")
+        setIsLoggedIn(true)
         router.push("/dashboard")
       }
     } catch {
-      setError("An unexpected error occurred. Please try again.")
+      toast.error("An error occurred. Please try again later.")
     } finally {
       setIsLoading(false)
     }
@@ -132,7 +174,7 @@ export default function LoginPage({ quote }: LoginPageProps) {
                       variant={loginMethod === "phone" ? "default" : "outline"}
                       className="w-full"
                     >
-                      Phone
+                      <Phone className="mr-2 h-4 w-4" /> Phone
                     </Button>
                   </div>
                   {loginMethod === "email" ? (

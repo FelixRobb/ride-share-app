@@ -11,6 +11,7 @@ const publicRoutes = [
   "/terms-of-service",
   "/admin",
   "/reset-password",
+  "/verify-email",
   "/api/login",
   "/api/register",
   "/api/auth/reset-password",
@@ -27,9 +28,12 @@ const publicRoutes = [
   "/api/auth/signout",
   "/api/auth/session",
   "/api/auth/callback",
+  "/api/auth/callback/credentials",
   "/api/auth/providers",
   "/api/auth/csrf",
   "/api/auth/logout",
+  "/api/auth/resend-verification", // Added verify email related route
+  "/api/auth/verify-email", // Added verify email related route
 ];
 
 // List of static files and directories that should be publicly accessible

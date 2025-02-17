@@ -6,21 +6,3 @@ export async function unregisterServiceWorker() {
     }
   }
 }
-
-export async function cleanupPushSubscription(userId: string) {
-  const registration = await navigator.serviceWorker.ready;
-  const subscription = await registration.pushManager.getSubscription();
-
-  if (subscription) {
-    await subscription.unsubscribe();
-
-    // Delete from backend
-    await fetch("/api/push-subscription", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ userId }),
-    });
-  }
-}

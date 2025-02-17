@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowBigLeft } from "lucide-react"
+import { ArrowBigLeft, Loader } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useParams } from "next/navigation"
@@ -28,6 +28,7 @@ export default function RideDetails() {
   const isOnline = useOnlineStatus()
   const { data: session, status } = useSession()
   const currentUser = session?.user as User | null
+   const [showLoader, setShowLoader] = useState(false)
 
   const fetchUserDataCallback = useCallback(
     async (userId: string) => {
@@ -79,8 +80,24 @@ export default function RideDetails() {
     }
   }, [currentUser, fetchRideDetailsCallback, id])
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoader(true)
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
   if (status === "loading") {
-    return <div>Loading...</div>
+    if (showLoader) {
+      return (
+        <div className="flex flex-col items-center justify-center h-screen bg-black">
+          <div className="flex items-center justify-center w-full"><Loader /></div>
+          <p className="mt-4 text-lg text-white">Please wait while we are checking your authentication status...</p>
+        </div>
+      )
+    }
+    return <div className="bg-black h-screen" /> // Show black screen initially
   }
 
   if (status === "unauthenticated") {

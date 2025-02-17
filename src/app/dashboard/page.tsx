@@ -10,6 +10,7 @@ import Layout from "@/components/Layout"
 import type { User, Ride, Contact } from "@/types"
 import { fetchUserData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import { Loader } from "lucide-react"
 
 const DashboardPage = dynamic(() => import("@/components/DashboardPage"), { ssr: false })
 
@@ -19,6 +20,7 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("")
   const [etag, setEtag] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("active") // default tab
+  const [showLoader, setShowLoader] = useState(false)
 
   const router = useRouter()
   const isOnline = useOnlineStatus()
@@ -72,8 +74,25 @@ export default function Dashboard() {
     }
   }, [currentUser, fetchUserDataCallback])
 
+  // Set a timeout to show the loader after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoader(true)
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
   if (status === "loading") {
-    return <div>Loading...</div>
+    if (showLoader) {
+      return (
+        <div className="flex flex-col items-center justify-center h-screen bg-black">
+          <div className="flex items-center justify-center w-full"><Loader /></div>
+          <p className="mt-4 text-lg text-white">Please wait while we are checking your authentication status...</p>
+        </div>
+      )
+    }
+    return <div className="bg-black h-screen" /> // Show black screen initially
   }
 
   if (status === "unauthenticated") {

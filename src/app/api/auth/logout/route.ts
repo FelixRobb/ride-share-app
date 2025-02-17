@@ -1,21 +1,23 @@
-import { NextResponse, NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
-    const token = await getToken({ req });
+    const session = await getServerSession(authOptions);
 
-    if (!token) {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = token.id as string;
+    const userId = session.user.id as string;
 
     // Delete push subscription from the database
     await supabase.from("push_subscriptions").delete().eq("user_id", userId);
 
-    // Clear the session (this will be handled by NextAuth.js signOut function on the client side)
+    // Clear the session using NextAuth.js
+    // This will be handled by the client-side signOut function
 
     return NextResponse.json({ success: true });
   } catch {

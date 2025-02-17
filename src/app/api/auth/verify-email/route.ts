@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/db";
-import { SignJWT } from "jose";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -33,19 +32,7 @@ export async function GET(request: Request) {
     // Delete the used token
     await supabase.from("email_verification_tokens").delete().eq("token", token);
 
-    // Create JWT for automatic login
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const jwt = await new SignJWT({ userId: tokenData.user_id }).setProtectedHeader({ alg: "HS256" }).setExpirationTime("1d").sign(secret);
-
-    const response = NextResponse.json({ message: "Email verified successfully" });
-    response.cookies.set("jwt", jwt, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 60 * 60 * 24 * 7, // 1 week
-    });
-
-    return response;
+    return NextResponse.json({ message: "Email verified successfully" }, { status: 200 });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

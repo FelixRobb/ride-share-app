@@ -1,16 +1,20 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { signOut } from "next-auth/react"
 import { toast } from "sonner"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { unregisterServiceWorker } from "@/utils/cleanupService"
 
 export default function LogoutPage() {
   const router = useRouter()
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const handleLogout = async () => {
@@ -35,6 +39,7 @@ export default function LogoutPage() {
         router.push("/")
       } catch {
         toast.error("An error occurred during logout")
+        setLoading(false)
       }
     }
 
@@ -42,16 +47,44 @@ export default function LogoutPage() {
   }, [router])
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-[350px]">
-        <CardHeader>
-          <CardTitle className="text-center">Logging Out</CardTitle>
-          <CardDescription className="text-center">Please wait while we log you out...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </CardContent>
-      </Card>
+    <div className="min-h-screen flex flex-col bg-background">
+      <header className="bg-background/80 backdrop-blur-sm p-4 shadow-sm border-b">
+        <div className="container mx-auto flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-primary">RideShare</h1>
+          <div>
+            <Button variant="ghost" asChild className="mr-2">
+              <Link href="/login">Login</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/register">Register</Link>
+            </Button>
+          </div>
+        </div>
+      </header>
+      <main className="flex-grow flex flex-col lg:flex-row">
+        <div className="flex-1 flex items-center justify-center p-4 lg:p-8">
+          <Card className="w-[350px]">
+            <CardHeader>
+              <CardTitle className="text-center">Logging Out</CardTitle>
+              <CardDescription className="text-center">
+                {loading ? "Please wait while we log you out..." : "An error occurred. Please try again."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-4">
+              {loading ? (
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              ) : (
+                <Button onClick={() => router.push("/")}>Go to Home</Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+      <footer className="bg-background/80 backdrop-blur-sm p-4 border-t">
+        <div className="container mx-auto text-center text-sm text-muted-foreground">
+          © {new Date().getFullYear()} RideShare. All rights reserved.
+        </div>
+      </footer>
     </div>
   )
 }

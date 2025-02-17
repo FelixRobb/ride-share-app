@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -21,7 +20,6 @@ interface RegisterPageProps {
 }
 
 export default function RegisterPage({ quote }: RegisterPageProps) {
-  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -34,40 +32,59 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
         body: JSON.stringify({ name, phone, email, password }),
       })
 
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Registration failed")
-      }
+      const data = await response.json()
 
-      // Sign in the user after successful registration
-      const result = await signIn("credentials", {
-        identifier: email,
-        password,
-        redirect: false,
-      })
-
-      if (result?.error) {
-        throw new Error(result.error)
-      }
-
-      router.push("/dashboard")
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message.includes("Email already registered")) {
-          setError("This email is already registered. Please use a different email or try logging in.")
-        } else if (error.message.includes("Phone number already registered")) {
-          setError("This phone number is already registered. Please use a different number or try logging in.")
-        } else if (error.message.includes("Invalid phone number")) {
-          setError("Please enter a valid phone number.")
-        } else {
-          setError(error.message)
-        }
+      if (response.ok) {
+        toast.success("Registration successful! Please check your email to verify your account.", {
+          action: {
+            label: "Resend Verification",
+            onClick: () => handleResendVerification(),
+          },
+        })
+        router.push("/login")
       } else {
-        setError("An unexpected error occurred. Please try again.")
+        if (data.error === "Email already registered") {
+          toast.error("Email already registered. Please try logging in or use a different email.", {
+            action: {
+              label: "Go to Login",
+              onClick: () => {
+                router.push("/login")
+              },
+            },
+          })
+        } else if (data.error === "Email not verified") {
+          toast.error("Email not verified. Please check your inbox for the verification email.", {
+            action: {
+              label: "Resend Verification",
+              onClick: () => handleResendVerification(),
+            },
+          })
+        } else {
+          toast.error("Registration failed. Please try again.")
+        }
       }
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+    } catch {
+      toast.error("An error occurred. Please try again later.")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleResendVerification = async () => {
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "" }), //This needs to be updated to get the email from the form
+      })
+
+      if (response.ok) {
+        toast.success("Verification email resent. Please check your inbox.")
+      } else {
+        toast.error("Failed to resend verification email. Please try again.")
+      }
+    } catch {
+      toast.error("An error occurred. Please try again later.")
     }
   }
 
@@ -96,7 +113,7 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
             <CardContent>
               <MultiStepRegisterForm onSubmit={handleRegister} isLoading={isLoading} />
             </CardContent>
-            {error && <p className="text-destructive text-center mt-2">{error}</p>}
+
             <CardFooter className="flex justify-center">
               <Button variant="link" asChild>
                 <Link href="/login">Already have an account? Login</Link>

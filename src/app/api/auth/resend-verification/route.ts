@@ -4,7 +4,14 @@ import crypto from "crypto";
 import { sendEmail, getVerificationEmailContent } from "@/lib/emailService";
 
 export async function POST(request: Request) {
-  const { identifier, loginMethod } = await request.json();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  const { identifier, loginMethod } = body;
 
   if (!identifier || !loginMethod) {
     return NextResponse.json({ error: "Identifier and login method are required" }, { status: 400 });
@@ -37,7 +44,9 @@ export async function POST(request: Request) {
     // Store new verification token
     const { error: tokenError } = await supabase.from("email_verification_tokens").insert({ user_id: user.id, token, expires_at: expiresAt.toISOString() });
 
-    if (tokenError) throw tokenError;
+    if (tokenError) {
+      throw tokenError;
+    }
 
     // Send verification email
     const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`;
