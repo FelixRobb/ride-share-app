@@ -1,69 +1,88 @@
-'use client'
+"use client"
 
-import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect, Suspense, useCallback } from 'react';
-import { toast } from "sonner";
+import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense, useCallback } from "react"
+import { toast } from "sonner"
+import { useSession } from "next-auth/react"
+import { Loader } from "lucide-react"
 
-import Layout from '@/components/Layout';
-import { User, AssociatedPerson } from "@/types";
-import { fetchUserData } from "@/utils/api";
-import { useOnlineStatus } from "@/utils/useOnlineStatus";
+import Layout from "@/components/Layout"
+import type { User, AssociatedPerson } from "@/types"
+import { fetchUserData } from "@/utils/api"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
-const CreateRidePage = dynamic(() => import('@/components/CreateRidePage'), { ssr: false });
+const CreateRidePage = dynamic(() => import("@/components/CreateRidePage"), { ssr: false })
 
 export default function CreateRide() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([]);
-  const [etag, setEtag] = useState<string | null>(null);
+  const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([])
+  const [etag, setEtag] = useState<string | null>(null)
 
-  const router = useRouter();
-  const isOnline = useOnlineStatus();
+  const router = useRouter()
+  const isOnline = useOnlineStatus()
+  const { data: session, status } = useSession()
+  const currentUser = session?.user as User | null
+  const [showLoader, setShowLoader] = useState(false)
 
-  const fetchUserDataCallback = useCallback(async (userId: string) => {
-    if (isOnline) {
-      try {
-        const result = await fetchUserData(userId, etag);
-        if (result) {
-          const { data, newEtag } = result;
-          setEtag(newEtag);
-          setAssociatedPeople(data.associatedPeople);
+  const fetchUserDataCallback = useCallback(
+    async (userId: string) => {
+      if (isOnline) {
+        try {
+          const result = await fetchUserData(userId, etag)
+          if (result) {
+            const { data, newEtag } = result
+            setEtag(newEtag)
+            setAssociatedPeople(data.associatedPeople)
+          }
+        } catch {
+          toast.error("Failed to fetch user data. Please try again.")
         }
-      } catch {
-        toast.error("Failed to fetch user data. Please try again.");
       }
-    }
-  }, [etag, isOnline]);
+    },
+    [etag, isOnline],
+  )
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch("/api/user")
-        if (response.ok) {
-          const userData = await response.json()
-          setCurrentUser(userData)
-          void fetchUserDataCallback(userData.id) // Fetch initial data after getting user data from /api/user
-        } else {
-          throw new Error("Failed to fetch user data")
-        }
-      } catch {
-        toast.error("Failed to load user data. Please try logging in again.")
-        router.push("/")
-      }
+    if (status === "unauthenticated") {
+      router.push("/login")
+    } else if (status === "authenticated" && currentUser) {
+      void fetchUserDataCallback(currentUser.id)
     }
-
-    fetchUserData()
-  }, [router, fetchUserDataCallback])
+  }, [status, currentUser, router, fetchUserDataCallback])
 
   useEffect(() => {
     if (currentUser) {
       const intervalId = setInterval(() => {
-        void fetchUserDataCallback(currentUser.id);
-      }, 10000);
-      return () => clearInterval(intervalId);
+        void fetchUserDataCallback(currentUser.id)
+      }, 10000)
+      return () => clearInterval(intervalId)
     }
-  }, [currentUser, fetchUserDataCallback, isOnline]);
+  }, [currentUser, fetchUserDataCallback])
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoader(true)
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (status === "loading") {
+    if (showLoader) {
+      return (
+        <div className="flex flex-col items-center justify-center h-screen bg-black">
+          <div className="flex items-center justify-center w-full"><Loader /></div>
+          <p className="mt-4 text-lg text-white">Please wait while we are checking your authentication status...</p>
+        </div>
+      )
+    }
+    return <div className="bg-black h-screen" /> // Show black screen initially
+  }
+
+  if (status === "unauthenticated") {
+    router.push("/login")
+    return null
+  }
 
   return (
     <Layout>
@@ -78,6 +97,6 @@ export default function CreateRide() {
         )}
       </Suspense>
     </Layout>
-  );
+  )
 }
 

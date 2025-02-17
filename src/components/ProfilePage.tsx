@@ -1,3 +1,7 @@
+"use client"
+
+import type React from "react"
+
 import { LucideUser, Mail, Phone, Car, MapPin, Loader, Moon, Sun, Monitor } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -37,7 +41,6 @@ import { ContactDialog } from "./ContactDialog"
 
 interface ProfilePageProps {
   currentUser: User
-  setCurrentUser: (user: User | null) => void
   contacts: Contact[]
   associatedPeople: AssociatedPerson[]
   fetchUserData: (userId: string) => Promise<void>
@@ -50,7 +53,6 @@ interface SuggestedContact extends User {
 
 export default function ProfilePage({
   currentUser,
-  setCurrentUser,
   contacts,
   associatedPeople,
   fetchUserData,
@@ -138,7 +140,6 @@ export default function ProfilePage({
         }
         const e164PhoneNumber = phoneNumber.format("E.164")
         await updateProfile(currentUser.id, { ...editedUser, phone: e164PhoneNumber })
-        setCurrentUser({ ...currentUser, ...editedUser, phone: e164PhoneNumber })
         toast.success("Profile updated successfully!")
         setIsEditProfileOpen(false)
         void fetchUserData(currentUser.id)
@@ -199,7 +200,6 @@ export default function ProfilePage({
     try {
       setIsDeletingAccount(true)
       await deleteUser(currentUser.id)
-      setCurrentUser(null)
       toast.success("Your account has been successfully deleted.")
       setIsDeleteAccountDialogOpen(false)
       router.push("/")
@@ -430,24 +430,27 @@ export default function ProfilePage({
             <span>Current theme:</span>
             <div className="relative inline-flex items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
-                  }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                  currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
+                }`}
                 onClick={() => toggleTheme("system")}
                 aria-label="System theme"
               >
                 <Monitor className="h-4 w-4" />
               </button>
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
-                  }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                  currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
+                }`}
                 onClick={() => toggleTheme("light")}
                 aria-label="Light theme"
               >
                 <Sun className="h-4 w-4" />
               </button>
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
-                  }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                  currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
+                }`}
                 onClick={() => toggleTheme("dark")}
                 aria-label="Dark theme"
               >

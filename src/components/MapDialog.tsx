@@ -257,32 +257,36 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
                 </Button>
               </div>
 
-              {address && (
                 <div className="mt-4 p-4 rounded-lg border bg-card text-card-foreground"> {/* Updated selected location card */}
                   <h3 className="text-sm font-medium mb-2">Selected Location</h3>
-                  <p className="text-sm mb-3 break-words">{address}</p>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => copyToClipboard(address)}
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => openInGoogleMaps(selectedLocation.lat, selectedLocation.lon)}
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Maps
-                    </Button>
-                  </div>
+                  {address ? (
+                    <>
+                      <p className="text-sm mb-3 break-words">{address}</p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => copyToClipboard(address)}
+                        >
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copy
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => openInGoogleMaps(selectedLocation.lat, selectedLocation.lon)}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Maps
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm mb-3">Please choose an address.</p>
+                  )}
                 </div>
-              )}
             </div>
 
             {/* Map Panel */}

@@ -109,7 +109,6 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 
 - `/api/login`: User login
 - `/api/register`: User registration
-- `/api/user`: Get current user data
 - `/api/rides`: CRUD operations for rides
 - `/api/contacts`: Manage user contacts
 - `/api/notifications`: Handle user notifications

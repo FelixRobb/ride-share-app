@@ -494,7 +494,7 @@ export default function RideDetailsPage({
               ) : (
                 notes.map((note) => (
                   <div
-                    key={note.id}
+                    key={`${note.id}-${note.created_at}`}
                     className={`mb-4 ${note.user_id === currentUser?.id ? "text-right" : "text-left"}`}
                   >
                     <div

@@ -1,23 +1,21 @@
+import type React from "react"
 import "./globals.css"
-import { ThemeProvider } from "next-themes"
-import { Toaster } from "sonner"
-import type { Metadata } from 'next'
+import { Providers } from "./Providers"
+import { Toaster } from "@/components/ui/sonner"
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rideshareappweb.netlify.app" // Fallback URL
 const ogImageUrl = `${siteUrl}/og-image.png`
-const twitterImageUrl = `${siteUrl}/twitter-image.png`;
+const twitterImageUrl = `${siteUrl}/twitter-image.png`
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "RideShare",
   description: "Connect with friends, share rides, and travel together safely.",
   manifest: "/manifest.webmanifest",
-
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "RideShare",
   },
-
   openGraph: {
     title: "RideShare",
     description: "Connect with friends, share rides, and travel together safely.",
@@ -33,19 +31,13 @@ export const metadata: Metadata = {
     ],
     type: "website",
   },
-
   twitter: {
     card: "summary_large_image",
     title: "RideShare",
     description: "Connect with friends, share rides, and travel together safely.",
     images: [twitterImageUrl],
   },
-  
   metadataBase: new URL(siteUrl),
-
-  other: {
-    "google-site-verification": "W9GFmL7Uxf4V2KqhH-IFNgbJHdrHziVtC95mXXGPwI0",
-  },
 }
 
 export default function RootLayout({
@@ -55,11 +47,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-background font-sans antialiased">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            {children}
-            <Toaster richColors closeButton theme="dark" />
-        </ThemeProvider>
+      <body>
+        <Toaster closeButton richColors />
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )

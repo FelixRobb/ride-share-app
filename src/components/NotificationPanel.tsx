@@ -1,4 +1,4 @@
-import { Bell, Search, X } from "lucide-react"
+import { Bell  } from "lucide-react"
 import { MessageSquare, UserPlus, Car, CheckCircle } from "lucide-react"
 import { useEffect, useState, useCallback } from "react"
 
@@ -6,14 +6,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer"
-import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { markNotificationsAsRead } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface Notification {
   id: string
@@ -25,7 +24,6 @@ interface Notification {
 
 interface NotificationPanelProps {
   userId: string
-  onNotificationsRead?: () => void
 }
 
 const notificationTypes = {
@@ -67,40 +65,73 @@ const formatDate = (dateString: string) => {
   })
 }
 
+const NotificationFilters = ({
+  selectedType,
+  setSelectedType,
+  selectedFilter,
+  setSelectedFilter,
+}: {
+  selectedType: string
+  setSelectedType: (type: string) => void
+  selectedFilter: string
+  setSelectedFilter: (filter: string) => void
+}) => {
+  return (
+    <div className="flex flex-wrap gap-4 mb-2 mt-4">
+      <Select value={selectedType} onValueChange={setSelectedType}>
+        <SelectTrigger className="flex-1 min-w-10">
+          <SelectValue placeholder="Filter by type" />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.entries(notificationTypes).map(([value, label]) => (
+            <SelectItem key={value} value={value}>
+              {label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Tabs value={selectedFilter} onValueChange={setSelectedFilter} className="flex-1 min-w-10">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="unread">Unread</TabsTrigger>
+          <TabsTrigger value="read">Read</TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </div>
+  )
+}
+
 const NotificationList = ({
   notifications,
-  searchQuery,
   selectedType,
   selectedFilter,
   isDesktop,
 }: {
   notifications: Notification[]
-  searchQuery: string
   selectedType: string
   selectedFilter: string
   isDesktop: boolean
 }) => {
   const filteredNotifications = notifications
     .filter((notification) => {
-      const matchesSearch = notification.message.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesType = selectedType === "all" || notification.type === selectedType
       const matchesFilter =
         selectedFilter === "all" ||
         (selectedFilter === "unread" && !notification.is_read) ||
         (selectedFilter === "read" && notification.is_read)
-      return matchesSearch && matchesType && matchesFilter
+      return matchesType && matchesFilter
     })
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   return (
     <ScrollArea
-      className={`${isDesktop ? "h-[calc(100vh-16rem)]" : "h-[60svh]"} w-full p-2 pr-4 mb-4 border rounded-lg`}
+      className={`${isDesktop ? "h-[calc(100vh-11rem)]" : "h-[65svh]"} w-full p-2 pr-4 my-4 border rounded-lg`}
     >
       {filteredNotifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <Bell className="h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-lg font-medium">No notifications found</p>
-          <p className="text-sm text-muted-foreground">Try adjusting your search or filters</p>
+          <p className="text-sm text-muted-foreground">Try adjusting your filters</p>
         </div>
       ) : (
         filteredNotifications.map((notification) => (
@@ -129,70 +160,10 @@ const NotificationList = ({
   )
 }
 
-const NotificationFilters = ({
-  searchQuery,
-  setSearchQuery,
-  selectedType,
-  setSelectedType,
-  selectedFilter,
-  setSelectedFilter,
-}: {
-  searchQuery: string
-  setSearchQuery: (query: string) => void
-  selectedType: string
-  setSelectedType: (type: string) => void
-  selectedFilter: string
-  setSelectedFilter: (filter: string) => void
-}) => (
-  <div className="space-y-4 my-4">
-    <div className="relative">
-      <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-      <Input
-        placeholder="Search notifications..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="pl-9 pr-4"
-      />
-      {searchQuery && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-2 top-2 h-5 w-5"
-          onClick={() => setSearchQuery("")}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      )}
-    </div>
-    <div className="flex gap-4">
-      <Select value={selectedType} onValueChange={setSelectedType}>
-        <SelectTrigger className="w-[200px]">
-          <SelectValue placeholder="Filter by type" />
-        </SelectTrigger>
-        <SelectContent>
-          {Object.entries(notificationTypes).map(([value, label]) => (
-            <SelectItem key={value} value={value}>
-              {label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Tabs value={selectedFilter} onValueChange={setSelectedFilter} className="w-[200px]">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="unread">Unread</TabsTrigger>
-          <TabsTrigger value="read">Read</TabsTrigger>
-        </TabsList>
-      </Tabs>
-    </div>
-  </div>
-)
-
-export function NotificationPanel({ userId, onNotificationsRead }: NotificationPanelProps) {
+export function NotificationPanel({ userId }: NotificationPanelProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const [searchQuery, setSearchQuery] = useState("")
   const [selectedType, setSelectedType] = useState("all")
   const [selectedFilter, setSelectedFilter] = useState("all")
   const [etag, setEtag] = useState<string | null>(null)
@@ -241,10 +212,9 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
         await markNotificationsAsRead(userId, unreadIds)
         setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
         setUnreadCount(0)
-        onNotificationsRead?.()
       }
     },
-    [userId, notifications, unreadCount, onNotificationsRead],
+    [userId, notifications, unreadCount],
   )
 
   const NotificationButton = () => (
@@ -269,8 +239,6 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
   const NotificationContent = () => (
     <>
       <NotificationFilters
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
         selectedType={selectedType}
         setSelectedType={setSelectedType}
         selectedFilter={selectedFilter}
@@ -278,7 +246,6 @@ export function NotificationPanel({ userId, onNotificationsRead }: NotificationP
       />
       <NotificationList
         notifications={notifications}
-        searchQuery={searchQuery}
         selectedType={selectedType}
         selectedFilter={selectedFilter}
         isDesktop={isDesktop}

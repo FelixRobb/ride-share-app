@@ -12,41 +12,23 @@ export async function POST(request: Request) {
     // Parse and validate the phone number
     const phoneNumber = parsePhoneNumber(phone);
     if (!phoneNumber || !phoneNumber.isValid()) {
-      return NextResponse.json({ error: "Invalid phone number", code: "INVALID_PHONE" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid phone number" }, { status: 400 });
     }
 
     const e164PhoneNumber = phoneNumber.format("E.164");
 
     // Check if email already exists
-    const { data: existingEmail } = await supabase.from("users").select("email, is_verified").eq("email", email.toLowerCase()).single();
+    const { data: existingEmail } = await supabase.from("users").select("email").eq("email", email.toLowerCase()).single();
 
     if (existingEmail) {
-      if (!existingEmail.is_verified) {
-        return NextResponse.json(
-          {
-            error: "Email already registered but not verified",
-            code: "EMAIL_REGISTERED_NOT_VERIFIED",
-          },
-          { status: 409 }
-        );
-      }
-      return NextResponse.json({ error: "Email already registered", code: "EMAIL_REGISTERED" }, { status: 409 });
+      return NextResponse.json({ error: "Email already registered", type: "EMAIL_EXISTS" }, { status: 409 });
     }
 
     // Check if phone already exists
-    const { data: existingPhone } = await supabase.from("users").select("phone, is_verified").eq("phone", e164PhoneNumber).single();
+    const { data: existingPhone } = await supabase.from("users").select("phone").eq("phone", e164PhoneNumber).single();
 
     if (existingPhone) {
-      if (!existingPhone.is_verified) {
-        return NextResponse.json(
-          {
-            error: "Phone number already registered but not verified",
-            code: "PHONE_REGISTERED_NOT_VERIFIED",
-          },
-          { status: 409 }
-        );
-      }
-      return NextResponse.json({ error: "Phone number already registered", code: "PHONE_REGISTERED" }, { status: 409 });
+      return NextResponse.json({ error: "Phone number already registered", type: "PHONE_EXISTS" }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -72,7 +54,11 @@ export async function POST(request: Request) {
     expiresAt.setHours(expiresAt.getHours() + 24); // Token expires in 24 hours
 
     // Store verification token
-    const { error: tokenError } = await supabase.from("email_verification_tokens").insert({ user_id: newUser.id, token, expires_at: expiresAt.toISOString() });
+    const { error: tokenError } = await supabase.from("email_verification_tokens").insert({
+      user_id: newUser.id,
+      token,
+      expires_at: expiresAt.toISOString(),
+    });
 
     if (tokenError) throw tokenError;
 
@@ -81,8 +67,8 @@ export async function POST(request: Request) {
     const verificationEmailContent = getVerificationEmailContent(newUser.name, verificationUrl);
     await sendEmail(newUser.email, "Verify your email for RideShare", verificationEmailContent);
 
-    return NextResponse.json({ message: "Registration successful. Please check your email to verify your account." });
+    return NextResponse.json({ user: newUser, message: "Verification email sent" });
   } catch {
-    return NextResponse.json({ error: "Internal server error", code: "SERVER_ERROR" }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

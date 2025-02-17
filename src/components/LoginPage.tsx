@@ -1,12 +1,15 @@
 "use client"
 
-import { Loader2, Mail, ArrowRight } from "lucide-react"
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { useState } from "react"
-import PhoneInput from "react-phone-number-input"
 import { toast } from "sonner"
-import type React from "react" // Added import for React
+import { Loader2, ArrowRight, Mail, Phone } from "lucide-react"
+import { signIn, useSession } from "next-auth/react"
+import PhoneInput from "react-phone-number-input"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -24,54 +27,33 @@ import { Label } from "@/components/ui/label"
 import "react-phone-number-input/style.css"
 
 interface LoginPageProps {
-  handleLoginAction: (identifier: string, password: string, method: "email" | "phone") => Promise<void>
-  isLoading: boolean
-  quoteIndex: number
+  quote: {
+    quote: string
+    author: string
+    source?: string
+  }
 }
 
-const quotes = [
-  {
-    quote: "The freedom of the open road is seductive, serendipitous, and absolutely liberating.",
-    author: "Aaron Lauritsen",
-    source: "100 Days Drive",
-  },
-  { quote: "Driving at night is about communicating with lights.", author: "Lukhman Pambra" },
-  {
-    quote: "All he needed was a wheel in his hand and four on the road.",
-    author: "Jack Kerouac",
-    source: "On the Road",
-  },
-  { quote: "Kilometers are shorter than miles. Save gas, take your next trip in kilometers.", author: "George Carlin" },
-  {
-    quote:
-      "The journey is part of the experience—an expression of the seriousness of one’s intent. One doesn’t take the A train to Mecca.",
-    author: "Anthony Bourdain",
-  },
-  { quote: "Road trips aren’t measured by mile markers, but by moments.", author: "Unknown" },
-  { quote: "The road must eventually lead to the whole world.", author: "Jack Kerouac", source: "On the Road" },
-  {
-    quote: "The open road is a beckoning, a strangeness, a place where a man can lose himself.",
-    author: "William Least Heat-Moon",
-    source: "Blue Highways",
-  },
-  { quote: "Stop worrying about the potholes in the road and enjoy the journey.", author: "Babs Hoffman" },
-  { quote: "Every journey begins with a single tank of gas.", author: "Unknown" },
-  { quote: "You can’t have a great day without driving a great distance.", author: "Unknown" },
-  { quote: "Sometimes the best therapy is a long drive and good music.", author: "Unknown" },
-  { quote: "No road is long with good company.", author: "Turkish Proverb" },
-  { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
-  { quote: "A journey is best measured in friends rather than miles.", author: "Tim Cahill" },
-]
-
-export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: LoginPageProps) {
+export default function LoginPage({ quote }: LoginPageProps) {
+  const [error, setError] = useState<string | null>(null)
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
   const [isResetLoading, setIsResetLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [phone, setPhone] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
-  const randomQuote = quotes[quoteIndex]
+  const [phone, setPhone] = useState("")
+  const router = useRouter()
+  const { data: session } = useSession()
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    if (session && !isLoggedIn) {
+      toast.success("You're still logged in. Redirecting to dashboard")
+      router.push("/dashboard")
+    }
+  }, [session, router, isLoggedIn])
 
   const handleResetPassword = async () => {
     try {
@@ -95,10 +77,60 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleResendVerification = async () => {
+    try {
+      const identifier = loginMethod === "email" ? email : phone
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, loginMethod }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success("Verification email resent. Please check your inbox.")
+      } else {
+        toast.error(data.error || "Failed to resend verification email. Please try again.")
+      }
+    } catch {
+      toast.error("An error occurred. Please try again later.")
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const formattedIdentifier = loginMethod === "email" ? email : phone
-    await handleLoginAction(formattedIdentifier, password, loginMethod)
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      const result = await signIn("credentials", {
+        redirect: false,
+        identifier: loginMethod === "email" ? email : phone,
+        password,
+      })
+
+      if (result?.error) {
+        if (result.error === "Email not verified") {
+          toast.error("Email not verified. Please check your inbox for the verification email.", {
+            action: {
+              label: "Resend Verification",
+              onClick: () => handleResendVerification(),
+            },
+          })
+        } else {
+          toast.error("Login failed. Please check your credentials and try again.")
+        }
+      } else {
+        setIsLoggedIn(true)
+        toast.success("Login successful!")
+        router.push("/dashboard")
+      }
+    } catch {
+      toast.error("An error occurred. Please try again later.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -141,7 +173,7 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
                       variant={loginMethod === "phone" ? "default" : "outline"}
                       className="w-full"
                     >
-                      Phone
+                      <Phone className="mr-2 h-4 w-4" /> Phone
                     </Button>
                   </div>
                   {loginMethod === "email" ? (
@@ -182,6 +214,7 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
                     />
                   </div>
                 </div>
+                {error && <p className="text-destructive text-sm mt-2">{error}</p>}
                 <Button className="w-full" type="submit" disabled={isLoading}>
                   {isLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -213,11 +246,11 @@ export default function LoginPage({ handleLoginAction, isLoading, quoteIndex }: 
             placeholder="blur"
             blurDataURL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkqAcAAIUAgUW0RjgAAAAASUVORK5CYII="
           />
-          {randomQuote && (
+          {quote && (
             <blockquote className="p-4 mt-4 text-center text-lg italic border-l-4 border-primary bg-muted/50 rounded-r-lg">
-              &#34;{randomQuote.quote}&#34;
+              &#34;{quote.quote}&#34;
               <footer className="mt-2 text-primary block font-semibold">
-                {randomQuote.author} {randomQuote.source && `- ${randomQuote.source}`}
+                {quote.author} {quote.source && `- ${quote.source}`}
               </footer>
             </blockquote>
           )}

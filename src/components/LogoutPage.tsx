@@ -2,88 +2,90 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader } from "lucide-react"
-import type { User } from "@/types"
-
+import { Loader2 } from "lucide-react"
+import { signOut } from "next-auth/react"
 import { toast } from "sonner"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { cleanupPushSubscription, unregisterServiceWorker } from "@/utils/cleanupService"
 
-type LogoutState = {
-  isLoading: boolean
-  error: string | null
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { unregisterServiceWorker } from "@/utils/cleanupService"
 
 export default function LogoutPage() {
   const router = useRouter()
-  const [state, setState] = useState<LogoutState>({
-    isLoading: true,
-    error: null,
-  })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let isMounted = true
-
     const handleLogout = async () => {
       try {
-        // Fetch user data first
-        const userResponse = await fetch("/api/user")
-        if (!userResponse.ok) {
-          throw new Error("Failed to fetch user data")
-        }
-
-        const userData: User = await userResponse.json()
-
-        // Perform logout
-        const logoutResponse = await fetch("/api/logout", {
+        // Call the logout API
+        const response = await fetch("/api/auth/logout", {
           method: "POST",
-          credentials: "include"
+          credentials: "include",
         })
 
-        if (!logoutResponse.ok) {
+        if (!response.ok) {
           throw new Error("Logout failed")
         }
 
-        // Cleanup operations
-        await Promise.all([
-          cleanupPushSubscription(userData.id),
-          unregisterServiceWorker()
-        ])
+        // Unregister service worker
+        await unregisterServiceWorker()
 
-      } catch (error) {
-        if (isMounted) {
-          setState(prev => ({ ...prev, error: String(error) }))
-          toast.error("An error occurred during logout")
-        }
-      } finally {
-        if (isMounted) {
-          setState(prev => ({ ...prev, isLoading: false }))
-          router.push("/")
-        }
+        // Sign out using NextAuth
+        await signOut({ redirect: false })
+
+        toast.success("Logged out successfully")
+        router.push("/")
+      } catch {
+        toast.error("An error occurred during logout")
+        setLoading(false)
       }
     }
 
     handleLogout()
-
-    return () => {
-      isMounted = false
-    }
   }, [router])
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-[350px]">
-        <CardHeader>
-          <CardTitle className="text-center">
-            {state.error ? "Logout Failed" : "Logging Out"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4">
-          {state.isLoading && <Loader className="h-8 w-8 animate-spin" />}
-          {state.error && <p className="text-sm text-destructive text-center">{state.error}</p>}
-        </CardContent>
-      </Card>
+    <div className="min-h-screen flex flex-col bg-background">
+      <header className="bg-background/80 backdrop-blur-sm p-4 shadow-sm border-b">
+        <div className="container mx-auto flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-primary">RideShare</h1>
+          <div>
+            <Button variant="ghost" asChild className="mr-2">
+              <Link href="/login">Login</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/register">Register</Link>
+            </Button>
+          </div>
+        </div>
+      </header>
+      <main className="flex-grow flex flex-col lg:flex-row">
+        <div className="flex-1 flex items-center justify-center p-4 lg:p-8">
+          <Card className="w-[350px]">
+            <CardHeader>
+              <CardTitle className="text-center">Logging Out</CardTitle>
+              <CardDescription className="text-center">
+                {loading ? "Please wait while we log you out..." : "An error occurred. Please try again."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-4">
+              {loading ? (
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              ) : (
+                <Button onClick={() => router.push("/")}>Go to Home</Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+      <footer className="bg-background/80 backdrop-blur-sm p-4 border-t">
+        <div className="container mx-auto text-center text-sm text-muted-foreground">
+          © {new Date().getFullYear()} RideShare. All rights reserved.
+        </div>
+      </footer>
     </div>
   )
 }
+
