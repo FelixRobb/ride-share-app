@@ -499,7 +499,7 @@ export function ContactDialog({
         open={isContactDetailsOpen}
         onOpenChange={setIsContactDetailsOpen}
       >
-        <DialogContent className="sm:max-w-[425px] rounded-lg">
+        <DialogContent className="sm:max-w-[425px] w-11/12 rounded-lg">
           <DialogHeader>
             <DialogTitle>Contact Details</DialogTitle>
           </DialogHeader>

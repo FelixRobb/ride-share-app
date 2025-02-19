@@ -104,30 +104,73 @@ export default function LoginPage({ quote }: LoginPageProps) {
     setIsLoading(true)
 
     try {
-      const result = await signIn("credentials", {
-        redirect: false,
-        identifier: loginMethod === "email" ? email : phone,
-        password,
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: loginMethod === "email" ? email : phone,
+          password,
+          loginMethod,
+        }),
       })
 
-      if (result?.error) {
-        if (result.error === "Email not verified") {
-          toast.error("Email not verified. Please check your inbox for the verification email.", {
-            action: {
-              label: "Resend Verification",
-              onClick: () => handleResendVerification(),
-            },
-          })
-        } else {
-          toast.error("Login failed. Please check your credentials and try again.")
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.code || "LOGIN_FAILED")
+      }
+
+      if (data.user) {
+        // Use NextAuth to set the session
+        const result = await signIn("credentials", {
+          redirect: false,
+          identifier: loginMethod === "email" ? email : phone,
+          password,
+        })
+
+        if (result?.error) {
+          throw new Error(result.error)
         }
-      } else {
+
         setIsLoggedIn(true)
         toast.success("Login successful!")
         router.push("/dashboard")
       }
-    } catch {
-      toast.error("An error occurred. Please try again later.")
+    } catch (error) {
+      if (error instanceof Error) {
+        switch (error.message) {
+          case "INVALID_CREDENTIALS":
+            toast.error("Invalid credentials. Please check your input and try again.")
+            break
+          case "INVALID_PHONE":
+            toast.error("Invalid phone number. Please enter a valid phone number.")
+            break
+          case "INVALID_LOGIN_METHOD":
+            toast.error("Invalid login method. Please try again.")
+            break
+          case "USER_NOT_FOUND":
+            toast.error("User not found. Please check your credentials or register a new account.")
+            break
+          case "INVALID_PASSWORD":
+            toast.error("Invalid password. Please try again.")
+            break
+          case "EMAIL_NOT_VERIFIED":
+            toast.error("Email not verified. Please check your inbox for the verification email.", {
+              action: {
+                label: "Resend Verification",
+                onClick: () => handleResendVerification(),
+              },
+            })
+            break
+          case "INTERNAL_SERVER_ERROR":
+            toast.error("An unexpected error occurred. Please try again later.")
+            break
+          default:
+            toast.error("Login failed. Please check your credentials and try again.")
+        }
+      } else {
+        toast.error("An unexpected error occurred. Please try again.")
+      }
     } finally {
       setIsLoading(false)
     }
