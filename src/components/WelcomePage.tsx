@@ -1,17 +1,27 @@
 "use client"
 
 import { motion, useScroll, useTransform } from "framer-motion"
-import { Car, Users, Shield, Zap, ChevronDown, Star, ArrowRight } from "lucide-react"
+import { Car, Users, Shield, Zap, ChevronDown, ArrowRight, Star } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+interface Review {
+  id: string
+  reviewer_name: string
+  review: string
+  rating: number
+  created_at: string
+}
 
 export default function WelcomePage() {
   const [scrolled, setScrolled] = useState(false)
   const [showCookieNotice, setShowCookieNotice] = useState(false)
   const [showHeader, setShowHeader] = useState(false)
+  const [approvedReviews, setApprovedReviews] = useState<Review[]>([])
   const { scrollY } = useScroll()
 
   // Enhanced parallax effects
@@ -23,9 +33,7 @@ export default function WelcomePage() {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Show header after scrolling 80px
       setShowHeader(window.scrollY > 80)
-      // Add blur effect after scrolling 150px
       setScrolled(window.scrollY > 150)
       if (window.scrollY > 200 && !localStorage.getItem("cookiePreferences")) {
         setShowCookieNotice(true)
@@ -34,6 +42,20 @@ export default function WelcomePage() {
 
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  useEffect(() => {
+    const fetchApprovedReviews = async () => {
+      const response = await fetch("/api/reviews/approved")
+      if (response.ok) {
+        const data = await response.json()
+        setApprovedReviews(data)
+      } else {
+        throw new Error("Failed to fetch approved reviews")
+      }
+    }
+
+    fetchApprovedReviews()
   }, [])
 
   const handleAcceptCookies = () => {
@@ -63,15 +85,8 @@ export default function WelcomePage() {
     "Reduce your carbon footprint by sharing rides",
   ]
 
-  const reviews = [
-    { name: "Alice", rating: 5, comment: "RideShare has made my daily commute so much easier and more enjoyable!" },
-    { name: "Bob", rating: 4, comment: "Great app for finding rides with friends. Saves me money on gas too!" },
-    { name: "Charlie", rating: 5, comment: "I feel much safer sharing rides with people I know. Highly recommended!" },
-    { name: "Diana", rating: 4, comment: "The real-time updates are super helpful. Never miss a ride!" },
-  ]
-
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden dark">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Enhanced Header */}
       <motion.header
         className={`fixed top-4 left-0 right-0 z-50 transition-all duration-300 border rounded-full w-11/12 m-auto shadow-lg ${scrolled ? "bg-background/80 backdrop-blur-sm" : "bg-transparent"
@@ -124,22 +139,21 @@ export default function WelcomePage() {
           </p>
         </motion.div>
 
-        {/* Car Aanimation */}
+        {/* Car Animation */}
         <motion.div
           className="absolute top-[70vh]"
           style={{
             x: carX,
             scale: carScale,
             opacity: carOpacity,
-
             transform: "translateY(-50%)",
           }}
           initial={{
             opacity: 0,
           }}
           transition={{
-            duration: 1.5, // Animation duration
-            ease: "easeOut", // Smooth easing
+            duration: 1.5,
+            ease: "easeOut",
           }}
           animate={{
             opacity: 1,
@@ -300,54 +314,31 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      {/* Reviews Section with Inline Animations */}
+      {/* Reviews Section */}
       <section className="py-20 bg-background relative">
         <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid" />
         <div className="container mx-auto px-4 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center text-primary">What Our Users Say</h2>
-          <div className="flex flex-wrap justify-center gap-6">
-            {reviews.map((review, index) => (
-              <motion.div
-                key={index}
-                className="rounded-lg p-6 shadow-lg flex-shrink-0 w-full md:w-80 bg-background/50 backdrop-blur-sm"
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{
-                  opacity: 1,
-                  scale: 1,
-                  transition: {
-                    duration: 0.8,
-                    ease: [0.25, 0.1, 0.25, 1],
-                    delay: index * 0.1,
-                  },
-                }}
-                viewport={{ once: true, margin: "-50px" }}
-                whileHover={{
-                  scale: 1.03,
-                  transition: { duration: 0.4, ease: "easeOut" },
-                }}
-              >
-                <div className="flex items-center mb-4">
-                  {[...Array(review.rating)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{
-                        opacity: 1,
-                        scale: 1,
-                        transition: {
-                          duration: 0.4,
-                          delay: i * 0.1,
-                          ease: "backOut",
-                        },
-                      }}
-                    >
-                      <Star className="w-5 h-5 text-primary fill-current" />
-                    </motion.div>
-                  ))}
-                </div>
-                <p className="text-zinc-300 mb-4">{review.comment}</p>
-                <p className="text-primary font-semibold">{review.name}</p>
-              </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {approvedReviews.map((review) => (
+              <Card key={review.id} className="bg-background/50 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex justify-between items-center">
+                    <span>{review.reviewer_name}</span>
+                    <div className="flex">
+                      {[...Array(review.rating)].map((_, i) => (
+                        <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                      ))}
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">{review.review}</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {new Date(review.created_at).toLocaleDateString()}
+                  </p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
