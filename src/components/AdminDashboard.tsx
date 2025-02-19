@@ -45,6 +45,7 @@ interface User {
   name: string
   email: string
   phone: string
+  isVerified: boolean
 }
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
@@ -150,12 +151,15 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(selectedUser),
+        body: JSON.stringify({
+          name: selectedUser.name,
+          email: selectedUser.email,
+          phone: selectedUser.phone,
+          isVerified: selectedUser.isVerified,
+        }),
       })
       if (response.ok) {
-        if (selectedUser) {
-          setUsers(users.map((user) => (user.id === selectedUser.id ? selectedUser : user)))
-        }
+        setUsers(users.map((user) => (user.id === selectedUser.id ? selectedUser : user)))
         setIsEditDialogOpen(false)
         toast.success("User updated successfully")
       } else {
@@ -369,6 +373,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Phone</TableHead>
+                      <TableHead>Verified</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -378,6 +383,11 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                         <TableCell>{user.name}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{user.phone}</TableCell>
+                        <TableCell>
+                          <Badge variant={user.isVerified ? "default" : "secondary"}>
+                            {user.isVerified ? "Yes" : "No"}
+                          </Badge>
+                        </TableCell>
                         <TableCell>
                           <Button
                             variant="outline"
@@ -523,6 +533,23 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   onChange={(e) => setSelectedUser(selectedUser ? { ...selectedUser, phone: e.target.value } : null)}
                   className="col-span-3"
                 />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="isVerified" className="text-right">
+                  Verified
+                </Label>
+                <div className="col-span-3">
+                  <input
+                    type="checkbox"
+                    id="isVerified"
+                    checked={selectedUser?.isVerified || false}
+                    onChange={(e) =>
+                      setSelectedUser(selectedUser ? { ...selectedUser, isVerified: e.target.checked } : null)
+                    }
+                    className="mr-2"
+                  />
+                  <Label htmlFor="isVerified">Is Verified</Label>
+                </div>
               </div>
             </div>
             <DialogFooter>

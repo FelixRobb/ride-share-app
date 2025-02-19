@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get("search") || "";
 
   try {
-    let query = supabase.from("users").select("id, name, email, phone", { count: "exact" });
+    let query = supabase.from("users").select("id, name, email, phone, is_verified", { count: "exact" });
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
@@ -23,9 +23,14 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil((count || 0) / USERS_PER_PAGE);
 
-    return NextResponse.json({ users, totalPages });
-  } catch (error) {
-    console.error("Error fetching users:", error);
+    return NextResponse.json({
+      users: users?.map((user) => ({
+        ...user,
+        isVerified: user.is_verified,
+      })),
+      totalPages,
+    });
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

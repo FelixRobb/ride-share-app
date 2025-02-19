@@ -78,6 +78,8 @@ export default function RideDetailsPage({
   const [map, setMap] = useState<maplibregl.Map | null>(null)
   const [isLoadingMap, setIsLoadingMap] = useState(true)
   const isOnline = useOnlineStatus()
+  const [isDeleteNoteDialogOpen, setIsDeleteNoteDialogOpen] = useState(false)
+  const [noteToDelete, setNoteToDelete] = useState<string | null>(null)
 
   const scrollToBottom = useCallback(() => {
     if (typeof window !== "undefined" && scrollAreaRef.current) {
@@ -230,13 +232,23 @@ export default function RideDetailsPage({
     }
   }
 
-  const handleDeleteNote = async (noteId: string) => {
-    try {
-      await deleteNote(noteId, currentUser.id)
-      setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId))
-      toast.success("Message deleted successfully.")
-    } catch {
-      toast.error("Failed to delete message. Please try again.")
+  const handleDeleteNote = (noteId: string) => {
+    setNoteToDelete(noteId)
+    setIsDeleteNoteDialogOpen(true)
+  }
+
+  const confirmDeleteNote = async () => {
+    if (noteToDelete) {
+      try {
+        await deleteNote(noteToDelete, currentUser.id)
+        setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteToDelete))
+        toast.success("Message deleted successfully.")
+      } catch {
+        toast.error("Failed to delete message. Please try again.")
+      } finally {
+        setIsDeleteNoteDialogOpen(false)
+        setNoteToDelete(null)
+      }
     }
   }
 
@@ -665,6 +677,23 @@ export default function RideDetailsPage({
             </Button>
             <Button className="mb-2" onClick={handleFinishRide}>
               Yes, Finish Ride
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteNoteDialogOpen} onOpenChange={setIsDeleteNoteDialogOpen}>
+        <DialogContent className="rounded-lg w-11/12">
+          <DialogHeader>
+            <DialogTitle>Confirm Delete Note</DialogTitle>
+            <DialogDescription>Are you sure you want to delete this note?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteNoteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDeleteNote}>
+              Yes, Delete Note
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -27,8 +27,7 @@ export async function GET() {
     }));
 
     return NextResponse.json(reviews);
-  } catch (error) {
-    console.error("Error fetching approved reviews:", error);
+  } catch {
     return NextResponse.json({ error: "Failed to fetch approved reviews" }, { status: 500 });
   }
 }
