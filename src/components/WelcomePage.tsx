@@ -419,6 +419,12 @@ export default function WelcomePage() {
             >
               Source code on github
             </Link>
+            <Link href="/faq" className="hover:text-primary transition-colors duration-300">
+              Frequently Asked Questions
+            </Link>
+            <Link href="/about" className="hover:text-primary transition-colors duration-300">
+              About RideShare
+            </Link>
           </div>
         </div>
       </footer>
