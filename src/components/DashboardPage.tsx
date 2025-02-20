@@ -13,6 +13,15 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect, useMemo } from "react"
 import { toast } from "sonner"
 
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -24,76 +33,113 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 import type { User, Ride, Contact } from "../types"
 
 
-interface FilterPopoverProps {
+interface FilterProps {
   statusFilter: string | null
   setStatusFilter: (status: string | null) => void
   dateFilter: Date | null
   setDateFilter: (date: Date | null) => void
 }
 
-const FilterPopover: React.FC<FilterPopoverProps> = ({ statusFilter, setStatusFilter, dateFilter, setDateFilter }) => {
+const FilterContent: React.FC<FilterProps> = ({ statusFilter, setStatusFilter, dateFilter, setDateFilter }) => {
+  return (
+    <div className="grid gap-4 p-4">
+      <div className="space-y-2">
+        <h4 className="font-medium leading-none">Status</h4>
+        <Select
+          value={statusFilter || "all"}
+          onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="accepted">Accepted</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <h4 className="font-medium leading-none">Date</h4>
+        <Calendar
+          mode="single"
+          selected={dateFilter !== null ? dateFilter : undefined}
+          onSelect={(day) => setDateFilter(day ?? null)}
+          initialFocus
+        />
+      </div>
+    </div>
+  )
+}
+
+const FilterPopover: React.FC<FilterProps> = (props) => {
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" className="h-10 w-full">
           <Filter className="mr-2 h-4 w-4" />
           Filters
-          {(statusFilter || dateFilter) && <span className="ml-2 h-2 w-2 rounded-full bg-primary" />}
+          {(props.statusFilter || props.dateFilter) && <span className="ml-2 h-2 w-2 rounded-full bg-primary" />}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="p-0">
-        <div className="w-full bg-popover rounded-md shadow-md">
-          <div className="p-4 grid gap-4">
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">Status</h4>
-              <Select
-                value={statusFilter || "all"}
-                onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="accepted">Accepted</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">Date</h4>
-              <Calendar
-                mode="single"
-                selected={dateFilter !== null ? dateFilter : undefined}
-                onSelect={(day) => setDateFilter(day ?? null)}
-                initialFocus
-              />
-            </div>
-            <Button className="w-full" onClick={() => { }}>
-              Apply Filters
-            </Button>
-            {(statusFilter || dateFilter) && (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setStatusFilter(null)
-                  setDateFilter(null)
-                }}
-                className="h-10"
-              >
-                Clear Filters
-              </Button>
-            )}
-          </div>
+      <PopoverContent className="w-80 p-0">
+        <FilterContent {...props} />
+        <div className="flex items-center justify-between p-4 pt-0">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              props.setStatusFilter(null)
+              props.setDateFilter(null)
+            }}
+            className="h-10"
+          >
+            Clear Filters
+          </Button>
+          <Button className="h-10">Apply Filters</Button>
         </div>
       </PopoverContent>
     </Popover>
+  )
+}
+
+const FilterDrawer: React.FC<FilterProps> = (props) => {
+  return (
+    <Drawer>
+      <DrawerTrigger asChild>
+        <Button variant="outline" className="h-10 w-full">
+          <Filter className="mr-2 h-4 w-4" />
+          Filters
+          {(props.statusFilter || props.dateFilter) && <span className="ml-2 h-2 w-2 rounded-full bg-primary" />}
+        </Button>
+      </DrawerTrigger>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Filters</DrawerTitle>
+        </DrawerHeader>
+        <FilterContent {...props} />
+        <DrawerFooter className="pt-2">
+          <Button
+            onClick={() => {
+              props.setStatusFilter(null)
+              props.setDateFilter(null)
+            }}
+            variant="outline"
+          >
+            Clear Filters
+          </Button>
+          <DrawerClose asChild>
+            <Button>Apply Filters</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   )
 }
 
@@ -125,6 +171,7 @@ export default function DashboardPage({
   const [dateFilter, setDateFilter] = useState<Date | null>(null)
   const [localRides, setLocalRides] = useState<Ride[]>(rides)
   const isOnline = useOnlineStatus()
+  const isDesktop = useMediaQuery("(min-width: 500px)")
 
   useEffect(() => {
     setLocalRides(rides)
@@ -430,12 +477,21 @@ export default function DashboardPage({
               />
             </div>
             <div className="flex gap-2">
-              <FilterPopover
-                statusFilter={statusFilter}
-                setStatusFilter={setStatusFilter}
-                dateFilter={dateFilter}
-                setDateFilter={setDateFilter}
-              />
+              {isDesktop ? (
+                <FilterPopover
+                  statusFilter={statusFilter}
+                  setStatusFilter={setStatusFilter}
+                  dateFilter={dateFilter}
+                  setDateFilter={setDateFilter}
+                />
+              ) : (
+                <FilterDrawer
+                  statusFilter={statusFilter}
+                  setStatusFilter={setStatusFilter}
+                  dateFilter={dateFilter}
+                  setDateFilter={setDateFilter}
+                />
+              )}
               <Button
                 className="h-10"
                 data-tutorial="create-ride"
