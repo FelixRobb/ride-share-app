@@ -1,6 +1,6 @@
-import { UserPlus, Loader} from "lucide-react"
+import { UserPlus, Loader } from "lucide-react"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import type { User } from "@/types"
 
@@ -44,10 +44,9 @@ export function ContactSuggestions({
       {suggestedContacts.map((contact) => (
         <div
           key={contact.id}
-          className="flex flex-col items-center p-4 border rounded-lg min-w-[200px] hover:bg-accent"
+          className="flex flex-col items-center p-4 border rounded-lg min-w-[200px] hover:bg-accent/30"
         >
           <Avatar className="h-16 w-16 mb-2">
-            <AvatarImage src="/placeholder.svg" alt={contact.name} />
             <AvatarFallback>{contact.name.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="text-center mb-2">

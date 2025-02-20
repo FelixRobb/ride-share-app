@@ -169,18 +169,18 @@ export default function RideDetailsPage({
 
           newMap.on("load", () => {
             if (ride) {
-                // Add markers for the starting and ending points
-                new maplibregl.Marker().setLngLat([ride.from_lon, ride.from_lat]).addTo(newMap)
-                new maplibregl.Marker().setLngLat([ride.to_lon, ride.to_lat]).addTo(newMap)
+              // Add markers for the starting and ending points
+              new maplibregl.Marker().setLngLat([ride.from_lon, ride.from_lat]).addTo(newMap)
+              new maplibregl.Marker().setLngLat([ride.to_lon, ride.to_lat]).addTo(newMap)
 
-                // Fit map bounds to markers
-                newMap.fitBounds(
-                  [
-                    [ride.from_lon, ride.from_lat],
-                    [ride.to_lon, ride.to_lat],
-                  ],
-                  { padding: 50 },
-                )
+              // Fit map bounds to markers
+              newMap.fitBounds(
+                [
+                  [ride.from_lon, ride.from_lat],
+                  [ride.to_lon, ride.to_lat],
+                ],
+                { padding: 50 },
+              )
             }
             setIsLoadingMap(false)
           })
@@ -689,10 +689,10 @@ export default function RideDetailsPage({
             <DialogDescription>Are you sure you want to delete this note?</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteNoteDialogOpen(false)}>
+            <Button className="mb-2" variant="outline" onClick={() => setIsDeleteNoteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDeleteNote}>
+            <Button className="mb-2" variant="destructive" onClick={confirmDeleteNote}>
               Yes, Delete Note
             </Button>
           </DialogFooter>

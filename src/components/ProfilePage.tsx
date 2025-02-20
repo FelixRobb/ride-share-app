@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { LucideUser, Mail, Phone, Car, MapPin, Loader, Moon, Sun, Monitor } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -430,27 +428,24 @@ export default function ProfilePage({
             <span>Current theme:</span>
             <div className="relative inline-flex items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
-                  currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
-                }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
+                  }`}
                 onClick={() => toggleTheme("system")}
                 aria-label="System theme"
               >
                 <Monitor className="h-4 w-4" />
               </button>
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
-                  currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
-                }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
+                  }`}
                 onClick={() => toggleTheme("light")}
                 aria-label="Light theme"
               >
                 <Sun className="h-4 w-4" />
               </button>
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
-                  currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
-                }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
+                  }`}
                 onClick={() => toggleTheme("dark")}
                 aria-label="Dark theme"
               >
