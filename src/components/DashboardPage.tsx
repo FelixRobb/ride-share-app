@@ -1,13 +1,8 @@
-import {
-  Search,
-  Clock,
-  MapPin,
-  User2,
-  CalendarIcon,
-  ArrowRight,
-  CheckCircle,
-  Filter
-} from "lucide-react"
+"use client"
+
+import type React from "react"
+
+import { Search, Clock, MapPin, User2, CalendarIcon, ArrowRight, CheckCircle, Filter } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useMemo } from "react"
@@ -36,7 +31,6 @@ import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 import type { User, Ride, Contact } from "../types"
-
 
 interface FilterProps {
   statusFilter: string | null
@@ -537,7 +531,18 @@ export default function DashboardPage({
                       <>
                         {tab === "active" && renderRides(activeRides)}
                         {tab === "available" && renderRides(availableRides)}
-                        {tab === "history" && renderRides(historyRides)}
+                        {tab === "history" && (
+                          <>
+                            {renderRides(historyRides)}
+                            {historyRides.length > 0 && (
+                              <div className="mt-4 text-center">
+                                <Button onClick={() => router.push("/ride-history")} variant="outline">
+                                  View Full Ride History
+                                </Button>
+                              </div>
+                            )}
+                          </>
+                        )}
                       </>
                     )}
                   </ScrollArea>
