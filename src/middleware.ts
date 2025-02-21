@@ -36,6 +36,8 @@ const publicRoutes = [
   "/api/auth/verify-email",
   "/about",
   "/faq",
+  "/robots.txt",
+  "/sitemap.xml"
 ];
 
 // List of static files and directories that should be publicly accessible
