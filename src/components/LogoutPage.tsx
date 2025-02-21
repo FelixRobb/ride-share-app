@@ -42,15 +42,17 @@ export default function LogoutPage() {
         }
 
         // Unregister service worker and unsubscribe from push notifications
-        await unregisterServiceWorker(currentSubscription)
+        if (currentSubscription) {
+          await currentSubscription.unsubscribe()
+        }
+        await unregisterServiceWorker()
 
         // Sign out using NextAuth
         await signOut({ redirect: false })
 
         toast.success("Logged out successfully")
         router.push("/")
-      } catch (error) {
-        console.error("Logout error:", error)
+      } catch {
         toast.error("An error occurred during logout")
         setLoading(false)
       }
