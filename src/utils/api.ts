@@ -1,32 +1,4 @@
-import type { User, RideData, Contact, AssociatedPerson, Notification, Ride, Note } from "../types"
-
-export const login = async (email: string, password: string): Promise<User> => {
-  const response = await fetch("/api/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  })
-  const data = await response.json()
-  if (response.ok && data.user) {
-    return data.user
-  } else {
-    throw new Error(data.error || "Invalid credentials. Please try again.")
-  }
-}
-
-export const register = async (name: string, phone: string, email: string, password: string): Promise<User> => {
-  const response = await fetch("/api/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, phone, email, password }),
-  })
-  const data = await response.json()
-  if (response.ok && data.user) {
-    return data.user
-  } else {
-    throw new Error(data.error || "Failed to register. Please try again.")
-  }
-}
+import type { User, RideData, Contact, AssociatedPerson, Ride, Note } from "../types"
 
 export const createRide = async (rideData: RideData, userId: string) => {
   const response = await fetch("/api/rides", {
@@ -316,16 +288,6 @@ export const fetchUserData = async (userId: string, etag: string | null) => {
     return { data, newEtag }
   } else {
     throw new Error("Failed to fetch user data")
-  }
-}
-
-export const fetchNotifications = async (userId: string): Promise<Notification[]> => {
-  const response = await fetch(`/api/notifications?userId=${userId}`)
-  if (response.ok) {
-    const data = await response.json()
-    return data.notifications as Notification[]
-  } else {
-    throw new Error("Failed to fetch notifications")
   }
 }
 

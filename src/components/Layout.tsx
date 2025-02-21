@@ -1,8 +1,5 @@
 "use client"
 
-
-=======
->>>>>>> origin/main
 import { Home, Car, Users, HelpCircle } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -59,12 +56,6 @@ export default function Layout({ children }: LayoutProps) {
     )
   }
 
-  const navItems = [
-    { icon: Home, label: "Dashboard", href: "/dashboard" },
-    { icon: Car, label: "Create Ride", href: "/create-ride" },
-    { icon: Users, label: "Profile", href: "/profile" },
-  ]
-
   return (
     <>
       {currentUser && (
@@ -81,7 +72,11 @@ export default function Layout({ children }: LayoutProps) {
 
                 {/* Desktop Navigation with Notification Button */}
                 <nav className="hidden md:flex items-center space-x-2 rounded-full p-1 border">
-                  {navItems.map((item) => (
+                  {[
+                    { icon: Home, label: "Dashboard", href: "/dashboard" },
+                    { icon: Car, label: "Create Ride", href: "/create-ride" },
+                    { icon: Users, label: "Profile", href: "/profile" },
+                  ].map((item) => (
                     <Button
                       key={item.href}
                       variant="ghost"
@@ -105,49 +100,29 @@ export default function Layout({ children }: LayoutProps) {
             </header>
 
             {/* Main Content */}
-            <main className="flex-grow container mx-auto px-4 py-8 pb-20 md:pb-8">{children}</main>
+            <main className="flex-grow container mx-auto px-4 py-8 pb-7 md:pb-8">{children}</main>
 
-            {/* Enhanced Mobile Navigation Bar */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-md border-t z-50">
-              <div className="flex justify-around items-center h-16 px-2">
-                {navItems.map((item) => {
-                  const isActive = pathname === item.href;
-                  return (
+            {/* Mobile Navigation Bar */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t z-50">
+              <div className="flex justify-around items-center h-16">
+                {[
+                  { icon: Home, label: "Dashboard", href: "/dashboard" },
+                  { icon: Car, label: "Create Ride", href: "/create-ride" },
+                  { icon: Users, label: "Profile", href: "/profile" },
+                ].map((item) => (
+                  <div key={item.label} className="flex-1">
                     <Link
-                      key={item.href}
                       href={item.href}
-                      className="group relative flex-1"
+                      className={cn(
+                        "flex flex-col items-center p-2",
+                        pathname === item.href ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                      )}
                     >
-                      <div className="flex flex-col items-center">
-                        {/* Animated background indicator */}
-                        {isActive && (
-                          <div className="absolute inset-0 bg-primary/10 rounded-xl -mx-2" />
-                        )}
-                        
-                        {/* Icon and label container */}
-                        <div className="relative flex flex-col items-center py-2">
-                          <div className={cn(
-                            "p-2 rounded-lg transition-all duration-300",
-                            isActive 
-                              ? "text-primary scale-110 transform" 
-                              : "text-muted-foreground group-hover:text-primary/80"
-                          )}>
-                            <item.icon className="h-5 w-5" />
-                          </div>
-                          
-                          <span className={cn(
-                            "text-xs transition-all duration-300",
-                            isActive 
-                              ? "text-primary font-medium" 
-                              : "text-muted-foreground group-hover:text-primary/80"
-                          )}>
-                            {item.label}
-                          </span>
-                        </div>
-                      </div>
+                      <item.icon className="h-6 w-6" />
+                      <span className="text-xs mt-1">{item.label}</span>
                     </Link>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </nav>
 
@@ -166,12 +141,6 @@ export default function Layout({ children }: LayoutProps) {
                 >
                   Source code on github
                 </Link>
-                <Link href="/faq" className="hover:text-primary transition-colors duration-300">
-                  Frequently Asked Questions
-                </Link>
-                <Link href="/about" className="hover:text-primary transition-colors duration-300">
-                  About RideShare
-                </Link>
               </div>
               <TutorialButton />
             </footer>
@@ -181,3 +150,4 @@ export default function Layout({ children }: LayoutProps) {
     </>
   )
 }
+

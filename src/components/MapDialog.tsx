@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { SearchIcon, MapPin, Crosshair, Loader, Copy, ExternalLink } from "lucide-react"
 import maplibregl from "maplibre-gl"
 import { useState, useEffect, useRef, useCallback } from "react"

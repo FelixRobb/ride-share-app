@@ -16,9 +16,6 @@ export async function POST() {
     // Delete push subscription from the database
     await supabase.from("push_subscriptions").delete().eq("user_id", userId);
 
-    // Clear the session using NextAuth.js
-    // This will be handled by the client-side signOut function
-
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "An error occurred during logout" }, { status: 500 });
