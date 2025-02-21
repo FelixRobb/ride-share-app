@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 
 import { Home, Car, Users, HelpCircle } from "lucide-react"
 import Link from "next/link"

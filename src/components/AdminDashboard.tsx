@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+
 
 import { toast } from "sonner"
 import { Star } from "lucide-react"
