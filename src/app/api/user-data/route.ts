@@ -1,20 +1,19 @@
-// src/app/api/user-data/route.ts
-import { NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
-import crypto from "crypto";
+import { NextResponse } from "next/server"
+import { supabase } from "@/lib/db"
+import crypto from "crypto"
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const userId = searchParams.get("userId");
+  const { searchParams } = new URL(request.url)
+  const userId = searchParams.get("userId")
 
   if (!userId) {
-    return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+    return NextResponse.json({ error: "User ID is required" }, { status: 400 })
   }
 
   // Validate UUID format
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
   if (!uuidRegex.test(userId)) {
-    return NextResponse.json({ error: "Invalid User ID format" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid User ID format" }, { status: 400 })
   }
 
   try {
@@ -26,16 +25,18 @@ export async function GET(request: Request) {
         *,
         user:users!contacts_user_id_fkey (id, name, phone),
         contact:users!contacts_contact_id_fkey (id, name, phone)
-      `
+      `,
       )
-      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`)
 
-    if (contactsError) throw contactsError;
+    if (contactsError) throw contactsError
 
     // Extract connected user IDs (only for accepted contacts)
-    const connectedUserIds = contacts.filter((contact) => contact.status === "accepted").map((contact) => (contact.user_id === userId ? contact.contact_id : contact.user_id));
+    const connectedUserIds = contacts
+      .filter((contact) => contact.status === "accepted")
+      .map((contact) => (contact.user_id === userId ? contact.contact_id : contact.user_id))
 
-    // Fetch rides
+    // Fetch active rides and limited history
     const { data: rides, error: ridesError } = await supabase
       .from("rides")
       .select(
@@ -43,28 +44,32 @@ export async function GET(request: Request) {
         *,
         requester:users!rides_requester_id_fkey (id, name, phone),
         accepter:users!rides_accepter_id_fkey (id, name, phone)
-      `
+      `,
       )
       .or(`requester_id.eq.${userId},accepter_id.eq.${userId},requester_id.in.(${connectedUserIds.join(",")})`)
+      .or("status.eq.pending,status.eq.accepted,status.in.(completed,cancelled)")
       .order("created_at", { ascending: false })
-      .limit(30);
+      .limit(50)
 
-    if (ridesError) throw ridesError;
+    if (ridesError) throw ridesError
 
     // Fetch associated people
-    const { data: associatedPeople, error: associatedPeopleError } = await supabase.from("associated_people").select("*").eq("user_id", userId);
+    const { data: associatedPeople, error: associatedPeopleError } = await supabase
+      .from("associated_people")
+      .select("*")
+      .eq("user_id", userId)
 
-    if (associatedPeopleError) throw associatedPeopleError;
+    if (associatedPeopleError) throw associatedPeopleError
 
     // Prepare response data
-    const data = { rides, contacts, associatedPeople };
-    const dataString = JSON.stringify(data);
-    const etag = crypto.createHash("md5").update(dataString).digest("hex");
+    const data = { rides, contacts, associatedPeople }
+    const dataString = JSON.stringify(data)
+    const etag = crypto.createHash("md5").update(dataString).digest("hex")
 
     // Check if the client has a valid cached version
-    const ifNoneMatch = request.headers.get("If-None-Match");
+    const ifNoneMatch = request.headers.get("If-None-Match")
     if (ifNoneMatch === etag) {
-      return new Response(null, { status: 304 });
+      return new Response(null, { status: 304 })
     }
 
     // Return the full response with ETag
@@ -74,8 +79,9 @@ export async function GET(request: Request) {
         ETag: etag,
         "Cache-Control": "no-cache",
       },
-    });
+    })
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 })
   }
 }
+
