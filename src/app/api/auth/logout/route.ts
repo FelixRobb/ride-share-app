@@ -7,16 +7,11 @@ export async function POST(request: Request) {
 
     // If a subscription was provided, delete only that specific subscription
     if (subscription) {
-      const { error } = await supabase.from("push_subscriptions").delete().eq("subscription", JSON.stringify(subscription));
-
-      if (error) {
-        console.error("Error deleting push subscription:", error);
-      }
+      await supabase.from("push_subscriptions").delete().eq("subscription", JSON.stringify(subscription));
     }
 
     return NextResponse.json({ message: "Logged out successfully" });
-  } catch (error) {
-    console.error("Logout error:", error);
+  } catch {
     return NextResponse.json({ error: "An error occurred during logout" }, { status: 500 });
   }
 }
