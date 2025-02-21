@@ -1,17 +1,8 @@
-export async function unregisterServiceWorker(subscription: PushSubscription | null) {
+export async function unregisterServiceWorker() {
   if ("serviceWorker" in navigator) {
-    const registrations = await navigator.serviceWorker.getRegistrations()
+    const registrations = await navigator.serviceWorker.getRegistrations();
     for (const registration of registrations) {
-      await registration.unregister()
-    }
-  }
-
-  if (subscription) {
-    try {
-      await subscription.unsubscribe()
-    } catch (error) {
-      console.error("Error unsubscribing from push notifications:", error)
+      await registration.unregister();
     }
   }
 }
-

@@ -1,43 +1,34 @@
-console.log('Service Worker: File loaded');
+self.addEventListener("install", (event) => {
+  event.waitUntil(self.skipWaiting())
+})
 
-self.addEventListener('install', function() {
-  console.log('Service Worker: Installed');
-});
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim())
+})
 
-self.addEventListener('activate', function() {
-  console.log('Service Worker: Activated');
-});
-
-self.addEventListener('push', function(event) {
-  console.log('Service Worker: Push event received');
+self.addEventListener("push", (event) => {
   if (event.data) {
-    const data = event.data.json();
-    console.log('Push event data:', data);
+    const data = event.data.json()
     event.waitUntil(
       self.registration.showNotification(data.title, {
         body: data.body,
-        icon: '/icon.png' // Ensure you have an icon.png in your public folder
+        icon: "/icon.png",
+      }),
+    )
+  }
+})
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close()
+  event.waitUntil(self.clients.openWindow("/dashboard"))
+})
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "PUSH_NOTIFICATION") {
+    self.clients.matchAll().then((clients) => {
+      clients.forEach((client) => {
+        client.postMessage(event.data)
       })
-    );
+    })
   }
-});
-
-self.addEventListener('notificationclick', function(event) {
-  console.log('Service Worker: Notification click event');
-  event.notification.close();
-  event.waitUntil(
-    self.clients.openWindow('/dashboard')
-  );
-});
-
-self.addEventListener('message', function(event) {
-  console.log('Service Worker: Message event received', event.data);
-  if (event.data && event.data.type === 'PUSH_NOTIFICATION') {
-    self.clients.matchAll().then(function(clients) {
-      clients.forEach(function(client) {
-        client.postMessage(event.data);
-      });
-    });
-  }
-});
-
+})

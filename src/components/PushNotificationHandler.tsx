@@ -18,13 +18,20 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
   const [subscription, setSubscription] = useState<PushSubscription | null>(null)
   const [showPermissionPopup, setShowPermissionPopup] = useState(false)
   const [hasSeenPopup, setHasSeenPopup] = useState(false)
-  const [pushEnabled, setPushEnabled] = useState<boolean | null>(null) // Store push preference
+  const [pushEnabled, setPushEnabled] = useState<boolean | null>(null)
   const [isPushLoading, setIsPushLoading] = useState(true)
 
-  const handlePermissionGranted = useCallback(async (registration: ServiceWorkerRegistration) => {
-    if (pushEnabled === null) return // Don't do anything if push preference hasn't been loaded yet
+  const registerServiceWorker = useCallback(async () => {
+    try {
+      const registration = await navigator.serviceWorker.register("/service-worker.js")
+      return registration
+    } catch {
+      return null
+    }
+  }, [])
 
-    const saveSubscription = async (subscription: PushSubscription) => {
+  const saveSubscription = useCallback(
+    async (subscription: PushSubscription) => {
       const response = await fetch("/api/push-subscription", {
         method: "POST",
         headers: {
@@ -39,56 +46,65 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
       if (!response.ok) {
         throw new Error("Failed to save push subscription")
       }
+    },
+    [userId],
+  )
 
+  const deleteSubscription = useCallback(async () => {
+    const response = await fetch("/api/push-subscription", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId }),
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to delete push subscription")
     }
 
-    const deleteSubscription = async () => {
-      const response = await fetch("/api/push-subscription", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId }),
-      })
+  }, [userId])
 
-      if (!response.ok) {
-        throw new Error("Failed to delete push subscription")
-      }
-    }
+  const handlePermissionGranted = useCallback(
+    async (registration: ServiceWorkerRegistration) => {
+      if (pushEnabled === null) return
 
-    if (pushEnabled) {
-      let currentSubscription = await registration.pushManager.getSubscription()
+      if (pushEnabled) {
+        let currentSubscription = await registration.pushManager.getSubscription()
 
-      if (!currentSubscription) {
-        const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-        if (!publicKey) {
-          throw new Error("VAPID public key is not set")
+        if (!currentSubscription) {
+          const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+          if (!publicKey) {
+            throw new Error("VAPID public key is not set")
+          }
+          currentSubscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: publicKey,
+          })
+          if (currentSubscription) {
+            await saveSubscription(currentSubscription)
+          }
         }
-        currentSubscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: publicKey,
-        })
-        if (currentSubscription) {
-          await saveSubscription(currentSubscription)
-        }
-      }
 
-      setSubscription(currentSubscription)
-    } else if (!pushEnabled && subscription) {
-      await subscription.unsubscribe()
-      await deleteSubscription()
-      setSubscription(null)
-    }
-  }, [userId, subscription, pushEnabled])
+        setSubscription(currentSubscription)
+
+      } else if (!pushEnabled && subscription) {
+        await subscription.unsubscribe()
+        await deleteSubscription()
+        setSubscription(null)
+      }
+    },
+    [subscription, pushEnabled, saveSubscription, deleteSubscription],
+  )
 
   const debouncedHandlePermissionGranted = debounce(handlePermissionGranted, 1000)
 
   useEffect(() => {
     const setupPushNotifications = async () => {
       if ("serviceWorker" in navigator && "PushManager" in window) {
-        const registration = await navigator.serviceWorker.ready
+        const registration = await registerServiceWorker()
+        if (!registration) return
 
-        // Check the current permission status
         const currentPermission = Notification.permission
 
         if (currentPermission === "default" && !hasSeenPopup) {
@@ -96,13 +112,11 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
         } else if (currentPermission === "granted") {
           await debouncedHandlePermissionGranted(registration)
         }
-        // If permission is "denied", do nothing
-
       }
     }
 
     setupPushNotifications()
-  }, [userId, hasSeenPopup, debouncedHandlePermissionGranted])
+  }, [hasSeenPopup, debouncedHandlePermissionGranted, registerServiceWorker])
 
   useEffect(() => {
     const getPushPreference = async () => {
@@ -126,10 +140,8 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
     }
   }, [isPushLoading, pushEnabled, debouncedHandlePermissionGranted])
 
-  const handlePermissionRequest: (event?: React.MouseEvent<HTMLButtonElement> | boolean) => Promise<void> = async (event = true) => {
-    if (typeof event !== "boolean") {
-      setShowPermissionPopup(false)
-    }
+  const handlePermissionRequest = async () => {
+    setShowPermissionPopup(false)
     setHasSeenPopup(true)
 
     const currentPermission = Notification.permission
@@ -140,7 +152,6 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
         await handlePermissionGranted(registration)
       }
     }
-    // If permission is already "granted" or "denied", do nothing
   }
 
   useEffect(() => {
@@ -178,11 +189,12 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
             <Button className="mb-2" variant="outline" onClick={() => setShowPermissionPopup(false)}>
               Cancel
             </Button>
-            <Button className="mb-2" onClick={handlePermissionRequest}>Allow Notifications</Button>
+            <Button className="mb-2" onClick={handlePermissionRequest}>
+              Allow Notifications
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
   )
 }
-
