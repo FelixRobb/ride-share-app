@@ -1,4 +1,4 @@
-import type React from "react"
+
 import "./globals.css"
 import { Providers } from "./Providers"
 import { Toaster } from "@/components/ui/sonner"

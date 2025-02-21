@@ -1,7 +1,7 @@
 "use client"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter, usePathname } from "next/navigation"
-import type React from "react"
+
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
 
 import { TutorialOverlay } from "@/components/TutorialOverlay"
