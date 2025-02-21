@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { Loader2, ArrowRight, Mail, Phone } from "lucide-react"
 import { signIn, useSession } from "next-auth/react"
 import PhoneInput from "react-phone-number-input"
+import oldCarImage from '@/components/images/oldcar.png';
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -175,133 +176,135 @@ export default function LoginPage({ quote }: LoginPageProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <header className="bg-background/80 backdrop-blur-sm p-4 shadow-sm border-b">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">RideShare</h1>
-          <div>
-            <Button variant="ghost" asChild className="mr-2">
-              <Link href="/login">Login</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/register">Register</Link>
-            </Button>
+    <>
+      <div className="min-h-screen flex flex-col bg-background">
+        <header className="bg-background/80 backdrop-blur-sm p-4 shadow-sm border-b">
+          <div className="container mx-auto flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-primary">RideShare</h1>
+            <div>
+              <Button variant="ghost" asChild className="mr-2">
+                <Link href="/login">Login</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/register">Register</Link>
+              </Button>
+            </div>
           </div>
-        </div>
-      </header>
-      <main className="flex-grow flex flex-col lg:flex-row">
-        <div className="flex-1 flex items-center justify-center p-4 lg:p-8">
-          <Card className="w-full max-w-md">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
-              <CardDescription className="text-center">Enter your credentials to access your account</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-center space-x-2 mb-4">
-                    <Button
-                      type="button"
-                      onClick={() => setLoginMethod("email")}
-                      variant={loginMethod === "email" ? "default" : "outline"}
-                      className="w-full"
-                    >
-                      <Mail className="mr-2 h-4 w-4" /> Email
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setLoginMethod("phone")}
-                      variant={loginMethod === "phone" ? "default" : "outline"}
-                      className="w-full"
-                    >
-                      <Phone className="mr-2 h-4 w-4" /> Phone
-                    </Button>
-                  </div>
-                  {loginMethod === "email" ? (
+        </header>
+        <main className="flex-grow flex flex-col lg:flex-row">
+          <div className="flex-1 flex items-center justify-center p-4 lg:p-8">
+            <Card className="w-full max-w-md">
+              <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
+                <CardDescription className="text-center">Enter your credentials to access your account</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-center space-x-2 mb-4">
+                      <Button
+                        type="button"
+                        onClick={() => setLoginMethod("email")}
+                        variant={loginMethod === "email" ? "default" : "outline"}
+                        className="w-full"
+                      >
+                        <Mail className="mr-2 h-4 w-4" /> Email
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setLoginMethod("phone")}
+                        variant={loginMethod === "phone" ? "default" : "outline"}
+                        className="w-full"
+                      >
+                        <Phone className="mr-2 h-4 w-4" /> Phone
+                      </Button>
+                    </div>
+                    {loginMethod === "email" ? (
+                      <div className="space-y-1">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="Enter your email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          className="w-full"
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <Label htmlFor="phone">Phone</Label>
+                        <PhoneInput
+                          international
+                          defaultCountry="PT"
+                          value={phone}
+                          onChange={(value) => setPhone(value || "")}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        />
+                      </div>
+                    )}
                     <div className="space-y-1">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="password">Password</Label>
                       <Input
-                        id="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        id="password"
+                        type="password"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         required
                         className="w-full"
                       />
                     </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <Label htmlFor="phone">Phone</Label>
-                      <PhoneInput
-                        international
-                        defaultCountry="PT"
-                        value={phone}
-                        onChange={(value) => setPhone(value || "")}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      />
-                    </div>
-                  )}
-                  <div className="space-y-1">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full"
-                    />
                   </div>
-                </div>
-                {error && <p className="text-destructive text-sm mt-2">{error}</p>}
-                <Button className="w-full" type="submit" disabled={isLoading}>
-                  {isLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <ArrowRight className="mr-2 h-4 w-4" />
-                  )}
-                  {isLoading ? "Logging in..." : "Login"}
+                  {error && <p className="text-destructive text-sm mt-2">{error}</p>}
+                  <Button className="w-full" type="submit" disabled={isLoading}>
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                    )}
+                    {isLoading ? "Logging in..." : "Login"}
+                  </Button>
+                </form>
+              </CardContent>
+              <CardFooter className="flex flex-col space-y-2">
+                <Button variant="link" asChild className="w-full">
+                  <Link href="/register">Don&#39;t have an account? Register</Link>
                 </Button>
-              </form>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-2">
-              <Button variant="link" asChild className="w-full">
-                <Link href="/register">Don&#39;t have an account? Register</Link>
-              </Button>
-              <Button variant="link" onClick={() => setIsResetPasswordOpen(true)} className="w-full">
-                Forgot your password?
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-        <div className="hidden lg:flex lg:w-1/2 lg:flex-col relative overflow-hidden items-center justify-center">
-          <Image
-            src="/oldcar.png"
-            alt="Car on the road"
-            width={0}
-            height={0}
-            sizes="50vw"
-            className="w-full lg:w-7/12 h-auto lg:rounded-l-lg"
-            placeholder="blur"
-            blurDataURL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkqAcAAIUAgUW0RjgAAAAASUVORK5CYII="
-          />
-          {quote && (
-            <blockquote className="p-4 mt-4 text-center text-lg italic border-l-4 border-primary bg-muted/50 rounded-r-lg">
-              &#34;{quote.quote}&#34;
-              <footer className="mt-2 text-primary block font-semibold">
-                {quote.author} {quote.source && `- ${quote.source}`}
-              </footer>
-            </blockquote>
-          )}
-        </div>
-      </main>
-      <footer className="bg-background/80 backdrop-blur-sm p-4 border-t">
-        <div className="container mx-auto text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} RideShare. All rights reserved.
-        </div>
-      </footer>
+                <Button variant="link" onClick={() => setIsResetPasswordOpen(true)} className="w-full">
+                  Forgot your password?
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+          <div className="hidden lg:flex lg:w-1/2 lg:flex-col relative overflow-hidden items-center justify-center">
+            <Image
+              src={oldCarImage}
+              alt="Car on the road"
+              width={0}
+              height={0}
+              sizes="50vw"
+              className="w-full lg:w-7/12 h-auto lg:rounded-l-lg"
+              placeholder="blur"
+              blurDataURL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkqAcAAIUAgUW0RjgAAAAASUVORK5CYII="
+            />
+            {quote && (
+              <blockquote className="p-4 mt-4 text-center text-lg italic border-l-4 border-primary bg-muted/50 rounded-r-lg">
+                &#34;{quote.quote}&#34;
+                <footer className="mt-2 text-primary block font-semibold">
+                  {quote.author} {quote.source && `- ${quote.source}`}
+                </footer>
+              </blockquote>
+            )}
+          </div>
+        </main>
+        <footer className="bg-background/80 backdrop-blur-sm p-4 border-t">
+          <div className="container mx-auto text-center text-sm text-muted-foreground">
+            © {new Date().getFullYear()} RideShare. All rights reserved.
+          </div>
+        </footer>
+      </div>
 
       <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-lg">
@@ -330,7 +333,7 @@ export default function LoginPage({ quote }: LoginPageProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }
 

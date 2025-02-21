@@ -6,6 +6,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
+import oldCarImage from '@/components/images/oldcar.png';
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -111,7 +112,7 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
           </div>
         </div>
       </header>
-      <main className="flex-grow flex items-center justify-center p-4 sm:p-6 md:p-8">
+      <main className="flex-grow flex flex-col lg:flex-row">
         <div className="flex-1 flex items-center justify-center p-4 lg:p-8">
           <Card className="w-full max-w-md">
             <CardHeader>
@@ -120,7 +121,7 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
             </CardHeader>
             <CardContent>
               {isRegistered ? (
-                <div className="flex items-center justify-center flex-col"> 
+                <div className="flex items-center justify-center flex-col">
                   <p className="text-center">Please check your email to verify your account.</p>
                   <Button onClick={handleResendVerification} className="mt-4">Resend Verification Email</Button>
                 </div>
@@ -135,26 +136,26 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
               </Button>
             </CardFooter>
           </Card>
-          <div className="hidden lg:flex lg:w-1/2 lg:flex-col relative overflow-hidden items-center justify-center">
-            <Image
-              src="/oldcar.png"
-              alt="Car on the road"
-              width={0}
-              height={0}
-              sizes="50vw"
-              className="w-full lg:w-7/12 h-auto lg:rounded-l-lg"
-              placeholder="blur"
-              blurDataURL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkqAcAAIUAgUW0RjgAAAAASUVORK5CYII="
-            />
-            {quote && (
-              <blockquote className="p-4 mt-4 text-center text-lg italic border-l-4 border-primary bg-muted/50 rounded-r-lg">
-                &quot;{quote.quote}&quot;
-                <footer className="mt-2 text-primary block font-semibold">
-                  {quote.author} {quote.source && `- ${quote.source}`}
-                </footer>
-              </blockquote>
-            )}
-          </div>
+        </div>
+        <div className="hidden lg:flex lg:w-1/2 lg:flex-col relative overflow-hidden items-center justify-center">
+          <Image
+            src={oldCarImage}
+            alt="Car on the road"
+            width={0}
+            height={0}
+            sizes="50vw"
+            className="w-full lg:w-7/12 h-auto lg:rounded-l-lg"
+            placeholder="blur"
+            blurDataURL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkqAcAAIUAgUW0RjgAAAAASUVORK5CYII="
+          />
+          {quote && (
+            <blockquote className="p-4 mt-4 text-center text-lg italic border-l-4 border-primary bg-muted/50 rounded-r-lg">
+              &#34;{quote.quote}&#34;
+              <footer className="mt-2 text-primary block font-semibold">
+                {quote.author} {quote.source && `- ${quote.source}`}
+              </footer>
+            </blockquote>
+          )}
         </div>
       </main>
       <footer className="bg-background p-4 border-t">

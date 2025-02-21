@@ -14,7 +14,13 @@ const nextConfig = {
     return config;
   },
   images: {
-    domains: ['api.tomtom.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'api.tomtom.com',
+        port: '',
+      },
+    ],
   },
 }
 
