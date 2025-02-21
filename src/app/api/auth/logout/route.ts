@@ -1,23 +1,22 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const { subscription } = await request.json();
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // If a subscription was provided, delete only that specific subscription
+    if (subscription) {
+      const { error } = await supabase.from("push_subscriptions").delete().eq("subscription", JSON.stringify(subscription));
+
+      if (error) {
+        console.error("Error deleting push subscription:", error);
+      }
     }
 
-    const userId = session.user.id as string;
-
-    // Delete push subscription from the database
-    await supabase.from("push_subscriptions").delete().eq("user_id", userId);
-
-    return NextResponse.json({ success: true });
-  } catch {
+    return NextResponse.json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("Logout error:", error);
     return NextResponse.json({ error: "An error occurred during logout" }, { status: 500 });
   }
 }

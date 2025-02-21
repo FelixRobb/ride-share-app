@@ -8,7 +8,6 @@ import { toast } from "sonner"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { unregisterServiceWorker } from "@/utils/cleanupService"
 
@@ -19,9 +18,22 @@ export default function LogoutPage() {
   useEffect(() => {
     const handleLogout = async () => {
       try {
-        // Call the logout API
+        // Get the current push subscription
+        let currentSubscription: PushSubscription | null = null
+        if ("serviceWorker" in navigator && "PushManager" in window) {
+          const registration = await navigator.serviceWorker.ready
+          currentSubscription = await registration.pushManager.getSubscription()
+        }
+
+        // Call the logout API with the current subscription
         const response = await fetch("/api/auth/logout", {
           method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            subscription: currentSubscription ? currentSubscription.toJSON() : null,
+          }),
           credentials: "include",
         })
 
@@ -29,15 +41,16 @@ export default function LogoutPage() {
           throw new Error("Logout failed")
         }
 
-        // Unregister service worker
-        await unregisterServiceWorker()
+        // Unregister service worker and unsubscribe from push notifications
+        await unregisterServiceWorker(currentSubscription)
 
         // Sign out using NextAuth
         await signOut({ redirect: false })
 
         toast.success("Logged out successfully")
         router.push("/")
-      } catch {
+      } catch (error) {
+        console.error("Logout error:", error)
         toast.error("An error occurred during logout")
         setLoading(false)
       }
