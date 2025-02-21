@@ -17,6 +17,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import type { Ride, User } from "@/types"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface ExtendedRide extends Ride {
     requester: User;
@@ -27,6 +29,9 @@ interface FilterState {
     status: string;
     date: Date | undefined;
 }
+
+// Define a key for localStorage
+const FILTER_STORAGE_KEY = "ride-history-filters"
 
 export default function RideHistoryPage() {
     const router = useRouter()
@@ -39,15 +44,41 @@ export default function RideHistoryPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [searchResults, setSearchResults] = useState<ExtendedRide[]>([])
     const [showSearchResults, setShowSearchResults] = useState(false)
-    const [activeFilters, setActiveFilters] = useState<FilterState>({
-        status: "all",
-        date: undefined
+    const [activeFilters, setActiveFilters] = useState<FilterState>(() => {
+        // Only run in browser environment to avoid SSR issues
+        if (typeof window !== "undefined") {
+            const savedFilters = localStorage.getItem(FILTER_STORAGE_KEY)
+            if (savedFilters) {
+                const parsedFilters = JSON.parse(savedFilters)
+                // Convert date string back to Date object if it exists
+                return {
+                    status: parsedFilters.status || "all",
+                    date: parsedFilters.date ? new Date(parsedFilters.date) : undefined
+                }
+            }
+        }
+        // Default filters if no saved state or error parsing
+        return {
+            status: "all",
+            date: undefined
+        }
     })
+
     const [filterCount, setFilterCount] = useState(0)
     const isOnline = useOnlineStatus()
     const searchRef = useRef<HTMLDivElement>(null)
+    const isMobile = useMediaQuery("(max-width: 768px)")
 
-    // Count active filters for badge display
+    // Save filters to localStorage whenever they change
+    useEffect(() => {
+        const filtersToSave = {
+            status: activeFilters.status,
+            date: activeFilters.date ? activeFilters.date.toISOString() : undefined
+        }
+        localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filtersToSave))
+    }, [activeFilters])
+
+
     useEffect(() => {
         let count = 0
         if (activeFilters.status !== "all") count++
@@ -55,6 +86,7 @@ export default function RideHistoryPage() {
         setFilterCount(count)
     }, [activeFilters])
 
+    // Fetch rides when filters change
     const fetchRides = useCallback(
         async (resetRides = false) => {
             if (!isOnline) {
@@ -259,7 +291,7 @@ export default function RideHistoryPage() {
     return (
         <>
             <Layout>
-                <Button type="button" variant="ghost" onClick={() => router.push("/dashboard")} className="mb-2">
+                <Button type="button" variant="ghost" onClick={() => router.push("/dashboard?tab=history")} className="mb-2">
                     <ArrowBigLeft />
                     Go Back to Dashboard
                 </Button>
@@ -351,78 +383,191 @@ export default function RideHistoryPage() {
                                     )}
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Status Filter */}
-                                    <div className="space-y-2">
+                                {/* Status Filter - Improved Tabs & Select Implementation */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
                                         <label className="text-sm font-medium flex items-center gap-2">
                                             Status
                                             {activeFilters.status !== "all" && (
-                                                <Badge variant="outline" className="ml-2">
+                                                <Badge variant="outline" className="ml-2 capitalize">
                                                     {activeFilters.status}
                                                 </Badge>
                                             )}
                                         </label>
+                                        {activeFilters.status !== "all" && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setActiveFilters(prev => ({ ...prev, status: "all" }))}
+                                                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                            >
+                                                <X className="h-3 w-3 mr-1" />Reset
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    {/* Conditional rendering based on screen size using useMediaQuery */}
+                                    {isMobile ? (
+                                        <Select
+                                            value={activeFilters.status}
+                                            onValueChange={(value) => setActiveFilters(prev => ({ ...prev, status: value }))}
+                                        >
+                                            <SelectTrigger className={cn(
+                                                "w-full h-10 border transition-all",
+                                                activeFilters.status !== "all" && "border-primary border-2"
+                                            )}>
+                                                <SelectValue placeholder="Select status">
+                                                    <span className="flex items-center">
+                                                        {activeFilters.status === "accepted" && <CheckCircle className="h-3 w-3 mr-2 text-green-500" />}
+                                                        {activeFilters.status === "completed" && <CheckCircle className="h-3 w-3 mr-2 text-blue-500" />}
+                                                        {activeFilters.status === "cancelled" && <CircleSlash className="h-3 w-3 mr-2 text-destructive" />}
+                                                        <span className="capitalize">{activeFilters.status}</span>
+                                                    </span>
+                                                </SelectValue>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All</SelectItem>
+                                                <SelectItem value="pending">
+                                                    <span className="flex items-center">
+                                                        <Clock className="h-3 w-3 mr-2 text-orange-500" />Pending
+                                                    </span>
+                                                </SelectItem>
+                                                <SelectItem value="accepted">
+                                                    <span className="flex items-center">
+                                                        <CheckCircle className="h-3 w-3 mr-2 text-green-500" />Accepted
+                                                    </span>
+                                                </SelectItem>
+                                                <SelectItem value="completed">
+                                                    <span className="flex items-center">
+                                                        <CheckCircle className="h-3 w-3 mr-2 text-blue-500" />Completed
+                                                    </span>
+                                                </SelectItem>
+                                                <SelectItem value="cancelled">
+                                                    <span className="flex items-center">
+                                                        <CircleSlash className="h-3 w-3 mr-2 text-destructive" />Cancelled
+                                                    </span>
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
                                         <Tabs
                                             value={activeFilters.status}
                                             onValueChange={(value) => setActiveFilters(prev => ({ ...prev, status: value }))}
                                             className="w-full"
                                         >
-                                            <TabsList className="w-full">
-                                                <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-                                                <TabsTrigger value="pending" className="flex-1">Pending</TabsTrigger>
-                                                <TabsTrigger value="accepted" className="flex-1">Accepted</TabsTrigger>
-                                                <TabsTrigger value="completed" className="flex-1">Completed</TabsTrigger>
-                                                <TabsTrigger value="cancelled" className="flex-1">Cancelled</TabsTrigger>
+                                            <TabsList className="w-full h-auto p-1 grid grid-cols-5 gap-1 bg-muted/70">
+                                                <TabsTrigger
+                                                    value="all"
+                                                    className={cn(
+                                                        "h-9 flex-1 data-[state=active]:shadow-sm",
+                                                        "data-[state=active]:bg-background"
+                                                    )}
+                                                >
+                                                    All
+                                                </TabsTrigger>
+                                                <TabsTrigger
+                                                    value="pending"
+                                                    className={cn(
+                                                        "h-9 flex-1 data-[state=active]:shadow-sm",
+                                                        "data-[state=active]:border-orange-300 data-[state=active]:border-b-2"
+                                                    )}
+                                                >
+                                                    <span className="flex items-center justify-center">
+                                                        {activeFilters.status === "pending" && <Clock className="h-3 w-3 mr-1 text-orange-500" />}
+                                                        Pending
+                                                    </span>
+                                                </TabsTrigger>
+                                                <TabsTrigger
+                                                    value="accepted"
+                                                    className={cn(
+                                                        "h-9 flex-1 data-[state=active]:shadow-sm",
+                                                        "data-[state=active]:border-green-500 data-[state=active]:border-b-2"
+                                                    )}
+                                                >
+                                                    <span className="flex items-center justify-center">
+                                                        {activeFilters.status === "accepted" && <CheckCircle className="h-3 w-3 mr-1 text-green-500" />}
+                                                        Accepted
+                                                    </span>
+                                                </TabsTrigger>
+                                                <TabsTrigger
+                                                    value="completed"
+                                                    className={cn(
+                                                        "h-9 flex-1 data-[state=active]:shadow-sm",
+                                                        "data-[state=active]:border-blue-500 data-[state=active]:border-b-2"
+                                                    )}
+                                                >
+                                                    <span className="flex items-center justify-center">
+                                                        {activeFilters.status === "completed" && <CheckCircle className="h-3 w-3 mr-1 text-blue-500" />}
+                                                        Completed
+                                                    </span>
+                                                </TabsTrigger>
+                                                <TabsTrigger
+                                                    value="cancelled"
+                                                    className={cn(
+                                                        "h-9 flex-1 data-[state=active]:shadow-sm",
+                                                        "data-[state=active]:border-destructive data-[state=active]:border-b-2"
+                                                    )}
+                                                >
+                                                    <span className="flex items-center justify-center">
+                                                        {activeFilters.status === "cancelled" && <CircleSlash className="h-3 w-3 mr-1 text-destructive" />}
+                                                        Cancelled
+                                                    </span>
+                                                </TabsTrigger>
                                             </TabsList>
                                         </Tabs>
-                                    </div>
+                                    )}
+                                </div>
 
-                                    {/* Date Filter */}
-                                    <div className="space-y-2">
+                                {/* Date Filter - Improved to match status filter style */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
                                         <label className="text-sm font-medium flex items-center gap-2">
                                             Date
                                             {activeFilters.date && (
                                                 <Badge variant="outline" className="ml-2">
                                                     {activeFilters.date.toLocaleDateString()}
-                                                    <button
-                                                        className="ml-1"
-                                                        onClick={(e) => {
-                                                            e.preventDefault()
-                                                            setActiveFilters(prev => ({ ...prev, date: undefined }))
-                                                        }}
-                                                    >
-                                                        <X className="h-3 w-3" />
-                                                    </button>
                                                 </Badge>
                                             )}
                                         </label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    className={cn(
-                                                        "w-full justify-start text-left font-normal",
-                                                        !activeFilters.date && "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {activeFilters.date ? (
-                                                        activeFilters.date.toLocaleDateString()
-                                                    ) : (
-                                                        "Select a date"
-                                                    )}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={activeFilters.date}
-                                                    onSelect={(date) => setActiveFilters(prev => ({ ...prev, date }))}
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
+                                        {activeFilters.date && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setActiveFilters(prev => ({ ...prev, date: undefined }))}
+                                                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground">
+                                                <X className="h-3 w-3 mr-1" />Reset
+                                            </Button>
+                                        )}
                                     </div>
+
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "w-full justify-start text-left font-normal",
+                                                    !activeFilters.date && "text-muted-foreground",
+                                                    activeFilters.date && "border-primary border-2"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {activeFilters.date ? (
+                                                    activeFilters.date.toLocaleDateString()
+                                                ) : (
+                                                    "Select a date"
+                                                )}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={activeFilters.date}
+                                                onSelect={(date) => setActiveFilters(prev => ({ ...prev, date }))}
+                                                initialFocus
+                                                className="border rounded-md"
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                             </div>
                         </div>
