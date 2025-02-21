@@ -64,8 +64,6 @@ const MapDialogContent: React.FC<{
   }, [initialLocation])
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout
-
     const initializeMap = async () => {
       if (!mapRef.current) return
       setIsLoading(true)
@@ -100,7 +98,7 @@ const MapDialogContent: React.FC<{
       }
     }
 
-    timeoutId = setTimeout(initializeMap, 100)
+    const timeoutId = setTimeout(initializeMap, 100)
 
     return () => {
       clearTimeout(timeoutId)
