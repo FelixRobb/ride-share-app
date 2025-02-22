@@ -1,13 +1,12 @@
 "use client"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter, usePathname } from "next/navigation"
-
+import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
 
 import { TutorialOverlay } from "@/components/TutorialOverlay"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-
 
 type TutorialStep = {
   key: string
@@ -23,7 +22,7 @@ type TutorialContextType = {
   nextStep: () => void
   prevStep: () => void
   skipTutorial: () => void
-  restartTutorial: () => void // Add this new function
+  restartTutorial: () => void
   showPopup: boolean
   handlePopupChoice: (choice: boolean) => void
 }
@@ -37,67 +36,128 @@ const tutorialSteps: TutorialStep[] = [
     step: 1,
     title: "Welcome to RideShare!",
     content:
-      "This is your dashboard. Here you can see your rides and manage your account. Let's explore the key features.",
+      "Welcome to RideShare, your new platform for sharing rides with trusted contacts. Let's explore the key features and get you started!",
+  },
+  {
+    key: "dashboard-overview",
+    page: "/dashboard",
+    step: 2,
+    title: "Your Dashboard",
+    content:
+      "This is your dashboard, the central hub of RideShare. Here you can see your active rides, available rides from contacts, and your ride history.",
     target: "[data-tutorial='dashboard']",
+  },
+  {
+    key: "rides-tabs",
+    page: "/dashboard",
+    step: 3,
+    title: "Ride Categories",
+    content:
+      "Use these tabs to switch between your active rides, available rides from your contacts, and your ride history. This helps you manage all your ride-related activities.",
+    target: "[data-tutorial='dashboard-tabs']",
+  },
+  {
+    key: "filters-and-search",
+    page: "/dashboard",
+    step: 4,
+    title: "Filters and Search",
+    content:
+      "Use these tools to find specific rides. You can filter by status, date, or use the search bar to find rides by location or rider name.",
+    target: "[data-tutorial='search-filter']",
   },
   {
     key: "create-ride",
     page: "/dashboard",
-    step: 2,
+    step: 5,
     title: "Create a Ride",
-    content: "Click here to create a new ride. You can offer or request rides with your contacts.",
+    content:
+      "Click this button to offer or request a new ride. You'll be able to set all the necessary details for your journey.",
     target: "[data-tutorial='create-ride']",
   },
   {
-    key: "ride-tabs",
+    key: "notifications",
     page: "/dashboard",
-    step: 3,
-    title: "Ride Tabs",
+    step: 6,
+    title: "Notifications",
     content:
-      "Use these tabs to switch between your active rides, available rides from your contacts, and your ride history.",
-    target: "[data-tutorial='dashboard-tabs']",
+      "Check your notifications here. You'll be alerted about new ride offers, requests, and any changes to your existing rides.",
+    target: "[data-tutorial='notifications']",
   },
   {
-    key: "profile",
+    key: "profile-overview",
     page: "/profile",
-    step: 4,
+    step: 7,
     title: "Your Profile",
-    content:
-      "This is your profile page. Here you can manage your personal information, contacts, and account settings.",
+    content: "This is your profile page. Here you can view and manage your personal information and account settings.",
     target: "[data-tutorial='profile-info']",
   },
   {
-    key: "contacts",
+    key: "edit-profile",
     page: "/profile",
-    step: 5,
+    step: 8,
+    title: "Edit Profile Information",
+    content: "Use these buttons to edit your profile information or change your password.",
+    target: "[data-tutorial='edit-profile']",
+  },
+  {
+    key: "contacts-section",
+    page: "/profile",
+    step: 9,
     title: "Managing Contacts",
-    content: "In the Contacts section, you can add new contacts, accept requests, and manage your existing contacts.",
+    content:
+      "In the Contacts section, you can add new contacts, accept requests, and manage your existing contacts. Building your network is key to getting the most out of RideShare.",
     target: "[data-tutorial='contacts-section']",
   },
   {
-    key: "notifications",
+    key: "push-notifications",
     page: "/profile",
-    step: 6,
-    title: "Notification Settings",
-    content: "Adjust your notification preferences here to stay updated on your rides and contact requests.",
+    step: 10,
+    title: "Push Notification Settings",
+    content:
+      "Control your push notification preferences here. Enable this to receive updates even when you're not using the app.",
     target: "[data-tutorial='notification-settings']",
   },
   {
-    key: "create-ride-form",
-    page: "/create-ride",
-    step: 7,
-    title: "Creating a Ride",
+    key: "associated-people",
+    page: "/profile",
+    step: 11,
+    title: "Associated People",
     content:
-      "Fill in the details for your ride. Specify the start and end locations, date, time, and any additional notes.",
+      "Add and manage associated people here. This is useful for setting up rides for family members or friends who don't have a RideShare account.",
+    target: "[data-tutorial='associated-people']",
+  },
+  {
+    key: "user-stats",
+    page: "/profile",
+    step: 12,
+    title: "Your RideShare Statistics",
+    content: "View your RideShare statistics here, including the number of rides you've offered and requested.",
+    target: "[data-tutorial='profile-stats']",
+  },
+  {
+    key: "account-actions",
+    page: "/profile",
+    step: 13,
+    title: "Account Actions",
+    content: "Here you can log out of your account or delete it if necessary. Be careful with the delete option!",
+    target: "[data-tutorial='account-actions']",
+  },
+  {
+    key: "create-ride-page",
+    page: "/create-ride",
+    step: 14,
+    title: "Creating a New Ride",
+    content:
+      "This is where you can create a new ride. Fill in all the necessary details like pickup and drop-off locations, date, time, and any special notes.",
     target: "[data-tutorial='ride-form']",
   },
   {
     key: "finish",
     page: "/dashboard",
-    step: 8,
+    step: 15,
     title: "Congratulations!",
     content:
-      "You've completed the tutorial. You're now ready to start sharing rides with your contacts. Enjoy using RideShare!",
+      "You've completed the RideShare tutorial! You're now ready to start sharing rides. Remember, you can always access help and FAQs from the menu if you need more information. Enjoy using RideShare!",
   },
 ]
 
@@ -113,6 +173,20 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isInitialized, setIsInitialized] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
 
+  const scrollToTarget = useCallback((target: string) => {
+    const element = document.querySelector(target)
+    if (element) {
+      // Use a small delay to ensure the DOM has updated
+      setTimeout(() => {
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
+        })
+      }, 100)
+    }
+  }, [])
+
   // Initialize tutorial on mount
   useEffect(() => {
     const initializeTutorial = () => {
@@ -127,6 +201,9 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setCurrentStep(step)
         setPendingStep(null)
         setShowStepPopup(true)
+        if (step.target) {
+          scrollToTarget(step.target)
+        }
       } else {
         setPendingStep(step)
         setShowPopup(true)
@@ -136,7 +213,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     initializeTutorial()
-  }, [pathname])
+  }, [pathname, scrollToTarget])
 
   useEffect(() => {
     if (isInitialized && pendingStep) {
@@ -148,6 +225,9 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           setShowStepPopup(true)
           setShowPopup(false)
           setIsTransitioning(false)
+          if (pendingStep.target) {
+            scrollToTarget(pendingStep.target)
+          }
         }, 300) // Increased delay for smoother transition
 
         return () => clearTimeout(timeoutId)
@@ -156,7 +236,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setShowStepPopup(false)
       }
     }
-  }, [pathname, pendingStep, isInitialized, isTransitioning])
+  }, [pathname, pendingStep, isInitialized, isTransitioning, scrollToTarget])
 
   const changeStep = useCallback(
     async (step: TutorialStep | null) => {
@@ -188,9 +268,12 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else {
         setCurrentStep(step)
         setShowStepPopup(true)
+        if (step.target) {
+          scrollToTarget(step.target)
+        }
       }
     },
-    [pathname, router],
+    [pathname, router, scrollToTarget],
   )
 
   const nextStep = useCallback(() => {
@@ -239,7 +322,10 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setShowStepPopup(true)
     setShowPopup(false)
     router.push(firstStep.page)
-  }, [router])
+    if (firstStep.target) {
+      scrollToTarget(firstStep.target)
+    }
+  }, [router, scrollToTarget])
 
   const handlePopupChoice = useCallback(
     (choice: boolean) => {
@@ -262,7 +348,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         nextStep,
         prevStep,
         skipTutorial,
-        restartTutorial, // Add this new function to the context
+        restartTutorial,
         showPopup,
         handlePopupChoice,
       }}

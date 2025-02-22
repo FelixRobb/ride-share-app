@@ -46,6 +46,7 @@
     "react": "^18",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18",
+    "react-draggable": "^4.4.6",
     "react-hot-toast": "^2.4.1",
     "react-intersection-observer": "^9.4.0",
     "react-phone-number-input": "^3.4.10",

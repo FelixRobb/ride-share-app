@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { useTutorial, TutorialProvider } from "@/contexts/TutorialContext"
 import { cn } from "@/lib/utils"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 import type { User } from "../types"
 
@@ -29,6 +30,7 @@ export default function Layout({ children }: LayoutProps) {
   const currentUser = session?.user as User | null
   const isOnline = useOnlineStatus()
   const [wasPreviouslyOffline, setWasPreviouslyOffline] = useState(false)
+  const isMediumScreen = useMediaQuery("(min-width: 768px)")
 
   useEffect(() => {
     if (!isOnline) {
@@ -71,31 +73,32 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
 
                 {/* Desktop Navigation with Notification Button */}
-                <nav className="hidden md:flex items-center space-x-2 rounded-full p-1 border">
-                  {[
-                    { icon: Home, label: "Dashboard", href: "/dashboard" },
-                    { icon: Car, label: "Create Ride", href: "/create-ride" },
-                    { icon: Users, label: "Profile", href: "/profile" },
-                  ].map((item) => (
-                    <Button
-                      key={item.href}
-                      variant="ghost"
-                      asChild
-                      className={`rounded-full px-4 py-2 transition-colors duration-200 ${pathname === item.href ? 'bg-accent' : ''}`}
-                    >
-                      <Link href={item.href} className={pathname === item.href ? "text-primary" : ""}>
-                        <item.icon className="mr-2 h-4 w-4" /> {item.label}
-                      </Link>
-                    </Button>
-                  ))}
-                  <div className="h-6 w-px bg-border mx-2" />
-                  <NotificationPanel userId={currentUser.id} />
-                </nav>
-
-                {/* Mobile Notification Button */}
-                <div className="md:hidden">
-                  <NotificationPanel userId={currentUser.id} />
-                </div>
+                {isMediumScreen ? (
+                  <nav className={`flex items-center space-x-2 rounded-full p-1 border`}>
+                    {[
+                      { icon: Home, label: "Dashboard", href: "/dashboard" },
+                      { icon: Car, label: "Create Ride", href: "/create-ride" },
+                      { icon: Users, label: "Profile", href: "/profile" },
+                    ].map((item) => (
+                      <Button
+                        key={item.href}
+                        variant="ghost"
+                        asChild
+                        className={`rounded-full px-4 py-2 transition-colors duration-200 ${pathname === item.href ? 'bg-accent' : ''}`}
+                      >
+                        <Link href={item.href} className={pathname === item.href ? "text-primary" : ""}>
+                          <item.icon className="mr-2 h-4 w-4" /> {item.label}
+                        </Link>
+                      </Button>
+                    ))}
+                    <div className="h-6 w-px bg-border mx-2" />
+                    <NotificationPanel userId={currentUser.id} />
+                  </nav>
+                ) : (
+                  <div>
+                    <NotificationPanel userId={currentUser.id}/>
+                  </div>
+                )}
               </div>
             </header>
 
@@ -103,7 +106,7 @@ export default function Layout({ children }: LayoutProps) {
             <main className="flex-grow container mx-auto px-4 py-8 pb-7 md:pb-8">{children}</main>
 
             {/* Mobile Navigation Bar */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t z-50">
+            <nav className={`md:hidden fixed bottom-0 left-0 right-0 bg-background border-t z-50`}>
               <div className="flex justify-around items-center h-16">
                 {[
                   { icon: Home, label: "Dashboard", href: "/dashboard" },

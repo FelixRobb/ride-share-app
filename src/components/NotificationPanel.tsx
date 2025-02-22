@@ -248,6 +248,7 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
         size="icon"
         className="relative rounded-full hover:bg-accent border"
         onClick={() => handleOpenChange(true)}
+        data-tutorial="notifications"
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (

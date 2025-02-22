@@ -49,12 +49,7 @@ interface SuggestedContact extends User {
   contactStatus?: "pending" | "accepted" | null
 }
 
-export default function ProfilePage({
-  currentUser,
-  contacts,
-  associatedPeople,
-  fetchUserData,
-}: ProfilePageProps) {
+export default function ProfilePage({ currentUser, contacts, associatedPeople, fetchUserData }: ProfilePageProps) {
   const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" })
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
@@ -309,7 +304,7 @@ export default function ProfilePage({
               </div>
             </div>
           </div>
-          <div className="flex space-x-4 mt-4">
+          <div className="flex space-x-4 mt-4" data-tutorial="edit-profile">
             <Button onClick={() => setIsEditProfileOpen(true)} disabled={!isOnline}>
               Edit Profile
             </Button>
@@ -320,7 +315,7 @@ export default function ProfilePage({
         </CardContent>
       </Card>
 
-      <Card className="mb-8">
+      <Card className="mb-8" data-tutorial="profile-stats">
         <CardHeader>
           <CardTitle className="text-2xl">Statistics</CardTitle>
         </CardHeader>
@@ -377,7 +372,7 @@ export default function ProfilePage({
         </CardContent>
       </Card>
 
-      <Card className="mb-8">
+      <Card className="mb-8" data-tutorial="associated-people">
         <CardHeader>
           <CardTitle className="text-2xl">Associated People</CardTitle>
         </CardHeader>
@@ -419,7 +414,7 @@ export default function ProfilePage({
         </CardContent>
       </Card>
 
-      <Card className="mb-8">
+      <Card className="mb-8" data-tutorial="theme-settings">
         <CardHeader>
           <CardTitle className="text-2xl">Theme Settings</CardTitle>
         </CardHeader>
@@ -428,24 +423,27 @@ export default function ProfilePage({
             <span>Current theme:</span>
             <div className="relative inline-flex items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
-                  }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                  currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
+                }`}
                 onClick={() => toggleTheme("system")}
                 aria-label="System theme"
               >
                 <Monitor className="h-4 w-4" />
               </button>
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
-                  }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                  currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
+                }`}
                 onClick={() => toggleTheme("light")}
                 aria-label="Light theme"
               >
                 <Sun className="h-4 w-4" />
               </button>
               <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
-                  }`}
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                  currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
+                }`}
                 onClick={() => toggleTheme("dark")}
                 aria-label="Dark theme"
               >
@@ -456,29 +454,38 @@ export default function ProfilePage({
         </CardContent>
       </Card>
 
-      <Card className="mb-8">
+      <Card className="mb-8" data-tutorial="security-settings">
         <CardHeader>
-          <CardTitle className="text-2xl text-destructive">Logout</CardTitle>
+          <CardTitle className="text-2xl">Security Settings</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between space-x-2">
+          <div className="space-y-4">
+            <Button onClick={() => setIsChangePasswordOpen(true)} disabled={!isOnline}>
+              Change Password
+            </Button>
+            {/* You can add more security-related options here */}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card data-tutorial="account-actions">
+        <CardHeader>
+          <CardTitle className="text-2xl text-destructive">Account Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between space-x-2 mb-4">
             <p>Logout of your account.</p>
             <Button variant="destructive" onClick={handleLogout} disabled={!isOnline}>
               Logout
             </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl text-destructive">Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button variant="destructive" onClick={handleDeleteUser} disabled={isDeletingAccount || !isOnline}>
-            {isDeletingAccount ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
-            {isDeletingAccount ? "Deleting..." : "Delete Account"}
-          </Button>
+          <div className="flex items-center justify-between space-x-2">
+            <p>Permanently delete your account.</p>
+            <Button variant="destructive" onClick={handleDeleteUser} disabled={isDeletingAccount || !isOnline}>
+              {isDeletingAccount ? <Loader className="animate-spin h-5 w-5 mr-2" /> : null}
+              {isDeletingAccount ? "Deleting..." : "Delete Account"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

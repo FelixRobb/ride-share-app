@@ -458,7 +458,7 @@ export default function DashboardPage({
             <CardTitle className="text-2xl font-bold">Dashboard</CardTitle>
             <CardDescription>Manage your rides and connections</CardDescription>
           </div>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4" data-tutorial="search-filter">
             <div className="relative flex-grow">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
               <Input
