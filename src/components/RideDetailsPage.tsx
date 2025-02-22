@@ -492,95 +492,118 @@ export default function RideDetailsPage({
           </div>
         )}
         <Separator />
-        {(ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") && (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <MessageSquare className="w-5 h-5 text-primary" />
-              <Label className="font-semibold">Messages</Label>
-            </div>
-            <ScrollArea className="h-[300px] w-full rounded-md border p-4" ref={scrollAreaRef}>
-              {notes.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground">No messages yet. Be the first to send a message!</p>
-                </div>
-              ) : (
-                notes.map((note) => (
-                  <div
-                    key={`${note.id}-${note.created_at}`}
-                    className={`mb-4 ${note.user_id === currentUser?.id ? "text-right" : "text-left"}`}
-                  >
-                    <div
-                      className={`inline-block max-w-[80%] ${note.user_id === currentUser?.id ? "bg-primary text-primary-foreground" : "bg-muted"} rounded-lg p-3`}
-                    >
-                      {editingNoteId === note.id ? (
-                        <div>
-                          <Input
-                            value={editedNoteContent}
-                            onChange={(e) => setEditedNoteContent(e.target.value)}
-                            className="mb-2"
-                          />
-                          <Button onClick={handleSaveEdit} size="sm" className="mr-2" disabled={!isOnline}>
-                            Save
-                          </Button>
-                          <Button
-                            onClick={() => setEditingNoteId(null)}
-                            size="sm"
-                            variant="outline"
-                            disabled={!isOnline}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        <>
-                          <p className="text-sm mb-1 break-words">{note.note}</p>
-                          <div className="flex justify-between items-center text-xs mt-2">
-                            <span>
-                              {getUserName(note.user_id)} - {new Date(note.created_at).toLocaleString()}
-                            </span>
-                          </div>
-                          {note.is_edited && <span className="text-xs text-muted-foreground">(edited)</span>}
-                        </>
-                      )}
-                    </div>
-                    {note.user_id === currentUser?.id && !editingNoteId && (
-                      <div className="mt-1">
-                        <Button
-                          onClick={() => handleEditNote(note.id)}
-                          size="sm"
-                          variant="ghost"
-                          className="p-1"
-                          disabled={!isOnline}
-                        >
-                          <Edit className="h-4 w-4" />
+      {(ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") && (
+  <div className="space-y-4">
+    <div className="flex items-center space-x-2">
+      <MessageSquare className="w-5 h-5 text-primary" />
+      <Label className="font-semibold">Messages</Label>
+    </div>
+    <ScrollArea className="h-[400px] w-full rounded-md border bg-muted/10 p-4" ref={scrollAreaRef}>
+      {notes.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-full space-y-2">
+          <MessageSquare className="w-8 h-8 text-muted-foreground" />
+          <p className="text-muted-foreground text-center">No messages yet. Start the conversation!</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {notes.map((note) => (
+            <div
+              key={`${note.id}-${note.created_at}`}
+              className={`group flex flex-col ${note.user_id === currentUser?.id ? "items-end" : "items-start"}`}
+            >
+              <div className="flex items-end gap-2">
+                {note.user_id !== currentUser?.id && (
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <LucideUser className="w-4 h-4 text-primary" />
+                  </div>
+                )}
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-2 shadow-sm
+                    ${note.user_id === currentUser?.id 
+                      ? "bg-primary text-primary-foreground rounded-br-none" 
+                      : "bg-secondary text-secondary-foreground rounded-bl-none"
+                    }`}
+                >
+                  {editingNoteId === note.id ? (
+                    <div className="space-y-2">
+                      <Input
+                        value={editedNoteContent}
+                        onChange={(e) => setEditedNoteContent(e.target.value)}
+                        className="min-w-[200px]"
+                      />
+                      <div className="flex gap-2">
+                        <Button onClick={handleSaveEdit} size="sm" disabled={!isOnline}>
+                          Save
                         </Button>
-                        <Button onClick={() => handleDeleteNote(note.id)} size="sm" variant="ghost" className="p-1">
-                          <Trash className="h-4 w-4" />
+                        <Button onClick={() => setEditingNoteId(null)} size="sm" variant="outline" disabled={!isOnline}>
+                          Cancel
                         </Button>
                       </div>
-                    )}
+                    </div>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap break-words">{note.note}</p>
+                  )}
+                </div>
+                {note.user_id === currentUser?.id && (
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                    <LucideUser className="w-4 h-4 text-primary-foreground" />
                   </div>
-                ))
-              )}
-            </ScrollArea>
-            {(ride.status === "accepted" || ride.status === "completed") && (
-              <div className="flex items-center space-x-2">
-                <Input
-                  id="new-note"
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  onKeyPress={(e) => handleAddNote(e)}
-                  placeholder="Type your message..."
-                  className="flex-grow"
-                  disabled={!isOnline}
-                />
-                <Button onClick={() => handleAddNote()} size="icon" disabled={!isOnline}>
-                  <Send className="h-4 w-4" />
-                </Button>
+                )}
               </div>
-            )}
-          </div>
-        )}
+              <div className={`flex items-center gap-2 mt-1 px-10 ${note.user_id === currentUser?.id ? "justify-end" : "justify-start"}`}>
+                <span className="text-xs text-muted-foreground">
+                  {getUserName(note.user_id)} • {new Date(note.created_at).toLocaleString()}
+                  {note.is_edited && " • edited"}
+                </span>
+                {note.user_id === currentUser?.id && !editingNoteId && (
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      onClick={() => handleEditNote(note.id)}
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      disabled={!isOnline}
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      onClick={() => handleDeleteNote(note.id)}
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                    >
+                      <Trash className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </ScrollArea>
+    {(ride.status === "accepted" || ride.status === "completed") && (
+      <div className="flex items-center gap-2 pt-2">
+        <Input
+          value={newNote}
+          onChange={(e) => setNewNote(e.target.value)}
+          onKeyPress={(e) => handleAddNote(e)}
+          placeholder="Type your message..."
+          className="flex-grow"
+          disabled={!isOnline}
+        />
+        <Button 
+          onClick={() => handleAddNote()} 
+          size="icon" 
+          disabled={!isOnline || !newNote.trim()}
+          className="h-10 w-10 shrink-0"
+        >
+          <Send className="h-4 w-4" />
+        </Button>
+      </div>
+    )}
+  </div>
+)}
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row gap-2">
         {ride.status === "pending" && ride.requester_id === currentUser?.id && (
