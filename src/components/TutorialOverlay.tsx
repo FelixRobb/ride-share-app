@@ -1,22 +1,23 @@
+"use client"
+
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronRight, ChevronLeft, X } from "lucide-react"
 import { usePathname } from "next/navigation"
-
+import type React from "react"
 import { useEffect, useState, useCallback } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useTutorial, tutorialSteps } from "@/contexts/TutorialContext"
 
-
 export const TutorialOverlay: React.FC = () => {
-  const { currentStep, nextStep, prevStep, skipTutorial } = useTutorial()
+  const { currentStep, nextStep, prevStep, skipTutorial, isTargetReady } = useTutorial()
   const [targetElement, setTargetElement] = useState<DOMRect | null>(null)
   const [isMounted, setIsMounted] = useState(false)
   const pathname = usePathname()
 
   const updateTargetElement = useCallback(() => {
-    if (!currentStep?.target || !isMounted) {
+    if (!currentStep?.target || !isMounted || !isTargetReady) {
       setTargetElement(null)
       return
     }
@@ -28,7 +29,7 @@ export const TutorialOverlay: React.FC = () => {
     } else {
       setTargetElement(null)
     }
-  }, [currentStep, isMounted])
+  }, [currentStep, isMounted, isTargetReady])
 
   // Set mounted state
   useEffect(() => {
@@ -36,7 +37,7 @@ export const TutorialOverlay: React.FC = () => {
     return () => setIsMounted(false)
   }, [])
 
-  // Update target element when step changes
+  // Update target element when step changes or target is ready
   useEffect(() => {
     if (!isMounted) return
 
@@ -69,7 +70,7 @@ export const TutorialOverlay: React.FC = () => {
         exit={{ opacity: 0, y: 50 }}
         transition={{ duration: 0.2 }}
         className="fixed bottom-20 md:bottom-4 left-0 right-0 mx-auto z-50 w-80 sm:right-4 sm:left-auto sm:mx-0"
-        >
+      >
         <Card className="w-80 shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex justify-between items-center">
@@ -101,7 +102,7 @@ export const TutorialOverlay: React.FC = () => {
           </CardFooter>
         </Card>
       </motion.div>
-      {targetElement && (
+      {targetElement && isTargetReady && (
         <motion.div
           key={`highlight-${currentStep.key}`}
           initial={{ opacity: 0 }}

@@ -2,7 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter, usePathname } from "next/navigation"
 import type React from "react"
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react"
 
 import { TutorialOverlay } from "@/components/TutorialOverlay"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,7 @@ type TutorialContextType = {
   restartTutorial: () => void
   showPopup: boolean
   handlePopupChoice: (choice: boolean) => void
+  isTargetReady: boolean
 }
 
 const TutorialContext = createContext<TutorialContextType | undefined>(undefined)
@@ -172,24 +173,72 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [showStepPopup, setShowStepPopup] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [isTargetReady, setIsTargetReady] = useState(false)
+  const observerRef = useRef<MutationObserver | null>(null)
 
   const scrollToTarget = useCallback((target: string) => {
     const element = document.querySelector(target)
     if (element) {
-      // Use a small delay to ensure the DOM has updated
-      setTimeout(() => {
-        element.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "center",
-        })
-      }, 100)
+      element.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "center",
+      })
     }
   }, [])
 
+  const waitForTarget = useCallback((target: string, maxWaitTime = 5000) => {
+    setIsTargetReady(false)
+    return new Promise<void>((resolve) => {
+      const checkElement = () => {
+        const element = document.querySelector(target)
+        if (element) {
+          setIsTargetReady(true)
+          resolve()
+        }
+      }
+
+      // Check immediately
+      checkElement()
+
+      // Set up MutationObserver
+      const observer = new MutationObserver(checkElement)
+      observerRef.current = observer
+      observer.observe(document.body, { childList: true, subtree: true })
+
+      // Set a timeout to resolve anyway after maxWaitTime
+      const timeoutId = setTimeout(() => {
+        observer.disconnect()
+        setIsTargetReady(true)
+        resolve()
+      }, maxWaitTime)
+
+      // Clean up function
+      const cleanup = () => {
+        observer.disconnect()
+        clearTimeout(timeoutId)
+      }
+
+      // Return cleanup function
+      return cleanup
+    })
+  }, [])
+
+  const handleStep = useCallback(
+    async (step: TutorialStep) => {
+      if (step.target) {
+        await waitForTarget(step.target)
+        scrollToTarget(step.target)
+      }
+      setCurrentStep(step)
+      setShowStepPopup(true)
+    },
+    [scrollToTarget, waitForTarget],
+  )
+
   // Initialize tutorial on mount
   useEffect(() => {
-    const initializeTutorial = () => {
+    const initializeTutorial = async () => {
       const tutorialCompleted = localStorage.getItem("tutorialCompleted") === "true"
       const savedStepNumber = Number.parseInt(localStorage.getItem("tutorialStep") || "1", 10)
       const step = tutorialSteps.find((s) => s.step === savedStepNumber) || tutorialSteps[0]
@@ -198,12 +247,8 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setCurrentStep(null)
         setPendingStep(null)
       } else if (step.page === pathname) {
-        setCurrentStep(step)
+        await handleStep(step)
         setPendingStep(null)
-        setShowStepPopup(true)
-        if (step.target) {
-          scrollToTarget(step.target)
-        }
       } else {
         setPendingStep(step)
         setShowPopup(true)
@@ -213,21 +258,17 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     initializeTutorial()
-  }, [pathname, scrollToTarget])
+  }, [pathname, handleStep])
 
   useEffect(() => {
     if (isInitialized && pendingStep) {
       if (pathname === pendingStep.page) {
         // Longer delay and more controlled state transition
-        const timeoutId = setTimeout(() => {
-          setCurrentStep(pendingStep)
+        const timeoutId = setTimeout(async () => {
+          await handleStep(pendingStep)
           setPendingStep(null)
-          setShowStepPopup(true)
           setShowPopup(false)
           setIsTransitioning(false)
-          if (pendingStep.target) {
-            scrollToTarget(pendingStep.target)
-          }
         }, 300) // Increased delay for smoother transition
 
         return () => clearTimeout(timeoutId)
@@ -236,7 +277,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setShowStepPopup(false)
       }
     }
-  }, [pathname, pendingStep, isInitialized, isTransitioning, scrollToTarget])
+  }, [pathname, pendingStep, isInitialized, isTransitioning, handleStep])
 
   const changeStep = useCallback(
     async (step: TutorialStep | null) => {
@@ -266,14 +307,10 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setPendingStep(step)
         router.push(step.page)
       } else {
-        setCurrentStep(step)
-        setShowStepPopup(true)
-        if (step.target) {
-          scrollToTarget(step.target)
-        }
+        await handleStep(step)
       }
     },
-    [pathname, router, scrollToTarget],
+    [pathname, router, handleStep],
   )
 
   const nextStep = useCallback(() => {
@@ -317,15 +354,13 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.removeItem("tutorialCompleted")
     localStorage.setItem("tutorialStep", "1")
     const firstStep = tutorialSteps[0]
-    setCurrentStep(firstStep)
+    setCurrentStep(null)
     setPendingStep(null)
-    setShowStepPopup(true)
+    setShowStepPopup(false)
     setShowPopup(false)
     router.push(firstStep.page)
-    if (firstStep.target) {
-      scrollToTarget(firstStep.target)
-    }
-  }, [router, scrollToTarget])
+    handleStep(firstStep)
+  }, [router, handleStep])
 
   const handlePopupChoice = useCallback(
     (choice: boolean) => {
@@ -341,6 +376,15 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     [pendingStep, router, skipTutorial],
   )
 
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [])
+
   return (
     <TutorialContext.Provider
       value={{
@@ -351,6 +395,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         restartTutorial,
         showPopup,
         handlePopupChoice,
+        isTargetReady,
       }}
     >
       {children}
