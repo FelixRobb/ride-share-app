@@ -1,12 +1,10 @@
 "use client"
 
-import type React from "react"
 
 import { Search, Clock, MapPin, User2, CalendarIcon, ArrowRight, CheckCircle, Filter } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useMemo } from "react"
-import { toast } from "sonner"
 
 import {
   Drawer,
@@ -27,7 +25,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 import type { User, Ride, Contact } from "../types"
@@ -143,7 +140,6 @@ interface DashboardPageProps {
   contacts: Contact[]
   searchTerm: string
   setSearchTerm: (term: string) => void
-  fetchUserData: () => Promise<void>
   activeTab: string
   setActiveTab: (tab: string) => void
 }
@@ -154,7 +150,6 @@ export default function DashboardPage({
   contacts,
   searchTerm,
   setSearchTerm,
-  fetchUserData,
   activeTab,
   setActiveTab,
 }: DashboardPageProps) {
@@ -164,30 +159,18 @@ export default function DashboardPage({
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [dateFilter, setDateFilter] = useState<Date | null>(null)
   const [localRides, setLocalRides] = useState<Ride[]>(rides)
-  const isOnline = useOnlineStatus()
   const isDesktop = useMediaQuery("(min-width: 500px)")
 
   useEffect(() => {
     setLocalRides(rides)
   }, [rides])
 
+  // Single initial load effect
   useEffect(() => {
-    const fetchData = async () => {
-      if (isOnline) {
-        try {
-          await fetchUserData()
-        } catch {
-          toast.error("Failed to fetch user data. Please try again.")
-        } finally {
-          setIsInitialLoading(false)
-        }
-      }
+    if (rides.length > 0) {
+      setIsInitialLoading(false)
     }
-
-    fetchData()
-    const intervalId = setInterval(fetchData, 10000)
-    return () => clearInterval(intervalId)
-  }, [isOnline, fetchUserData])
+  }, [rides])
 
   const formatDateTime = (timestamp: string) => {
     const date = new Date(timestamp)

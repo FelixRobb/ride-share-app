@@ -2,22 +2,26 @@
 
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { useState, useEffect, useCallback, Suspense } from "react"
+import { useState, useEffect, useCallback, Suspense, useRef } from "react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { Loader } from "lucide-react"
 
 import Layout from "@/components/Layout"
-import type { User, Contact, AssociatedPerson } from "@/types"
-import { fetchUserData } from "@/utils/api"
+import type { User, Contact, AssociatedPerson, Ride } from "@/types"
+import { fetchProfileData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
 const ProfilePage = dynamic(() => import("@/components/ProfilePage"), { ssr: false })
 
 export default function Profile() {
-  const [contacts, setContacts] = useState<Contact[]>([])
-  const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([])
-  const [etag, setEtag] = useState<string | null>(null)
+  const [profileData, setProfileData] = useState<{
+    user: User
+    contacts: Contact[]
+    associatedPeople: AssociatedPerson[]
+    rides: Ride[]
+  } | null>(null)
+  const etagRef = useRef<string | null>(null)
 
   const router = useRouter()
   const isOnline = useOnlineStatus()
@@ -29,19 +33,18 @@ export default function Profile() {
     async (userId: string) => {
       if (isOnline) {
         try {
-          const result = await fetchUserData(userId, etag)
+          const result = await fetchProfileData(userId, etagRef.current)
           if (result) {
             const { data, newEtag } = result
-            setEtag(newEtag)
-            setContacts(data.contacts)
-            setAssociatedPeople(data.associatedPeople)
+            etagRef.current = newEtag
+            setProfileData(data)
           }
         } catch {
-          toast.error("Failed to fetch user data. Please try again.")
+          toast.error("Failed to fetch profile data. Please try again.")
         }
       }
     },
-    [etag, isOnline],
+    [isOnline],
   )
 
   useEffect(() => {
@@ -73,7 +76,9 @@ export default function Profile() {
     if (showLoader) {
       return (
         <div className="flex flex-col items-center justify-center h-screen bg-black">
-          <div className="flex items-center justify-center w-full"><Loader /></div>
+          <div className="flex items-center justify-center w-full">
+            <Loader />
+          </div>
           <p className="mt-4 text-lg text-white">Please wait while we are checking your authentication status...</p>
         </div>
       )
@@ -86,17 +91,18 @@ export default function Profile() {
     return null
   }
 
-  if (!currentUser) {
-    return <div>Error: User not found</div>
+  if (!currentUser || !profileData) {
+    return <div>Loading...</div>
   }
 
   return (
     <Layout>
       <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your profile</div>}>
         <ProfilePage
-          currentUser={currentUser}
-          contacts={contacts}
-          associatedPeople={associatedPeople}
+          currentUser={profileData.user}
+          contacts={profileData.contacts}
+          associatedPeople={profileData.associatedPeople}
+          rides={profileData.rides}
           fetchUserData={() => fetchUserDataCallback(currentUser.id)}
         />
       </Suspense>

@@ -1,3 +1,5 @@
+"use client"
+
 import { parsePhoneNumber } from "libphonenumber-js"
 import {
   MapPin,
@@ -43,7 +45,6 @@ import {
   editNote,
   deleteNote,
   markNoteAsSeen,
-  fetchRideDetails,
   finishRide,
 } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
@@ -51,19 +52,13 @@ import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import "maplibre-gl/dist/maplibre-gl.css"
 
 interface RideDetailsPageProps {
-  ride: Ride
+  rideData: { ride: Ride; contacts: Contact[]; user: User }
   currentUser: User
-  contacts: Contact[]
-  fetchUserData: () => Promise<void>
+  rideId: string  // Restored this prop as it's needed
+  onDataUpdate: () => Promise<void>
 }
 
-export default function RideDetailsPage({
-  ride: initialRide,
-  currentUser,
-  contacts,
-  fetchUserData,
-}: RideDetailsPageProps) {
-  const [ride, setRide] = useState<Ride>(initialRide)
+export default function RideDetailsPage({ rideData, currentUser, rideId, onDataUpdate }: RideDetailsPageProps) {
   const [notes, setNotes] = useState<Note[]>([])
   const [newNote, setNewNote] = useState("")
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
@@ -78,8 +73,8 @@ export default function RideDetailsPage({
   const [map, setMap] = useState<maplibregl.Map | null>(null)
   const [isLoadingMap, setIsLoadingMap] = useState(true)
   const isOnline = useOnlineStatus()
-  const [isDeleteNoteDialogOpen, setIsDeleteNoteDialogOpen] = useState(false)
-  const [noteToDelete, setNoteToDelete] = useState<string | null>(null)
+
+  const { ride, contacts } = rideData
 
   const scrollToBottom = useCallback(() => {
     if (typeof window !== "undefined" && scrollAreaRef.current) {
@@ -90,18 +85,10 @@ export default function RideDetailsPage({
     }
   }, [])
 
-  const getRequesterName = (ride: Ride) => {
-    if (ride.requester_id === currentUser.id) {
-      return currentUser.name
-    }
-    const contact = contacts.find((c) => c.user_id === ride.requester_id || c.contact_id === ride.requester_id)
-    return contact ? (contact.user_id === ride.requester_id ? contact.user.name : contact.contact.name) : "Unknown User"
-  }
-
   const loadNotes = useCallback(async () => {
     if (isOnline && (ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed")) {
       try {
-        const fetchedNotes = await fetchNotes(ride.id)
+        const fetchedNotes = await fetchNotes(rideId) // Using rideId from props
         setNotes(fetchedNotes || [])
 
         // Automatically mark new notes as seen
@@ -123,26 +110,21 @@ export default function RideDetailsPage({
         }
       }
     }
-  }, [isOnline, ride.status, ride.id, notes.length, currentUser.id, scrollToBottom])
-
-  const refreshRideData = useCallback(async () => {
-    if (isOnline) {
-      const updatedRide = await fetchRideDetails(currentUser.id, ride.id)
-      setRide(updatedRide)
-    }
-  }, [currentUser.id, ride.id, isOnline])
+  }, [isOnline, ride.status, rideId, currentUser.id, notes.length, scrollToBottom])
 
   useEffect(() => {
     loadNotes()
-    scrollToBottom()
-    const notesInterval = setInterval(loadNotes, 5000)
-    const rideInterval = setInterval(refreshRideData, 10000)
+    const intervalId = setInterval(loadNotes, 5000)
+    return () => clearInterval(intervalId)
+  }, [loadNotes])
 
-    return () => {
-      clearInterval(notesInterval)
-      clearInterval(rideInterval)
+  const getRequesterName = (ride: Ride) => {
+    if (ride.requester_id === currentUser.id) {
+      return currentUser.name
     }
-  }, [loadNotes, refreshRideData, scrollToBottom])
+    const contact = contacts.find((c) => c.user_id === ride.requester_id || c.contact_id === ride.requester_id)
+    return contact ? (contact.user_id === ride.requester_id ? contact.user.name : contact.contact.name) : "Unknown User"
+  }
 
   useEffect(() => {
     const buildMap = async () => {
@@ -191,7 +173,7 @@ export default function RideDetailsPage({
     }
 
     buildMap()
-  }, [ride, map, mapRef])
+  }, [ride, map])
 
   const handleAddNote = async (e?: React.KeyboardEvent<HTMLInputElement>) => {
     if (e && e.key !== "Enter") return
@@ -232,23 +214,13 @@ export default function RideDetailsPage({
     }
   }
 
-  const handleDeleteNote = (noteId: string) => {
-    setNoteToDelete(noteId)
-    setIsDeleteNoteDialogOpen(true)
-  }
-
-  const confirmDeleteNote = async () => {
-    if (noteToDelete) {
-      try {
-        await deleteNote(noteToDelete, currentUser.id)
-        setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteToDelete))
-        toast.success("Message deleted successfully.")
-      } catch {
-        toast.error("Failed to delete message. Please try again.")
-      } finally {
-        setIsDeleteNoteDialogOpen(false)
-        setNoteToDelete(null)
-      }
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      await deleteNote(noteId, currentUser.id)
+      setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId))
+      toast.success("Message deleted successfully.")
+    } catch {
+      toast.error("Failed to delete message. Please try again.")
     }
   }
 
@@ -256,8 +228,7 @@ export default function RideDetailsPage({
     setIsLoading(true)
     try {
       await acceptRide(ride.id, currentUser.id)
-      await fetchUserData()
-      await refreshRideData()
+      await onDataUpdate()
       toast.success("Ride offered successfully.")
     } catch {
       toast.error("Failed to accept ride. Please try again.")
@@ -273,14 +244,15 @@ export default function RideDetailsPage({
   const confirmCancelRequest = async () => {
     try {
       setIsLoading(true)
-      setIsCancelRequestDialogOpen(true)
-      await cancelRequest(ride.id, currentUser.id)
-      await fetchUserData()
-      toast.success("Ride request cancelled successfully.")
       setIsCancelRequestDialogOpen(false)
+      await cancelRequest(ride.id, currentUser.id)
+      await onDataUpdate()
+      toast.success("Ride request cancelled successfully.")
       router.push("/dashboard")
     } catch {
       toast.error("Failed to cancel request. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -293,12 +265,13 @@ export default function RideDetailsPage({
       setIsLoading(true)
       setIsCancelOfferDialogOpen(false)
       await cancelOffer(ride.id, currentUser.id)
-      await fetchUserData()
+      await onDataUpdate()
       toast.success("Ride offer cancelled successfully.")
-      setIsCancelOfferDialogOpen(false)
       router.push("/dashboard")
     } catch {
       toast.error("Failed to cancel offer. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -307,8 +280,7 @@ export default function RideDetailsPage({
     setIsFinishRideDialogOpen(false)
     try {
       await finishRide(ride.id, currentUser.id)
-      await fetchUserData()
-      await refreshRideData()
+      await onDataUpdate()
       toast.success("Ride marked as completed.")
     } catch {
       toast.error("Failed to finish ride. Please try again.")
@@ -492,118 +464,149 @@ export default function RideDetailsPage({
           </div>
         )}
         <Separator />
-      {(ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") && (
-  <div className="space-y-4">
-    <div className="flex items-center space-x-2">
-      <MessageSquare className="w-5 h-5 text-primary" />
-      <Label className="font-semibold">Messages</Label>
-    </div>
-    <ScrollArea className="h-[400px] w-full rounded-md border bg-muted/10 p-4" ref={scrollAreaRef}>
-      {notes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full space-y-2">
-          <MessageSquare className="w-8 h-8 text-muted-foreground" />
-          <p className="text-muted-foreground text-center">No messages yet. Start the conversation!</p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {notes.map((note) => (
-            <div
-              key={`${note.id}-${note.created_at}`}
-              className={`group flex flex-col ${note.user_id === currentUser?.id ? "items-end" : "items-start"}`}
-            >
-              <div className="flex items-end gap-2">
-                {note.user_id !== currentUser?.id && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <LucideUser className="w-4 h-4 text-primary" />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2 shadow-sm
-                    ${note.user_id === currentUser?.id 
-                      ? "bg-primary text-primary-foreground rounded-br-none" 
-                      : "bg-secondary text-secondary-foreground rounded-bl-none"
-                    }`}
-                >
-                  {editingNoteId === note.id ? (
-                    <div className="space-y-2">
-                      <Input
-                        value={editedNoteContent}
-                        onChange={(e) => setEditedNoteContent(e.target.value)}
-                        className="min-w-[200px]"
-                      />
-                      <div className="flex gap-2">
-                        <Button onClick={handleSaveEdit} size="sm" disabled={!isOnline}>
-                          Save
-                        </Button>
-                        <Button onClick={() => setEditingNoteId(null)} size="sm" variant="outline" disabled={!isOnline}>
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm whitespace-pre-wrap break-words">{note.note}</p>
-                  )}
-                </div>
-                {note.user_id === currentUser?.id && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                    <LucideUser className="w-4 h-4 text-primary-foreground" />
-                  </div>
-                )}
-              </div>
-              <div className={`flex items-center gap-2 mt-1 px-10 ${note.user_id === currentUser?.id ? "justify-end" : "justify-start"}`}>
-                <span className="text-xs text-muted-foreground">
-                  {getUserName(note.user_id)} • {new Date(note.created_at).toLocaleString()}
-                  {note.is_edited && " • edited"}
-                </span>
-                {note.user_id === currentUser?.id && !editingNoteId && (
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      onClick={() => handleEditNote(note.id)}
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0"
-                      disabled={!isOnline}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      onClick={() => handleDeleteNote(note.id)}
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0"
-                    >
-                      <Trash className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-              </div>
+        {(ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") && (
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <MessageSquare className="w-5 h-5 text-primary" />
+              <Label className="font-semibold">Messages</Label>
             </div>
-          ))}
-        </div>
-      )}
-    </ScrollArea>
-    {(ride.status === "accepted" || ride.status === "completed") && (
-      <div className="flex items-center gap-2 pt-2">
-        <Input
-          value={newNote}
-          onChange={(e) => setNewNote(e.target.value)}
-          onKeyPress={(e) => handleAddNote(e)}
-          placeholder="Type your message..."
-          className="flex-grow"
-          disabled={!isOnline}
-        />
-        <Button 
-          onClick={() => handleAddNote()} 
-          size="icon" 
-          disabled={!isOnline || !newNote.trim()}
-          className="h-10 w-10 shrink-0"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
-      </div>
-    )}
-  </div>
-)}
+            <ScrollArea className="h-[400px] w-full rounded-md border bg-muted/10 p-4" ref={scrollAreaRef}>
+              {notes.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full space-y-2">
+                  <MessageSquare className="w-8 h-8 text-muted-foreground" />
+                  <p className="text-muted-foreground text-center">No messages yet. Start the conversation!</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {notes.reduce<React.ReactNode[]>((acc, note, index) => {
+                    const currentDate = new Date(note.created_at).toLocaleDateString()
+                    const previousDate = index > 0 ? new Date(notes[index - 1].created_at).toLocaleDateString() : null
+
+                    if (currentDate !== previousDate) {
+                      acc.push(
+                        <div key={`date-separator-${currentDate}-${index}`} className="flex justify-center my-4">
+                          <span className="px-3 py-1 rounded-full bg-muted text-xs text-muted-foreground">
+                            {currentDate === new Date().toLocaleDateString() ? "Today" : currentDate}
+                          </span>
+                        </div>,
+                      )
+                    }
+
+                    acc.push(
+                      <div
+                        key={`message-${note.id}-${index}`}
+                        className={`group flex flex-col ${note.user_id === currentUser?.id ? "items-end" : "items-start"} w-fit max-w-[85%] ${note.user_id === currentUser?.id ? "ml-auto" : "mr-auto"}`}
+                      >
+                        <div className="flex items-end gap-2 w-full">
+                          {note.user_id !== currentUser?.id && (
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                              <LucideUser className="w-4 h-4 text-primary" />
+                            </div>
+                          )}
+                          <div
+                            className={`rounded-2xl px-4 py-2 shadow-sm w-full
+                      ${note.user_id === currentUser?.id
+                                ? "bg-primary text-primary-foreground rounded-br-none"
+                                : "bg-secondary text-secondary-foreground rounded-bl-none"
+                              }`}
+                          >
+                            {editingNoteId === note.id ? (
+                              <div className="space-y-2">
+                                <Input
+                                  value={editedNoteContent}
+                                  onChange={(e) => setEditedNoteContent(e.target.value)}
+                                  className="min-w-[200px]"
+                                />
+                                <div className="flex gap-2">
+                                  <Button onClick={handleSaveEdit} size="sm" disabled={!isOnline}>
+                                    Save
+                                  </Button>
+                                  <Button
+                                    onClick={() => setEditingNoteId(null)}
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={!isOnline}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-1">
+                                {note.user_id !== currentUser?.id && (
+                                  <p className="text-xs font-medium opacity-75">{getUserName(note.user_id)}</p>
+                                )}
+                                <p className="text-sm whitespace-pre-wrap break-words">{note.note}</p>
+                                <div
+                                  className={`flex items-center text-xs opacity-60 ${note.user_id === currentUser?.id ? "justify-end" : "justify-start"}`}
+                                >
+                                  <span>
+                                    {new Date(note.created_at).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                    {note.is_edited && " • edited"}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          {note.user_id === currentUser?.id && (
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                              <LucideUser className="w-4 h-4 text-primary-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        {note.user_id === currentUser?.id && !editingNoteId && (
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 flex gap-1">
+                            <Button
+                              onClick={() => handleEditNote(note.id)}
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              disabled={!isOnline}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              onClick={() => handleDeleteNote(note.id)}
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                            >
+                              <Trash className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>,
+                    )
+                    return acc
+                  }, [])}
+                </div>
+              )}
+            </ScrollArea>
+            {(ride.status === "accepted" || ride.status === "completed") && (
+              <div className="flex items-center gap-2 pt-2">
+                <Input
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  onKeyPress={(e) => handleAddNote(e)}
+                  placeholder="Type your message..."
+                  className="flex-grow"
+                  disabled={!isOnline}
+                />
+                <Button
+                  onClick={() => handleAddNote()}
+                  size="icon"
+                  disabled={!isOnline || !newNote.trim()}
+                  className="h-10 w-10 shrink-0"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row gap-2">
         {ride.status === "pending" && ride.requester_id === currentUser?.id && (
@@ -700,23 +703,6 @@ export default function RideDetailsPage({
             </Button>
             <Button className="mb-2" onClick={handleFinishRide}>
               Yes, Finish Ride
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isDeleteNoteDialogOpen} onOpenChange={setIsDeleteNoteDialogOpen}>
-        <DialogContent className="rounded-lg w-11/12">
-          <DialogHeader>
-            <DialogTitle>Confirm Delete Note</DialogTitle>
-            <DialogDescription>Are you sure you want to delete this note?</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button className="mb-2" variant="outline" onClick={() => setIsDeleteNoteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button className="mb-2" variant="destructive" onClick={confirmDeleteNote}>
-              Yes, Delete Note
             </Button>
           </DialogFooter>
         </DialogContent>

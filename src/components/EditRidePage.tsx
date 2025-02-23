@@ -1,3 +1,5 @@
+"use client"
+
 import { parsePhoneNumber } from "libphonenumber-js"
 import { motion } from "framer-motion"
 import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight, X } from "lucide-react"
@@ -15,20 +17,20 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
-import { updateRide, fetchRideDetails } from "@/utils/api"
+import { updateRide } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
-import type { RideData, User } from "../types"
+import type { RideData, User, Ride } from "../types"
 
 const LocationSearch = dynamic(() => import("./LocationSearch"), { ssr: false })
 const MapDialog = dynamic(() => import("./MapDialog"), { ssr: false })
 
 interface EditRidePageProps {
   currentUser: User
-  rideId: string
+  ride: Ride
 }
 
-export default function EditRidePage({ currentUser, rideId }: EditRidePageProps) {
+export default function EditRidePage({ currentUser, ride }: EditRidePageProps) {
   const [rideData, setRideData] = useState<RideData | null>(null)
   const [isFromMapOpen, setIsFromMapOpen] = useState(false)
   const [isToMapOpen, setIsToMapOpen] = useState(false)
@@ -38,28 +40,21 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
   const router = useRouter()
 
   useEffect(() => {
-    const fetchRideData = async () => {
-      try {
-        const ride = await fetchRideDetails(currentUser.id, rideId)
-        setRideData({
-          from_location: ride.from_location,
-          to_location: ride.to_location,
-          from_lat: ride.from_lat,
-          from_lon: ride.from_lon,
-          to_lat: ride.to_lat,
-          to_lon: ride.to_lon,
-          time: ride.time,
-          rider_name: ride.rider_name,
-          rider_phone: ride.rider_phone,
-          note: ride.note,
-        })
-      } catch {
-        toast.error("Failed to fetch ride details. Please try again.")
-      }
+    if (ride) {
+      setRideData({
+        from_location: ride.from_location,
+        to_location: ride.to_location,
+        from_lat: ride.from_lat,
+        from_lon: ride.from_lon,
+        to_lat: ride.to_lat,
+        to_lon: ride.to_lon,
+        time: ride.time,
+        rider_name: ride.rider_name,
+        rider_phone: ride.rider_phone,
+        note: ride.note,
+      })
     }
-
-    fetchRideData()
-  }, [currentUser.id, rideId])
+  }, [ride])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,9 +69,9 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
         }
         rideData.rider_phone = phoneNumber.format("E.164")
       }
-      await updateRide(rideId, rideData, currentUser.id)
+      await updateRide(ride.id, rideData, currentUser.id)
       toast.success("Your ride has been updated successfully.")
-      router.push(`/rides/${rideId}`)
+      router.push(`/rides/${ride.id}`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.")
     } finally {
@@ -118,7 +113,7 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
   }
 
   const handleCancel = () => {
-    router.push(`/rides/${rideId}`)
+    router.push(`/rides/${ride.id}`)
   }
 
   const renderStepContent = () => {
@@ -184,7 +179,9 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
               <PhoneInput
                 id="rider_phone"
                 value={rideData.rider_phone || ""}
-                onChange={(value) => setRideData((prev) => (prev ? { ...prev, rider_phone: value ? String(value) : null } : null))}
+                onChange={(value) =>
+                  setRideData((prev) => (prev ? { ...prev, rider_phone: value ? String(value) : null } : null))
+                }
                 placeholder="Enter rider's phone number"
                 defaultCountry="PT"
                 international

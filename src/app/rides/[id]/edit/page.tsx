@@ -1,22 +1,22 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useRouter } from "next/navigation"
-import { useParams } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { useState, useEffect, Suspense } from "react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 
 import Layout from "@/components/Layout"
 import type { User, Ride } from "@/types"
-import { fetchRideDetails } from "@/utils/api"
+import { fetchRideDetailsData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { Loader } from "lucide-react"
 
 const EditRidePage = dynamic(() => import("@/components/EditRidePage"), { ssr: false })
 
 export default function EditRide() {
-  const [ride, setRide] = useState<Ride | null>(null)
+  const [rideData, setRideData] = useState<{ ride: Ride } | null>(null)
+  const [etag, setEtag] = useState<string | null>(null)
 
   const router = useRouter()
   const { id } = useParams()
@@ -29,11 +29,15 @@ export default function EditRide() {
     const fetchRideDetailsCallback = async (userId: string, rideId: string) => {
       if (isOnline) {
         try {
-          const rideDetails = await fetchRideDetails(userId, rideId)
-          setRide(rideDetails)
-          if (rideDetails.status !== "pending" || rideDetails.requester_id !== userId) {
-            toast.error("You can't edit this ride.")
-            router.push(`/rides/${rideId}`)
+          const result = await fetchRideDetailsData(userId, rideId, etag)
+          if (result) {
+            const { data, newEtag } = result
+            setEtag(newEtag)
+            setRideData(data)
+            if (data.ride.status !== "pending" || data.ride.requester_id !== userId) {
+              toast.error("You can't edit this ride.")
+              router.push(`/rides/${rideId}`)
+            }
           }
         } catch {
           toast.error("Failed to fetch ride details. Please try again.")
@@ -47,7 +51,7 @@ export default function EditRide() {
     } else if (status === "unauthenticated") {
       router.push("/login")
     }
-  }, [router, id, isOnline, status, currentUser])
+  }, [router, id, isOnline, status, currentUser, etag])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -61,12 +65,14 @@ export default function EditRide() {
     if (showLoader) {
       return (
         <div className="flex flex-col items-center justify-center h-screen bg-black">
-          <div className="flex items-center justify-center w-full"><Loader /></div>
+          <div className="flex items-center justify-center w-full">
+            <Loader />
+          </div>
           <p className="mt-4 text-lg text-white">Please wait while we are checking your authentication status...</p>
         </div>
       )
     }
-    return <div className="bg-black h-screen" /> // Show black screen initially
+    return <div className="bg-black h-screen" />
   }
 
   if (status === "unauthenticated") {
@@ -74,14 +80,14 @@ export default function EditRide() {
     return null
   }
 
-  if (!currentUser) {
-    return <div>Error: User not found</div>
+  if (!currentUser || !rideData) {
+    return <div>Loading...</div>
   }
 
   return (
     <Layout>
       <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
-        {ride && <EditRidePage currentUser={currentUser} rideId={id as string} />}
+        <EditRidePage currentUser={currentUser} ride={rideData.ride} />
       </Suspense>
     </Layout>
   )

@@ -301,7 +301,6 @@ export const fetchRideDetails = async (userId: string, rideId: string): Promise<
   }
 }
 
-
 export const finishRide = async (rideId: string, userId: string) => {
   const response = await fetch(`/api/rides/${rideId}/finish`, {
     method: "POST",
@@ -324,5 +323,115 @@ export const fetchUserStats = async (userId: string): Promise<{ ridesOffered: nu
     throw new Error("Failed to fetch user stats")
   }
   return await response.json()
+}
+
+export const fetchDashboardData = async (userId: string, etag: string | null) => {
+  const headers: HeadersInit = {}
+  if (etag) {
+    headers["If-None-Match"] = etag
+  }
+
+  const response = await fetch(`/api/user-data/dashboard?userId=${userId}`, { headers })
+
+  if (response.status === 304) {
+    // Data hasn't changed
+    return null
+  }
+
+  if (response.ok) {
+    const newEtag = response.headers.get("ETag")
+    const data = await response.json()
+    return { data, newEtag }
+  } else {
+    throw new Error("Failed to fetch dashboard data")
+  }
+}
+
+export const fetchProfileData = async (userId: string, etag: string | null) => {
+  const headers: HeadersInit = {}
+  if (etag) {
+    headers["If-None-Match"] = etag
+  }
+
+  const response = await fetch(`/api/user-data/profile?userId=${userId}`, { headers })
+
+  if (response.status === 304) {
+    // Data hasn't changed
+    return null
+  }
+
+  if (response.ok) {
+    const newEtag = response.headers.get("ETag")
+    const data = await response.json()
+    return { data, newEtag }
+  } else {
+    throw new Error("Failed to fetch profile data")
+  }
+}
+
+export const fetchRideDetailsData = async (userId: string, rideId: string, etag: string | null) => {
+  const headers: HeadersInit = {}
+  if (etag) {
+    headers["If-None-Match"] = etag
+  }
+
+  const response = await fetch(`/api/user-data/ride-details?userId=${userId}&rideId=${rideId}`, { headers })
+
+  if (response.status === 304) {
+    // Data hasn't changed
+    return null
+  }
+
+  if (response.ok) {
+    const newEtag = response.headers.get("ETag")
+    const data = await response.json()
+    return { data, newEtag }
+  } else {
+    throw new Error("Failed to fetch ride details data")
+  }
+}
+
+export const fetchRideFormData = async (userId: string, etag: string | null) => {
+  const headers: HeadersInit = {}
+  if (etag) {
+    headers["If-None-Match"] = etag
+  }
+
+  const response = await fetch(`/api/user-data/ride-form?userId=${userId}`, { headers })
+
+  if (response.status === 304) {
+    // Data hasn't changed
+    return null
+  }
+
+  if (response.ok) {
+    const newEtag = response.headers.get("ETag")
+    const data = await response.json()
+    return { data, newEtag }
+  } else {
+    throw new Error("Failed to fetch ride form data")
+  }
+}
+
+export const fetchRideHistoryData = async (userId: string, etag: string | null) => {
+  const headers: HeadersInit = {}
+  if (etag) {
+    headers["If-None-Match"] = etag
+  }
+
+  const response = await fetch(`/api/user-data/ride-history?userId=${userId}`, { headers })
+
+  if (response.status === 304) {
+    // Data hasn't changed
+    return null
+  }
+
+  if (response.ok) {
+    const newEtag = response.headers.get("ETag")
+    const data = await response.json()
+    return { data, newEtag }
+  } else {
+    throw new Error("Failed to fetch ride history data")
+  }
 }
 

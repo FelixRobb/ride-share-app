@@ -24,7 +24,7 @@ import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
 
-import type { User, Contact, AssociatedPerson } from "../types"
+import type { User, Contact, AssociatedPerson, Ride } from "../types"
 import {
   updateProfile,
   changePassword,
@@ -41,7 +41,8 @@ interface ProfilePageProps {
   currentUser: User
   contacts: Contact[]
   associatedPeople: AssociatedPerson[]
-  fetchUserData: (userId: string) => Promise<void>
+  rides: Ride[]
+  fetchUserData: () => Promise<void>
 }
 
 interface SuggestedContact extends User {
@@ -49,7 +50,13 @@ interface SuggestedContact extends User {
   contactStatus?: "pending" | "accepted" | null
 }
 
-export default function ProfilePage({ currentUser, contacts, associatedPeople, fetchUserData }: ProfilePageProps) {
+export default function ProfilePage({
+  currentUser,
+  contacts,
+  associatedPeople,
+  rides,
+  fetchUserData,
+}: ProfilePageProps) {
   const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" })
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
@@ -135,7 +142,7 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, f
         await updateProfile(currentUser.id, { ...editedUser, phone: e164PhoneNumber })
         toast.success("Profile updated successfully!")
         setIsEditProfileOpen(false)
-        void fetchUserData(currentUser.id)
+        void fetchUserData()
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
       } finally {
@@ -169,7 +176,7 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, f
       try {
         await addAssociatedPerson(currentUser.id, associatename, associaterela)
         setNewAssociatedPerson({ name: "", relationship: "" })
-        void fetchUserData(currentUser.id)
+        void fetchUserData()
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
       }
@@ -179,7 +186,7 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, f
   const handleDeleteAssociatedPerson = async (personId: string) => {
     try {
       await deleteAssociatedPerson(personId, currentUser.id)
-      void fetchUserData(currentUser.id)
+      void fetchUserData()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
     }
@@ -224,7 +231,7 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, f
   const fetchUserDataCallback = useCallback(async () => {
     if (isOnline && currentUser) {
       try {
-        await fetchUserData(currentUser.id)
+        await fetchUserData()
       } catch {
         toast.error("Failed to fetch user data. Please try again.")
       }
@@ -248,16 +255,6 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, f
   }, [isOnline, currentUser])
 
   useEffect(() => {
-    fetchUserDataCallback()
-    fetchSuggestedContacts()
-    const intervalId = setInterval(() => {
-      fetchUserDataCallback()
-      fetchSuggestedContacts()
-    }, 20000)
-    return () => clearInterval(intervalId)
-  }, [fetchUserDataCallback, fetchSuggestedContacts])
-
-  useEffect(() => {
     const fetchStats = async () => {
       if (currentUser && isOnline) {
         try {
@@ -273,6 +270,22 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, f
     const intervalId = setInterval(fetchStats, 60000) // Refresh every minute
     return () => clearInterval(intervalId)
   }, [currentUser, isOnline])
+
+  useEffect(() => {
+    fetchUserDataCallback()
+    fetchSuggestedContacts()
+    const intervalId = setInterval(() => {
+      fetchUserDataCallback()
+      fetchSuggestedContacts()
+    }, 20000)
+    return () => clearInterval(intervalId)
+  }, [fetchUserDataCallback, fetchSuggestedContacts])
+
+  useEffect(() => {
+    const ridesOffered = rides.filter((ride) => ride.accepter_id === currentUser.id).length
+    const ridesRequested = rides.filter((ride) => ride.requester_id === currentUser.id).length
+    setUserStats({ ridesOffered, ridesRequested })
+  }, [rides, currentUser.id])
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -367,7 +380,7 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, f
             currentUser={currentUser}
             contacts={contacts}
             suggestedContacts={suggestedContacts}
-            fetchUserData={() => fetchUserData(currentUser.id)}
+            fetchUserData={() => fetchUserData()}
           />
         </CardContent>
       </Card>
