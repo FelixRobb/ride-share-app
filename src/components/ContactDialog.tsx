@@ -1,20 +1,19 @@
 "use client"
 
-import { Loader, Search, UserPlus, Check, Phone, Users, X } from "lucide-react"
+import { Loader, Search, UserPlus, Check, Phone, Users, X, UserX, UserCheck } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { parsePhoneNumber } from "libphonenumber-js"
 
-import { ContactSuggestions } from "@/components/ContactSugestions"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   Drawer,
   DrawerClose,
   DrawerContent,
-  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
@@ -77,6 +76,92 @@ const useSuggestedContacts = (currentUserId: string, isOnline: boolean) => {
   return { suggestedContacts, isFetchingSuggestions, fetchSuggestedContacts }
 }
 
+// Adding proper interface for the ContactSuggestions component to fix TypeScript errors
+interface ContactSuggestionsProps {
+  suggestedContacts: SuggestedContact[]
+  isFetchingSuggestions: boolean
+  handleAddContact: (user: ExtendedUser | SuggestedContact) => Promise<void>
+  currentUser: ExtendedUser
+  isOnline: boolean
+  addingUserId: string | null
+}
+
+// Suggested contacts component
+const ContactSuggestions = ({
+  suggestedContacts,
+  isFetchingSuggestions,
+  handleAddContact,
+  currentUser,
+  isOnline,
+  addingUserId
+}: ContactSuggestionsProps) => {
+  if (isFetchingSuggestions) {
+    return (
+      <div className="flex items-center justify-center w-full py-6">
+        <Loader className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (suggestedContacts.length === 0) {
+    return (
+      <div className="w-full text-center py-4">
+        <p className="text-muted-foreground">No suggestions available</p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {suggestedContacts.map((contact) => (
+        <Card key={contact.id} className="min-w-[240px] max-w-[280px] bg-accent/30 hover:bg-accent/50 transition-colors">
+          <CardContent className="p-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <Avatar className="h-16 w-16 mt-2">
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {contact.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h4 className="font-medium">{contact.name}</h4>
+                <p className="text-xs text-muted-foreground mb-1 flex items-center justify-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  {contact.phone}
+                </p>
+                {contact.mutual_contacts > 0 && (
+                  <p className="text-xs text-primary">
+                    {contact.mutual_contacts} mutual {contact.mutual_contacts === 1 ? "contact" : "contacts"}
+                  </p>
+                )}
+              </div>
+              <Button
+                size="sm"
+                className="w-full mt-1"
+                onClick={() => handleAddContact(contact)}
+                disabled={contact.contactStatus === "accepted" || addingUserId === contact.id || !isOnline}
+                variant={contact.contactStatus === "accepted" ? "secondary" : "default"}
+              >
+                {addingUserId === contact.id ? (
+                  <Loader className="w-4 h-4 animate-spin mr-2" />
+                ) : contact.contactStatus === "accepted" ? (
+                  <Check className="w-4 h-4 mr-2" />
+                ) : contact.contactStatus === "pending" ? (
+                  "Pending"
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Connect
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </>
+  )
+}
+
 export function ContactManager({ currentUser, contacts, fetchProfileData }: ContactManagerProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<ExtendedUser[]>([])
@@ -87,6 +172,7 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
   const [deletingContactId, setDeletingContactId] = useState<string | null>(null)
   const isOnline = useOnlineStatus()
   const isMobile = useMediaQuery("(max-width: 768px)")
+  const [activeTab, setActiveTab] = useState("all")
 
   const { suggestedContacts, isFetchingSuggestions, fetchSuggestedContacts } = useSuggestedContacts(
     currentUser.id,
@@ -94,7 +180,7 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
   )
 
   const handleAddContact = useCallback(
-    async (user: ExtendedUser) => {
+    async (user: ExtendedUser | SuggestedContact) => {
       if (!isOnline) return
       setAddingUserId(user.id)
       try {
@@ -216,6 +302,9 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
     }
   }, [searchQuery, currentUser.id])
 
+  // Calculate pending requests count
+  const pendingRequestsCount = contacts.filter(contact => contact.status === "pending").length
+
   // Render contact details content based on the selected contact
   const renderContactDetails = () => {
     if (!selectedContact) return null
@@ -226,13 +315,17 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
 
     return (
       <div className="grid gap-6">
-        <div className="flex items-center gap-4">
-          <Avatar className="w-20 h-20">
-            <AvatarFallback>{contactUser.name.charAt(0).toUpperCase()}</AvatarFallback>
+        <div className="flex flex-col items-center text-center gap-4">
+          <Avatar className="w-24 h-24">
+            <AvatarFallback className="bg-primary/10 text-primary text-xl">
+              {contactUser.name.charAt(0).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
           <div>
-            <h3 className="text-lg font-semibold">{contactUser.name}</h3>
-            <p className="text-sm text-muted-foreground">{getContactStatus(selectedContact)}</p>
+            <h3 className="text-xl font-semibold">{contactUser.name}</h3>
+            <Badge className="mt-2" variant={selectedContact.status === "accepted" ? "default" : "secondary"}>
+              {getContactStatus(selectedContact)}
+            </Badge>
           </div>
         </div>
 
@@ -240,28 +333,32 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
 
         <div className="grid gap-4">
           <div className="bg-accent/30 rounded-lg p-4">
-            <h4 className="font-medium text-sm text-muted-foreground mb-2">Contact Information</h4>
+            <h4 className="font-medium text-sm text-muted-foreground mb-3">Contact Information</h4>
             <div className="flex items-center gap-2">
-              <Phone className="w-4 h-4 text-muted-foreground" />
+              <Phone className="w-4 h-4 text-primary" />
               <p className="font-medium">{contactUser.phone}</p>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 mt-4">
+        <div className="flex justify-center gap-3 mt-4">
           {selectedContact.status === "pending" && selectedContact.contact_id === currentUser.id ? (
-            <Button onClick={() => handleAcceptContact(selectedContact.id)} disabled={!isOnline}>
+            <Button className="w-full" onClick={() => handleAcceptContact(selectedContact.id)} disabled={!isOnline}>
+              <UserCheck className="w-4 h-4 mr-2" />
               Accept Contact
             </Button>
           ) : null}
           <Button
             variant="destructive"
+            className="w-full"
             onClick={() => handleDeleteContact(selectedContact.id)}
             disabled={!isOnline || deletingContactId === selectedContact.id}
           >
             {deletingContactId === selectedContact.id ? (
               <Loader className="animate-spin w-4 h-4 mr-2" />
-            ) : null}
+            ) : (
+              <UserX className="w-4 h-4 mr-2" />
+            )}
             {selectedContact.user_id === currentUser.id ? "Remove Contact" : "Decline Request"}
           </Button>
         </div>
@@ -271,258 +368,341 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
 
   // Empty state component for when there are no contacts
   const EmptyState = ({ isPending = false }) => (
-    <div className="text-center py-12 px-4 border border-dashed rounded-lg bg-muted/20">
-      <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-        <Users className="w-6 h-6 text-primary" />
-      </div>
-      <h3 className="text-lg font-medium mb-2">
-        {isPending ? "No pending requests" : "No contacts yet"}
-      </h3>
-      <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-        {isPending
-          ? "You don't have any pending contact requests. When you send or receive requests, they'll appear here."
-          : "Start building your contact list by searching for people or checking the suggestions below."}
-      </p>
-      {!isPending && (
-        <Button
-          size="sm"
-          onClick={() => document.querySelector<HTMLInputElement>('input[placeholder="Search contacts"]')?.focus()}
-        >
-          Find Contacts
-        </Button>
-      )}
-    </div>
+    <Card className="border-dashed bg-muted/10">
+      <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <Users className="w-8 h-8 text-primary" />
+        </div>
+        <h3 className="text-lg font-medium mb-2">
+          {isPending ? "No pending requests" : "No contacts yet"}
+        </h3>
+        <p className="text-muted-foreground mb-6 max-w-md">
+          {isPending
+            ? "You don't have any pending contact requests. When you send or receive requests, they'll appear here."
+            : "Start building your contact list by searching for people or checking the suggestions below."}
+        </p>
+        {!isPending && (
+          <Button
+            size="sm"
+            onClick={() => document.querySelector<HTMLInputElement>('input[placeholder="Search contacts"]')?.focus()}
+          >
+            <Search className="w-4 h-4 mr-2" />
+            Find Contacts
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   )
 
   return (
-    <div className="space-y-6">
-      <div className="relative mb-6">
-        <div className="flex items-center h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
-          <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
-          <Input
-            placeholder="Search contacts"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent w-full"
-          />
-          {isSearching && <Loader className="h-4 w-4 animate-spin text-primary shrink-0 ml-2" />}
-        </div>
-        {searchResults.length > 0 && (
-          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-background border rounded-lg shadow-lg">
-            <ScrollArea className="max-h-[300px] h-fit overflow-y-auto">
-              <div className="p-1">
-                {searchResults.map((user: ExtendedUser) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-3 rounded-md hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3 min-w-0 flex-grow">
-                      <Avatar className="h-10 w-10 shrink-0">
-                        <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-grow">
-                        <p className="font-medium truncate">{user.name}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-2">
-                          <Phone className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{user.phone}</span>
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant={user.contactStatus === "accepted" ? "secondary" : "default"}
-                      onClick={() => handleAddContact(user)}
-                      disabled={user.contactStatus === "accepted" || addingUserId === user.id || !isOnline}
-                      className="ml-2 shrink-0"
-                    >
-                      {addingUserId === user.id ? (
-                        <Loader className="animate-spin w-4 h-4" />
-                      ) : user.contactStatus === "accepted" ? (
-                        <Check className="w-4 h-4" />
-                      ) : user.contactStatus === "pending" ? (
-                        "Pending"
-                      ) : (
-                        <UserPlus className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-        )}
-      </div>
-
-      <div className="mb-6">
-        <h3 className="font-medium mb-3">Suggested Contacts</h3>
-        <ScrollArea className="w-full">
-          <div className="flex gap-4 pb-4">
-            <ContactSuggestions
-              suggestedContacts={suggestedContacts}
-              isFetchingSuggestions={isFetchingSuggestions}
-              handleAddContact={handleAddContact}
-              currentUser={currentUser}
-              isOnline={isOnline}
+    <Card className="w-full border-none shadow-none">
+      <CardHeader className="px-0 pt-0">
+        <CardTitle className="text-2xl mb-4">Contacts</CardTitle>
+      </CardHeader>
+      <CardContent className="p-0 space-y-6">
+        <div className="relative mb-6">
+          <div className="flex items-center h-12 w-full rounded-md border border-input bg-background px-4 py-2 ring-offset-background focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 transition-all">
+            <Search className="h-5 w-5 text-muted-foreground mr-3 shrink-0" />
+            <Input
+              placeholder="Search contacts"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent w-full h-full text-base"
             />
+            {isSearching && <Loader className="h-5 w-5 animate-spin text-primary shrink-0 ml-2" />}
           </div>
-        </ScrollArea>
-      </div>
-
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="w-full grid grid-cols-2 mb-4">
-          <TabsTrigger value="all">All Contacts</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="mt-0">
-          <ScrollArea className="h-fit max-h-[500px]">
-            <div className="py-4 grid gap-4">
-              {contacts.length === 0 ? (
-                <EmptyState />
-              ) : (
-                contacts.map((contact) => {
-                  const isCurrentUserRequester = contact.user_id === currentUser.id
-                  const contactUser = isCurrentUserRequester ? contact.contact : contact.user
-                  const contactStatus = getContactStatus(contact)
-
-                  return (
+          {searchResults.length > 0 && (
+            <Card className="absolute z-50 top-full left-0 right-0 mt-1 border shadow-lg overflow-hidden">
+              <ScrollArea className="max-h-[300px] h-fit overflow-y-auto">
+                <CardContent className="p-2">
+                  {searchResults.map((user: ExtendedUser) => (
                     <div
-                      key={contact.id}
-                      className="group flex items-center justify-between p-4 hover:bg-accent/30 rounded-lg transition-colors cursor-pointer"
-                      onClick={() => handleOpenContactDetails(contact)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          handleOpenContactDetails(contact)
-                        }
-                      }}
+                      key={user.id}
+                      className="flex items-center justify-between p-3 rounded-md hover:bg-accent/50 transition-colors"
                     >
-                      <div className="flex items-center space-x-4 flex-grow min-w-0">
-                        <Avatar className="h-12 w-12 shrink-0">
-                          <AvatarFallback>{contactUser.name.charAt(0).toUpperCase()}</AvatarFallback>
+                      <div className="flex items-center space-x-3 min-w-0 flex-grow">
+                        <Avatar className="h-10 w-10 shrink-0">
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {user.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
                         </Avatar>
-                        <div className="flex-grow min-w-0">
-                          <p className="font-medium truncate">{contactUser.name}</p>
+                        <div className="min-w-0 flex-grow">
+                          <p className="font-medium truncate">{user.name}</p>
                           <p className="text-sm text-muted-foreground flex items-center gap-2">
                             <Phone className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{contactUser.phone}</span>
+                            <span className="truncate">{user.phone}</span>
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 ml-2 shrink-0">
-                        {contactStatus && (
-                          <Badge variant={contactStatus === "Accepted" ? "default" : "secondary"}>
-                            {contactStatus}
-                          </Badge>
+                      <Button
+                        size="sm"
+                        variant={user.contactStatus === "accepted" ? "secondary" : "default"}
+                        onClick={() => handleAddContact(user)}
+                        disabled={user.contactStatus === "accepted" || addingUserId === user.id || !isOnline}
+                        className="ml-2 shrink-0"
+                      >
+                        {addingUserId === user.id ? (
+                          <Loader className="animate-spin w-4 h-4" />
+                        ) : user.contactStatus === "accepted" ? (
+                          <Check className="w-4 h-4" />
+                        ) : user.contactStatus === "pending" ? (
+                          "Pending"
+                        ) : (
+                          <UserPlus className="w-4 h-4" />
                         )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Users className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      </Button>
                     </div>
-                  )
-                })
-              )}
+                  ))}
+                </CardContent>
+              </ScrollArea>
+            </Card>
+          )}
+        </div>
+
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium text-lg">Suggested Contacts</h3>
+            <Button variant="ghost" size="sm" onClick={fetchSuggestedContacts} disabled={!isOnline}>
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </Button>
+          </div>
+          <ScrollArea className="w-full">
+            <div className="flex gap-4 pb-4">
+              <ContactSuggestions
+                suggestedContacts={suggestedContacts}
+                isFetchingSuggestions={isFetchingSuggestions}
+                handleAddContact={handleAddContact}
+                currentUser={currentUser}
+                isOnline={isOnline}
+                addingUserId={addingUserId}
+              />
             </div>
           </ScrollArea>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="pending" className="mt-0">
-          <ScrollArea className="h-fit max-h-[500px]">
-            <div className="py-4 grid gap-4">
-              {contacts.filter((contact) => contact.status === "pending").length === 0 ? (
-                <EmptyState isPending={true} />
-              ) : (
-                contacts
-                  .filter((contact) => contact.status === "pending")
-                  .map((contact) => {
-                    const isCurrentUserRequester = contact.user_id === currentUser.id
-                    const contactUser = isCurrentUserRequester ? contact.contact : contact.user
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <TabsList className="grid grid-cols-2 w-64">
+              <TabsTrigger value="all">All Contacts</TabsTrigger>
+              <TabsTrigger value="pending" className="relative">
+                Pending
+                {pendingRequestsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {pendingRequestsCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            {!isOnline && (
+              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
+                Offline Mode
+              </Badge>
+            )}
+          </div>
 
-                    return (
-                      <div key={contact.id} className="flex items-center justify-between p-4 bg-accent/50 rounded-lg">
-                        <div className="flex items-center space-x-4 flex-grow min-w-0">
-                          <Avatar className="h-12 w-12 shrink-0">
-                            <AvatarFallback>{contactUser.name.charAt(0).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-grow min-w-0">
-                            <p className="font-medium truncate">{contactUser.name}</p>
-                            <p className="text-sm text-muted-foreground flex items-center gap-2">
-                              <Phone className="h-3 w-3 shrink-0" />
-                              <span className="truncate">{contactUser.phone}</span>
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {isCurrentUserRequester ? "Waiting for approval" : "Wants to connect"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 ml-2 shrink-0">
-                          {!isCurrentUserRequester && (
-                            <Button onClick={() => handleAcceptContact(contact.id)} disabled={!isOnline}>
-                              {addingUserId === contact.id ? <Loader className="animate-spin w-4 h-4" /> : "Accept"}
-                            </Button>
-                          )}
-                          <Button
-                            variant="destructive"
-                            onClick={() => handleDeleteContact(contact.id)}
-                            disabled={!isOnline || deletingContactId === contact.id}
+          <TabsContent value="all" className="mt-0">
+            <Card className="border-none shadow-none">
+              <CardContent className="p-0">
+                {/* Fix for mobile overflow: limiting the max height and making sure content doesn't overflow */}
+                <ScrollArea className="h-fit max-h-[500px]">
+                  <div className="py-4 grid gap-2">
+                    {contacts.length === 0 ? (
+                      <EmptyState />
+                    ) : (
+                      contacts.map((contact) => {
+                        const isCurrentUserRequester = contact.user_id === currentUser.id
+                        const contactUser = isCurrentUserRequester ? contact.contact : contact.user
+                        const contactStatus = getContactStatus(contact)
+
+                        return (
+                          <div
+                            key={contact.id}
+                            className="group flex items-center justify-between p-4 hover:bg-accent/30 rounded-lg transition-colors cursor-pointer overflow-hidden"
+                            onClick={() => handleOpenContactDetails(contact)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                handleOpenContactDetails(contact)
+                              }
+                            }}
                           >
-                            {deletingContactId === contact.id ? (
-                              <Loader className="animate-spin w-4 h-4" />
-                            ) : (
-                              <span>{isCurrentUserRequester ? "Cancel" : "Decline"}</span>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })
-              )}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+                            <div className="flex items-center space-x-4 min-w-0 flex-1">
+                              <Avatar className="h-10 w-10 shrink-0">
+                                <AvatarFallback className="bg-primary/10 text-primary">
+                                  {contactUser.name.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium truncate">{contactUser.name}</p>
+                                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                  <Phone className="h-3 w-3 shrink-0" />
+                                  <span className="truncate">{contactUser.phone}</span>
+                                </p>
+                              </div>
+                            </div>
+                            {/* Adjusted for better mobile display with flex-shrink */}
+                            <div className="flex items-center gap-2 ml-2 shrink-0">
+                              {contactStatus && (
+                                <Badge variant={contactStatus === "Accepted" ? "default" : "secondary"}>
+                                  {contactStatus}
+                                </Badge>
+                              )}
+                              {/* Only show this button on non-mobile */}
+                              {!isMobile && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Users className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-      {isMobile ? (
-        <Drawer open={isContactDetailsOpen} onOpenChange={setIsContactDetailsOpen}>
-          <DrawerContent className="px-4">
-            <DrawerHeader className="px-0">
-              <DrawerTitle>Contact Details</DrawerTitle>
-              <DrawerDescription>View and manage contact information</DrawerDescription>
-            </DrawerHeader>
-            <div className="p-4">
+          <TabsContent value="pending" className="mt-0">
+            <Card className="border-none shadow-none">
+              <CardContent className="p-0">
+                <ScrollArea className="h-fit max-h-[500px]">
+                  <div className="py-4 grid gap-2">
+                    {contacts.filter((contact) => contact.status === "pending").length === 0 ? (
+                      <EmptyState isPending={true} />
+                    ) : (
+                      contacts
+                        .filter((contact) => contact.status === "pending")
+                        .map((contact) => {
+                          const isCurrentUserRequester = contact.user_id === currentUser.id
+                          const contactUser = isCurrentUserRequester ? contact.contact : contact.user
+
+                          return (
+                            <Card key={contact.id} className="border bg-accent/30">
+                              <CardContent className="p-4">
+                                {/* Improved layout for mobile with better spacing and flex properties */}
+                                <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'}`}>
+                                  <div className="flex items-center space-x-4 min-w-0 flex-1">
+                                    <Avatar className="h-10 w-10 shrink-0">
+                                      <AvatarFallback className="bg-primary/10 text-primary">
+                                        {contactUser.name.charAt(0).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-medium truncate">{contactUser.name}</p>
+                                      <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                        <Phone className="h-3 w-3 shrink-0" />
+                                        <span className="truncate">{contactUser.phone}</span>
+                                      </p>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        {isCurrentUserRequester ? "Waiting for approval" : "Wants to connect"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className={`flex ${isMobile ? 'flex-row mt-3 justify-end' : 'flex-col gap-2 ml-2 shrink-0'}`}>
+                                    {!isCurrentUserRequester && (
+                                      <Button 
+                                        onClick={() => handleAcceptContact(contact.id)} 
+                                        disabled={!isOnline || addingUserId === contact.id}
+                                        size="sm"
+                                        className={isMobile ? "mr-2" : ""}
+                                      >
+                                        {addingUserId === contact.id ? (
+                                          <Loader className="animate-spin w-4 h-4" />
+                                        ) : (
+                                          <>
+                                            <Check className="w-4 h-4 mr-2" />
+                                            Accept
+                                          </>
+                                        )}
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDeleteContact(contact.id)}
+                                      disabled={!isOnline || deletingContactId === contact.id}
+                                      className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                    >
+                                      {deletingContactId === contact.id ? (
+                                        <Loader className="animate-spin w-4 h-4" />
+                                      ) : (
+                                        <>
+                                          <X className="w-4 h-4 mr-2" />
+                                          <span>{isCurrentUserRequester ? "Cancel" : "Decline"}</span>
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )
+                        })
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {isMobile ? (
+          <Drawer open={isContactDetailsOpen} onOpenChange={setIsContactDetailsOpen}>
+            <DrawerContent className="px-4">
+              <DrawerHeader className="px-0">
+                <DrawerTitle>Contact Details</DrawerTitle>
+                <Button
+                  className="absolute right-4 top-4"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsContactDetailsOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </DrawerHeader>
+              <div className="p-4">
+                {renderContactDetails()}
+              </div>
+              <DrawerFooter className="pt-2">
+                <DrawerClose asChild>
+                  <Button variant="outline">Close</Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Dialog open={isContactDetailsOpen} onOpenChange={setIsContactDetailsOpen}>
+            <DialogContent className="sm:max-w-[425px] w-[95vw] rounded-lg">
+              <DialogHeader>
+                <DialogTitle>Contact Details</DialogTitle>
+                <Button
+                  className="absolute right-4 top-4"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsContactDetailsOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </DialogHeader>
               {renderContactDetails()}
-            </div>
-            <DrawerFooter className="pt-2">
-              <DrawerClose asChild>
-                <Button variant="outline">Close</Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
-      ) : (
-        <Dialog open={isContactDetailsOpen} onOpenChange={setIsContactDetailsOpen}>
-          <DialogContent className="sm:max-w-[425px] w-[95vw] rounded-lg">
-            <DialogHeader>
-              <DialogTitle>Contact Details</DialogTitle>
-              <Button
-                className="absolute right-4 top-4"
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsContactDetailsOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogHeader>
-            {renderContactDetails()}
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </CardContent>
+    </Card>
   )
 }
