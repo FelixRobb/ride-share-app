@@ -1,3 +1,5 @@
+"use client"
+
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
 import { motion } from "framer-motion"
@@ -5,6 +7,7 @@ import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight } from "lucide-re
 import dynamic from "next/dynamic"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import Router from "next/router"
 
 import { InlineDateTimePicker } from "@/components/InlineDateTimePicker"
 import { Button } from "@/components/ui/button"
@@ -27,40 +30,37 @@ import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import type { RideData, AssociatedPerson, User } from "../types"
 import { createRide } from "../utils/api"
 
-const initialRideData: RideData = {
-  from_location: "",
-  to_location: "",
-  from_lat: 0,
-  from_lon: 0,
-  to_lat: 0,
-  to_lon: 0,
-  time: "",
-  rider_name: "",
-  rider_phone: null,
-  note: null,
-}
-
 const LocationSearch = dynamic(() => import("./LocationSearch"), { ssr: false })
 const MapDialog = dynamic(() => import("./MapDialog"), { ssr: false })
 
 interface CreateRidePageProps {
   currentUser: User
-  fetchUserData: (userId: string) => Promise<void>
-  setCurrentPage: (page: string) => void
   associatedPeople: AssociatedPerson[]
+}
+
+const initialRideData: RideData = {
+  from_location: "",
+  from_lat: 0,
+  from_lon: 0,
+  to_location: "",
+  to_lat: 0,
+  to_lon: 0,
+  time: "", // Changed from null to an empty string to match type
+  rider_name: "",
+  rider_phone: "", // Changed from null to an empty string to match type
+  note: "",
 }
 
 export default function CreateRidePage({
   currentUser,
-  fetchUserData,
-  setCurrentPage,
-  associatedPeople,
+  associatedPeople: initialAssociatedPeople,
 }: CreateRidePageProps) {
   const [rideData, setRideData] = useState<RideData>({
     ...initialRideData,
     rider_name: currentUser?.name || "",
     rider_phone: currentUser?.phone || null,
   })
+  const [associatedPeople] = useState<AssociatedPerson[]>(initialAssociatedPeople)
 
   const [riderType, setRiderType] = useState("self")
   const [isFromMapOpen, setIsFromMapOpen] = useState(false)
@@ -80,18 +80,20 @@ export default function CreateRidePage({
     const storedRideData = localStorage.getItem("rideData")
     if (storedRideData) {
       const parsedData: RideData = JSON.parse(storedRideData)
-      
+
       // Check if there's significant data to restore by excluding specified fields
       const hasSignificantData = Object.entries(parsedData).some(([key, value]) => {
         // Skip checking these fields
-        if (key === 'time' || key === 'rider_name' || key === 'rider_phone') {
+        if (key === "time" || key === "rider_name" || key === "rider_phone") {
           return false
         }
         // Check if the value is non-empty and not the default value
-        return value !== "" && 
-               value !== null && 
-               value !== 0 && 
-               JSON.stringify(value) !== JSON.stringify(initialRideData[key as keyof RideData])
+        return (
+          value !== "" &&
+          value !== null &&
+          value !== 0 &&
+          JSON.stringify(value) !== JSON.stringify(initialRideData[key as keyof RideData])
+        )
       })
 
       if (hasSignificantData) {
@@ -159,9 +161,8 @@ export default function CreateRidePage({
       await createRide(rideData, currentUser.id)
       if (!isMounted) return
       toast.success("Your ride request has been created successfully.")
-      localStorage.removeItem("rideData") // Clear stored data after successful submission
-      setCurrentPage("dashboard")
-      void fetchUserData(currentUser.id)
+      localStorage.removeItem("rideData")
+      Router.push("/dashboard")
     } catch (error) {
       if (!isMounted) return
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.")
@@ -422,7 +423,7 @@ export default function CreateRidePage({
       )}
 
       <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
-        <DialogContent className="sm:max-w-[425px] w-11/12 rounded-lg">
+        <DialogContent className="sm:max-w-[425px] rounded-lg">
           <DialogHeader>
             <DialogTitle>Restore Previous Ride Data</DialogTitle>
             <DialogDescription>It seems you have unsaved ride data. Would you like to restore it?</DialogDescription>

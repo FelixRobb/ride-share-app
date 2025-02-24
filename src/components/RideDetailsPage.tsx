@@ -1,3 +1,7 @@
+"use client"
+
+import type React from "react"
+
 import { parsePhoneNumber } from "libphonenumber-js"
 import {
   MapPin,
@@ -29,7 +33,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
@@ -43,27 +46,27 @@ import {
   editNote,
   deleteNote,
   markNoteAsSeen,
-  fetchRideDetails,
+  fetchRideDetailsData,
   finishRide,
 } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
 import "maplibre-gl/dist/maplibre-gl.css"
+import { Textarea } from "./ui/textarea"
 
 interface RideDetailsPageProps {
   ride: Ride
   currentUser: User
   contacts: Contact[]
-  fetchUserData: () => Promise<void>
 }
 
 export default function RideDetailsPage({
   ride: initialRide,
   currentUser,
-  contacts,
-  fetchUserData,
+  contacts: initialContacts
 }: RideDetailsPageProps) {
   const [ride, setRide] = useState<Ride>(initialRide)
+  const [contacts, setContacts] = useState<Contact[]>(initialContacts)
   const [notes, setNotes] = useState<Note[]>([])
   const [newNote, setNewNote] = useState("")
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
@@ -79,7 +82,7 @@ export default function RideDetailsPage({
   const [isLoadingMap, setIsLoadingMap] = useState(true)
   const isOnline = useOnlineStatus()
   const [isDeleteNoteDialogOpen, setIsDeleteNoteDialogOpen] = useState(false)
-  const [noteToDelete, setNoteToDelete] = useState<string | null>(null)
+  const [noteToDeleteId, setNoteToDeleteId] = useState<string | null>(null)
 
   const scrollToBottom = useCallback(() => {
     if (typeof window !== "undefined" && scrollAreaRef.current) {
@@ -127,20 +130,23 @@ export default function RideDetailsPage({
 
   const refreshRideData = useCallback(async () => {
     if (isOnline) {
-      const updatedRide = await fetchRideDetails(currentUser.id, ride.id)
-      setRide(updatedRide)
+      try {
+        const data = await fetchRideDetailsData(ride.id)
+        setRide(data.ride)
+        setContacts(data.contacts)
+      } catch {
+        toast.error("Failed to fetch ride details. Please try again.")
+      }
     }
-  }, [currentUser.id, ride.id, isOnline])
+  }, [ride.id, isOnline])
 
   useEffect(() => {
     loadNotes()
     scrollToBottom()
     const notesInterval = setInterval(loadNotes, 5000)
-    const rideInterval = setInterval(refreshRideData, 10000)
 
     return () => {
       clearInterval(notesInterval)
-      clearInterval(rideInterval)
     }
   }, [loadNotes, refreshRideData, scrollToBottom])
 
@@ -191,9 +197,9 @@ export default function RideDetailsPage({
     }
 
     buildMap()
-  }, [ride, map, mapRef])
+  }, [ride, map])
 
-  const handleAddNote = async (e?: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleAddNote = async (e?: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e && e.key !== "Enter") return
     if (newNote.trim() && currentUser) {
       try {
@@ -232,31 +238,31 @@ export default function RideDetailsPage({
     }
   }
 
-  const handleDeleteNote = (noteId: string) => {
-    setNoteToDelete(noteId)
-    setIsDeleteNoteDialogOpen(true)
-  }
-
   const confirmDeleteNote = async () => {
-    if (noteToDelete) {
+    if (noteToDeleteId) {
       try {
-        await deleteNote(noteToDelete, currentUser.id)
-        setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteToDelete))
+        await deleteNote(noteToDeleteId, currentUser.id)
+        setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteToDeleteId))
         toast.success("Message deleted successfully.")
       } catch {
         toast.error("Failed to delete message. Please try again.")
       } finally {
         setIsDeleteNoteDialogOpen(false)
-        setNoteToDelete(null)
+        setNoteToDeleteId(null)
       }
     }
+  }
+
+  const handleDeleteNote = (noteId: string) => {
+    setNoteToDeleteId(noteId)
+    setIsDeleteNoteDialogOpen(true)
   }
 
   const handleAcceptRide = async () => {
     setIsLoading(true)
     try {
       await acceptRide(ride.id, currentUser.id)
-      await fetchUserData()
+      await fetchRideDetailsData(ride.id)
       await refreshRideData()
       toast.success("Ride offered successfully.")
     } catch {
@@ -275,7 +281,7 @@ export default function RideDetailsPage({
       setIsLoading(true)
       setIsCancelRequestDialogOpen(true)
       await cancelRequest(ride.id, currentUser.id)
-      await fetchUserData()
+      await fetchRideDetailsData(ride.id)
       toast.success("Ride request cancelled successfully.")
       setIsCancelRequestDialogOpen(false)
       router.push("/dashboard")
@@ -293,7 +299,7 @@ export default function RideDetailsPage({
       setIsLoading(true)
       setIsCancelOfferDialogOpen(false)
       await cancelOffer(ride.id, currentUser.id)
-      await fetchUserData()
+      await fetchRideDetailsData(ride.id)
       toast.success("Ride offer cancelled successfully.")
       setIsCancelOfferDialogOpen(false)
       router.push("/dashboard")
@@ -307,7 +313,7 @@ export default function RideDetailsPage({
     setIsFinishRideDialogOpen(false)
     try {
       await finishRide(ride.id, currentUser.id)
-      await fetchUserData()
+      await fetchRideDetailsData(ride.id)
       await refreshRideData()
       toast.success("Ride marked as completed.")
     } catch {
@@ -492,118 +498,211 @@ export default function RideDetailsPage({
           </div>
         )}
         <Separator />
-      {(ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") && (
-  <div className="space-y-4">
-    <div className="flex items-center space-x-2">
-      <MessageSquare className="w-5 h-5 text-primary" />
-      <Label className="font-semibold">Messages</Label>
-    </div>
-    <ScrollArea className="h-[400px] w-full rounded-md border bg-muted/10 p-4" ref={scrollAreaRef}>
-      {notes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full space-y-2">
-          <MessageSquare className="w-8 h-8 text-muted-foreground" />
-          <p className="text-muted-foreground text-center">No messages yet. Start the conversation!</p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {notes.map((note) => (
-            <div
-              key={`${note.id}-${note.created_at}`}
-              className={`group flex flex-col ${note.user_id === currentUser?.id ? "items-end" : "items-start"}`}
-            >
-              <div className="flex items-end gap-2">
-                {note.user_id !== currentUser?.id && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <LucideUser className="w-4 h-4 text-primary" />
+        {/* Messages section with improved styling */}
+        {(ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <MessageSquare className="w-5 h-5 text-primary" />
+                <Label className="font-semibold">Messages</Label>
+              </div>
+              {notes.length > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  {notes.length} {notes.length === 1 ? "message" : "messages"}
+                </Badge>
+              )}
+            </div>
+
+            <div className="rounded-lg border bg-card">
+              <ScrollArea className="h-[400px] px-4 pt-4" ref={scrollAreaRef}>
+                {notes.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-[350px] space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center">
+                      <MessageSquare className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-muted-foreground text-center">No messages yet</p>
+                    <p className="text-xs text-muted-foreground text-center">Messages between you and other participants will appear here</p>
+                  </div>
+                ) : (
+                  <div className="pb-4">
+                    {notes.reduce((acc: JSX.Element[], note, index) => {
+                      const currentDate = new Date(note.created_at).toLocaleDateString()
+                      const previousDate = index > 0 ? new Date(notes[index - 1].created_at).toLocaleDateString() : null
+
+                      // Add date separator
+                      if (currentDate !== previousDate) {
+                        acc.push(
+                          <div key={`date-separator-${currentDate}-${index}`} className="relative flex py-3 my-2">
+                            <div className="flex-grow border-t border-muted"></div>
+                            <span className="flex-shrink mx-4 text-xs font-medium text-muted-foreground">
+                              {currentDate === new Date().toLocaleDateString() ? 'Today' : currentDate}
+                            </span>
+                            <div className="flex-grow border-t border-muted"></div>
+                          </div>
+                        )
+                      }
+
+                      // Check if this is a consecutive message from the same user
+                      const isConsecutive = index > 0 && notes[index - 1].user_id === note.user_id
+
+                      const isCurrentUser = note.user_id === currentUser?.id;
+
+                      // Check if this starts a new message group
+                      const isNewGroup = !isConsecutive || currentDate !== previousDate;
+
+                      acc.push(
+                        <div
+                          key={`message-${note.id}-${index}`}
+                          className={`group flex flex-col ${isCurrentUser ? "items-end" : "items-start mb-1"} ${isNewGroup ? "mt-3" : "mt-0.5"}`}
+                        >
+                          {/* Show name only if it's not a consecutive message */}
+                          {!isConsecutive && !isCurrentUser && (
+                            <span className="text-xs font-medium text-muted-foreground ml-10 mb-1">
+                              {getUserName(note.user_id)}
+                            </span>
+                          )}
+
+                          <div className="flex items-end gap-2 max-w-[85%]">
+                            {!isCurrentUser && (
+                              <div className={`flex-shrink-0 ${isConsecutive ? "invisible" : "visible"} w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center`}>
+                                <LucideUser className="w-4 h-4 text-primary" />
+                              </div>
+                            )}
+
+                            <div
+                              className={`px-4 py-2 shadow-sm
+                        ${isCurrentUser
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-secondary text-secondary-foreground"
+                                }
+                        ${isConsecutive
+                                  ? (isCurrentUser
+                                    ? "rounded-lg rounded-tr-sm"
+                                    : "rounded-lg rounded-tl-sm")
+                                  : (isCurrentUser
+                                    ? "rounded-2xl rounded-br-none"
+                                    : "rounded-2xl rounded-bl-none")
+                                }
+                      `}
+                            >
+                              {editingNoteId === note.id ? (
+                                <div className="space-y-2 w-full">
+                                  <Textarea
+                                    value={editedNoteContent}
+                                    onChange={(e) => setEditedNoteContent(e.target.value)}
+                                    className="bg-background resize-none"
+                                    placeholder="Edit your message..."
+                                  />
+                                  <div className="flex justify-end gap-2 mt-2">
+                                    <Button
+                                      onClick={() => setEditingNoteId(null)}
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={!isOnline}
+                                      className="h-8 px-3"
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      onClick={handleSaveEdit}
+                                      size="sm"
+                                      disabled={!isOnline || !editedNoteContent.trim()}
+                                      className="h-8 px-3"
+                                    >
+                                      Save changes
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="text-sm whitespace-pre-wrap break-words">{note.note}</p>
+                                  <div className={`flex items-center text-xs opacity-70 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+                                    <span>
+                                      {new Date(note.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      {note.is_edited && " • edited"}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {isCurrentUser && (
+                              <div className={`flex-shrink-0 ${isConsecutive ? "invisible" : "visible"} w-8 h-8 rounded-full bg-primary flex items-center justify-center`}>
+                                <LucideUser className="w-4 h-4 text-primary-foreground" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Message actions */}
+                          {isCurrentUser && !editingNoteId && (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 flex gap-1">
+                              <Button
+                                onClick={() => handleEditNote(note.id)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0 rounded-full"
+                                disabled={!isOnline}
+                              >
+                                <Edit className="h-3 w-3" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteNote(note.id)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0 rounded-full text-destructive"
+                                disabled={!isOnline}
+                              >
+                                <Trash className="h-3 w-3" />
+                                <span className="sr-only">Delete</span>
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                      return acc
+                    }, [])}
                   </div>
                 )}
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2 shadow-sm
-                    ${note.user_id === currentUser?.id 
-                      ? "bg-primary text-primary-foreground rounded-br-none" 
-                      : "bg-secondary text-secondary-foreground rounded-bl-none"
-                    }`}
-                >
-                  {editingNoteId === note.id ? (
-                    <div className="space-y-2">
-                      <Input
-                        value={editedNoteContent}
-                        onChange={(e) => setEditedNoteContent(e.target.value)}
-                        className="min-w-[200px]"
-                      />
-                      <div className="flex gap-2">
-                        <Button onClick={handleSaveEdit} size="sm" disabled={!isOnline}>
-                          Save
-                        </Button>
-                        <Button onClick={() => setEditingNoteId(null)} size="sm" variant="outline" disabled={!isOnline}>
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm whitespace-pre-wrap break-words">{note.note}</p>
+              </ScrollArea>
+
+              {/* Message input area with improved styling */}
+              {(ride.status === "accepted" || ride.status === "completed") && (
+                <div className="border-t p-3">
+                  <div className="flex items-center gap-2">
+                    <Textarea
+                      value={newNote}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      onKeyDown={(e) => handleAddNote(e)}
+                      placeholder="Type your message..."
+                      className="flex-grow bg-background border-muted resize-none overflow-hidden"
+                      rows={1}
+                      onInput={(e) => {
+                        e.currentTarget.style.height = "auto";
+                        e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
+                      }}
+                      disabled={!isOnline}
+                    />
+                    <Button
+                      onClick={() => handleAddNote()}
+                      size="icon"
+                      disabled={!isOnline || !newNote.trim()}
+                      className="h-10 w-10 shrink-0 rounded-full"
+                    >
+                      <Send className="h-4 w-4" />
+                      <span className="sr-only">Send message</span>
+                    </Button>
+                  </div>
+                  {!isOnline && (
+                    <p className="mt-2 text-xs text-destructive">
+                      You&apos;re offline. Messages will be sent when you reconnect.
+                    </p>
                   )}
                 </div>
-                {note.user_id === currentUser?.id && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                    <LucideUser className="w-4 h-4 text-primary-foreground" />
-                  </div>
-                )}
-              </div>
-              <div className={`flex items-center gap-2 mt-1 px-10 ${note.user_id === currentUser?.id ? "justify-end" : "justify-start"}`}>
-                <span className="text-xs text-muted-foreground">
-                  {getUserName(note.user_id)} • {new Date(note.created_at).toLocaleString()}
-                  {note.is_edited && " • edited"}
-                </span>
-                {note.user_id === currentUser?.id && !editingNoteId && (
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      onClick={() => handleEditNote(note.id)}
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0"
-                      disabled={!isOnline}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      onClick={() => handleDeleteNote(note.id)}
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0"
-                    >
-                      <Trash className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-          ))}
-        </div>
-      )}
-    </ScrollArea>
-    {(ride.status === "accepted" || ride.status === "completed") && (
-      <div className="flex items-center gap-2 pt-2">
-        <Input
-          value={newNote}
-          onChange={(e) => setNewNote(e.target.value)}
-          onKeyPress={(e) => handleAddNote(e)}
-          placeholder="Type your message..."
-          className="flex-grow"
-          disabled={!isOnline}
-        />
-        <Button 
-          onClick={() => handleAddNote()} 
-          size="icon" 
-          disabled={!isOnline || !newNote.trim()}
-          className="h-10 w-10 shrink-0"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
-      </div>
-    )}
-  </div>
-)}
+          </div>
+        )}
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row gap-2">
         {ride.status === "pending" && ride.requester_id === currentUser?.id && (
@@ -708,15 +807,15 @@ export default function RideDetailsPage({
       <Dialog open={isDeleteNoteDialogOpen} onOpenChange={setIsDeleteNoteDialogOpen}>
         <DialogContent className="rounded-lg w-11/12">
           <DialogHeader>
-            <DialogTitle>Confirm Delete Note</DialogTitle>
-            <DialogDescription>Are you sure you want to delete this note?</DialogDescription>
+            <DialogTitle>Confirm Delete Message</DialogTitle>
+            <DialogDescription>Are you sure you want to delete this message?</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button className="mb-2" variant="outline" onClick={() => setIsDeleteNoteDialogOpen(false)}>
-              Cancel
+              No, Keep Message
             </Button>
             <Button className="mb-2" variant="destructive" onClick={confirmDeleteNote}>
-              Yes, Delete Note
+              Yes, Delete Message
             </Button>
           </DialogFooter>
         </DialogContent>
