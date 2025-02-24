@@ -6,7 +6,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
-import oldCarImage from '@/components/images/oldcar.png';
+import oldCarImage from '@/components/images/oldcar.jpg';
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"

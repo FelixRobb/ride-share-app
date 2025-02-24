@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import { Loader2, ArrowRight, Mail, Phone } from "lucide-react"
 import { signIn, useSession } from "next-auth/react"
 import PhoneInput from "react-phone-number-input"
-import oldCarImage from '@/components/images/oldcar.png';
+import oldCarImage from '@/components/images/oldcar.jpg';
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
