@@ -249,7 +249,6 @@ export default function LoginPage({ quote }: LoginPageProps) {
                       <Label htmlFor="password">Password</Label>
                       <PasswordInput
                         id="password"
-                        type="password"
                         placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}

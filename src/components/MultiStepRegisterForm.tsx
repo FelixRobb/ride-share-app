@@ -160,7 +160,6 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
               <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <PasswordInput
                 id="password"
-                type="password"
                 placeholder="Create a password"
                 value={formData.password}
                 onChange={(e) => updateFormData("password", e.target.value)}
@@ -175,7 +174,6 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
               <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <PasswordInput
                 id="confirmPassword"
-                type="password"
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={(e) => updateFormData("confirmPassword", e.target.value)}
