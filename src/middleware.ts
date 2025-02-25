@@ -47,6 +47,8 @@ const publicFiles = [
   "/service-worker.js",
   "/wide-pwa.png",
   "/narrow-pwa.png",
+  "/twitter-image.png",
+  "/og-image.png"
 ]
 
 // List of admin routes that require admin authentication
