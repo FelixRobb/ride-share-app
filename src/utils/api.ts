@@ -265,38 +265,6 @@ export const markNotificationsAsRead = async (userId: string, notificationIds: s
   }
 };
 
-export const fetchUserData = async (userId: string, etag: string | null) => {
-  const headers: HeadersInit = {};
-  if (etag) {
-    headers["If-None-Match"] = etag;
-  }
-
-  const response = await fetch(`/api/user-data?userId=${userId}`, { headers });
-
-  if (response.status === 304) {
-    // Data hasn't changed
-    return null;
-  }
-
-  if (response.ok) {
-    const newEtag = response.headers.get("ETag");
-    const data = await response.json();
-    return { data, newEtag };
-  } else {
-    throw new Error("Failed to fetch user data");
-  }
-};
-
-export const fetchRideDetails = async (userId: string, rideId: string): Promise<Ride> => {
-  const response = await fetch(`/api/rides/${rideId}?userId=${userId}`);
-  if (response.ok) {
-    const data = await response.json();
-    return data.ride;
-  } else {
-    throw new Error("Failed to fetch ride details, or you don't have permission to see this ride. Please go back.");
-  }
-};
-
 export const finishRide = async (rideId: string, userId: string) => {
   const response = await fetch(`/api/rides/${rideId}/finish`, {
     method: "POST",

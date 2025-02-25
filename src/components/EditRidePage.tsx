@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { parsePhoneNumber } from "libphonenumber-js"
 import { motion } from "framer-motion"
 import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight, X } from "lucide-react"

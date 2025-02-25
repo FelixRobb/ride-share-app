@@ -201,7 +201,7 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
         headers["If-None-Match"] = etag
       }
 
-      const response = await fetch(`/api/notifications?userId=${userId}`, { headers })
+      const response = await fetch(`/api/notifications`, { headers })
 
       if (response.status === 304) {
         return null // Data hasn't changed
@@ -217,7 +217,7 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
         }
       }
     }
-  }, [userId, etag, isOnline])
+  }, [etag, isOnline])
 
   useEffect(() => {
     if (isOnline) {
