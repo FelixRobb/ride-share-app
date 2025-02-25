@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Label } from "@/components/ui/label"
 
 import "react-phone-number-input/style.css"
@@ -222,7 +222,7 @@ export default function LoginPage({ quote }: LoginPageProps) {
                     {loginMethod === "email" ? (
                       <div className="space-y-1">
                         <Label htmlFor="email">Email</Label>
-                        <Input
+                        <PasswordInput
                           id="email"
                           type="email"
                           placeholder="Enter your email"
