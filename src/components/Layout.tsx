@@ -131,7 +131,7 @@ export default function Layout({ children }: LayoutProps) {
 
        <footer className="bg-background text-center text-sm text-zinc-500 block mb-20 md:mb-6">
   <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
-  
+
   <div className="mt-3 flex flex-wrap justify-center gap-4">
     {[
       { href: "/privacy-policy", label: "Privacy Policy" },
@@ -151,15 +151,7 @@ export default function Layout({ children }: LayoutProps) {
   </div>
 
   <div className="mt-4">
-    <Button 
-      variant="outline" 
-      size="sm" 
-      className="px-4 py-2 border border-border rounded-lg text-foreground hover:bg-accent transition-all"
-      onClick={useTutorial().restartTutorial}
-    >
-      <HelpCircle className="mr-2 h-4 w-4" />
-      Restart Tutorial
-    </Button>
+    <TutorialButton />
   </div>
 </footer>
           </TutorialProvider>
