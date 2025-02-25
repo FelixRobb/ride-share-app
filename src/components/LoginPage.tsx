@@ -223,7 +223,7 @@ export default function LoginPage({ quote }: LoginPageProps) {
                     {loginMethod === "email" ? (
                       <div className="space-y-1">
                         <Label htmlFor="email">Email</Label>
-                        <PasswordInput
+                        <Input
                           id="email"
                           type="email"
                           placeholder="Enter your email"
@@ -247,7 +247,7 @@ export default function LoginPage({ quote }: LoginPageProps) {
                     )}
                     <div className="space-y-1">
                       <Label htmlFor="password">Password</Label>
-                      <Input
+                      <PasswordInput
                         id="password"
                         type="password"
                         placeholder="Enter your password"
