@@ -129,24 +129,39 @@ export default function Layout({ children }: LayoutProps) {
               </div>
             </nav>
 
-            <footer className="bg-background text-center text-sm text-zinc-500 block mb-20 md:mb-6">
-              <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
-              <div className="mt-2 space-x-4">
-                <Link href="/privacy-policy" className="hover:text-orange-500 transition-colors duration-300">
-                  Privacy Policy
-                </Link>
-                <Link href="/terms-of-service" className="hover:text-orange-500 transition-colors duration-300">
-                  Terms of Service
-                </Link>
-                <Link
-                  href="https://github.com/FelixRobb/ride-share-app"
-                  className="hover:text-orange-500 transition-colors duration-300"
-                >
-                  Source code on github
-                </Link>
-              </div>
-              <TutorialButton />
-            </footer>
+       <footer className="bg-background text-center text-sm text-zinc-500 block mb-20 md:mb-6">
+  <p>&copy; {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
+  
+  <div className="mt-3 flex flex-wrap justify-center gap-4">
+    {[
+      { href: "/privacy-policy", label: "Privacy Policy" },
+      { href: "/terms-of-service", label: "Terms of Service" },
+      { href: "/about", label: "Learn more" },
+      { href: "/faq", label: "FAQ" },
+      { href: "https://github.com/FelixRobb/ride-share-app", label: "GitHub" },
+    ].map(({ href, label }) => (
+      <Link 
+        key={href} 
+        href={href} 
+        className="text-muted-foreground hover:text-primary transition-colors duration-300 underline-offset-4 hover:underline"
+      >
+        {label}
+      </Link>
+    ))}
+  </div>
+
+  <div className="mt-4">
+    <Button 
+      variant="outline" 
+      size="sm" 
+      className="px-4 py-2 border border-border rounded-lg text-foreground hover:bg-accent transition-all"
+      onClick={useTutorial().restartTutorial}
+    >
+      <HelpCircle className="mr-2 h-4 w-4" />
+      Restart Tutorial
+    </Button>
+  </div>
+</footer>
           </TutorialProvider>
         </div>
       )}
