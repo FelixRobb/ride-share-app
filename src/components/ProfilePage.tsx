@@ -18,6 +18,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
@@ -628,9 +629,8 @@ export default function ProfilePage({
             <div className="grid w-full items-center gap-4 py-2">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="current-password">Current Password</Label>
-                <Input
+                <PasswordInput
                   id="current-password"
-                  type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
@@ -638,9 +638,8 @@ export default function ProfilePage({
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="new-password">New Password</Label>
-                <Input
+                <PasswordInput
                   id="new-password"
-                  type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
@@ -648,9 +647,8 @@ export default function ProfilePage({
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="confirm-new-password">Confirm New Password</Label>
-                <Input
+                <PasswordInput
                   id="confirm-new-password"
-                  type="password"
                   value={confirmNewPassword}
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
                   required
