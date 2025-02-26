@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/db";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user || !session.user.id) {
       return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
     }
+
+    const userId = session.user.id;
 
     const rideId = req.nextUrl.searchParams.get("rideId");
 
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
       .from("rides")
       .select("*")
       .eq("id", rideId)
-      .eq("requester_id", user.id)
+      .eq("requester_id", userId)
       .single();
 
     if (error) {
