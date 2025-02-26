@@ -47,6 +47,12 @@ export default function LogoutPage() {
         }
         await unregisterServiceWorker()
 
+        // Clear specific data from localStorage
+        localStorage.removeItem("tutorialstep")
+        localStorage.removeItem("rideData")
+        localStorage.removeItem("theme")
+        localStorage.removeItem("pushNotificationDeclined")
+
         // Sign out using NextAuth
         await signOut({ redirect: false })
 

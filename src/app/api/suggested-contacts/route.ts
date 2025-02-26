@@ -3,7 +3,7 @@ import { supabase } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 
-export async function GET(request: Request) {
+export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user || !session.user.id) {
     return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {

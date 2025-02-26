@@ -88,60 +88,57 @@ const tutorialSteps: TutorialStep[] = [
     key: "profile-overview",
     page: "/profile",
     step: 7,
-    title: "Your Profile",
-    content: "This is your profile page. Here you can view and manage your personal information and account settings.",
-    target: "[data-tutorial='profile-info']",
+    title: "Profile Overview",
+    content: "Welcome to your profile page! Here you can manage all your personal information, security settings, contacts, and app preferences.",
+    target: "[data-tutorial='profile-header']"
   },
   {
-    key: "edit-profile",
+    key: "personal-info",
     page: "/profile",
     step: 8,
-    title: "Edit Profile Information",
-    content: "Use these buttons to edit your profile information or change your password.",
-    target: "[data-tutorial='edit-profile']",
+    title: "Personal Information",
+    content: "View and edit your personal details including name, email, and phone number. Click 'Edit Profile' to make changes.",
+    target: "[data-tutorial='personal-info']"
   },
   {
-    key: "contacts-section",
+    key: "activity-stats",
     page: "/profile",
     step: 9,
-    title: "Managing Contacts",
-    content:
-      "In the Contacts section, you can add new contacts, accept requests, and manage your existing contacts. Building your network is key to getting the most out of RideShare.",
-    target: "[data-tutorial='contacts-section']",
-  },
-  {
-    key: "push-notifications",
-    page: "/profile",
-    step: 10,
-    title: "Push Notification Settings",
-    content:
-      "Control your push notification preferences here. Enable this to receive updates even when you're not using the app.",
-    target: "[data-tutorial='notification-settings']",
+    title: "Activity Statistics",
+    content: "Track your platform activity here. See how many rides you've offered and requested over time.",
+    target: "[data-tutorial='activity-stats']"
   },
   {
     key: "associated-people",
     page: "/profile",
-    step: 11,
+    step: 10,
     title: "Associated People",
-    content:
-      "Add and manage associated people here. This is useful for setting up rides for family members or friends who don't have a RideShare account.",
-    target: "[data-tutorial='associated-people']",
+    content: "Manage people associated with your account. Add family members or friends you frequently arrange rides for.",
+    target: "[data-tutorial='associated-people']"
   },
   {
-    key: "user-stats",
+    key: "contact-management",
+    page: "/profile",
+    step: 11,
+    title: "Contact Management",
+    content: "View and manage your contacts in the Contacts tab. Add new contacts and manage existing ones to build your trusted network.",
+    target: "[data-tutorial='contacts-tab']"
+  },
+  {
+    key: "security-settings",
     page: "/profile",
     step: 12,
-    title: "Your RideShare Statistics",
-    content: "View your RideShare statistics here, including the number of rides you've offered and requested.",
-    target: "[data-tutorial='profile-stats']",
+    title: "Security Settings",
+    content: "Access the Security tab to change your password and manage notification preferences to keep your account secure.",
+    target: "[data-tutorial='security-tab']"
   },
   {
-    key: "account-actions",
+    key: "app-settings",
     page: "/profile",
     step: 13,
-    title: "Account Actions",
-    content: "Here you can log out of your account or delete it if necessary. Be careful with the delete option!",
-    target: "[data-tutorial='account-actions']",
+    title: "App Settings",
+    content: "Customize your app experience in the Settings tab. Choose your preferred theme and check your connection status.",
+    target: "[data-tutorial='settings-tab']"
   },
   {
     key: "create-ride-page",

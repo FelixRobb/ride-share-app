@@ -17,20 +17,33 @@ export async function GET(req: NextRequest) {
     const rideId = req.nextUrl.searchParams.get("rideId");
 
     if (!rideId) {
-      return new NextResponse(JSON.stringify({ error: "Ride ID is required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new NextResponse(
+        JSON.stringify({ error: "Ride ID is required" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
-    const { data: ride, error } = await supabase.from("rides").select("*").eq("id", rideId).eq("requester_id", user.id).single();
+    const { data: ride, error } = await supabase
+      .from("rides")
+      .select("*")
+      .eq("id", rideId)
+      .eq("requester_id", user.id)
+      .single();
 
     if (error) {
       if (error.code === "PGRST116") {
-        return new NextResponse(JSON.stringify({ error: "Ride not found or you don't have permission to edit" }), {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        });
+        return new NextResponse(
+          JSON.stringify({
+            error: "Ride not found or you don't have permission to edit",
+          }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
       throw error;
     }
@@ -39,11 +52,13 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
-  } catch (error) {
-    console.error("Error fetching edit ride data:", error);
-    return new NextResponse(JSON.stringify({ error: "Internal Server Error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+  } catch {
+    return new NextResponse(
+      JSON.stringify({ error: "Internal Server Error" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }

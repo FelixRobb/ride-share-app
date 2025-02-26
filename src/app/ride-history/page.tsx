@@ -40,12 +40,6 @@ import Link from "next/link";
 
 const ITEMS_PER_PAGE = 10;
 
-// Define a type for status badge configuration
-interface StatusBadgeConfig {
-  variant: "default" | "destructive" | "secondary" | "outline";
-  className: string;
-}
-
 export default function RideHistoryPage() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,16 +68,9 @@ export default function RideHistoryPage() {
       setRides(data.rides);
       setTotalPages(data.totalPages);
       setCurrentPage(data.page); // Use the page returned from the API
-    } catch (error) {
-      // Replace console.error with a safer alternative
-      // Option 1: Use a logging service
-      // logger.error("Error fetching rides:", error);
-
-      // Option 2: Handle the error silently or with user feedback
+    } catch {
       setRides([]);
       setTotalPages(0);
-      // You could also set an error state to show a message to the user
-      // setError("Failed to fetch rides. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -137,33 +124,27 @@ export default function RideHistoryPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, StatusBadgeConfig> = {
-      completed: {
-        variant: "default",
-        className: "bg-green-100 text-green-800 hover:bg-green-200",
-      },
-      cancelled: {
-        variant: "destructive",
-        className: "bg-red-100 text-red-800 hover:bg-red-200",
-      },
-      pending: {
-        variant: "secondary",
-        className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
-      },
-      accepted: {
-        variant: "outline",
-        className: "bg-blue-100 text-blue-800 hover:bg-blue-200",
-      },
-    };
-
-    const config = variants[status] || variants.pending;
-
-    return (
-      <Badge variant={config.variant} className={config.className}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
+    switch (status) {
+      case "pending":
+        return <Badge variant="secondary">Pending</Badge>
+      case "accepted":
+        return (
+          <Badge variant="default" className="bg-green-500">
+            Accepted
+          </Badge>
+        )
+      case "cancelled":
+        return <Badge variant="destructive">Cancelled</Badge>
+      case "completed":
+        return (
+          <Badge variant="default" className="bg-blue-500">
+            Completed
+          </Badge>
+        )
+      default:
+        return null
+    }
+  }
 
   const RideCard = ({ ride }: { ride: Ride }) => {
     const { date, time } = formatDateTime(ride.time);

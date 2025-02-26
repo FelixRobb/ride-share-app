@@ -261,7 +261,7 @@ export default function ProfilePage({
   return (
     <div className="w-full max-w-4xl mx-auto pb-8">
       {/* Profile header with avatar */}
-      <div className="mb-6 flex flex-col items-center sm:flex-row sm:justify-between">
+      <div className="mb-6 flex flex-col items-center sm:flex-row sm:justify-between" data-tutorial="profile-header">
         <div className="flex items-center gap-4 mb-4 sm:mb-0">
           <Avatar className="h-16 w-16 border-2 border-primary">
             <AvatarFallback className="bg-primary/10 text-primary text-xl font-medium">
@@ -289,14 +289,14 @@ export default function ProfilePage({
       <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-4 mb-6">
           <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="contacts">Contacts</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="security" data-tutorial="security-tab">Security</TabsTrigger>
+          <TabsTrigger value="contacts" data-tutorial="contacts-tab">Contacts</TabsTrigger>
+          <TabsTrigger value="settings" data-tutorial="settings-tab">Settings</TabsTrigger>
         </TabsList>
 
         {/* Profile Tab */}
         <TabsContent value="profile" className="space-y-6">
-          <Card>
+          <Card data-tutorial="personal-info">
             <CardHeader className="pb-3">
               <CardTitle className="text-xl flex items-center">
                 <LucideUser className="h-5 w-5 mr-2 text-primary" /> Personal Information
@@ -323,7 +323,7 @@ export default function ProfilePage({
             </CardFooter>
           </Card>
 
-          <Card>
+          <Card data-tutorial="activity-stats">
             <CardHeader className="pb-3">
               <CardTitle className="text-xl flex items-center">
                 <Car className="h-5 w-5 mr-2 text-primary" /> Activity Statistics
@@ -344,7 +344,7 @@ export default function ProfilePage({
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-tutorial="associated-people">
             <CardHeader className="pb-3">
               <CardTitle className="text-xl flex items-center">
                 <UserPlus className="h-5 w-5 mr-2 text-primary" /> Associated People
@@ -453,7 +453,7 @@ export default function ProfilePage({
             </CardContent>
           </Card>
 
-          <Card className="border-destructive/20">
+          <Card className="border-destructive/20" data-tutorial="danger-zone">
             <CardHeader className="pb-3">
               <CardTitle className="text-xl flex items-center text-destructive">
                 <UserX className="h-5 w-5 mr-2" /> Danger Zone
