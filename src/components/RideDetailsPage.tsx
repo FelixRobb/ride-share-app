@@ -67,6 +67,8 @@ interface RideDetailsPageProps {
   contacts: Contact[];
 }
 
+const MAX_MESSAGE_LENGTH = 1000; // Set the maximum message length
+
 export default function RideDetailsPage({
   ride: initialRide,
   currentUser,
@@ -91,6 +93,7 @@ export default function RideDetailsPage({
   const isOnline = useOnlineStatus();
   const [isDeleteNoteDialogOpen, setIsDeleteNoteDialogOpen] = useState(false);
   const [noteToDeleteId, setNoteToDeleteId] = useState<string | null>(null);
+  const [messageLength, setMessageLength] = useState(0); // New state for message length
 
   const scrollToBottom = useCallback(() => {
     if (typeof window !== "undefined" && scrollAreaRef.current) {
@@ -239,21 +242,55 @@ export default function RideDetailsPage({
     buildMap();
   }, [ride, map]);
 
-  const handleAddNote = async (
-    e?: React.KeyboardEvent<HTMLTextAreaElement>
-  ) => {
-    if (e && e.key !== "Enter") return;
-    if (newNote.trim() && currentUser) {
-      try {
-        const addedNote = await addNote(ride.id, currentUser.id, newNote);
-        if (addedNote) {
-          setNotes((prevNotes) => [...prevNotes, addedNote]);
-          setNewNote("");
-          scrollToBottom();
-          toast.success("Message sent successfully.");
+  const handleAddNote = async (e?: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e) {
+      // Send on Ctrl+Enter or Cmd+Enter
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        if (newNote.trim() && currentUser) {
+          try {
+            const addedNote = await addNote(ride.id, currentUser.id, newNote);
+            if (addedNote) {
+              setNotes((prevNotes) => [...prevNotes, addedNote]);
+              setNewNote("");
+              setMessageLength(0); // Reset message length
+              scrollToBottom();
+              // Reset the height of the textarea
+              if (scrollAreaRef.current) {
+                const textarea = scrollAreaRef.current.querySelector('textarea');
+                if (textarea) {
+                  textarea.style.height = 'auto'; // Reset height
+                }
+              }
+              toast.success("Message sent successfully.");
+            }
+          } catch {
+            toast.error("Failed to send message. Please try again.");
+          }
         }
-      } catch {
-        toast.error("Failed to send message. Please try again.");
+      }
+    } else {
+      // Handle button click submit
+      if (newNote.trim() && currentUser) {
+        try {
+          const addedNote = await addNote(ride.id, currentUser.id, newNote);
+          if (addedNote) {
+            setNotes((prevNotes) => [...prevNotes, addedNote]);
+            setNewNote("");
+            setMessageLength(0); // Reset message length
+            scrollToBottom();
+            // Reset the height of the textarea
+            if (scrollAreaRef.current) {
+              const textarea = scrollAreaRef.current.querySelector('textarea');
+              if (textarea) {
+                textarea.style.height = 'auto'; // Reset height
+              }
+            }
+            toast.success("Message sent successfully.");
+          }
+        } catch {
+          toast.error("Failed to send message. Please try again.");
+        }
       }
     }
   };
@@ -571,10 +608,10 @@ export default function RideDetailsPage({
                 {ride.accepter_id === currentUser?.id
                   ? "Me"
                   : contacts.find(
-                      (c) =>
-                        c.user_id === ride.accepter_id ||
-                        c.contact_id === ride.accepter_id
-                    )?.contact?.name || "Unknown"}
+                    (c) =>
+                      c.user_id === ride.accepter_id ||
+                      c.contact_id === ride.accepter_id
+                  )?.contact?.name || "Unknown"}
               </p>
             </div>
           )}
@@ -583,279 +620,277 @@ export default function RideDetailsPage({
         {(ride.status === "accepted" ||
           ride.status === "cancelled" ||
           ride.status === "completed") && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <MessageSquare className="w-5 h-5 text-primary" />
-                <Label className="font-semibold">Messages</Label>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <MessageSquare className="w-5 h-5 text-primary" />
+                  <Label className="font-semibold">Messages</Label>
+                </div>
+                {notes.length > 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    {notes.length} {notes.length === 1 ? "message" : "messages"}
+                  </Badge>
+                )}
               </div>
-              {notes.length > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  {notes.length} {notes.length === 1 ? "message" : "messages"}
-                </Badge>
-              )}
-            </div>
 
-            <div className="rounded-lg border bg-card">
-              <ScrollArea className="h-[400px] px-4 pt-4" ref={scrollAreaRef}>
-                {notes.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-[350px] space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center">
-                      <MessageSquare className="w-6 h-6 text-muted-foreground" />
+              <div className="rounded-lg border bg-card">
+                <ScrollArea className="h-[400px] px-4 pt-4" ref={scrollAreaRef}>
+                  {notes.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-[350px] space-y-3">
+                      <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center">
+                        <MessageSquare className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-muted-foreground text-center">
+                        No messages yet
+                      </p>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Messages between you and other participants will appear
+                        here
+                      </p>
                     </div>
-                    <p className="text-muted-foreground text-center">
-                      No messages yet
-                    </p>
-                    <p className="text-xs text-muted-foreground text-center">
-                      Messages between you and other participants will appear
-                      here
-                    </p>
-                  </div>
-                ) : (
-                  <div className="pb-4">
-                    {notes.reduce((acc: JSX.Element[], note, index) => {
-                      const currentDate = new Date(
-                        note.created_at
-                      ).toLocaleDateString();
-                      const previousDate =
-                        index > 0
-                          ? new Date(
+                  ) : (
+                    <div className="pb-4">
+                      {notes.reduce((acc: JSX.Element[], note, index) => {
+                        const currentDate = new Date(
+                          note.created_at
+                        ).toLocaleDateString();
+                        const previousDate =
+                          index > 0
+                            ? new Date(
                               notes[index - 1].created_at
                             ).toLocaleDateString()
-                          : null;
-                      const nextNote =
-                        index < notes.length - 1 ? notes[index + 1] : null;
+                            : null;
+                        const nextNote =
+                          index < notes.length - 1 ? notes[index + 1] : null;
 
-                      // Add date separator
-                      if (currentDate !== previousDate) {
-                        acc.push(
-                          <div
-                            key={`date-separator-${currentDate}-${index}`}
-                            className="relative flex py-3 my-2"
-                          >
-                            <div className="flex-grow border-t border-muted"></div>
-                            <span className="flex-shrink mx-4 text-xs font-medium text-muted-foreground">
-                              {currentDate === new Date().toLocaleDateString()
-                                ? "Today"
-                                : currentDate}
-                            </span>
-                            <div className="flex-grow border-t border-muted"></div>
-                          </div>
-                        );
-                      }
+                        // Add date separator
+                        if (currentDate !== previousDate) {
+                          acc.push(
+                            <div
+                              key={`date-separator-${currentDate}-${index}`}
+                              className="relative flex py-3 my-2"
+                            >
+                              <div className="flex-grow border-t border-muted"></div>
+                              <span className="flex-shrink mx-4 text-xs font-medium text-muted-foreground">
+                                {currentDate === new Date().toLocaleDateString()
+                                  ? "Today"
+                                  : currentDate}
+                              </span>
+                              <div className="flex-grow border-t border-muted"></div>
+                            </div>
+                          );
+                        }
 
-                      const isCurrentUser = note.user_id === currentUser?.id;
+                        const isCurrentUser = note.user_id === currentUser?.id;
 
-                      // Check if this message is at the end of a consecutive group from the same user
-                      const isLastInGroup =
-                        !nextNote ||
-                        nextNote.user_id !== note.user_id ||
-                        new Date(nextNote.created_at).toLocaleDateString() !==
+                        // Check if this message is at the end of a consecutive group from the same user
+                        const isLastInGroup =
+                          !nextNote ||
+                          nextNote.user_id !== note.user_id ||
+                          new Date(nextNote.created_at).toLocaleDateString() !==
                           currentDate;
 
-                      // Check if this is part of a message group
-                      const isFirstInGroup =
-                        index === 0 ||
-                        notes[index - 1].user_id !== note.user_id ||
-                        currentDate !== previousDate;
+                        // Check if this is part of a message group
+                        const isFirstInGroup =
+                          index === 0 ||
+                          notes[index - 1].user_id !== note.user_id ||
+                          currentDate !== previousDate;
 
-                      acc.push(
-                        <div
-                          key={`message-${note.id}-${index}`}
-                          className={`group relative flex flex-col ${isCurrentUser ? "items-end" : "items-start"} 
+                        acc.push(
+                          <div
+                            key={`message-${note.id}-${index}`}
+                            className={`group relative flex flex-col ${isCurrentUser ? "items-end" : "items-start"} 
                  ${isFirstInGroup ? "mt-4" : "mt-3"} 
                  ${!isLastInGroup ? "mb-3" : "mb-4"}`}
-                        >
-                          {/* Show name only for first message in a group when it's not current user */}
-                          {isFirstInGroup && !isCurrentUser && (
-                            <span className="text-xs font-medium text-muted-foreground ml-10 mb-1">
-                              {getUserName(note.user_id)}
-                            </span>
-                          )}
-
-                          <div className="flex items-end gap-2 max-w-[85%]">
-                            {/* Only show icon if this is the last message in a consecutive group */}
-                            {!isCurrentUser && !isLastInGroup && (
-                              <div className="w-8 h-8 invisible">
-                                <span className="sr-only">User</span>
-                              </div>
+                          >
+                            {/* Show name only for first message in a group when it's not current user */}
+                            {isFirstInGroup && !isCurrentUser && (
+                              <span className="text-xs font-medium text-muted-foreground ml-10 mb-1">
+                                {getUserName(note.user_id)}
+                              </span>
                             )}
 
-                            {/* Message content with hover-activated action buttons for current user */}
-                            <div className="relative">
-                              <div
-                                className={`px-4 py-2 shadow-sm
-              ${
-                isCurrentUser
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground"
-              }
-              ${
-                !isFirstInGroup && !isLastInGroup
-                  ? "rounded-lg"
-                  : isFirstInGroup && !isLastInGroup
-                    ? isCurrentUser
-                      ? "rounded-lg rounded-br-none"
-                      : "rounded-lg rounded-bl-none"
-                    : !isFirstInGroup && isLastInGroup
-                      ? isCurrentUser
-                        ? "rounded-lg rounded-tr-sm"
-                        : "rounded-lg rounded-tl-sm"
-                      : isCurrentUser
-                        ? "rounded-2xl rounded-br-none"
-                        : "rounded-2xl rounded-bl-none"
-              }
+                            <div className="flex items-end gap-2 max-w-[85%]">
+                              {/* Show user icon only at the bottom of a group for non-current users, but on the LEFT side */}
+                              {!isCurrentUser && isLastInGroup && (
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <LucideUser className="w-4 h-4 text-primary" />
+                                </div>
+                              )}
+
+                              {/* Invisible spacer to maintain alignment for non-last messages from non-current users */}
+                              {!isCurrentUser && !isLastInGroup && (
+                                <div className="w-8 h-8 invisible">
+                                  <span className="sr-only">Other User</span>
+                                </div>
+                              )}
+
+                              {/* Message content with hover-activated action buttons for current user */}
+                              <div className="relative">
+                                <div
+                                  className={`px-4 py-2 shadow-sm
+              ${isCurrentUser
+                                      ? "bg-primary text-primary-foreground rounded-lg rounded-br-none" // All current user messages have bottom-right pointy corner
+                                      : "bg-secondary text-secondary-foreground rounded-lg rounded-bl-none" // All other user messages have bottom-left pointy corner
+                                    }
             `}
-                              >
-                                {editingNoteId === note.id ? (
-                                  <div className="space-y-2 w-full">
-                                    <Textarea
-                                      value={editedNoteContent}
-                                      onChange={(e) =>
-                                        setEditedNoteContent(e.target.value)
-                                      }
-                                      className="bg-background resize-none"
-                                      placeholder="Edit your message..."
-                                    />
-                                    <div className="flex justify-end gap-2 mt-2">
-                                      <Button
-                                        onClick={() => setEditingNoteId(null)}
-                                        size="sm"
-                                        variant="outline"
-                                        disabled={!isOnline}
-                                        className="h-8 px-3"
-                                      >
-                                        Cancel
-                                      </Button>
-                                      <Button
-                                        onClick={handleSaveEdit}
-                                        size="sm"
-                                        disabled={
-                                          !isOnline || !editedNoteContent.trim()
+                                >
+                                  {editingNoteId === note.id ? (
+                                    <div className="space-y-2 w-full">
+                                      <Textarea
+                                        value={editedNoteContent}
+                                        onChange={(e) =>
+                                          setEditedNoteContent(e.target.value)
                                         }
-                                        className="h-8 px-3"
-                                      >
-                                        Save changes
-                                      </Button>
+                                        className="bg-background resize-none"
+                                        placeholder="Edit your message..."
+                                      />
+                                      <div className="flex justify-end gap-2 mt-2">
+                                        <Button
+                                          onClick={() => setEditingNoteId(null)}
+                                          size="sm"
+                                          variant="outline"
+                                          disabled={!isOnline}
+                                          className="h-8 px-3"
+                                        >
+                                          Cancel
+                                        </Button>
+                                        <Button
+                                          onClick={handleSaveEdit}
+                                          size="sm"
+                                          disabled={
+                                            !isOnline || !editedNoteContent.trim()
+                                          }
+                                          className="h-8 px-3"
+                                        >
+                                          Save changes
+                                        </Button>
+                                      </div>
                                     </div>
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <p className="text-sm whitespace-pre-wrap break-words">
-                                      {note.note}
-                                    </p>
-                                    <div
-                                      className={`flex items-center text-xs opacity-70 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}
-                                    >
-                                      <span>
-                                        {new Date(
-                                          note.created_at
-                                        ).toLocaleTimeString([], {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
-                                        {note.is_edited && " • edited"}
-                                      </span>
+                                  ) : (
+                                    <div>
+                                      <p className="text-sm whitespace-pre-wrap break-words">
+                                        {note.note}
+                                      </p>
+                                      <div
+                                        className={`flex items-center text-xs opacity-70 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                                      >
+                                        <span>
+                                          {new Date(
+                                            note.created_at
+                                          ).toLocaleTimeString([], {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })}
+                                          {note.is_edited && " • edited"}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Action buttons overlay for current user messages */}
+                                {isCurrentUser && !editingNoteId && (
+                                  <div className="absolute -top-3 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out">
+                                    <div className="bg-background/90 backdrop-blur-sm rounded-full shadow-md border border-border flex overflow-hidden p-0.5">
+                                      <Button
+                                        onClick={() => handleEditNote(note.id)}
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 w-6 p-0 rounded-full hover:bg-primary/10 hover:text-primary"
+                                        disabled={!isOnline}
+                                      >
+                                        <Edit className="h-3 w-3" />
+                                        <span className="sr-only">Edit</span>
+                                      </Button>
+                                      <Button
+                                        onClick={() => handleDeleteNote(note.id)}
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 w-6 p-0 rounded-full hover:bg-destructive/10 hover:text-destructive"
+                                        disabled={!isOnline}
+                                      >
+                                        <Trash className="h-3 w-3" />
+                                        <span className="sr-only">Delete</span>
+                                      </Button>
                                     </div>
                                   </div>
                                 )}
                               </div>
 
-                              {/* Action buttons overlay for current user messages */}
-                              {isCurrentUser && !editingNoteId && (
-                                <div className="absolute -top-3 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out">
-                                  <div className="bg-background/90 backdrop-blur-sm rounded-full shadow-md border border-border flex overflow-hidden p-0.5">
-                                    <Button
-                                      onClick={() => handleEditNote(note.id)}
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 w-6 p-0 rounded-full hover:bg-primary/10 hover:text-primary"
-                                      disabled={!isOnline}
-                                    >
-                                      <Edit className="h-3 w-3" />
-                                      <span className="sr-only">Edit</span>
-                                    </Button>
-                                    <Button
-                                      onClick={() => handleDeleteNote(note.id)}
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 w-6 p-0 rounded-full hover:bg-destructive/10 hover:text-destructive"
-                                      disabled={!isOnline}
-                                    >
-                                      <Trash className="h-3 w-3" />
-                                      <span className="sr-only">Delete</span>
-                                    </Button>
-                                  </div>
+                              {/* Current user icon at the bottom of their message group */}
+                              {isCurrentUser && isLastInGroup && (
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                                  <LucideUser className="w-4 h-4 text-primary-foreground" />
+                                </div>
+                              )}
+
+                              {/* Invisible spacer to maintain alignment for non-last messages from current user */}
+                              {isCurrentUser && !isLastInGroup && (
+                                <div className="w-8 h-8 invisible">
+                                  <span className="sr-only">Me</span>
                                 </div>
                               )}
                             </div>
-
-                            {/* Show user icon only at the bottom of a group */}
-                            {!isCurrentUser && isLastInGroup && (
-                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                <LucideUser className="w-4 h-4 text-primary" />
-                              </div>
-                            )}
-
-                            {/* Current user icon at the bottom of their message group */}
-                            {isCurrentUser && !isLastInGroup && (
-                              <div className="w-8 h-8 invisible">
-                                <span className="sr-only">Me</span>
-                              </div>
-                            )}
-
-                            {isCurrentUser && isLastInGroup && (
-                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                                <LucideUser className="w-4 h-4 text-primary-foreground" />
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      );
-                      return acc;
-                    }, [])}
+                        );
+                        return acc;
+                      }, [])}
+                    </div>
+                  )}
+                </ScrollArea>
+
+                {/* Message input area with improved styling */}
+                {(ride.status === "accepted" || ride.status === "completed") && (
+                  <div className="border-t p-3">
+                    <div className="flex flex-col">
+                      {/* Character count display above the textarea */}
+                      <div className="text-sm text-muted-foreground mb-1">
+                        {MAX_MESSAGE_LENGTH - messageLength} characters remaining
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Textarea
+                          value={newNote}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value.length <= MAX_MESSAGE_LENGTH) {
+                              setNewNote(value);
+                              setMessageLength(value.length); // Update message length
+                            }
+                          }}
+                          onKeyDown={(e) => handleAddNote(e)}
+                          placeholder="Type your message..."
+                          className="flex-grow bg-background border-muted resize-none overflow-hidden max-w-full"
+                          rows={1}
+                          onInput={(e) => {
+                            e.currentTarget.style.height = "auto"; // Reset height before expanding
+                            e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`; // Expand to fit content
+                          }}
+                          disabled={!isOnline}
+                        />
+                        <Button
+                          onClick={() => handleAddNote()}
+                          size="icon"
+                          disabled={!isOnline || !newNote.trim()}
+                          className="h-10 w-10 shrink-0 rounded-full"
+                          title="Send message (Ctrl+Enter)"
+                        >
+                          <Send className="h-4 w-4" />
+                          <span className="sr-only">Send message</span>
+                        </Button>
+                      </div>
+                      {!isOnline && (
+                        <p className="mt-2 text-xs text-destructive">
+                          You&apos;re offline. Messages will be sent when you
+                          reconnect.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
-              </ScrollArea>
-
-              {/* Message input area with improved styling */}
-              {(ride.status === "accepted" || ride.status === "completed") && (
-                <div className="border-t p-3">
-                  <div className="flex items-center gap-2">
-                    <Textarea
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      onKeyDown={(e) => handleAddNote(e)}
-                      placeholder="Type your message..."
-                      className="flex-grow bg-background border-muted resize-none overflow-hidden"
-                      rows={1}
-                      onInput={(e) => {
-                        e.currentTarget.style.height = "auto";
-                        e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
-                      }}
-                      disabled={!isOnline}
-                    />
-                    <Button
-                      onClick={() => handleAddNote()}
-                      size="icon"
-                      disabled={!isOnline || !newNote.trim()}
-                      className="h-10 w-10 shrink-0 rounded-full"
-                    >
-                      <Send className="h-4 w-4" />
-                      <span className="sr-only">Send message</span>
-                    </Button>
-                  </div>
-                  {!isOnline && (
-                    <p className="mt-2 text-xs text-destructive">
-                      You&apos;re offline. Messages will be sent when you
-                      reconnect.
-                    </p>
-                  )}
-                </div>
-              )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row gap-2">
         {ride.status === "pending" && ride.requester_id === currentUser?.id && (

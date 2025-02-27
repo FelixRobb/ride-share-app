@@ -114,7 +114,7 @@ export default function AboutPage() {
               <Link href="/register">Get Started</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/contact">Contact Us</Link>
+              <a href={`mailto:${process.env.GMAIL_USER}`}>Contact Us</a>
             </Button>
           </div>
         </section>

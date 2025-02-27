@@ -56,16 +56,21 @@ export default function LogoutPage() {
         // Sign out using NextAuth
         await signOut({ redirect: false })
 
-        toast.success("Logged out successfully")
+        // Show success toast only if not already loading
+        if (loading) {
+          toast.success("Logged out successfully")
+          setLoading(false) // Ensure loading is set to false after success
+        }
         router.push("/")
       } catch {
-        toast.error("An error occurred during logout")
+        // Redirect to the login page on error
+        router.push("/login")
         setLoading(false)
       }
     }
 
     handleLogout()
-  }, [router])
+  }, [router, loading]) // Add loading to the dependency array
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

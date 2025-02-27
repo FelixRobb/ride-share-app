@@ -71,6 +71,7 @@ export default function ProfilePage({
   const [activeTab, setActiveTab] = useState("profile")
   const router = useRouter()
   const isOnline = useOnlineStatus()
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
 
   const { setTheme } = useTheme()
   const [currentMode, setCurrentMode] = useState<"system" | "light" | "dark">(() => {
@@ -200,6 +201,10 @@ export default function ProfilePage({
   }
 
   const confirmDeleteUser = async () => {
+    if (deleteConfirmation !== "delete") {
+      toast.error("Please type 'delete' to confirm account deletion.")
+      return
+    }
     try {
       setIsDeletingAccount(true)
       await deleteUser(currentUser.id)
@@ -512,35 +517,32 @@ export default function ProfilePage({
                   <h3 className="font-medium mb-1">Theme Preference</h3>
                   <p className="text-sm text-muted-foreground">Select how you want the application to appear</p>
                 </div>
-                   <div className="relative inline-flex items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
-              <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
-                  currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
-                }`}
-                onClick={() => toggleTheme("system")}
-                aria-label="System theme"
-              >
-                <Monitor className="h-4 w-4" />
-              </button>
-              <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
-                  currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
-                }`}
-                onClick={() => toggleTheme("light")}
-                aria-label="Light theme"
-              >
-                <Sun className="h-4 w-4" />
-              </button>
-              <button
-                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
-                  currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
-                }`}
-                onClick={() => toggleTheme("dark")}
-                aria-label="Dark theme"
-              >
-                <Moon className="h-4 w-4" />
-              </button>
-            </div>
+                <div className="inline-flex w-fit gap-1 md:self-end self-center items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
+                  <button
+                    className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
+                      }`}
+                    onClick={() => toggleTheme("system")}
+                    aria-label="System theme"
+                  >
+                    <Monitor className="h-4 w-4" />
+                  </button>
+                  <button
+                    className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
+                      }`}
+                    onClick={() => toggleTheme("light")}
+                    aria-label="Light theme"
+                  >
+                    <Sun className="h-4 w-4" />
+                  </button>
+                  <button
+                    className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
+                      }`}
+                    onClick={() => toggleTheme("dark")}
+                    aria-label="Dark theme"
+                  >
+                    <Moon className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -688,6 +690,15 @@ export default function ProfilePage({
               <li>Account settings</li>
             </ul>
           </div>
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="delete-confirmation">Type &quot;delete&quot; to confirm:</Label>
+            <Input
+              id="delete-confirmation"
+              value={deleteConfirmation}
+              onChange={(e) => setDeleteConfirmation(e.target.value)}
+              placeholder="Type 'delete'"
+            />
+          </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
@@ -699,7 +710,7 @@ export default function ProfilePage({
             <Button
               variant="destructive"
               onClick={confirmDeleteUser}
-              disabled={!isOnline}
+              disabled={isDeletingAccount || !isOnline || deleteConfirmation !== "delete"}
               className="sm:order-2 mb-2"
             >
               {isDeletingAccount ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}

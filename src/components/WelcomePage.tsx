@@ -65,7 +65,7 @@ export default function WelcomePage() {
 
   const scrollToContent = () => {
     window.scrollTo({
-      top: window.innerHeight,
+      top: window.innerHeight - 16,
       behavior: "smooth",
     })
   }
