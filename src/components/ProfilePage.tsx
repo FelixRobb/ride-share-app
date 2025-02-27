@@ -690,19 +690,17 @@ export default function ProfilePage({
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
-            className="mb-2"
               variant="outline"
               onClick={() => setIsDeleteAccountDialogOpen(false)}
-              className="sm:order-1"
+              className="sm:order-1 mb-2"
             >
               Cancel
             </Button>
             <Button
-            className="mb-2"
               variant="destructive"
               onClick={confirmDeleteUser}
               disabled={!isOnline}
-              className="sm:order-2"
+              className="sm:order-2 mb-2"
             >
               {isDeletingAccount ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
               Delete Permanently
