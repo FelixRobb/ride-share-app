@@ -1,34 +1,42 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import { toast } from "sonner"
-import { debounce } from "lodash"
+import { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
+import { debounce } from "lodash";
+import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
-export default function PushNotificationHandler({ userId }: { userId: string }) {
-  const [subscription, setSubscription] = useState<PushSubscription | null>(null)
-  const [showPermissionPopup, setShowPermissionPopup] = useState(false)
-  const [hasSeenPopup, setHasSeenPopup] = useState(false)
-  const [pushEnabled, setPushEnabled] = useState<boolean | null>(null)
-  const [isPushLoading, setIsPushLoading] = useState(true)
+export default function PushNotificationHandler({
+  userId,
+}: {
+  userId: string;
+}) {
+  const [subscription, setSubscription] = useState<PushSubscription | null>(
+    null
+  );
+  const [showPermissionPopup, setShowPermissionPopup] = useState(false);
+  const [hasSeenPopup, setHasSeenPopup] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState<boolean | null>(null);
+  const [isPushLoading, setIsPushLoading] = useState(true);
 
   const registerServiceWorker = useCallback(async () => {
     try {
-      const registration = await navigator.serviceWorker.register("/service-worker.js")
-      return registration
+      const registration =
+        await navigator.serviceWorker.register("/service-worker.js");
+      return registration;
     } catch {
-      return null
+      return null;
     }
-  }, [])
+  }, []);
 
   const saveSubscription = useCallback(
     async (subscription: PushSubscription) => {
@@ -41,14 +49,14 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
           subscription: subscription.toJSON(),
           userId,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to save push subscription")
+        throw new Error("Failed to save push subscription");
       }
     },
-    [userId],
-  )
+    [userId]
+  );
 
   const deleteSubscription = useCallback(async () => {
     const response = await fetch("/api/push-subscription", {
@@ -57,102 +65,130 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ userId }),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error("Failed to delete push subscription")
+      throw new Error("Failed to delete push subscription");
     }
-
-  }, [userId])
+  }, [userId]);
 
   const handlePermissionGranted = useCallback(
     async (registration: ServiceWorkerRegistration) => {
-      if (pushEnabled === null) return
+      if (pushEnabled === null) return;
 
       if (pushEnabled) {
-        let currentSubscription = await registration.pushManager.getSubscription()
+        let currentSubscription =
+          await registration.pushManager.getSubscription();
 
         if (!currentSubscription) {
-          const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+          const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
           if (!publicKey) {
-            throw new Error("VAPID public key is not set")
+            throw new Error("VAPID public key is not set");
           }
           currentSubscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: publicKey,
-          })
+          });
           if (currentSubscription) {
-            await saveSubscription(currentSubscription)
+            await saveSubscription(currentSubscription);
           }
         }
 
-        setSubscription(currentSubscription)
-
+        setSubscription(currentSubscription);
       } else if (!pushEnabled && subscription) {
-        await subscription.unsubscribe()
-        await deleteSubscription()
-        setSubscription(null)
+        await subscription.unsubscribe();
+        await deleteSubscription();
+        setSubscription(null);
       }
     },
-    [subscription, pushEnabled, saveSubscription, deleteSubscription],
-  )
+    [subscription, pushEnabled, saveSubscription, deleteSubscription]
+  );
 
-  const debouncedHandlePermissionGranted = debounce(handlePermissionGranted, 1000)
+  const debouncedHandlePermissionGranted = debounce(
+    handlePermissionGranted,
+    1000
+  );
 
   useEffect(() => {
     const setupPushNotifications = async () => {
       if ("serviceWorker" in navigator && "PushManager" in window) {
-        const registration = await registerServiceWorker()
-        if (!registration) return
+        const registration = await registerServiceWorker();
+        if (!registration) return;
 
-        const currentPermission = Notification.permission
+        const currentPermission = Notification.permission;
+        const hasDeclinedBefore = localStorage.getItem(
+          "pushNotificationDeclined"
+        );
 
-        if (currentPermission === "default" && !hasSeenPopup) {
-          setShowPermissionPopup(true)
-        } else if (currentPermission === "granted") {
-          await debouncedHandlePermissionGranted(registration)
+        // Only show the popup if not granted and haven't declined before
+        if (
+          currentPermission === "default" &&
+          !hasDeclinedBefore &&
+          !hasSeenPopup
+        ) {
+          setShowPermissionPopup(true);
         }
       }
-    }
+    };
 
-    setupPushNotifications()
-  }, [hasSeenPopup, debouncedHandlePermissionGranted, registerServiceWorker])
+    setupPushNotifications();
+  }, [hasSeenPopup, registerServiceWorker]);
+
+  const handleDecline = () => {
+    setShowPermissionPopup(false);
+    setHasSeenPopup(true);
+    localStorage.setItem("pushNotificationDeclined", "true");
+  };
 
   useEffect(() => {
     const getPushPreference = async () => {
       try {
-        const response = await fetch(`/api/users/${userId}/push-preference`)
-        const { enabled } = await response.json()
-        setPushEnabled(enabled)
+        const response = await fetch(`/api/users/${userId}/push-preference`);
+        const { enabled } = await response.json();
+        setPushEnabled(enabled);
       } finally {
-        setIsPushLoading(false)
+        setIsPushLoading(false);
       }
-    }
+    };
 
-    getPushPreference()
-  }, [userId])
+    getPushPreference();
+  }, [userId]);
 
   useEffect(() => {
-    if (!isPushLoading && "serviceWorker" in navigator && "PushManager" in window && pushEnabled !== null) {
+    if (!isPushLoading && pushEnabled !== null) {
       navigator.serviceWorker.ready.then((registration) => {
-        void debouncedHandlePermissionGranted(registration)
-      })
+        // Only handle subscription management, not permission requests
+        if (Notification.permission === "granted") {
+          void debouncedHandlePermissionGranted(registration);
+        }
+      });
     }
-  }, [isPushLoading, pushEnabled, debouncedHandlePermissionGranted])
+  }, [isPushLoading, pushEnabled, debouncedHandlePermissionGranted]);
 
   const handlePermissionRequest = async () => {
-    setShowPermissionPopup(false)
-    setHasSeenPopup(true)
+    setShowPermissionPopup(false);
+    setHasSeenPopup(true);
 
-    const currentPermission = Notification.permission
-    if (currentPermission === "default") {
-      const permission = await Notification.requestPermission()
-      if (permission === "granted") {
-        const registration = await navigator.serviceWorker.ready
-        await handlePermissionGranted(registration)
+    try {
+      // Register service worker first if not already registered
+      const registration = await registerServiceWorker();
+      if (!registration) {
+        throw new Error("Failed to register service worker");
       }
+
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        setPushEnabled(true);
+        await handlePermissionGranted(registration);
+        toast.success("Push notifications enabled successfully!");
+      } else {
+        setPushEnabled(false);
+        toast.error("Permission denied for push notifications");
+      }
+    } catch {
+      toast.error("Failed to enable push notifications");
     }
-  }
+  };
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -160,41 +196,52 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
         if (event.data && event.data.type === "PUSH_NOTIFICATION") {
           toast(event.data.title, {
             description: event.data.body,
-          })
+          });
         }
-      })
+      });
     }
-  }, [])
+  }, []);
 
   return (
-    <>
-      <Dialog
-        open={showPermissionPopup}
-        onOpenChange={(open) => {
-          setShowPermissionPopup(open)
-          if (!open) {
-            setHasSeenPopup(true)
-          }
-        }}
-      >
-        <DialogContent className="rounded-lg w-11/12">
-          <DialogHeader>
-            <DialogTitle>Enable Push Notifications</DialogTitle>
-            <DialogDescription>
-              RideShare needs your permission to send push notifications. This allows us to keep you updated about your
-              rides and important information.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button className="mb-2" variant="outline" onClick={() => setShowPermissionPopup(false)}>
-              Cancel
-            </Button>
-            <Button className="mb-2" onClick={handlePermissionRequest}>
-              Allow Notifications
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  )
+    <AnimatePresence mode="wait">
+      {showPermissionPopup && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          transition={{ duration: 0.2 }}
+          className="fixed top-10 left-0 right-0 mx-auto z-50 w-80 sm:left-4 sm:right-auto sm:mx-0"
+        >
+          <Card className="w-80 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex justify-between items-center">
+                <span>Enable Notifications</span>
+                <Button variant="ghost" size="sm" onClick={handleDecline}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm">
+                Stay updated about your rides and important information with
+                push notifications.
+              </p>
+            </CardContent>
+            <CardFooter className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={handleDecline}>
+                Not Now
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handlePermissionRequest}
+              >
+                Enable
+              </Button>
+            </CardFooter>
+          </Card>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }

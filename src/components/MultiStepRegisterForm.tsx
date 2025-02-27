@@ -7,6 +7,7 @@ import PhoneInput from "react-phone-number-input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -157,9 +158,8 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
             <Label htmlFor="password">Password</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder="Create a password"
                 value={formData.password}
                 onChange={(e) => updateFormData("password", e.target.value)}
@@ -172,9 +172,8 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
             <Label htmlFor="confirmPassword">Confirm Password</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={(e) => updateFormData("confirmPassword", e.target.value)}

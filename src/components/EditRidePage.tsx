@@ -1,3 +1,5 @@
+"use client"
+
 import { parsePhoneNumber } from "libphonenumber-js"
 import { motion } from "framer-motion"
 import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight, X } from "lucide-react"
@@ -15,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
-import { updateRide, fetchRideDetails } from "@/utils/api"
+import { updateRide, fetchEditRideData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 
 import type { RideData, User } from "../types"
@@ -40,19 +42,8 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
   useEffect(() => {
     const fetchRideData = async () => {
       try {
-        const ride = await fetchRideDetails(currentUser.id, rideId)
-        setRideData({
-          from_location: ride.from_location,
-          to_location: ride.to_location,
-          from_lat: ride.from_lat,
-          from_lon: ride.from_lon,
-          to_lat: ride.to_lat,
-          to_lon: ride.to_lon,
-          time: ride.time,
-          rider_name: ride.rider_name,
-          rider_phone: ride.rider_phone,
-          note: ride.note,
-        })
+        const data = await fetchEditRideData(rideId)
+        setRideData(data.ride)
       } catch {
         toast.error("Failed to fetch ride details. Please try again.")
       }
@@ -184,7 +175,9 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
               <PhoneInput
                 id="rider_phone"
                 value={rideData.rider_phone || ""}
-                onChange={(value) => setRideData((prev) => (prev ? { ...prev, rider_phone: value ? String(value) : null } : null))}
+                onChange={(value) =>
+                  setRideData((prev) => (prev ? { ...prev, rider_phone: value ? String(value) : null } : null))
+                }
                 placeholder="Enter rider's phone number"
                 defaultCountry="PT"
                 international

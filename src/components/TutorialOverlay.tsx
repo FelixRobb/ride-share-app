@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronRight, ChevronLeft, X } from "lucide-react"
 import { usePathname } from "next/navigation"
-import type React from "react"
 import { useEffect, useState, useCallback } from "react"
 
 import { Button } from "@/components/ui/button"
