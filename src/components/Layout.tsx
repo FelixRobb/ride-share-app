@@ -64,7 +64,7 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex flex-col min-h-screen bg-background text-foreground relative">
           <TutorialProvider>
             <PushNotificationHandler userId={currentUser.id} />
-            <header className="bg-background/80 backdrop-blur-sm shadow-md border-b border-border sticky top-0 z-40">
+            <header className="bg-background/80 backdrop-blur-sm shadow-md border-b border-border sticky top-0 z-50">
               <div className="container mx-auto px-4 py-3 flex items-center justify-between">
                 <div className="flex-shrink-0 mr-4">
                   <Link href="/dashboard" className="text-2xl font-bold text-primary">
