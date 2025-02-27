@@ -610,10 +610,10 @@ export default function ProfilePage({
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button classname="mb-2" variant="outline" type="button" onClick={() => setIsEditProfileOpen(false)}>
+              <Button className="mb-2" variant="outline" type="button" onClick={() => setIsEditProfileOpen(false)}>
                 Cancel
               </Button>
-              <Button classname="mb-2" type="submit" disabled={isUpdatingProfile || !isOnline}>
+              <Button className="mb-2" type="submit" disabled={isUpdatingProfile || !isOnline}>
                 {isUpdatingProfile ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
                 {isUpdatingProfile ? "Updating..." : "Save Changes"}
               </Button>
@@ -659,10 +659,10 @@ export default function ProfilePage({
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button classname="mb-2" variant="outline" type="button" onClick={() => setIsChangePasswordOpen(false)}>
+              <Button className="mb-2" variant="outline" type="button" onClick={() => setIsChangePasswordOpen(false)}>
                 Cancel
               </Button>
-              <Button classname="mb-2" type="submit" disabled={isChangingPassword || !isOnline}>
+              <Button className="mb-2" type="submit" disabled={isChangingPassword || !isOnline}>
                 {isChangingPassword ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
                 {isChangingPassword ? "Changing..." : "Change Password"}
               </Button>
@@ -690,7 +690,7 @@ export default function ProfilePage({
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
-            classname="mb-2"
+            className="mb-2"
               variant="outline"
               onClick={() => setIsDeleteAccountDialogOpen(false)}
               className="sm:order-1"
@@ -698,7 +698,7 @@ export default function ProfilePage({
               Cancel
             </Button>
             <Button
-            classname="mb-2"
+            className="mb-2"
               variant="destructive"
               onClick={confirmDeleteUser}
               disabled={!isOnline}
