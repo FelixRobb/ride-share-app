@@ -148,7 +148,6 @@ const NotificationFilters = ({
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="unread">Unread</TabsTrigger>
-            <TabsTrigger value="read">Read</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
