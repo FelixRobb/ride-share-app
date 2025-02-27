@@ -512,32 +512,35 @@ export default function ProfilePage({
                   <h3 className="font-medium mb-1">Theme Preference</h3>
                   <p className="text-sm text-muted-foreground">Select how you want the application to appear</p>
                 </div>
-                <div className="flex p-1 gap-1 self-start bg-secondary rounded-full">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`flex items-center justify-center rounded-full px-3 ${currentMode === "light" ? "bg-background shadow" : "hover:bg-background/50"}`}
-                    onClick={() => toggleTheme("light")}
-                  >
-                    <Sun className="h-4 w-4 mr-2" /> Light
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`flex items-center justify-center rounded-full px-3 ${currentMode === "dark" ? "bg-background shadow" : "hover:bg-background/50"}`}
-                    onClick={() => toggleTheme("dark")}
-                  >
-                    <Moon className="h-4 w-4 mr-2" /> Dark
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`flex items-center justify-center rounded-full px-3 ${currentMode === "system" ? "bg-background shadow" : "hover:bg-background/50"}`}
-                    onClick={() => toggleTheme("system")}
-                  >
-                    <Monitor className="h-4 w-4 mr-2" /> System
-                  </Button>
-                </div>
+                   <div className="relative inline-flex items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
+              <button
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                  currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
+                }`}
+                onClick={() => toggleTheme("system")}
+                aria-label="System theme"
+              >
+                <Monitor className="h-4 w-4" />
+              </button>
+              <button
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                  currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
+                }`}
+                onClick={() => toggleTheme("light")}
+                aria-label="Light theme"
+              >
+                <Sun className="h-4 w-4" />
+              </button>
+              <button
+                className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                  currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
+                }`}
+                onClick={() => toggleTheme("dark")}
+                aria-label="Dark theme"
+              >
+                <Moon className="h-4 w-4" />
+              </button>
+            </div>
               </div>
             </CardContent>
           </Card>
@@ -607,10 +610,10 @@ export default function ProfilePage({
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button variant="outline" type="button" onClick={() => setIsEditProfileOpen(false)}>
+              <Button classname="mb-2" variant="outline" type="button" onClick={() => setIsEditProfileOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isUpdatingProfile || !isOnline}>
+              <Button classname="mb-2" type="submit" disabled={isUpdatingProfile || !isOnline}>
                 {isUpdatingProfile ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
                 {isUpdatingProfile ? "Updating..." : "Save Changes"}
               </Button>
@@ -656,10 +659,10 @@ export default function ProfilePage({
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button variant="outline" type="button" onClick={() => setIsChangePasswordOpen(false)}>
+              <Button classname="mb-2" variant="outline" type="button" onClick={() => setIsChangePasswordOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isChangingPassword || !isOnline}>
+              <Button classname="mb-2" type="submit" disabled={isChangingPassword || !isOnline}>
                 {isChangingPassword ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
                 {isChangingPassword ? "Changing..." : "Change Password"}
               </Button>
@@ -687,6 +690,7 @@ export default function ProfilePage({
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
+            classname="mb-2"
               variant="outline"
               onClick={() => setIsDeleteAccountDialogOpen(false)}
               className="sm:order-1"
@@ -694,6 +698,7 @@ export default function ProfilePage({
               Cancel
             </Button>
             <Button
+            classname="mb-2"
               variant="destructive"
               onClick={confirmDeleteUser}
               disabled={!isOnline}
