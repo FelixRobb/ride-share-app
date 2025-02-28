@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+<loc>https://rideshareappweb.netlify.app</loc>
+<lastmod>2025-02-28T12:46:25.850Z</lastmod>
+<changefreq>yearly</changefreq>
+<priority>1</priority>
+</url>
+<url>
+<loc>https://rideshareappweb.netlify.app/login</loc>
+<lastmod>2025-02-28T12:46:25.850Z</lastmod>
+<changefreq>monthly</changefreq>
+<priority>0.8</priority>
+</url>
+<url>
+<loc>https://rideshareappweb.netlify.app/register</loc>
+<lastmod>2025-02-28T12:46:25.850Z</lastmod>
+<changefreq>monthly</changefreq>
+<priority>0.8</priority>
+</url>
+<url>
+<loc>https://rideshareappweb.netlify.app/privacy-policy</loc>
+<lastmod>2025-02-28T12:46:25.850Z</lastmod>
+<changefreq>yearly</changefreq>
+<priority>0.5</priority>
+</url>
+<url>
+<loc>https://rideshareappweb.netlify.app/terms-of-service</loc>
+<lastmod>2025-02-28T12:46:25.850Z</lastmod>
+<changefreq>yearly</changefreq>
+<priority>0.5</priority>
+</url>
+</urlset>
