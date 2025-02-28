@@ -177,13 +177,16 @@ export default function WelcomePage() {
             transform: "translateY(-50%)",
           }}
           initial={{
+            x: -200,
             opacity: 0,
           }}
           transition={{
-            duration: 1.5,
+            duration: 1,
             ease: "easeOut",
+            opacity: { duration: 0.5 },
           }}
           animate={{
+            x: 0,
             opacity: 1,
           }}
         >
