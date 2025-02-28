@@ -27,7 +27,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       .select("enabled")
       .eq("user_id", id)
       .eq("device_id", deviceId)
-      .maybeSingle()
+      .single()
 
     if (error) throw error
 

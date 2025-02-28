@@ -1,5 +1,4 @@
 import webpush from "web-push"
-
 import { supabase } from "./db"
 
 const vapidKeys = {
@@ -26,8 +25,11 @@ export async function sendImmediateNotification(userId: string, title: string, b
     .from("push_subscriptions")
     .select("id, subscription, enabled")
     .eq("user_id", userId)
+    .eq("enabled", true)
 
   if (subscriptionError) throw subscriptionError
+
+  console.log("Enabled subscriptions:", subscriptionData)
 
   if (subscriptionData && subscriptionData.length > 0) {
     const payload = JSON.stringify({ title, body })
@@ -35,13 +37,10 @@ export async function sendImmediateNotification(userId: string, title: string, b
 
     await Promise.all(
       subscriptionData.map(async (sub) => {
-        // Only send to enabled subscriptions
-        if (sub.enabled) {
-          const subscription = JSON.parse(sub.subscription)
-          const success = await sendPushNotification(subscription, payload)
-          if (!success) {
-            expiredSubscriptions.push(sub.id)
-          }
+        const subscription = JSON.parse(sub.subscription)
+        const success = await sendPushNotification(subscription, payload)
+        if (!success) {
+          expiredSubscriptions.push(sub.id)
         }
       }),
     )

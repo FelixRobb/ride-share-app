@@ -220,33 +220,33 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
   const isOnline = useOnlineStatus()
 
   useEffect(() => {
-    let mounted = true;
+    let mounted = true
 
     const fetchDevices = async () => {
-      if (!isOnline || !isSettingsOpen) return;
-      
-      setIsLoading(true);
+      if (!isOnline || !isSettingsOpen) return
+
+      setIsLoading(true)
       try {
-        const response = await fetch(`/api/users/${userId}/push-devices`);
+        const response = await fetch(`/api/users/${userId}/push-devices`)
         if (response.ok && mounted) {
-          const data = await response.json();
-          setDevices(data.devices);
+          const data = await response.json()
+          setDevices(data.devices)
         }
       } catch (error) {
-        console.error("Failed to fetch devices:", error);
+        console.error("Failed to fetch devices:", error)
       } finally {
         if (mounted) {
-          setIsLoading(false);
+          setIsLoading(false)
         }
       }
-    };
+    }
 
-    void fetchDevices();
+    void fetchDevices()
 
     return () => {
-      mounted = false;
-    };
-  }, [userId, isOnline, isSettingsOpen]);
+      mounted = false
+    }
+  }, [userId, isOnline, isSettingsOpen])
 
   const handleToggleDevice = async (deviceId: string, enabled: boolean) => {
     try {
