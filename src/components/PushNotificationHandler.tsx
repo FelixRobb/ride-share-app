@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 import { X } from "lucide-react"
@@ -8,6 +8,12 @@ import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { getDeviceId, getDeviceInfo } from "@/utils/deviceUtils"
+
+interface PushNotificationMessage {
+  type: string;
+  title?: string;
+  body?: string;
+}
 
 export default function PushNotificationHandler({
   userId,
@@ -18,13 +24,24 @@ export default function PushNotificationHandler({
   const [hasSeenPopup, setHasSeenPopup] = useState(false)
   const [deviceId] = useState(() => getDeviceId())
   const [deviceInfo] = useState(() => getDeviceInfo())
+  const messageHandlerSet = useRef(false)
 
+  // Function to register the service worker
   const registerServiceWorker = useCallback(async () => {
+    if (!("serviceWorker" in navigator)) {
+      return null
+    }
+
     try {
-      if (navigator.serviceWorker.controller) {
-        return navigator.serviceWorker.ready
+      // Force update by unregistering existing service workers first
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      for (const registration of registrations) {
+        await registration.unregister()
       }
-      const registration = await navigator.serviceWorker.register("/service-worker.js")
+
+      const registration = await navigator.serviceWorker.register("/service-worker.js", {
+        scope: "/"
+      })
       return registration
     } catch {
       toast.error("Failed to register service worker")
@@ -46,6 +63,7 @@ export default function PushNotificationHandler({
           deviceName: deviceInfo.name,
         }),
       })
+
       if (!response.ok) {
         throw new Error(`Failed to save subscription: ${response.status}`)
       }
@@ -70,13 +88,14 @@ export default function PushNotificationHandler({
         throw new Error("VAPID public key is not set")
       }
 
-      // Use the VAPID key directly instead of fetching it
+      // Use the VAPID key directly
       const applicationServerKey = urlBase64ToUint8Array(publicKey)
 
       currentSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey,
       })
+
       if (currentSubscription) {
         await saveSubscription(currentSubscription)
         return true
@@ -86,6 +105,43 @@ export default function PushNotificationHandler({
     [saveSubscription],
   )
 
+  // Setup push notification message handler
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) {
+      return
+    }
+
+    // Prevent setting up multiple handlers
+    if (messageHandlerSet.current) {
+      return
+    }
+
+    const handleMessage = (event: MessageEvent) => {
+      const data = event.data as PushNotificationMessage
+
+      // Handle push notification messages
+      if (data && data.type === "PUSH_NOTIFICATION") {
+        // Show toast notification
+        toast.info(data.title || "Notification", {
+          description: data.body || "",
+          duration: 5000,
+        })
+      }
+    }
+
+    // Setup listener directly on navigator.serviceWorker
+    navigator.serviceWorker.addEventListener("message", handleMessage)
+    messageHandlerSet.current = true
+
+    return () => {
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.removeEventListener("message", handleMessage)
+        messageHandlerSet.current = false
+      }
+    }
+  }, [])
+
+  // Initial setup for push notifications
   useEffect(() => {
     const setupPushNotifications = async () => {
       try {
@@ -94,7 +150,9 @@ export default function PushNotificationHandler({
         }
 
         const registration = await registerServiceWorker()
-        if (!registration) return
+        if (!registration) {
+          return
+        }
 
         const currentPermission = Notification.permission
 
@@ -108,6 +166,8 @@ export default function PushNotificationHandler({
           if (!hasDeclined) {
             setShowPermissionPopup(true)
           }
+        } else if (currentPermission === "denied") {
+          // Do nothing
         }
       } catch {
         toast.error("Failed to setup push notifications")
@@ -128,20 +188,18 @@ export default function PushNotificationHandler({
     setHasSeenPopup(true)
 
     try {
-      // First, request the permission
       const permission = await Notification.requestPermission()
+
       if (permission !== "granted") {
         toast.error("Permission denied for push notifications")
         return
       }
 
-      // Then register the service worker
       const registration = await registerServiceWorker()
       if (!registration) {
         throw new Error("Failed to register service worker")
       }
 
-      // Finally handle the granted permission
       const success = await handlePermissionGranted(registration)
       if (success) {
         toast.success("Push notifications enabled successfully!")
@@ -152,18 +210,6 @@ export default function PushNotificationHandler({
       toast.error("Failed to enable push notifications")
     }
   }
-
-  useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.addEventListener("message", (event) => {
-        if (event.data && event.data.type === "PUSH_NOTIFICATION") {
-          toast.info(event.data.title, {
-            description: event.data.body,
-          })
-        }
-      })
-    }
-  }, [])
 
   return (
     <AnimatePresence mode="wait">

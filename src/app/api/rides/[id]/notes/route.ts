@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
         if (authorError) throw authorError;
 
-        await sendImmediateNotification(otherUserId, "New Ride Message", `${noteAuthor.name} has added a new message to your ride`);
+        await sendImmediateNotification(otherUserId, "New Ride Message", `${noteAuthor.name} has added a new message to your ride: "${note}"`);
         await supabase.from("notifications").insert({
           user_id: otherUserId,
           message: `${noteAuthor.name} has added a new message to your ride: "${note}"`,
