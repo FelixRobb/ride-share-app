@@ -346,7 +346,7 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
                     />
                     <span className="text-sm">{device.enabled ? "Enabled" : "Disabled"}</span>
                   </div>
-                                {device.device_id === !currentDeviceId && (
+                                {!(device.device_id === currentDeviceId) && (
                   <Button
                     variant="ghost"
                     size="icon"
