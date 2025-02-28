@@ -93,7 +93,8 @@ export default function RideDetailsPage({
   const isOnline = useOnlineStatus();
   const [isDeleteNoteDialogOpen, setIsDeleteNoteDialogOpen] = useState(false);
   const [noteToDeleteId, setNoteToDeleteId] = useState<string | null>(null);
-  const [messageLength, setMessageLength] = useState(0); // New state for message length
+  const [messageLength, setMessageLength] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = useCallback(() => {
     if (typeof window !== "undefined" && scrollAreaRef.current) {
@@ -241,59 +242,6 @@ export default function RideDetailsPage({
 
     buildMap();
   }, [ride, map]);
-
-  const handleAddNote = async (e?: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e) {
-      // Send on Ctrl+Enter or Cmd+Enter
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        if (newNote.trim() && currentUser) {
-          try {
-            const addedNote = await addNote(ride.id, currentUser.id, newNote);
-            if (addedNote) {
-              setNotes((prevNotes) => [...prevNotes, addedNote]);
-              setNewNote("");
-              setMessageLength(0); // Reset message length
-              scrollToBottom();
-              // Reset the height of the textarea
-              if (scrollAreaRef.current) {
-                const textarea = scrollAreaRef.current.querySelector('textarea');
-                if (textarea) {
-                  textarea.style.height = 'auto'; // Reset height
-                }
-              }
-              toast.success("Message sent successfully.");
-            }
-          } catch {
-            toast.error("Failed to send message. Please try again.");
-          }
-        }
-      }
-    } else {
-      // Handle button click submit
-      if (newNote.trim() && currentUser) {
-        try {
-          const addedNote = await addNote(ride.id, currentUser.id, newNote);
-          if (addedNote) {
-            setNotes((prevNotes) => [...prevNotes, addedNote]);
-            setNewNote("");
-            setMessageLength(0); // Reset message length
-            scrollToBottom();
-            // Reset the height of the textarea
-            if (scrollAreaRef.current) {
-              const textarea = scrollAreaRef.current.querySelector('textarea');
-              if (textarea) {
-                textarea.style.height = 'auto'; // Reset height
-              }
-            }
-            toast.success("Message sent successfully.");
-          }
-        } catch {
-          toast.error("Failed to send message. Please try again.");
-        }
-      }
-    }
-  };
 
   const handleEditNote = async (noteId: string) => {
     const noteToEdit = notes.find((note) => note.id === noteId);
@@ -710,7 +658,7 @@ export default function RideDetailsPage({
                               </span>
                             )}
 
-                            <div className="flex items-end gap-2 max-w-[85%]">
+                            <div className="flex items-end gap-2 !max-w-[70%]">
                               {/* Show user icon only at the bottom of a group for non-current users, but on the LEFT side */}
                               {!isCurrentUser && isLastInGroup && (
                                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -726,22 +674,20 @@ export default function RideDetailsPage({
                               )}
 
                               {/* Message content with hover-activated action buttons for current user */}
-                              <div className="relative">
+                              <div className="relative max-w-full">
                                 <div
-                                  className={`px-4 py-2 shadow-sm
-              ${isCurrentUser
-                                      ? "bg-primary text-primary-foreground rounded-lg rounded-br-none" // All current user messages have bottom-right pointy corner
-                                      : "bg-secondary text-secondary-foreground rounded-lg rounded-bl-none" // All other user messages have bottom-left pointy corner
+                                  className={`px-4 py-2 shadow-sm overflow-hidden
+      ${isCurrentUser
+                                      ? "bg-primary text-primary-foreground rounded-lg rounded-br-none"
+                                      : "bg-secondary text-secondary-foreground rounded-lg rounded-bl-none"
                                     }
-            `}
+    `}
                                 >
                                   {editingNoteId === note.id ? (
                                     <div className="space-y-2 w-full">
                                       <Textarea
                                         value={editedNoteContent}
-                                        onChange={(e) =>
-                                          setEditedNoteContent(e.target.value)
-                                        }
+                                        onChange={(e) => setEditedNoteContent(e.target.value)}
                                         className="bg-background resize-none"
                                         placeholder="Edit your message..."
                                       />
@@ -758,9 +704,7 @@ export default function RideDetailsPage({
                                         <Button
                                           onClick={handleSaveEdit}
                                           size="sm"
-                                          disabled={
-                                            !isOnline || !editedNoteContent.trim()
-                                          }
+                                          disabled={!isOnline || !editedNoteContent.trim()}
                                           className="h-8 px-3"
                                         >
                                           Save changes
@@ -773,12 +717,11 @@ export default function RideDetailsPage({
                                         {note.note}
                                       </p>
                                       <div
-                                        className={`flex items-center text-xs opacity-70 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                                        className={`flex items-center text-xs opacity-70 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"
+                                          }`}
                                       >
                                         <span>
-                                          {new Date(
-                                            note.created_at
-                                          ).toLocaleTimeString([], {
+                                          {new Date(note.created_at).toLocaleTimeString([], {
                                             hour: "2-digit",
                                             minute: "2-digit",
                                           })}
@@ -791,7 +734,7 @@ export default function RideDetailsPage({
 
                                 {/* Action buttons overlay for current user messages */}
                                 {isCurrentUser && !editingNoteId && (
-                                  <div className="absolute -top-3 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out">
+                                  <div className="absolute -top-3 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out z-20">
                                     <div className="bg-background/90 backdrop-blur-sm rounded-full shadow-md border border-border flex overflow-hidden p-0.5">
                                       <Button
                                         onClick={() => handleEditNote(note.id)}
@@ -844,32 +787,89 @@ export default function RideDetailsPage({
                 {(ride.status === "accepted" || ride.status === "completed") && (
                   <div className="border-t p-3">
                     <div className="flex flex-col">
-                      {/* Character count display above the textarea */}
+                      {/* Character count display */}
                       <div className="text-sm text-muted-foreground mb-1">
                         {MAX_MESSAGE_LENGTH - messageLength} characters remaining
                       </div>
-                      <div className="flex items-center gap-2">
+
+                      <form
+                        className="flex items-center gap-2"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (newNote.trim() && currentUser) {
+                            addNote(ride.id, currentUser.id, newNote)
+                              .then(addedNote => {
+                                if (addedNote) {
+                                  setNotes((prevNotes) => [...prevNotes, addedNote]);
+                                  setNewNote("");
+                                  setMessageLength(0);
+                                  scrollToBottom();
+
+                                  // Reset textarea height using ref
+                                  if (textareaRef.current) {
+                                    textareaRef.current.style.height = '40px';
+                                  }
+
+                                  toast.success("Message sent successfully.");
+                                }
+                              })
+                              .catch(() => {
+                                toast.error("Failed to send message. Please try again.");
+                              });
+                          }
+                        }}
+                      >
                         <Textarea
+                          ref={textareaRef}
                           value={newNote}
                           onChange={(e) => {
                             const value = e.target.value;
                             if (value.length <= MAX_MESSAGE_LENGTH) {
                               setNewNote(value);
-                              setMessageLength(value.length); // Update message length
+                              setMessageLength(value.length);
                             }
                           }}
-                          onKeyDown={(e) => handleAddNote(e)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                              e.preventDefault();
+                              if (newNote.trim() && currentUser) {
+                                addNote(ride.id, currentUser.id, newNote)
+                                  .then(addedNote => {
+                                    if (addedNote) {
+                                      setNotes((prevNotes) => [...prevNotes, addedNote]);
+                                      setNewNote("");
+                                      setMessageLength(0);
+                                      scrollToBottom();
+
+                                      // Reset textarea height using ref
+                                      if (textareaRef.current) {
+                                        textareaRef.current.style.height = '40px';
+                                      }
+
+                                      toast.success("Message sent successfully.");
+                                    }
+                                  })
+                                  .catch(() => {
+                                    toast.error("Failed to send message. Please try again.");
+                                  });
+                              }
+                            }
+                          }}
                           placeholder="Type your message..."
-                          className="flex-grow bg-background border-muted resize-none overflow-hidden max-w-full"
+                          className="flex-grow bg-background border-muted resize-none overflow-y-auto max-w-full min-h-[40px] max-h-[150px]"
                           rows={1}
-                          onInput={(e) => {
-                            e.currentTarget.style.height = "auto"; // Reset height before expanding
-                            e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`; // Expand to fit content
+                          onInput={() => {
+                            // Reset to minimum height before calculating new height
+                            if (textareaRef.current) {
+                              textareaRef.current.style.height = '40px';
+                              // Set new height based on content
+                              textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
+                            }
                           }}
                           disabled={!isOnline}
                         />
                         <Button
-                          onClick={() => handleAddNote()}
+                          type="submit"
                           size="icon"
                           disabled={!isOnline || !newNote.trim()}
                           className="h-10 w-10 shrink-0 rounded-full"
@@ -878,16 +878,17 @@ export default function RideDetailsPage({
                           <Send className="h-4 w-4" />
                           <span className="sr-only">Send message</span>
                         </Button>
-                      </div>
+                      </form>
+
                       {!isOnline && (
                         <p className="mt-2 text-xs text-destructive">
-                          You&apos;re offline. Messages will be sent when you
-                          reconnect.
+                          You&apos;re offline. Messages will be sent when you reconnect.
                         </p>
                       )}
                     </div>
                   </div>
                 )}
+
               </div>
             </div>
           )}
