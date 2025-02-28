@@ -346,6 +346,7 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
                     />
                     <span className="text-sm">{device.enabled ? "Enabled" : "Disabled"}</span>
                   </div>
+                                {device.device_id === !currentDeviceId && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -354,6 +355,7 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
+                  )}
                 </CardFooter>
               </Card>
             ))}
@@ -387,7 +389,7 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
     <>
       {SettingsButton}
       <Drawer open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DrawerContent className="h-fit max-h-[90vh]">
+        <DrawerContent className="h-fit max-h-[60svh]">
           <DrawerHeader>
             <DrawerTitle>Notification Settings</DrawerTitle>
             <DrawerDescription>Manage your notification preferences</DrawerDescription>
