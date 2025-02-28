@@ -87,3 +87,13 @@ export type Note = {
   }
 }
 
+export type PushSubscription = {
+  id: string
+  user_id: string
+  device_id: string
+  subscription: string
+  enabled: boolean
+  device_name: string
+  last_used: string
+}
+

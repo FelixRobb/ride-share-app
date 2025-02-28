@@ -29,6 +29,7 @@
     "@tanstack/react-query": "^5.66.9",
     "@tomtom-international/web-sdk-maps": "^6.25.0",
     "@types/nodemailer": "^6.4.16",
+    "@types/ua-parser-js": "^0.7.39",
     "bcrypt": "^5.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -50,6 +51,7 @@
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "ua-parser-js": "^2.0.2",
     "vaul": "^1.1.2",
     "web-push": "^3.6.7"
   },
@@ -63,6 +65,7 @@
     "@types/react-dom": "^18",
     "@types/react-phone-number-input": "^3.0.17",
     "@types/three": "^0.172.0",
+    "@types/uuid": "^10.0.0",
     "@types/web-push": "^3.6.4",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
