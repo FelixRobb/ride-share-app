@@ -1,6 +1,24 @@
 "use client"
 
-import { LucideUser, Mail, Phone, Car, Loader, Moon, Sun, Monitor, Settings, Shield, Bell, UserPlus, LogOut, UserX } from "lucide-react"
+import type React from "react"
+
+import {
+  LucideUser,
+  Mail,
+  Phone,
+  Car,
+  Loader,
+  Moon,
+  Sun,
+  Monitor,
+  Settings,
+  Shield,
+  Bell,
+  UserPlus,
+  LogOut,
+  UserX,
+  Smartphone,
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
@@ -28,7 +46,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
 
-import type { User, Contact, AssociatedPerson } from "../types"
+import type { User, Contact, AssociatedPerson, PushSubscription } from "../types"
 import {
   updateProfile,
   changePassword,
@@ -37,6 +55,7 @@ import {
   deleteUser,
   fetchUserStats,
 } from "../utils/api"
+import { getDeviceId, formatLastUsed } from "@/utils/deviceUtils"
 
 import { ContactManager } from "./ContactDialog"
 
@@ -47,12 +66,7 @@ interface ProfilePageProps {
   refreshData: () => Promise<void>
 }
 
-export default function ProfilePage({
-  currentUser,
-  contacts,
-  associatedPeople,
-  refreshData,
-}: ProfilePageProps) {
+export default function ProfilePage({ currentUser, contacts, associatedPeople, refreshData }: ProfilePageProps) {
   const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" })
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
@@ -61,17 +75,18 @@ export default function ProfilePage({
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
   const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false)
-  const [isPushEnabled, setIsPushEnabled] = useState(false)
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
-  const [isPushLoading, setIsPushLoading] = useState(true)
   const [userStats, setUserStats] = useState<{ ridesOffered: number; ridesRequested: number } | null>(null)
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("profile")
   const router = useRouter()
   const isOnline = useOnlineStatus()
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
+  const [pushDevices, setPushDevices] = useState<PushSubscription[]>([])
+  const [isPushLoading, setIsPushLoading] = useState(true)
+  const [currentDeviceId] = useState(() => getDeviceId())
 
   const { setTheme } = useTheme()
   const [currentMode, setCurrentMode] = useState<"system" | "light" | "dark">(() => {
@@ -104,22 +119,20 @@ export default function ProfilePage({
     logout()
   }
 
-  // Set edited user when currentUser changes
-  useEffect(() => {
+  const handleEditProfileOpen = () => {
     setEditedUser(currentUser)
-  }, [currentUser])
+    setIsEditProfileOpen(true)
+  }
 
   useEffect(() => {
-    const fetchPushPreference = async () => {
+    const fetchPushDevices = async () => {
+      if (!isOnline) return
       setIsPushLoading(true)
       try {
-        if (!isOnline) {
-          return
-        }
-        const response = await fetch(`/api/users/${currentUser.id}/push-preference`)
+        const response = await fetch(`/api/users/${currentUser.id}/push-devices`)
         if (response.ok) {
           const data = await response.json()
-          setIsPushEnabled(data.enabled)
+          setPushDevices(data.devices)
         }
       } finally {
         setIsPushLoading(false)
@@ -127,26 +140,136 @@ export default function ProfilePage({
     }
 
     if (currentUser) {
-      void fetchPushPreference()
+      void fetchPushDevices()
     }
-  }, [currentUser, isOnline])
+  }, [currentUser, currentUser.id, isOnline])
+
+  const handleToggleDevice = async (deviceId: string, enabled: boolean) => {
+    try {
+      const response = await fetch(`/api/users/${currentUser.id}/push-preference`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled, deviceId }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to update device preference")
+      }
+
+      const data = await response.json()
+      if (data.success) {
+        setPushDevices((prev) =>
+          prev.map((device) => (device.device_id === deviceId ? { ...device, enabled } : device)),
+        )
+        toast.success(enabled ? "Notifications enabled for this device" : "Notifications disabled for this device")
+      } else {
+        throw new Error("Failed to update device preference")
+      }
+    } catch {
+      toast.error("Failed to update notification preference. Please try again.")
+    }
+  }
+
+  const handleRemoveDevice = async (deviceId: string) => {
+    try {
+      const response = await fetch(`/api/push-subscription`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUser.id, deviceId }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to remove device")
+      }
+
+      setPushDevices((prev) => prev.filter((device) => device.device_id !== deviceId))
+      toast.success("Device removed successfully")
+    } catch {
+      toast.error("Failed to remove device")
+    }
+  }
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     if (editedUser) {
       try {
         setIsUpdatingProfile(true)
+
+        // Validate phone number
         const phoneNumber = parsePhoneNumber(editedUser.phone)
         if (!phoneNumber || !phoneNumber.isValid()) {
           throw new Error("Invalid phone number")
         }
         const e164PhoneNumber = phoneNumber.format("E.164")
-        await updateProfile(currentUser.id, { ...editedUser, phone: e164PhoneNumber })
-        toast.success("Profile updated successfully!")
+
+        // Check if email is being changed
+        const isEmailChanged = currentUser.email.toLowerCase() !== editedUser.email.toLowerCase()
+
+        if (isEmailChanged) {
+          // Validate email format
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+          if (!emailRegex.test(editedUser.email)) {
+            throw new Error("Invalid email format")
+          }
+        }
+
+        // Update profile
+        const updatedUser = await updateProfile(currentUser.id, {
+          ...editedUser,
+          phone: e164PhoneNumber,
+          email: editedUser.email.toLowerCase()
+        })
+
+        if (!updatedUser) {
+          throw new Error("Failed to update profile")
+        }
+
+        // Show success message only if email hasn't changed
+        if (!isEmailChanged) {
+          toast.success("Profile updated successfully!")
+        } else {
+          // Show email change notification
+          toast.info("A notification has been sent to your previous email address.", {
+            duration: 6000,
+            description: "If you did not make this change, please contact support immediately.",
+            action: {
+              label: "Undo",
+              onClick: async () => {
+                try {
+                  setIsUpdatingProfile(true)
+                  await updateProfile(currentUser.id, {
+                    ...editedUser,
+                    email: currentUser.email
+                  })
+                  toast.success("Email change reverted successfully")
+                  await refreshData()
+                } catch {
+                  toast.error("Failed to revert email change")
+                } finally {
+                  setIsUpdatingProfile(false)
+                }
+              }
+            }
+          })
+        }
+
         setIsEditProfileOpen(false)
-        await refreshData() // Use the prop function to refresh data
+        await refreshData()
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+        if (error instanceof Error) {
+          if (error.message.includes("already in use")) {
+            toast.error("This email address is already registered")
+          } else if (error.message.includes("Invalid email")) {
+            toast.error("Please enter a valid email address")
+          } else if (error.message.includes("Invalid phone")) {
+            toast.error("Please enter a valid phone number")
+          } else {
+            toast.error(error.message)
+          }
+        } else {
+          toast.error("An unexpected error occurred")
+        }
       } finally {
         setIsUpdatingProfile(false)
       }
@@ -218,24 +341,6 @@ export default function ProfilePage({
     }
   }
 
-  const handlePushToggle = async (checked: boolean) => {
-    setIsPushEnabled(checked)
-    try {
-      const response = await fetch(`/api/users/${currentUser.id}/push-preference`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: checked }),
-      })
-      if (!response.ok) {
-        throw new Error("Failed to update push notification preference")
-      }
-      toast.success(checked ? "Push notifications enabled" : "Push notifications disabled")
-    } catch {
-      toast.error("Failed to update push notification preference. Please try again.")
-      setIsPushEnabled(!checked)
-    }
-  }
-
   useEffect(() => {
     const fetchStats = async () => {
       if (currentUser && isOnline) {
@@ -256,11 +361,11 @@ export default function ProfilePage({
   // Get initials for avatar
   const getInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
       .toUpperCase()
-      .substring(0, 2);
+      .substring(0, 2)
   }
 
   return (
@@ -270,7 +375,7 @@ export default function ProfilePage({
         <div className="flex items-center gap-4 mb-4 sm:mb-0">
           <Avatar className="h-16 w-16 border-2 border-primary">
             <AvatarFallback className="bg-primary/10 text-primary text-xl font-medium">
-              {getInitials(currentUser?.name || 'User')}
+              {getInitials(currentUser?.name || "User")}
             </AvatarFallback>
           </Avatar>
           <div>
@@ -281,7 +386,7 @@ export default function ProfilePage({
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setIsEditProfileOpen(true)} disabled={!isOnline} size="sm" variant="outline">
+          <Button onClick={handleEditProfileOpen} disabled={!isOnline} size="sm" variant="outline">
             <Settings className="h-4 w-4 mr-2" /> Edit Profile
           </Button>
           <Button onClick={handleLogout} disabled={!isOnline} size="sm" variant="outline" className="text-destructive">
@@ -294,9 +399,15 @@ export default function ProfilePage({
       <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-4 mb-6">
           <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="security" data-tutorial="security-tab">Security</TabsTrigger>
-          <TabsTrigger value="contacts" data-tutorial="contacts-tab">Contacts</TabsTrigger>
-          <TabsTrigger value="settings" data-tutorial="settings-tab">Settings</TabsTrigger>
+          <TabsTrigger value="security" data-tutorial="security-tab">
+            Security
+          </TabsTrigger>
+          <TabsTrigger value="contacts" data-tutorial="contacts-tab">
+            Contacts
+          </TabsTrigger>
+          <TabsTrigger value="settings" data-tutorial="settings-tab">
+            Settings
+          </TabsTrigger>
         </TabsList>
 
         {/* Profile Tab */}
@@ -322,7 +433,13 @@ export default function ProfilePage({
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={() => setIsEditProfileOpen(true)} disabled={!isOnline} size="sm" variant="outline" className="w-full sm:w-auto">
+              <Button
+                onClick={handleEditProfileOpen}
+                disabled={!isOnline}
+                size="sm"
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
                 Edit Information
               </Button>
             </CardFooter>
@@ -360,7 +477,10 @@ export default function ProfilePage({
               {associatedPeople.length > 0 ? (
                 <div className="space-y-3">
                   {associatedPeople.map((person) => (
-                    <div key={person.id} className="flex justify-between items-center px-4 py-3 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
+                    <div
+                      key={person.id}
+                      className="flex justify-between items-center px-4 py-3 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors"
+                    >
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="bg-primary/10 text-primary text-xs">
@@ -428,7 +548,10 @@ export default function ProfilePage({
             </CardHeader>
             <CardContent>
               <div className="bg-secondary/30 p-4 rounded-lg mb-4">
-                <p className="text-sm">For security reasons, you should change your password regularly. Use a strong password that includes uppercase and lowercase letters, numbers, and special characters.</p>
+                <p className="text-sm">
+                  For security reasons, you should change your password regularly. Use a strong password that includes
+                  uppercase and lowercase letters, numbers, and special characters.
+                </p>
               </div>
               <Button onClick={() => setIsChangePasswordOpen(true)} disabled={!isOnline} className="w-full sm:w-auto">
                 Change Password
@@ -441,20 +564,64 @@ export default function ProfilePage({
               <CardTitle className="text-xl flex items-center">
                 <Bell className="h-5 w-5 mr-2 text-primary" /> Notification Settings
               </CardTitle>
-              <CardDescription>Configure how you want to be notified</CardDescription>
+              <CardDescription>Manage push notifications for your devices</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
-                <div className="space-y-0.5">
-                  <h3 className="font-medium">Push Notifications</h3>
-                  <p className="text-sm text-muted-foreground">Receive alerts even when app is closed</p>
+              {isPushLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader className="animate-spin h-6 w-6" />
                 </div>
-                {isPushLoading ? (
-                  <Loader className="animate-spin h-5 w-5" />
-                ) : (
-                  <Switch checked={isPushEnabled} onCheckedChange={handlePushToggle} disabled={!isOnline} />
-                )}
-              </div>
+              ) : pushDevices.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">No devices registered for notifications</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pushDevices.map((device) => (
+                    <Card
+                      key={device.device_id}
+                      className={device.device_id === currentDeviceId ? "border-primary" : ""}
+                    >
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Smartphone className="h-4 w-4" />
+                            <CardTitle className="text-sm font-medium">
+                              {device.device_name}
+                              {device.device_id === currentDeviceId && (
+                                <Badge variant="outline" className="ml-2">
+                                  Current
+                                </Badge>
+                              )}
+                            </CardTitle>
+                          </div>
+                        </div>
+                        <CardDescription className="text-xs">
+                          Last used: {formatLastUsed(device.last_used)}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardFooter className="pt-0 pb-2 flex justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={device.enabled}
+                            onCheckedChange={(checked) => handleToggleDevice(device.device_id, checked)}
+                            disabled={!isOnline}
+                          />
+                          <span className="text-sm">{device.enabled ? "Enabled" : "Disabled"}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveDevice(device.device_id)}
+                          disabled={!isOnline}
+                        >
+                          <UserX className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -468,7 +635,9 @@ export default function ProfilePage({
             <CardContent>
               <div className="bg-destructive/10 p-4 rounded-lg mb-4 border border-destructive/20">
                 <h3 className="font-medium mb-1 text-destructive">Delete Account</h3>
-                <p className="text-sm mb-3">Once you delete your account, there is no going back. All your data will be permanently removed.</p>
+                <p className="text-sm mb-3">
+                  Once you delete your account, there is no going back. All your data will be permanently removed.
+                </p>
                 <Button
                   variant="destructive"
                   onClick={handleDeleteUser}
@@ -493,11 +662,7 @@ export default function ProfilePage({
               <CardDescription>Manage people you frequently travel with</CardDescription>
             </CardHeader>
             <CardContent>
-              <ContactManager
-                currentUser={currentUser}
-                contacts={contacts}
-                fetchProfileData={refreshData}
-              />
+              <ContactManager currentUser={currentUser} contacts={contacts} fetchProfileData={refreshData} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -573,7 +738,12 @@ export default function ProfilePage({
       </Tabs>
 
       {/* Dialogs */}
-      <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
+      <Dialog open={isEditProfileOpen} onOpenChange={(open) => {
+        if (!open) {
+          setEditedUser(currentUser)
+        }
+        setIsEditProfileOpen(open)
+      }}>
         <DialogContent className="rounded-lg w-11/12 max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
@@ -700,11 +870,7 @@ export default function ProfilePage({
             />
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteAccountDialogOpen(false)}
-              className="sm:order-1 mb-2"
-            >
+            <Button variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)} className="sm:order-1 mb-2">
               Cancel
             </Button>
             <Button
@@ -739,3 +905,4 @@ export default function ProfilePage({
     </div>
   )
 }
+

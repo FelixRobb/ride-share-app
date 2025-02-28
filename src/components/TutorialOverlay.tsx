@@ -8,6 +8,7 @@ import { useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useTutorial, tutorialSteps } from "@/contexts/TutorialContext"
+import { cn } from "@/lib/utils"
 
 export const TutorialOverlay: React.FC = () => {
   const { currentStep, nextStep, prevStep, skipTutorial, isTargetReady } = useTutorial()
@@ -107,7 +108,11 @@ export const TutorialOverlay: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed border-2 border-primary rounded-md pointer-events-none z-40"
+          className={cn(
+            "fixed border-2 border-primary rounded-md pointer-events-none",
+            // Only use z-[60] for the notifications tutorial step
+            currentStep.key === "notifications" ? "z-[60] rounded-full" : "z-40"
+          )}
           style={{
             left: targetElement.left - 4,
             top: targetElement.top - 4,

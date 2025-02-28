@@ -1,42 +1,33 @@
-"use client";
+"use client"
 
-import { useEffect, useState, useCallback } from "react";
-import { toast } from "sonner";
-import { debounce } from "lodash";
-import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { useEffect, useState, useCallback } from "react"
+import { toast } from "sonner"
+import { motion, AnimatePresence } from "framer-motion"
+import { X } from "lucide-react"
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { getDeviceId, getDeviceInfo } from "@/utils/deviceUtils"
 
 export default function PushNotificationHandler({
   userId,
 }: {
-  userId: string;
+  userId: string
 }) {
-  const [subscription, setSubscription] = useState<PushSubscription | null>(
-    null
-  );
-  const [showPermissionPopup, setShowPermissionPopup] = useState(false);
-  const [hasSeenPopup, setHasSeenPopup] = useState(false);
-  const [pushEnabled, setPushEnabled] = useState<boolean | null>(null);
-  const [isPushLoading, setIsPushLoading] = useState(true);
+  const [showPermissionPopup, setShowPermissionPopup] = useState(false)
+  const [hasSeenPopup, setHasSeenPopup] = useState(false)
+  const [deviceId] = useState(() => getDeviceId())
+  const [deviceInfo] = useState(() => getDeviceInfo())
 
   const registerServiceWorker = useCallback(async () => {
     try {
-      const registration =
-        await navigator.serviceWorker.register("/service-worker.js");
-      return registration;
+      const registration = await navigator.serviceWorker.register("/service-worker.js")
+      return registration
     } catch {
-      return null;
+      toast.error("Failed to register service worker")
+      return null
     }
-  }, []);
+  }, [])
 
   const saveSubscription = useCallback(
     async (subscription: PushSubscription) => {
@@ -48,159 +39,105 @@ export default function PushNotificationHandler({
         body: JSON.stringify({
           subscription: subscription.toJSON(),
           userId,
+          deviceId,
+          deviceName: deviceInfo.name,
         }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error("Failed to save push subscription");
+        throw new Error("Failed to save push subscription")
       }
+
+      const data = await response.json()
+      return data.enabled
     },
-    [userId]
-  );
-
-  const deleteSubscription = useCallback(async () => {
-    const response = await fetch("/api/push-subscription", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ userId }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to delete push subscription");
-    }
-  }, [userId]);
+    [userId, deviceId, deviceInfo.name],
+  )
 
   const handlePermissionGranted = useCallback(
     async (registration: ServiceWorkerRegistration) => {
-      if (pushEnabled === null) return;
-
-      if (pushEnabled) {
-        let currentSubscription =
-          await registration.pushManager.getSubscription();
+      try {
+        let currentSubscription = await registration.pushManager.getSubscription()
 
         if (!currentSubscription) {
-          const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+          const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
           if (!publicKey) {
-            throw new Error("VAPID public key is not set");
+            throw new Error("VAPID public key is not set")
           }
           currentSubscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: publicKey,
-          });
-          if (currentSubscription) {
-            await saveSubscription(currentSubscription);
-          }
+          })
         }
 
-        setSubscription(currentSubscription);
-      } else if (!pushEnabled && subscription) {
-        await subscription.unsubscribe();
-        await deleteSubscription();
-        setSubscription(null);
+        if (currentSubscription) {
+          await saveSubscription(currentSubscription)
+        }
+      } catch {
+        toast.error("Error handling push permission")
       }
     },
-    [subscription, pushEnabled, saveSubscription, deleteSubscription]
-  );
-
-  const debouncedHandlePermissionGranted = debounce(
-    handlePermissionGranted,
-    1000
-  );
+    [saveSubscription],
+  )
 
   useEffect(() => {
     const setupPushNotifications = async () => {
       if ("serviceWorker" in navigator && "PushManager" in window) {
-        const registration = await registerServiceWorker();
-        if (!registration) return;
+        const registration = await registerServiceWorker()
+        if (!registration) return
 
-        const currentPermission = Notification.permission;
-        const hasDeclinedBefore = localStorage.getItem(
-          "pushNotificationDeclined"
-        );
+        const currentPermission = Notification.permission
 
-        // Only show the popup if not granted and haven't declined before
-        if (
-          currentPermission === "default" &&
-          !hasDeclinedBefore &&
-          !hasSeenPopup
-        ) {
-          setShowPermissionPopup(true);
+        if (currentPermission === "granted") {
+          await handlePermissionGranted(registration)
+        } else if (currentPermission === "default" && !hasSeenPopup) {
+          setShowPermissionPopup(true)
         }
       }
-    };
+    }
 
-    setupPushNotifications();
-  }, [hasSeenPopup, registerServiceWorker]);
+    setupPushNotifications()
+  }, [hasSeenPopup, registerServiceWorker, handlePermissionGranted])
 
   const handleDecline = () => {
-    setShowPermissionPopup(false);
-    setHasSeenPopup(true);
-    localStorage.setItem("pushNotificationDeclined", "true");
-  };
-
-  useEffect(() => {
-    const getPushPreference = async () => {
-      try {
-        const response = await fetch(`/api/users/${userId}/push-preference`);
-        const { enabled } = await response.json();
-        setPushEnabled(enabled);
-      } finally {
-        setIsPushLoading(false);
-      }
-    };
-
-    getPushPreference();
-  }, [userId]);
-
-  useEffect(() => {
-    if (!isPushLoading && pushEnabled !== null) {
-      navigator.serviceWorker.ready.then((registration) => {
-        // Only handle subscription management, not permission requests
-        if (Notification.permission === "granted") {
-          void debouncedHandlePermissionGranted(registration);
-        }
-      });
-    }
-  }, [isPushLoading, pushEnabled, debouncedHandlePermissionGranted]);
+    setShowPermissionPopup(false)
+    setHasSeenPopup(true)
+    localStorage.setItem("pushNotificationDeclined", "true")
+  }
 
   const handlePermissionRequest = async () => {
-    setShowPermissionPopup(false);
-    setHasSeenPopup(true);
+    setShowPermissionPopup(false)
+    setHasSeenPopup(true)
 
     try {
-      // Register service worker first if not already registered
-      const registration = await registerServiceWorker();
+      const registration = await registerServiceWorker()
       if (!registration) {
-        throw new Error("Failed to register service worker");
+        throw new Error("Failed to register service worker")
       }
 
-      const permission = await Notification.requestPermission();
+      const permission = await Notification.requestPermission()
       if (permission === "granted") {
-        setPushEnabled(true);
-        await handlePermissionGranted(registration);
-        toast.success("Push notifications enabled successfully!");
+        await handlePermissionGranted(registration)
+        toast.success("Push notifications enabled successfully!")
       } else {
-        setPushEnabled(false);
-        toast.error("Permission denied for push notifications");
+        toast.error("Permission denied for push notifications")
       }
     } catch {
-      toast.error("Failed to enable push notifications");
+      toast.error("Failed to enable push notifications")
     }
-  };
+  }
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("message", (event) => {
         if (event.data && event.data.type === "PUSH_NOTIFICATION") {
-          toast(event.data.title, {
+          toast.info(event.data.title, {
             description: event.data.body,
-          });
+          })
         }
-      });
+      })
     }
-  }, []);
+  }, [])
 
   return (
     <AnimatePresence mode="wait">
@@ -210,7 +147,7 @@ export default function PushNotificationHandler({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           transition={{ duration: 0.2 }}
-          className="fixed top-10 left-0 right-0 mx-auto z-50 w-80 sm:left-4 sm:right-auto sm:mx-0"
+          className="fixed top-16 left-0 right-0 mx-auto z-50 w-80 sm:left-4 sm:right-auto sm:mx-0"
         >
           <Card className="w-80 shadow-lg">
             <CardHeader className="pb-2">
@@ -223,19 +160,14 @@ export default function PushNotificationHandler({
             </CardHeader>
             <CardContent>
               <p className="text-sm">
-                Stay updated about your rides and important information with
-                push notifications.
+                Stay updated about your rides and important information with push notifications on this device.
               </p>
             </CardContent>
             <CardFooter className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={handleDecline}>
                 Not Now
               </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handlePermissionRequest}
-              >
+              <Button variant="default" size="sm" onClick={handlePermissionRequest}>
                 Enable
               </Button>
             </CardFooter>
@@ -243,5 +175,6 @@ export default function PushNotificationHandler({
         </motion.div>
       )}
     </AnimatePresence>
-  );
+  )
 }
+

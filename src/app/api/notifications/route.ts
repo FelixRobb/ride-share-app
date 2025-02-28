@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/db";
-import { sendPushNotification } from "@/lib/pushNotificationService";
 import { createHash } from "crypto";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
@@ -28,23 +27,6 @@ export async function GET(request: Request) {
     // If ETag matches, return 304 Not Modified
     if (ifNoneMatch === etag) {
       return new NextResponse(null, { status: 304 });
-    }
-
-    // Fetch user's push subscription
-    const { data: subscriptionData, error: subscriptionError } = await supabase.from("push_subscriptions").select("subscription").eq("user_id", userId).single();
-
-    if (subscriptionError && subscriptionError.code !== "PGRST116") {
-      throw subscriptionError;
-    }
-
-    // If there's a subscription and new notifications, send a push notification
-    if (subscriptionData && notifications.some((n) => !n.is_read)) {
-      const subscription = JSON.parse(subscriptionData.subscription);
-      const payload = JSON.stringify({
-        title: "New Notifications",
-        body: "You have new notifications in RideShare app.",
-      });
-      await sendPushNotification(subscription, payload);
     }
 
     return NextResponse.json(

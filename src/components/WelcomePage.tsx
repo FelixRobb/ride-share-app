@@ -5,9 +5,37 @@ import { Car, Users, Shield, Zap, ChevronDown, ArrowRight, Star } from "lucide-r
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
+import { Metadata } from "next"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+// Add metadata configuration
+export const metadata: Metadata = {
+  title: "RideShare - Connect and Share Rides with Friends",
+  description: "Join RideShare to connect with friends, share rides, and travel together safely. Create or join rides with just a few taps in our trusted community.",
+  keywords: ["rideshare", "carpooling", "ride sharing", "transportation", "community rides"],
+  openGraph: {
+    title: "RideShare - Connect and Share Rides with Friends",
+    description: "Join RideShare to connect with friends, share rides, and travel together safely.",
+    type: "website",
+    locale: "en_US",
+    images: [
+      {
+        url: "/og-image.png", // Make sure to add this image to your public folder
+        width: 1200,
+        height: 630,
+        alt: "RideShare Preview",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RideShare - Connect and Share Rides with Friends",
+    description: "Join RideShare to connect with friends, share rides, and travel together safely.",
+    images: ["/twitter-image.png"], // Make sure to add this image to your public folder
+  },
+}
 
 interface Review {
   id: string
