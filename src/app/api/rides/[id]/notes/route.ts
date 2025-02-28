@@ -60,7 +60,7 @@ export async function POST(request: Request) {
         await sendImmediateNotification(otherUserId, "New Ride Message", `${noteAuthor.name} has added a new message to your ride`);
         await supabase.from("notifications").insert({
           user_id: otherUserId,
-          message: `${noteAuthor.name} has added a new message to your ride`,
+          message: `${noteAuthor.name} has added a new message to your ride: "${note}"`,
           type: "newNote",
           related_id: rideId,
         });

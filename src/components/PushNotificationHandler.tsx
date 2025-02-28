@@ -21,6 +21,9 @@ export default function PushNotificationHandler({
 
   const registerServiceWorker = useCallback(async () => {
     try {
+      if (navigator.serviceWorker.controller) {
+        return navigator.serviceWorker.ready
+      }
       const registration = await navigator.serviceWorker.register("/service-worker.js")
       return registration
     } catch {
@@ -43,9 +46,8 @@ export default function PushNotificationHandler({
           deviceName: deviceInfo.name,
         }),
       })
-
       if (!response.ok) {
-        throw new Error("Failed to save push subscription")
+        throw new Error(`Failed to save subscription: ${response.status}`)
       }
 
       const data = await response.json()
@@ -56,43 +58,59 @@ export default function PushNotificationHandler({
 
   const handlePermissionGranted = useCallback(
     async (registration: ServiceWorkerRegistration) => {
-      try {
-        let currentSubscription = await registration.pushManager.getSubscription()
-
-        if (!currentSubscription) {
-          const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-          if (!publicKey) {
-            throw new Error("VAPID public key is not set")
-          }
-          currentSubscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: publicKey,
-          })
-        }
-
-        if (currentSubscription) {
-          await saveSubscription(currentSubscription)
-        }
-      } catch {
-        toast.error("Error handling push permission")
+      // First, unsubscribe from any existing subscription
+      let currentSubscription = await registration.pushManager.getSubscription()
+      if (currentSubscription) {
+        await currentSubscription.unsubscribe()
       }
+
+      // Create a new subscription
+      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      if (!publicKey) {
+        throw new Error("VAPID public key is not set")
+      }
+
+      // Use the VAPID key directly instead of fetching it
+      const applicationServerKey = urlBase64ToUint8Array(publicKey)
+
+      currentSubscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      })
+      if (currentSubscription) {
+        await saveSubscription(currentSubscription)
+        return true
+      }
+      return false
     },
     [saveSubscription],
   )
 
   useEffect(() => {
     const setupPushNotifications = async () => {
-      if ("serviceWorker" in navigator && "PushManager" in window) {
+      try {
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+          return
+        }
+
         const registration = await registerServiceWorker()
         if (!registration) return
 
         const currentPermission = Notification.permission
 
         if (currentPermission === "granted") {
-          await handlePermissionGranted(registration)
+          const success = await handlePermissionGranted(registration)
+          if (!success) {
+            toast.error("Failed to setup push notifications")
+          }
         } else if (currentPermission === "default" && !hasSeenPopup) {
-          setShowPermissionPopup(true)
+          const hasDeclined = localStorage.getItem("pushNotificationDeclined")
+          if (!hasDeclined) {
+            setShowPermissionPopup(true)
+          }
         }
+      } catch {
+        toast.error("Failed to setup push notifications")
       }
     }
 
@@ -110,17 +128,25 @@ export default function PushNotificationHandler({
     setHasSeenPopup(true)
 
     try {
+      // First, request the permission
+      const permission = await Notification.requestPermission()
+      if (permission !== "granted") {
+        toast.error("Permission denied for push notifications")
+        return
+      }
+
+      // Then register the service worker
       const registration = await registerServiceWorker()
       if (!registration) {
         throw new Error("Failed to register service worker")
       }
 
-      const permission = await Notification.requestPermission()
-      if (permission === "granted") {
-        await handlePermissionGranted(registration)
+      // Finally handle the granted permission
+      const success = await handlePermissionGranted(registration)
+      if (success) {
         toast.success("Push notifications enabled successfully!")
       } else {
-        toast.error("Permission denied for push notifications")
+        throw new Error("Failed to setup push notifications")
       }
     } catch {
       toast.error("Failed to enable push notifications")
@@ -147,7 +173,7 @@ export default function PushNotificationHandler({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           transition={{ duration: 0.2 }}
-          className="fixed top-16 left-0 right-0 mx-auto z-50 w-80 sm:left-4 sm:right-auto sm:mx-0"
+          className="fixed top-16 md:top-20 left-0 right-0 mx-auto z-50 w-80 sm:left-4 sm:right-auto sm:mx-0"
         >
           <Card className="w-80 shadow-lg">
             <CardHeader className="pb-2">
@@ -178,3 +204,26 @@ export default function PushNotificationHandler({
   )
 }
 
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  // Remove any padding characters
+  const base64 = base64String.replace(/=/g, '')
+    // Replace URL-safe characters
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+
+  // Add padding back
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4)
+  const base64Padded = base64 + padding
+
+  try {
+    const rawData = window.atob(base64Padded)
+    const outputArray = new Uint8Array(rawData.length)
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i)
+    }
+    return outputArray
+  } catch {
+    throw new Error('Invalid VAPID key format')
+  }
+}
