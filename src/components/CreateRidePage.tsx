@@ -510,7 +510,7 @@ export default function CreateRidePage({
       )}
 
       <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
-        <DialogContent className="sm:max-w-[425px] rounded-lg">
+        <DialogContent className="w-11/12 rounded-lg">
           <DialogHeader>
             <DialogTitle>Restore Previous Ride Data</DialogTitle>
             <DialogDescription>
