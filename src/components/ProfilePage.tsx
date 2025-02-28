@@ -119,10 +119,10 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, r
     logout()
   }
 
-  // Set edited user when currentUser changes
-  useEffect(() => {
+  const handleEditProfileOpen = () => {
     setEditedUser(currentUser)
-  }, [currentUser])
+    setIsEditProfileOpen(true)
+  }
 
   useEffect(() => {
     const fetchPushDevices = async () => {
@@ -195,17 +195,81 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, r
     if (editedUser) {
       try {
         setIsUpdatingProfile(true)
+
+        // Validate phone number
         const phoneNumber = parsePhoneNumber(editedUser.phone)
         if (!phoneNumber || !phoneNumber.isValid()) {
           throw new Error("Invalid phone number")
         }
         const e164PhoneNumber = phoneNumber.format("E.164")
-        await updateProfile(currentUser.id, { ...editedUser, phone: e164PhoneNumber })
-        toast.success("Profile updated successfully!")
+
+        // Check if email is being changed
+        const isEmailChanged = currentUser.email.toLowerCase() !== editedUser.email.toLowerCase()
+
+        if (isEmailChanged) {
+          // Validate email format
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+          if (!emailRegex.test(editedUser.email)) {
+            throw new Error("Invalid email format")
+          }
+        }
+
+        // Update profile
+        const updatedUser = await updateProfile(currentUser.id, {
+          ...editedUser,
+          phone: e164PhoneNumber,
+          email: editedUser.email.toLowerCase()
+        })
+
+        if (!updatedUser) {
+          throw new Error("Failed to update profile")
+        }
+
+        // Show success message only if email hasn't changed
+        if (!isEmailChanged) {
+          toast.success("Profile updated successfully!")
+        } else {
+          // Show email change notification
+          toast.info("A notification has been sent to your previous email address.", {
+            duration: 6000,
+            description: "If you did not make this change, please contact support immediately.",
+            action: {
+              label: "Undo",
+              onClick: async () => {
+                try {
+                  setIsUpdatingProfile(true)
+                  await updateProfile(currentUser.id, {
+                    ...editedUser,
+                    email: currentUser.email
+                  })
+                  toast.success("Email change reverted successfully")
+                  await refreshData()
+                } catch {
+                  toast.error("Failed to revert email change")
+                } finally {
+                  setIsUpdatingProfile(false)
+                }
+              }
+            }
+          })
+        }
+
         setIsEditProfileOpen(false)
-        await refreshData() // Use the prop function to refresh data
+        await refreshData()
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+        if (error instanceof Error) {
+          if (error.message.includes("already in use")) {
+            toast.error("This email address is already registered")
+          } else if (error.message.includes("Invalid email")) {
+            toast.error("Please enter a valid email address")
+          } else if (error.message.includes("Invalid phone")) {
+            toast.error("Please enter a valid phone number")
+          } else {
+            toast.error(error.message)
+          }
+        } else {
+          toast.error("An unexpected error occurred")
+        }
       } finally {
         setIsUpdatingProfile(false)
       }
@@ -322,7 +386,7 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, r
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setIsEditProfileOpen(true)} disabled={!isOnline} size="sm" variant="outline">
+          <Button onClick={handleEditProfileOpen} disabled={!isOnline} size="sm" variant="outline">
             <Settings className="h-4 w-4 mr-2" /> Edit Profile
           </Button>
           <Button onClick={handleLogout} disabled={!isOnline} size="sm" variant="outline" className="text-destructive">
@@ -370,7 +434,7 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, r
             </CardContent>
             <CardFooter>
               <Button
-                onClick={() => setIsEditProfileOpen(true)}
+                onClick={handleEditProfileOpen}
                 disabled={!isOnline}
                 size="sm"
                 variant="outline"
@@ -674,7 +738,12 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, r
       </Tabs>
 
       {/* Dialogs */}
-      <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
+      <Dialog open={isEditProfileOpen} onOpenChange={(open) => {
+        if (!open) {
+          setEditedUser(currentUser)
+        }
+        setIsEditProfileOpen(open)
+      }}>
         <DialogContent className="rounded-lg w-11/12 max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>

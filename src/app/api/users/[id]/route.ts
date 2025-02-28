@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 import { parsePhoneNumber } from "libphonenumber-js";
+import { sendEmail, getEmailChangeNotificationContent } from "@/lib/emailService";
 
 // PUT Handler: Update User Information
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
@@ -15,6 +16,15 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
   }
 
   try {
+    // Get current user data to check if email is being changed
+    const { data: currentUser, error: userError } = await supabase
+      .from("users")
+      .select("email")
+      .eq("id", userId)
+      .single();
+
+    if (userError) throw userError;
+
     // Parse the phone number
     const phoneNumber = parsePhoneNumber(phone);
     if (!phoneNumber || !phoneNumber.isValid()) {
@@ -23,12 +33,26 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
     const e164Number = phoneNumber.format("E.164");
 
+    // Check if new email already exists for another user
+    if (currentUser.email !== email) {
+      const { data: existingEmail } = await supabase
+        .from("users")
+        .select("id")
+        .eq("email", email.toLowerCase())
+        .neq("id", userId)
+        .single();
+
+      if (existingEmail) {
+        return NextResponse.json({ error: "Email already in use" }, { status: 400 });
+      }
+    }
+
     const { data: updatedUser, error } = await supabase
       .from("users")
       .update({
         name,
         phone: e164Number,
-        email,
+        email: email.toLowerCase(),
       })
       .eq("id", userId)
       .select("id, name, phone, email")
@@ -38,6 +62,16 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
     if (!updatedUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Send notification email if email was changed
+    if (currentUser.email !== email.toLowerCase()) {
+      const emailContent = getEmailChangeNotificationContent(name, email);
+      await sendEmail(
+        currentUser.email, // Send to old email address
+        "RideShare - Email Change Notification",
+        emailContent
+      );
     }
 
     return NextResponse.json(updatedUser, { status: 200 });

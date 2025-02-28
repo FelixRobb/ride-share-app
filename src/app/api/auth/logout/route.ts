@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/db";
-import { getDeviceId } from "@/utils/deviceUtils";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -11,15 +10,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { subscription } = await request.json();
-    const deviceId = getDeviceId();
+    let subscription;
+    let deviceId;
+    try {
+      const body = await request.json();
+      subscription = body.subscription;
+      deviceId = body.deviceId; // Get deviceId from the client request instead
+    } catch {
+      // If request.json() fails, continue without subscription data
+      subscription = null;
+      deviceId = null;
+    }
 
-    // If there's a subscription, delete it from the database
-    if (subscription) {
+    // If there's a subscription and deviceId, delete it from the database
+    if (subscription && deviceId) {
       await supabase.from("push_subscriptions").delete().match({
         user_id: session.user.id,
         device_id: deviceId,
-        endpoint: subscription.endpoint, // Add endpoint to ensure we delete the correct subscription
       });
     }
 

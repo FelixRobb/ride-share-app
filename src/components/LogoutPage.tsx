@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { unregisterServiceWorker } from "@/utils/cleanupService"
+import { getDeviceId } from "@/utils/deviceUtils"
 
 export default function LogoutPage() {
   const router = useRouter()
@@ -26,7 +27,10 @@ export default function LogoutPage() {
           currentSubscription = await registration.pushManager.getSubscription()
         }
 
-        // Call the logout API with the current subscription
+        // Get the device ID
+        const deviceId = getDeviceId()
+
+        // Call the logout API with the current subscription and device ID
         const response = await fetch("/api/auth/logout", {
           method: "POST",
           headers: {
@@ -34,6 +38,7 @@ export default function LogoutPage() {
           },
           body: JSON.stringify({
             subscription: currentSubscription ? currentSubscription.toJSON() : null,
+            deviceId,
           }),
           credentials: "include",
         })
