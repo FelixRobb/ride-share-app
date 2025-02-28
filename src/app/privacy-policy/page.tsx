@@ -2,6 +2,16 @@ import Link from 'next/link'
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "Privacy Policy - RideShare",
+  description: "Read our privacy policy to understand how we handle your data.",
+  openGraph: {
+    title: "Privacy Policy - RideShare",
+    description: "Read our privacy policy to understand how we handle your data.",
+  }
+}
 
 export default function PrivacyPolicy() {
   return (

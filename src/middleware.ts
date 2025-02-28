@@ -131,6 +131,6 @@ export const config = {
      * - _next (static files and images)
      * - public assets and icons
      */
-    "/((?!api/auth|_next|favicon\\.ico|manifest\\.webmanifest|icon-\\d+x\\d+\\.png|icon\\.svg|service-worker\\.js|wide-pwa\\.png|narrow-pwa\\.png|twitter-image\\.png|og-image\\.png|web-app-manifest-192x192\\.png|web-app-manifest-512x512\\.png).*)",
+    "/((?!api/auth|_next|favicon\\.ico|manifest\\.webmanifest|icon-\\d+x\\d+\\.png|icon\\.svg|service-worker\\.js|wide-pwa\\.png|narrow-pwa\\.png|twitter-image\\.png|og-image\\.png|web-app-manifest-192x192\\.png|web-app-manifest-512x512\\.png|robots\\.txt|sitemap\\.xml).*)",
   ],
 };

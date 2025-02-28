@@ -691,7 +691,7 @@ export function getEmailChangeNotificationContent(name: string, newEmail: string
     </div>
     
     <div style="text-align: center; margin: 2rem 0;">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL}/settings/security" class="action-button">Review Account Security</a>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/profile" class="action-button">Review Account Security</a>
     </div>
     
     <div style="text-align: center; color: var(--muted-foreground); background-color: rgba(58, 29, 110, 0.1); padding: 1rem; border-radius: 0.5rem;">

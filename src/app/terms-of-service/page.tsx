@@ -2,6 +2,16 @@ import Link from 'next/link'
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "Terms of Service - RideShare",
+  description: "Read our terms of service agreement.",
+  openGraph: {
+    title: "Terms of Service - RideShare",
+    description: "Read our terms of service agreement.",
+  }
+}
 
 export default function TermsOfService() {
   return (
