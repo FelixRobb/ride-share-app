@@ -7,23 +7,20 @@ export async function GET() {
       .from("reviews")
       .select(
         `
-        id,
-        review,
-        rating,
+        *,
         users:user_id (name)
       `
       )
-      .eq("is_approved", true)
-      .order("created_at", { ascending: false })
-      .limit(6);
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
 
     const reviews = data.map((review) => ({
       id: review.id,
-      userName: review.users[0]?.name,
+      userName: review.users.name || "Unknown User",
       review: review.review,
       rating: review.rating,
+      created_at: review.created_at,
     }));
 
     return NextResponse.json(reviews);

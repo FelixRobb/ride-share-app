@@ -39,7 +39,7 @@ export const metadata: Metadata = {
 
 interface Review {
   id: string
-  reviewer_name: string
+  userName: string
   review: string
   rating: number
   created_at: string
@@ -183,7 +183,7 @@ export default function WelcomePage() {
           transition={{
             duration: 1,
             ease: "easeOut",
-            opacity: { duration: 0.5 },
+            opacity: { duration: 0.5, ease: "easeOut" },
           }}
           animate={{
             x: 0,
@@ -355,7 +355,7 @@ export default function WelcomePage() {
               <Card key={review.id} className="bg-background/50 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex justify-between items-center">
-                    <span>{review.reviewer_name}</span>
+                    <span className="text-xl whitespace-nowrap overflow-hidden text-ellipsis">{review.userName}</span>
                     <div className="flex">
                       {[...Array(review.rating)].map((_, i) => (
                         <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
