@@ -14,6 +14,7 @@ import { unregisterServiceWorker } from "@/utils/cleanupService"
 export default function LogoutPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     const handleLogout = async () => {
@@ -56,21 +57,18 @@ export default function LogoutPage() {
         // Sign out using NextAuth
         await signOut({ redirect: false })
 
-        // Show success toast only if not already loading
-        if (loading) {
-          toast.success("Logged out successfully")
-          setLoading(false) // Ensure loading is set to false after success
-        }
+        toast.success("Logged out successfully")
         router.push("/")
       } catch {
-        // Redirect to the login page on error
-        router.push("/login")
+        setError(true)
+        toast.error("Failed to logout. Please try again.")
+      } finally {
         setLoading(false)
       }
     }
 
     handleLogout()
-  }, [router, loading]) // Add loading to the dependency array
+  }, [router]) // Remove loading from dependencies to avoid infinite loop
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -93,7 +91,9 @@ export default function LogoutPage() {
             <CardHeader>
               <CardTitle className="text-center">Logging Out</CardTitle>
               <CardDescription className="text-center">
-                {loading ? "Please wait while we log you out..." : "An error occurred. Please try again."}
+                {loading ? "Please wait while we log you out..." :
+                  error ? "An error occurred. Please try again." :
+                    "Logging you out..."}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">

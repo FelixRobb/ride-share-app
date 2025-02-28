@@ -25,6 +25,17 @@ CREATE TABLE public.contacts (
 CREATE INDEX IF NOT EXISTS idx_contacts_user_id ON public.contacts USING btree (user_id);
 CREATE INDEX IF NOT EXISTS idx_contacts_contact_id ON public.contacts USING btree (contact_id);
 
+CREATE TABLE public.email_verification_tokens (
+  id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  token character varying(255) NOT NULL,
+  created_at timestamp with time zone NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at timestamp with time zone NOT NULL,
+  CONSTRAINT email_verification_tokens_pkey PRIMARY KEY (id),
+  CONSTRAINT email_verification_tokens_token_key UNIQUE (token),
+  CONSTRAINT email_verification_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE public.notifications (
   id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
   user_id uuid NOT NULL,
@@ -53,13 +64,37 @@ CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON public.password_
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires_at ON public.password_reset_tokens USING btree (expires_at);
 
 CREATE TABLE public.push_subscriptions (
-  id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
-  user_id uuid NULL,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
   subscription jsonb NOT NULL,
+  device_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  device_name character varying(255) NULL,
+  enabled boolean NOT NULL DEFAULT true,
   created_at timestamp with time zone NULL DEFAULT CURRENT_TIMESTAMP,
+  last_used timestamp with time zone NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT push_subscriptions_pkey PRIMARY KEY (id),
-  CONSTRAINT push_subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  CONSTRAINT unique_user_device UNIQUE (user_id, device_id),
+  CONSTRAINT fk_push_subscriptions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON public.push_subscriptions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_device_id ON public.push_subscriptions USING btree (device_id);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_last_used ON public.push_subscriptions USING btree (last_used);
+
+CREATE TABLE public.reviews (
+  id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  review text NOT NULL,
+  rating integer NOT NULL,
+  created_at timestamp with time zone NULL DEFAULT CURRENT_TIMESTAMP,
+  is_approved boolean NULL DEFAULT false,
+  reviewer_name character varying NULL,
+  CONSTRAINT reviews_pkey PRIMARY KEY (id),
+  CONSTRAINT reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT reviews_rating_check CHECK (((rating >= 1) AND (rating <= 5)))
+);
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON public.reviews USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_is_approved ON public.reviews USING btree (is_approved);
+CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON public.reviews USING btree (created_at);
 
 CREATE TABLE public.ride_notes (
   id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
@@ -109,6 +144,7 @@ CREATE TABLE public.users (
   password character varying(255) NOT NULL,
   created_at timestamp with time zone NULL DEFAULT CURRENT_TIMESTAMP,
   push_enabled boolean NULL DEFAULT true,
+  is_verified boolean NULL DEFAULT false,
   CONSTRAINT users_pkey PRIMARY KEY (id),
   CONSTRAINT users_email_key UNIQUE (email)
 );

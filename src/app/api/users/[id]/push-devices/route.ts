@@ -3,7 +3,8 @@ import { supabase } from "@/lib/db"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const { id } = params
 
   const session = await getServerSession(authOptions)
@@ -24,8 +25,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     if (error) throw error
 
     return NextResponse.json({ devices: data })
-  } catch (error) {
-    console.error("Error fetching push devices:", error)
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

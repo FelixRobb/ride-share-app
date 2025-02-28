@@ -14,11 +14,8 @@ export default function PushNotificationHandler({
 }: {
   userId: string
 }) {
-  const [subscription, setSubscription] = useState<PushSubscription | null>(null)
   const [showPermissionPopup, setShowPermissionPopup] = useState(false)
   const [hasSeenPopup, setHasSeenPopup] = useState(false)
-  const [pushEnabled, setPushEnabled] = useState<boolean | null>(null)
-  const [isPushLoading, setIsPushLoading] = useState(true)
   const [deviceId] = useState(() => getDeviceId())
   const [deviceInfo] = useState(() => getDeviceInfo())
 
@@ -26,8 +23,8 @@ export default function PushNotificationHandler({
     try {
       const registration = await navigator.serviceWorker.register("/service-worker.js")
       return registration
-    } catch (error) {
-      console.error("Failed to register service worker:", error)
+    } catch {
+      toast.error("Failed to register service worker")
       return null
     }
   }, [])
@@ -74,13 +71,10 @@ export default function PushNotificationHandler({
         }
 
         if (currentSubscription) {
-          const enabled = await saveSubscription(currentSubscription)
-          setPushEnabled(enabled)
-          setSubscription(currentSubscription)
+          await saveSubscription(currentSubscription)
         }
-      } catch (error) {
-        console.error("Error handling push permission:", error)
-        setPushEnabled(false)
+      } catch {
+        toast.error("Error handling push permission")
       }
     },
     [saveSubscription],
@@ -100,7 +94,6 @@ export default function PushNotificationHandler({
           setShowPermissionPopup(true)
         }
       }
-      setIsPushLoading(false)
     }
 
     setupPushNotifications()
@@ -127,11 +120,9 @@ export default function PushNotificationHandler({
         await handlePermissionGranted(registration)
         toast.success("Push notifications enabled successfully!")
       } else {
-        setPushEnabled(false)
         toast.error("Permission denied for push notifications")
       }
-    } catch (error) {
-      console.error("Failed to enable push notifications:", error)
+    } catch {
       toast.error("Failed to enable push notifications")
     }
   }

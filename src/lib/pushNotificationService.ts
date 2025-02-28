@@ -29,8 +29,6 @@ export async function sendImmediateNotification(userId: string, title: string, b
 
   if (subscriptionError) throw subscriptionError
 
-  console.log("Enabled subscriptions:", subscriptionData)
-
   if (subscriptionData && subscriptionData.length > 0) {
     const payload = JSON.stringify({ title, body })
     const expiredSubscriptions: string[] = []

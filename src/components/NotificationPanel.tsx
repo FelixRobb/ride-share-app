@@ -126,8 +126,8 @@ const NotificationFilters = ({
             ))}
           </SelectContent>
         </Select>
-        <Tabs value={selectedFilter} onValueChange={setSelectedFilter} className="flex-1 min-w-10">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs value={selectedFilter} onValueChange={setSelectedFilter} className="w-fit">
+          <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="unread">Unread</TabsTrigger>
           </TabsList>
@@ -232,8 +232,6 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
           const data = await response.json()
           setDevices(data.devices)
         }
-      } catch (error) {
-        console.error("Failed to fetch devices:", error)
       } finally {
         if (mounted) {
           setIsLoading(false)
@@ -268,10 +266,8 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
       } else {
         throw new Error("Failed to update device preference")
       }
-    } catch (error) {
-      console.error("Error updating push preference:", error)
+    } catch {
       toast.error("Failed to update notification preference. Please try again.")
-      // Revert the UI change
       setDevices((prev) => [...prev])
     }
   }
@@ -290,7 +286,7 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
 
       setDevices((prev) => prev.filter((device) => device.device_id !== deviceId))
       toast.success("Device removed successfully")
-    } catch (error) {
+    } catch {
       toast.error("Failed to remove device")
     }
   }
