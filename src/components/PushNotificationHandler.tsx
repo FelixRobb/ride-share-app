@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { toast } from "sonner"
 import { debounce } from "lodash"
 import { motion, AnimatePresence } from "framer-motion"
@@ -92,37 +92,55 @@ export default function PushNotificationHandler({
     async (registration: ServiceWorkerRegistration) => {
       if (pushEnabled === null) return
 
-      if (pushEnabled) {
-        let currentSubscription = await registration.pushManager.getSubscription()
+      try {
+        if (pushEnabled) {
+          let currentSubscription = await registration.pushManager.getSubscription()
 
-        if (!currentSubscription) {
-          const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-          if (!publicKey) {
-            throw new Error("VAPID public key is not set")
+          if (!currentSubscription) {
+            const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+            if (!publicKey) {
+              throw new Error("VAPID public key is not set")
+            }
+            currentSubscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: publicKey,
+            })
+            if (currentSubscription) {
+              const enabled = await saveSubscription(currentSubscription)
+              setPushEnabled(enabled)
+            }
+          } else {
+            // Only update if subscription changed
+            if (!subscription || 
+                JSON.stringify(subscription) !== JSON.stringify(currentSubscription)) {
+              const enabled = await saveSubscription(currentSubscription)
+              setPushEnabled(enabled)
+              setSubscription(currentSubscription)
+            }
           }
-          currentSubscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: publicKey,
-          })
-          if (currentSubscription) {
-            const enabled = await saveSubscription(currentSubscription)
-            setPushEnabled(enabled)
-          }
-        } else {
-          // Update the subscription to ensure it's current
-          const enabled = await saveSubscription(currentSubscription)
-          setPushEnabled(enabled)
+        } else if (!pushEnabled && subscription) {
+          await updateSubscriptionStatus(false)
+          setSubscription(null)
         }
-
-        setSubscription(currentSubscription)
-      } else if (!pushEnabled && subscription) {
-        await updateSubscriptionStatus(false)
+      } catch (error) {
+        console.error('Error handling push permission:', error)
       }
     },
-    [subscription, pushEnabled, saveSubscription, updateSubscriptionStatus],
+    [subscription, pushEnabled, saveSubscription, updateSubscriptionStatus]
   )
 
-  const debouncedHandlePermissionGranted = debounce(handlePermissionGranted, 1000)
+  // Create stable debounced function
+  const debouncedHandlePermissionGranted = useMemo(
+    () => debounce(handlePermissionGranted, 1000, { leading: true, trailing: false }),
+    [handlePermissionGranted]
+  )
+
+  // Cleanup debounced function
+  useEffect(() => {
+    return () => {
+      debouncedHandlePermissionGranted.cancel()
+    }
+  }, [debouncedHandlePermissionGranted])
 
   useEffect(() => {
     const setupPushNotifications = async () => {
@@ -170,7 +188,6 @@ export default function PushNotificationHandler({
   useEffect(() => {
     if (!isPushLoading && pushEnabled !== null) {
       navigator.serviceWorker.ready.then((registration) => {
-        // Only handle subscription management, not permission requests
         if (Notification.permission === "granted") {
           void debouncedHandlePermissionGranted(registration)
         }
@@ -207,7 +224,7 @@ export default function PushNotificationHandler({
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("message", (event) => {
         if (event.data && event.data.type === "PUSH_NOTIFICATION") {
-          toast(event.data.title, {
+          toast.info(event.data.title, {
             description: event.data.body,
           })
         }

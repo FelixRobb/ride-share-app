@@ -220,28 +220,33 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
   const isOnline = useOnlineStatus()
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchDevices = async () => {
-      setIsLoading(true)
+      if (!isOnline || !isSettingsOpen) return;
+      
+      setIsLoading(true);
       try {
-        if (!isOnline) {
-          return
-        }
-        const response = await fetch(`/api/users/${userId}/push-devices`)
-        if (response.ok) {
-          const data = await response.json()
-          setDevices(data.devices)
+        const response = await fetch(`/api/users/${userId}/push-devices`);
+        if (response.ok && mounted) {
+          const data = await response.json();
+          setDevices(data.devices);
         }
       } catch (error) {
-        console.error("Failed to fetch devices:", error)
+        console.error("Failed to fetch devices:", error);
       } finally {
-        setIsLoading(false)
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-    }
+    };
 
-    if (isSettingsOpen) {
-      void fetchDevices()
-    }
-  }, [isOnline, userId, isSettingsOpen])
+    void fetchDevices();
+
+    return () => {
+      mounted = false;
+    };
+  }, [userId, isOnline, isSettingsOpen]);
 
   const handleToggleDevice = async (deviceId: string, enabled: boolean) => {
     try {
@@ -252,14 +257,20 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to update device preference")
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to update device preference")
       }
 
-      setDevices((prev) => prev.map((device) => (device.device_id === deviceId ? { ...device, enabled } : device)))
-
-      toast.success(enabled ? "Notifications enabled for this device" : "Notifications disabled for this device")
+      const data = await response.json()
+      if (data.success) {
+        setDevices((prev) => prev.map((device) => (device.device_id === deviceId ? { ...device, enabled } : device)))
+        toast.success(enabled ? "Notifications enabled for this device" : "Notifications disabled for this device")
+      } else {
+        throw new Error("Failed to update device preference")
+      }
     } catch (error) {
-      toast.error("Failed to update notification preference")
+      console.error("Error updating push preference:", error)
+      toast.error("Failed to update notification preference. Please try again.")
       // Revert the UI change
       setDevices((prev) => [...prev])
     }
