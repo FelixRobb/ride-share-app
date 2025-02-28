@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Car, Users, HelpCircle, Shield, FileText, Info, Star, Code, Github } from "lucide-react"
+import { Home, Car, Users, HelpCircle, Shield, FileText, Info, Star, Code } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
@@ -214,7 +214,7 @@ export default function Layout({ children }: LayoutProps) {
                                 { href: "/about", label: "Learn more", icon: Info },
                                 { href: "/faq", label: "FAQ", icon: HelpCircle },
                                 { href: "/reviews", label: "Leave a review", icon: Star },
-                                { href: "https://github.com/FelixRobb/ride-share-app", label: "GitHub", icon: Github },
+                                { href: "https://github.com/FelixRobb/ride-share-app", label: "GitHub", icon: Code },
                               ].map(({ href, label, icon: Icon }) => (
                                 <Link
                                   key={href}
