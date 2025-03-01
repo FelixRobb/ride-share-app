@@ -598,10 +598,18 @@ export default function RideDetailsPage({
                     </div>
                   ) : (
                     <div className="pb-4">
-{notes.reduce((acc: JSX.Element[], note, index) => {
-  const currentDate = new Date(note.created_at).toLocaleDateString();
-  const previousDate = index > 0 ? new Date(notes[index - 1].created_at).toLocaleDateString() : null;
-  const nextNote = index < notes.length - 1 ? notes[index + 1] : null;
+                     {notes.reduce((acc: JSX.Element[], note, index) => {
+  const currentDate = new Date(
+    note.created_at
+  ).toLocaleDateString();
+  const previousDate =
+    index > 0
+      ? new Date(
+        notes[index - 1].created_at
+      ).toLocaleDateString()
+      : null;
+  const nextNote =
+    index < notes.length - 1 ? notes[index + 1] : null;
 
   // Add date separator
   if (currentDate !== previousDate) {
@@ -627,7 +635,8 @@ export default function RideDetailsPage({
   const isLastInGroup =
     !nextNote ||
     nextNote.user_id !== note.user_id ||
-    new Date(nextNote.created_at).toLocaleDateString() !== currentDate;
+    new Date(nextNote.created_at).toLocaleDateString() !==
+    currentDate;
 
   // Check if this is part of a message group
   const isFirstInGroup =
@@ -649,7 +658,7 @@ export default function RideDetailsPage({
         </span>
       )}
 
-      <div className="flex items-end gap-2">
+      <div className="flex items-end gap-2 max-w-[70%]">
         {/* Show user icon only at the bottom of a group for non-current users */}
         {!isCurrentUser && isLastInGroup && (
           <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -665,7 +674,7 @@ export default function RideDetailsPage({
         )}
 
         {/* Message content with hover-activated action buttons for current user */}
-        <div className="relative max-w-[70%]">
+        <div className="relative max-w-full">
           <div
             className={`px-4 py-2 shadow-sm overflow-hidden
               ${isCurrentUser
