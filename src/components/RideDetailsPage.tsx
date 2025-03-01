@@ -598,18 +598,10 @@ export default function RideDetailsPage({
                     </div>
                   ) : (
                     <div className="pb-4">
-                     {notes.reduce((acc: JSX.Element[], note, index) => {
-  const currentDate = new Date(
-    note.created_at
-  ).toLocaleDateString();
-  const previousDate =
-    index > 0
-      ? new Date(
-        notes[index - 1].created_at
-      ).toLocaleDateString()
-      : null;
-  const nextNote =
-    index < notes.length - 1 ? notes[index + 1] : null;
+{notes.reduce((acc: JSX.Element[], note, index) => {
+  const currentDate = new Date(note.created_at).toLocaleDateString();
+  const previousDate = index > 0 ? new Date(notes[index - 1].created_at).toLocaleDateString() : null;
+  const nextNote = index < notes.length - 1 ? notes[index + 1] : null;
 
   // Add date separator
   if (currentDate !== previousDate) {
@@ -620,9 +612,7 @@ export default function RideDetailsPage({
       >
         <div className="flex-grow border-t border-muted"></div>
         <span className="flex-shrink mx-4 text-xs font-medium text-muted-foreground">
-          {currentDate === new Date().toLocaleDateString()
-            ? "Today"
-            : currentDate}
+          {currentDate === new Date().toLocaleDateString() ? "Today" : currentDate}
         </span>
         <div className="flex-grow border-t border-muted"></div>
       </div>
@@ -635,8 +625,7 @@ export default function RideDetailsPage({
   const isLastInGroup =
     !nextNote ||
     nextNote.user_id !== note.user_id ||
-    new Date(nextNote.created_at).toLocaleDateString() !==
-    currentDate;
+    new Date(nextNote.created_at).toLocaleDateString() !== currentDate;
 
   // Check if this is part of a message group
   const isFirstInGroup =
@@ -717,8 +706,7 @@ export default function RideDetailsPage({
                   {note.note}
                 </p>
                 <div
-                  className={`flex items-center text-xs opacity-70 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"
-                    }`}
+                  className={`flex items-center text-xs opacity-70 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}
                 >
                   <span>
                     {new Date(note.created_at).toLocaleTimeString([], {
