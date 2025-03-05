@@ -2,45 +2,23 @@
 
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { useState, useEffect, Suspense } from "react"
-import { toast } from "sonner"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 
 import Layout from "@/components/Layout"
-import type { User, Ride, Contact } from "@/types"
-import { fetchDashboardData } from "@/utils/api"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import type { User } from "@/types"
 import { Loader } from "lucide-react"
 
 const DashboardPage = dynamic(() => import("@/components/DashboardPage"), { ssr: false })
 
 export default function Dashboard() {
-  const [dashboardData, setDashboardData] = useState<{ rides: Ride[]; contacts: Contact[] } | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("active") // default tab
   const [showLoader, setShowLoader] = useState(false)
 
   const router = useRouter()
-  const isOnline = useOnlineStatus()
   const { data: session, status } = useSession()
   const currentUser = session?.user as User | undefined
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (isOnline && currentUser) {
-        try {
-          const data = await fetchDashboardData()
-          setDashboardData(data)
-        } catch {
-          toast.error("Failed to fetch dashboard data. Please try again.")
-        }
-      }
-    }
-
-    fetchData()
-    const intervalId = setInterval(fetchData, 10000) // Refresh every 10 seconds
-    return () => clearInterval(intervalId)
-  }, [isOnline, currentUser])
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search)
@@ -70,7 +48,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-center w-full">
             <Loader />
           </div>
-          <p className="mt-4 text-lg text-white">Please wait while we are checking your authentication status...</p>
+          <p className="mt-4 text-lg text-center text-white">Please wait while we are checking your authentication status...</p>
         </div>
       )
     }
@@ -88,19 +66,13 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your dashboard</div>}>
-        {dashboardData && (
-          <DashboardPage
-            currentUser={currentUser}
-            rides={dashboardData.rides}
-            contacts={dashboardData.contacts}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-          />
-        )}
-      </Suspense>
+      <DashboardPage
+        currentUser={currentUser}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
     </Layout>
   )
 }

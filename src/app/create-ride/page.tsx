@@ -2,41 +2,20 @@
 
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { useState, useEffect, Suspense } from "react"
-import { toast } from "sonner"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Loader } from "lucide-react"
 
 import Layout from "@/components/Layout"
-import type { User, AssociatedPerson } from "@/types"
-import { fetchCreateRideData } from "@/utils/api"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import type { User } from "@/types"
 
 const CreateRidePage = dynamic(() => import("@/components/CreateRidePage"), { ssr: false })
 
 export default function CreateRide() {
-  const [createRideData, setCreateRideData] = useState<{ associatedPeople: AssociatedPerson[] } | null>(null)
-
   const router = useRouter()
-  const isOnline = useOnlineStatus()
   const { data: session, status } = useSession()
   const currentUser = session?.user as User | null
   const [showLoader, setShowLoader] = useState(false)
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (isOnline && currentUser) {
-        try {
-          const data = await fetchCreateRideData()
-          setCreateRideData(data)
-        } catch {
-          toast.error("Failed to fetch user data. Please try again.")
-        }
-      }
-    }
-
-    fetchData()
-  }, [isOnline, currentUser])
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -71,17 +50,6 @@ export default function CreateRide() {
     return null
   }
 
-  return (
-    <Layout>
-      <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
-        {createRideData && currentUser && (
-          <CreateRidePage
-            currentUser={currentUser}
-            associatedPeople={createRideData.associatedPeople}
-          />
-        )}
-      </Suspense>
-    </Layout>
-  )
+  return <Layout>{currentUser && <CreateRidePage currentUser={currentUser} />}</Layout>
 }
 
