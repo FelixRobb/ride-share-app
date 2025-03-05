@@ -422,9 +422,9 @@ export default function DashboardPage({
           </div>
           <div className="flex items-center space-x-3">
             <div className="flex flex-col items-center space-y-1">
-              <div className="w-3 h-3 rounded-full bg-muted"></div>
+              <MapPin className="w-3 h-3 rounded-full text-muted"></MapPin>
               <div className="w-0.5 h-10 bg-muted"></div>
-              <div className="w-3 h-3 rounded-full bg-muted"></div>
+              <MapPin className="w-3 h-3 rounded-full text-muted"></MapPin>
             </div>
             <div className="flex-1 space-y-4">
               <Skeleton className="h-5 w-full" />

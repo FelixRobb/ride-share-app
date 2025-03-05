@@ -10,7 +10,6 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   ChevronLeft,
   ChevronRight,
@@ -36,6 +35,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
+import { useMediaQuery } from "@/hooks/use-media-query"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
 const ITEMS_PER_PAGE = 10
 
@@ -197,7 +198,7 @@ export default function RideHistoryPage() {
   }, [fetchRides])
 
   // Handle page change
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = (newPage: number): void => {
     setCurrentPage(newPage)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
@@ -358,29 +359,53 @@ export default function RideHistoryPage() {
     </Card>
   )
 
-  // Filter tabs for quick filtering
-  const FilterTabs = () => (
-    <Tabs
-      value={activeTab}
-      onValueChange={(value) => {
-        setActiveTab(value)
-        if (value === "all") {
-          setStatusFilter("all")
-        } else {
-          setStatusFilter(value)
-        }
-        setCurrentPage(1)
-      }}
-      className="mb-6"
-    >
-      <TabsList className="grid grid-cols-4 w-full">
-        <TabsTrigger value="all">All</TabsTrigger>
-        <TabsTrigger value="completed">Completed</TabsTrigger>
-        <TabsTrigger value="accepted">Accepted</TabsTrigger>
-        <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-      </TabsList>
-    </Tabs>
-  )
+  // Check if the screen is small
+  const isSmallScreen = useMediaQuery("(max-width: 768px)")
+
+  // Replace the FilterTabs component with conditional rendering
+  const FilterTabs = () => {
+    if (isSmallScreen) {
+      return (
+        <Select
+          value={activeTab}
+          onValueChange={(value) => {
+            setActiveTab(value)
+            setStatusFilter(value === "all" ? "all" : value)
+            setCurrentPage(1)
+          }}
+        >
+          <SelectTrigger className="w-full mb-6">
+            <SelectValue placeholder="Select Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="accepted">Accepted</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+      )
+    }
+
+    return (
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => {
+          setActiveTab(value)
+          setStatusFilter(value === "all" ? "all" : value)
+          setCurrentPage(1)
+        }}
+        className="mb-6"
+      >
+        <TabsList className="grid grid-cols-4 w-full">
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="accepted">Accepted</TabsTrigger>
+          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+        </TabsList>
+      </Tabs>
+    )
+  }
 
   // Time period dropdown for filtering by time
   const TimePeriodFilter = () => (
@@ -573,11 +598,11 @@ export default function RideHistoryPage() {
             Array.from({ length: 5 }).map((_, index) => <RideCardSkeleton key={index} />)
           ) : rides.length > 0 ? (
             // Scrollable ride list
-            <ScrollArea className="h-[calc(100vh-350px)]">
+            <div>
               {rides.map((ride) => (
                 <RideCard key={ride.id} ride={ride} />
               ))}
-            </ScrollArea>
+            </div>
           ) : (
             // Empty state
             <div className="text-center py-12 border rounded-lg bg-muted/20">
