@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
 import Layout from "@/components/Layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -107,8 +106,6 @@ const STATUS_OPTIONS = [
 ]
 
 export default function RideHistoryPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
 
   // State for ride data and pagination
   const [rides, setRides] = useState<Ride[]>([])
@@ -142,7 +139,7 @@ export default function RideHistoryPage() {
       setStatusFilter(filters.statusFilter || "all");
       setTimePeriod(filters.timePeriod || "all");
       setDateFilter(filters.dateFilter ? new Date(filters.dateFilter) : undefined);
-      
+
       // Set active tab based on the loaded status filter
       setActiveTab(filters.statusFilter || "all");
     }
@@ -199,35 +196,6 @@ export default function RideHistoryPage() {
     fetchRides()
   }, [fetchRides])
 
-  // Update URL with current filters for shareable/bookmarkable state
-  useEffect(() => {
-    const params = new URLSearchParams()
-
-    if (currentPage > 1) params.set("page", currentPage.toString())
-    if (debouncedSearchTerm) params.set("search", debouncedSearchTerm)
-    if (statusFilter !== "all") params.set("status", statusFilter)
-    if (timePeriod !== "all") params.set("timePeriod", timePeriod)
-    if (dateFilter) params.set("date", format(dateFilter, "yyyy-MM-dd"))
-
-    const url = `/ride-history${params.toString() ? `?${params.toString()}` : ""}`
-    router.push(url, { scroll: false })
-  }, [currentPage, debouncedSearchTerm, statusFilter, timePeriod, dateFilter, router])
-
-  // Initialize state from URL params on first load
-  useEffect(() => {
-    const page = searchParams.get("page")
-    const search = searchParams.get("search")
-    const status = searchParams.get("status")
-    const period = searchParams.get("timePeriod")
-    const date = searchParams.get("date")
-
-    if (page) setCurrentPage(Number.parseInt(page))
-    if (search) setSearchTerm(search)
-    if (status) setStatusFilter(status)
-    if (period) setTimePeriod(period)
-    if (date) setDateFilter(new Date(date))
-  }, [searchParams])
-
   // Handle page change
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage)
@@ -283,17 +251,17 @@ export default function RideHistoryPage() {
     return (
       <Link href={`/rides/${ride.id}?from=history`} className="block">
         <Card
-          className="mb-4 hover:bg-accent/50 transition-all duration-200 group border-l-4 hover:shadow-md"
-          style={{
-            borderLeftColor:
-              ride.status === "completed"
-                ? "var(--blue-500)"
-                : ride.status === "accepted"
-                  ? "var(--green-500)"
-                  : ride.status === "cancelled"
-                    ? "var(--destructive)"
-                    : "var(--border)",
-          }}
+          className={`mb-4 hover:bg-accent/50 transition-all duration-200 group border-l-4 hover:shadow-md 
+            ${ride.status === "completed"
+              ? "border-l-blue-500"
+              : ride.status === "accepted"
+                ? "border-l-green-500"
+                : ride.status === "cancelled"
+                  ? "border-l-destructive"
+                  : ride.status === "pending"
+                    ? "border-l-secondary"
+                    : "border-l-border"
+            }`}
         >
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col space-y-4">

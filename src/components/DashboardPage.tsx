@@ -61,7 +61,7 @@ const FilterContent: React.FC<FilterProps> = ({ statusFilter, setStatusFilter, d
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2 flex items-center justify-center flex-col">
         <h4 className="font-medium leading-none">Date</h4>
         <Calendar
           mode="single"
@@ -473,14 +473,16 @@ export default function DashboardPage({
       return (
         <Card
           key={ride.id}
-          className={`w-full mb-4 hover:bg-accent/50 transition-all duration-200 overflow-hidden mr-3 border-l-4 
+          className={`mb-4 hover:bg-accent/50 transition-all duration-200 group border-l-4 hover:shadow-md 
             ${ride.status === "completed"
               ? "border-blue-500"
               : ride.status === "accepted"
                 ? "border-green-500"
                 : ride.status === "cancelled"
                   ? "border-destructive"
-                  : "border-border"
+                  : ride.status === "pending"
+                    ? "border-secondary"
+                    : "border-border"
             }`}>
           <Link href={`/rides/${ride.id}?from=active`}>
             <CardHeader className="pb-2 bg-primary/5">
