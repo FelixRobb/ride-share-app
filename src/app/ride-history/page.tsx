@@ -250,7 +250,7 @@ export default function RideHistoryPage() {
     const toLocationShort = ride.to_location.split(",")[0]
 
     return (
-      <Link href={`/rides/${ride.id}?from=history`} className="block">
+      <Link href={`/rides/${ride.id}?from=ride-history`} className="block">
         <Card
           className={`mb-4 hover:bg-accent/50 transition-all duration-200 group border-l-4 hover:shadow-md 
             ${ride.status === "completed"
