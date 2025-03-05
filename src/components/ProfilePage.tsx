@@ -2,23 +2,7 @@
 
 import type React from "react"
 
-import {
-  LucideUser,
-  Mail,
-  Phone,
-  Car,
-  Loader,
-  Moon,
-  Sun,
-  Monitor,
-  Settings,
-  Shield,
-  Bell,
-  UserPlus,
-  LogOut,
-  UserX,
-  Smartphone,
-} from "lucide-react"
+import { LucideUser, Mail, Phone, Car, Loader, Moon, Sun, Monitor, Settings, Shield, Bell, UserPlus, LogOut, UserX, Smartphone, Trash2 } from 'lucide-react'
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
@@ -567,61 +551,74 @@ export default function ProfilePage({ currentUser, contacts, associatedPeople, r
               <CardDescription>Manage push notifications for your devices</CardDescription>
             </CardHeader>
             <CardContent>
-              {isPushLoading ? (
-                <div className="flex justify-center py-4">
-                  <Loader className="animate-spin h-6 w-6" />
-                </div>
-              ) : pushDevices.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground">No devices registered for notifications</p>
-                </div>
-              ) : (
+              <div className="space-y-6">
                 <div className="space-y-4">
-                  {pushDevices.map((device) => (
-                    <Card
-                      key={device.device_id}
-                      className={device.device_id === currentDeviceId ? "border-primary" : ""}
-                    >
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Smartphone className="h-4 w-4" />
-                            <CardTitle className="text-sm font-medium">
-                              {device.device_name}
-                              {device.device_id === currentDeviceId && (
-                                <Badge variant="outline" className="ml-2">
-                                  Current
-                                </Badge>
-                              )}
-                            </CardTitle>
-                          </div>
-                        </div>
-                        <CardDescription className="text-xs">
-                          Last used: {formatLastUsed(device.last_used)}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardFooter className="pt-0 pb-2 flex justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            checked={device.enabled}
-                            onCheckedChange={(checked) => handleToggleDevice(device.device_id, checked)}
-                            disabled={!isOnline}
-                          />
-                          <span className="text-sm">{device.enabled ? "Enabled" : "Disabled"}</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveDevice(device.device_id)}
-                          disabled={!isOnline}
+                  <h3 className="font-medium">Device Notifications</h3>
+                  <p className="text-sm text-muted-foreground mb-4">Manage push notifications for each of your devices</p>
+
+                  {isPushLoading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader className="animate-spin h-6 w-6" />
+                    </div>
+                  ) : pushDevices.length === 0 ? (
+                    <div className="text-center py-4 bg-secondary/30 rounded-lg">
+                      <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">No devices registered for notifications</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Notifications will appear here once you allow them in your browser
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {pushDevices.map((device) => (
+                        <Card
+                          key={device.device_id}
+                          className={device.device_id === currentDeviceId ? "border-primary" : ""}
                         >
-                          <UserX className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
+                          <CardHeader className="pb-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <Smartphone className="h-4 w-4" />
+                                <CardTitle className="text-sm font-medium">
+                                  {device.device_name}
+                                  {device.device_id === currentDeviceId && (
+                                    <Badge variant="outline" className="ml-2">
+                                      Current
+                                    </Badge>
+                                  )}
+                                </CardTitle>
+                              </div>
+                            </div>
+                            <CardDescription className="text-xs">
+                              Last used: {formatLastUsed(device.last_used)}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardFooter className="pt-0 flex justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                checked={device.enabled}
+                                onCheckedChange={(checked) => handleToggleDevice(device.device_id, checked)}
+                                disabled={!isOnline}
+                              />
+                              <span className="text-sm">{device.enabled ? "Enabled" : "Disabled"}</span>
+                            </div>
+                            {!(device.device_id === currentDeviceId) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveDevice(device.device_id)}
+                                disabled={!isOnline}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </CardFooter>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
 

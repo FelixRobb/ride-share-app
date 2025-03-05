@@ -295,66 +295,91 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
     <Button
       variant="ghost"
       size="icon"
-      className="h-8 w-8 rounded-full hover:bg-accent"
+      className="h-10 w-10 rounded-full hover:bg-accent/20 transition-colors duration-200"
       onClick={() => setIsSettingsOpen(true)}
       aria-label="Notification Settings"
     >
-      <Settings className="h-4 w-4" />
+      <Settings className="h-5 w-5 text-muted-foreground" />
     </Button>
   )
 
   const SettingsContent = (
     <div className="space-y-6 py-5">
       <div className="space-y-4">
-        <h3 className="font-medium">Device Notifications</h3>
-        <p className="text-sm text-muted-foreground mb-4">Manage push notifications for each of your devices</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Device Notifications</h3>
+            <p className="text-sm text-muted-foreground">Manage push notifications across your devices</p>
+          </div>
+          {!isOnline && (
+            <Badge variant="destructive" className="flex items-center gap-1">
+              <Smartphone className="h-3 w-3" />
+              Offline
+            </Badge>
+          )}
+        </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-4">
-            <Loader className="animate-spin h-6 w-6" />
+          <div className="flex justify-center py-6">
+            <Loader className="animate-spin h-8 w-8 text-primary" />
           </div>
         ) : devices.length === 0 ? (
-          <div className="text-center py-4">
+          <div className="text-center py-6 border rounded-lg bg-accent/50">
+            <Smartphone className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">No devices registered for notifications</p>
+            <p className="text-xs text-muted-foreground mt-2">Connect a new device to receive push notifications</p>
           </div>
         ) : (
           <div className="space-y-4">
             {devices.map((device) => (
-              <Card key={device.device_id} className={device.device_id === currentDeviceId ? "border-primary" : ""}>
+              <Card
+                key={device.device_id}
+                className={`
+                  ${device.device_id === currentDeviceId ? "border-primary" : "border-border"}
+                  hover:shadow-sm transition-shadow duration-200
+                  ${!device.enabled ? "opacity-60" : ""}
+                `}
+              >
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Smartphone className="h-4 w-4" />
-                      <CardTitle className="text-sm font-medium">
-                        {device.device_name}
-                        {device.device_id === currentDeviceId && (
-                          <Badge variant="outline" className="ml-2">
-                            Current
-                          </Badge>
-                        )}
-                      </CardTitle>
+                    <div className="flex items-center space-x-3">
+                      <Smartphone className={`h-5 w-5 ${device.enabled ? "text-primary" : "text-muted-foreground"}`} />
+                      <div>
+                        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                          {device.device_name}
+                          {device.device_id === currentDeviceId && (
+                            <Badge variant="outline" className="text-xs">Current Device</Badge>
+                          )}
+                        </CardTitle>
+                        <CardDescription className="text-xs mt-1">
+                          Last used: {formatLastUsed(device.last_used)}
+                        </CardDescription>
+                      </div>
                     </div>
                   </div>
-                  <CardDescription className="text-xs">Last used: {formatLastUsed(device.last_used)}</CardDescription>
                 </CardHeader>
-                <CardFooter className="pt-0 pb-2 flex justify-between">
-                  <div className="flex items-center space-x-2">
+                <CardFooter className="pt-0 flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
                     <Switch
                       checked={device.enabled}
                       onCheckedChange={(checked) => handleToggleDevice(device.device_id, checked)}
                       disabled={!isOnline}
+                      className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-input"
                     />
-                    <span className="text-sm">{device.enabled ? "Enabled" : "Disabled"}</span>
+                    <span className={`text-sm ${device.enabled ? "text-foreground" : "text-muted-foreground"}`}>
+                      {device.enabled ? "Notifications On" : "Notifications Off"}
+                    </span>
                   </div>
-                                {!(device.device_id === currentDeviceId) && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveDevice(device.device_id)}
-                    disabled={!isOnline}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  {!(device.device_id === currentDeviceId) && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveDevice(device.device_id)}
+                      disabled={!isOnline}
+                      className="text-destructive hover:bg-destructive/10 transition-colors duration-200"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   )}
                 </CardFooter>
               </Card>
@@ -370,14 +395,18 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
       <>
         {SettingsButton}
         <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Notification Settings</DialogTitle>
-              <DialogDescription>Manage your notification preferences</DialogDescription>
+              <DialogTitle className="text-2xl">Notification Preferences</DialogTitle>
+              <DialogDescription>
+                Customize how and where you receive notifications across your devices
+              </DialogDescription>
             </DialogHeader>
             {SettingsContent}
             <DialogFooter>
-              <Button onClick={() => setIsSettingsOpen(false)}>Close</Button>
+              <Button onClick={() => setIsSettingsOpen(false)} variant="outline">
+                Close
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -389,14 +418,20 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
     <>
       {SettingsButton}
       <Drawer open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DrawerContent className="h-fit max-h-[60svh]">
-          <DrawerHeader>
-            <DrawerTitle>Notification Settings</DrawerTitle>
-            <DrawerDescription>Manage your notification preferences</DrawerDescription>
+        <DrawerContent className="h-[70svh]">
+          <DrawerHeader className="text-center">
+            <DrawerTitle className="text-xl">Notification Preferences</DrawerTitle>
+            <DrawerDescription>
+              Customize how and where you receive notifications
+            </DrawerDescription>
           </DrawerHeader>
           <div className="px-4 overflow-auto">{SettingsContent}</div>
-          <DrawerFooter className="pt-0">
-            <Button variant="default" onClick={() => setIsSettingsOpen(false)}>
+          <DrawerFooter className="pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsSettingsOpen(false)}
+              className="w-full"
+            >
               Close
             </Button>
           </DrawerFooter>
