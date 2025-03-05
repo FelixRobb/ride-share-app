@@ -1,6 +1,10 @@
 "use client"
 
-import { Search, Clock, MapPin, User2, CalendarIcon, ArrowRight, CheckCircle, Filter } from "lucide-react"
+import type React from "react"
+
+import { Search, User2, ArrowRight, CheckCircle, Filter, MapPin } from "lucide-react"
+import { CalendarPlus2Icon as CalendarIcon2 } from "lucide-react"
+import { format, isToday, isYesterday, isThisWeek, isThisMonth } from "date-fns"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
@@ -28,8 +32,6 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-
-
 
 interface FilterProps {
   statusFilter: string | null
@@ -136,6 +138,37 @@ const FilterDrawer: React.FC<FilterProps> = (props) => {
   )
 }
 
+const StatusBadge = ({ status }: { status: string }) => {
+  switch (status) {
+    case "pending":
+      return (
+        <Badge variant="secondary" className="px-2 py-1 font-medium">
+          Pending
+        </Badge>
+      )
+    case "accepted":
+      return (
+        <Badge variant="default" className="bg-green-500 px-2 py-1 font-medium">
+          Accepted
+        </Badge>
+      )
+    case "cancelled":
+      return (
+        <Badge variant="destructive" className="px-2 py-1 font-medium">
+          Cancelled
+        </Badge>
+      )
+    case "completed":
+      return (
+        <Badge variant="default" className="bg-blue-500 px-2 py-1 font-medium">
+          Completed
+        </Badge>
+      )
+    default:
+      return null
+  }
+}
+
 interface DashboardPageProps {
   currentUser: User
   searchTerm: string
@@ -214,7 +247,19 @@ export default function DashboardPage({
     const options: Intl.DateTimeFormatOptions = { year: "numeric", month: "long", day: "numeric" }
     const formattedDate = date.toLocaleDateString(undefined, options)
     const formattedTime = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    return { date: formattedDate, time: formattedTime }
+    return {
+      date: formattedDate,
+      time: formattedTime,
+      relative: getRelativeTimeLabel(date),
+    }
+  }
+
+  const getRelativeTimeLabel = (date: Date) => {
+    if (isToday(date)) return "Today"
+    if (isYesterday(date)) return "Yesterday"
+    if (isThisWeek(date)) return format(date, "EEEE") // Day name
+    if (isThisMonth(date)) return format(date, "MMMM d") // Month and day
+    return format(date, "MMM d, yyyy") // Full date for older dates
   }
 
   const getOfferedByText = (ride: Ride) => {
@@ -273,81 +318,90 @@ export default function DashboardPage({
     setSearchTerm(localSearchTerm)
   }, [localSearchTerm, setSearchTerm])
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "pending":
-        return <Badge variant="secondary">Pending</Badge>
-      case "accepted":
-        return (
-          <Badge variant="default" className="bg-green-500">
-            Accepted
-          </Badge>
-        )
-      case "cancelled":
-        return <Badge variant="destructive">Cancelled</Badge>
-      case "completed":
-        return (
-          <Badge variant="default" className="bg-blue-500">
-            Completed
-          </Badge>
-        )
-      default:
-        return null
-    }
-  }
-
   const RideCard = ({ ride }: { ride: Ride }) => {
-    const { date, time } = formatDateTime(ride.time)
+    const { time, relative } = formatDateTime(ride.time)
+
+    // Extract just the first part of the location for a cleaner display
+    const fromLocationParts = ride.from_location.split(",")
+    const toLocationParts = ride.to_location.split(",")
+    const fromLocationShort = fromLocationParts[0]
+    const toLocationShort = toLocationParts[0]
 
     return (
       <Link href={`/rides/${ride.id}?from=${activeTab}`}>
-        <Card className="mb-4 hover:bg-accent transition-colors duration-200 group">
+        <Card
+          className={`mb-4 hover:bg-accent/50 transition-all duration-200 group border-l-4 hover:shadow-md 
+            ${ride.status === "completed"
+              ? "border-l-blue-500"
+              : ride.status === "accepted"
+                ? "border-l-green-500"
+                : ride.status === "cancelled"
+                  ? "border-l-destructive"
+                  : ride.status === "pending"
+                    ? "border-l-secondary"
+                    : "border-l-border"
+            }`}
+        >
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col space-y-4">
+              {/* Header with status and time */}
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <CalendarIcon2 className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{relative}</span>
+                    <span className="text-sm text-muted-foreground">• {time}</span>
+                  </div>
                   <div className="flex items-center space-x-2">
                     <User2 className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">{getRequesterName(ride)}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <CalendarIcon className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{date}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{time}</span>
-                  </div>
                 </div>
-                <div>{getStatusBadge(ride.status)}</div>
+                <StatusBadge status={ride.status} />
               </div>
 
-              <div className="flex items-center space-x-2">
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-start space-x-2">
-                    <MapPin className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm sm:text-base">{ride.from_location}</p>
-                    </div>
+              {/* Route information */}
+              <div className="flex items-center space-x-3">
+                <div className="flex flex-col items-center space-y-1">
+                  <MapPin className="w-3 h-3 rounded-full text-primary"></MapPin>
+                  <div className="w-0.5 h-10 bg-muted-foreground/30"></div>
+                  <MapPin className="w-3 h-3 rounded-full text-destructive"></MapPin>
+                </div>
+                <div className="flex-1 space-y-4">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm sm:text-base">{fromLocationShort}</p>
+                    <p className="text-xs text-muted-foreground truncate max-w-full">
+                      {ride.from_location.replace(fromLocationShort + ",", "")}
+                    </p>
                   </div>
-                  <div className="flex items-start space-x-2">
-                    <MapPin className="w-4 h-4 text-destructive mt-1 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm sm:text-base">{ride.to_location}</p>
-                    </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm sm:text-base">{toLocationShort}</p>
+                    <p className="text-xs text-muted-foreground truncate max-w-full">
+                      {ride.to_location.replace(toLocationShort + ",", "")}
+                    </p>
                   </div>
                 </div>
-                {ride.status === "completed" ? (
-                  <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                ) : (
-                  <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                )}
+                <div className="flex-shrink-0">
+                  {ride.status === "completed" ? (
+                    <CheckCircle className="w-5 h-5 text-blue-500" />
+                  ) : (
+                    <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
+                </div>
               </div>
 
+              {/* Additional information */}
               {(ride.status === "accepted" || ride.status === "completed") && ride.accepter_id && (
                 <div className="flex items-center space-x-2 pt-2 border-t">
                   <User2 className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Offered by: {getOfferedByText(ride)}</span>
+                </div>
+              )}
+              {ride.note && (
+                <div className="pt-2 border-t">
+                  <p className="text-sm text-muted-foreground line-clamp-1">
+                    <span className="font-medium">Note:</span> {ride.note}
+                  </p>
                 </div>
               )}
             </div>
@@ -357,13 +411,27 @@ export default function DashboardPage({
     )
   }
 
+  // Update the RideCardSkeleton component to match the new design
   const RideCardSkeleton = () => (
-    <Card className="mb-4">
+    <Card className="mb-4 border-l-4">
       <CardContent className="p-4 sm:p-6">
-        <div className="space-y-3">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-9/12" />
-          <Skeleton className="h-4 w-7/12" />
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-start justify-between">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-6 w-20" />
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="flex flex-col items-center space-y-1">
+              <div className="w-3 h-3 rounded-full bg-muted"></div>
+              <div className="w-0.5 h-10 bg-muted"></div>
+              <div className="w-3 h-3 rounded-full bg-muted"></div>
+            </div>
+            <div className="flex-1 space-y-4">
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-full" />
+            </div>
+          </div>
+          <Skeleton className="h-4 w-3/4" />
         </div>
       </CardContent>
     </Card>
@@ -390,36 +458,74 @@ export default function DashboardPage({
       return null
     }
 
+    // Update the ImportantRides component to use the new card design
     const renderImportantRide = (ride: Ride) => {
-      const { date, time } = formatDateTime(ride.time)
+      const { time, relative } = formatDateTime(ride.time)
       const isUserRequester = ride.requester_id === currentUser.id
       const actionNeeded = ride.status === "pending" ? (isUserRequester ? "Waiting for offer" : "Offer a ride") : ""
+
+      // Extract just the first part of the location for a cleaner display
       const fromLocationParts = ride.from_location.split(",")
       const toLocationParts = ride.to_location.split(",")
-      const shortFromLocation = fromLocationParts[0]
-      const shortToLocation = toLocationParts[0]
+      const fromLocationShort = fromLocationParts[0]
+      const toLocationShort = toLocationParts[0]
 
       return (
-        <Card key={ride.id} className="w-full mb-4 hover:bg-accent transition-colors duration-200 overflow-hidden mr-3">
+        <Card
+          key={ride.id}
+          className={`w-full mb-4 hover:bg-accent/50 transition-all duration-200 overflow-hidden mr-3 border-l-4 
+            ${ride.status === "completed"
+              ? "border-blue-500"
+              : ride.status === "accepted"
+                ? "border-green-500"
+                : ride.status === "cancelled"
+                  ? "border-destructive"
+                  : "border-border"
+            }`}>
           <Link href={`/rides/${ride.id}?from=active`}>
-            <CardHeader className="pb-2 bg-primary/10">
+            <CardHeader className="pb-2 bg-primary/5">
               <div className="flex justify-between items-start flex-col sm:flex-row">
                 <div className="">
-                  <CardTitle className="text-md">
-                    <MapPin className="mx-1 h-4 w-4 inline text-muted-foreground mb-1" /> {shortFromLocation} to{" "}
-                    {shortToLocation}
+                  <CardTitle className="text-md flex items-center">
+                    <CalendarIcon2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span>{relative}</span>
+                    <span className="text-sm text-muted-foreground ml-2">• {time}</span>
                   </CardTitle>
                   <CardDescription className="flex items-center gap-2 ml-1 mb-1">
-                    <Clock className="h-4 w-4 inline text-muted-foreground" /> {date} at {time}
+                    <User2 className="h-4 w-4 inline text-muted-foreground" /> {getRequesterName(ride)}
                   </CardDescription>
                 </div>
                 <div className="flex flex-row justify-between items-center sm:justify-end sm:flex-col sm:items-end gap-4 sm:gap-1">
-                  <div> {getStatusBadge(ride.status)}</div>
+                  <div>
+                    <StatusBadge status={ride.status} />
+                  </div>
                   <div>{actionNeeded && <Badge variant="destructive">{actionNeeded}</Badge>}</div>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-4 bg-primary/10">
+            <CardContent className="pt-4 bg-primary/5">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="flex flex-col items-center space-y-1">
+                  <div className="w-3 h-3 rounded-full bg-primary"></div>
+                  <div className="w-0.5 h-10 bg-muted-foreground/30"></div>
+                  <div className="w-3 h-3 rounded-full bg-destructive"></div>
+                </div>
+                <div className="flex-1 space-y-4">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{fromLocationShort}</p>
+                    <p className="text-xs text-muted-foreground truncate max-w-full">
+                      {ride.from_location.replace(fromLocationShort + ",", "")}
+                    </p>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{toLocationShort}</p>
+                    <p className="text-xs text-muted-foreground truncate max-w-full">
+                      {ride.to_location.replace(toLocationShort + ",", "")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2 border rounded-lg p-3 bg-card">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Requester:</span>

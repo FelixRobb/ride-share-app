@@ -1,11 +1,13 @@
 "use client"
 
+import type React from "react"
+
 import { parsePhoneNumber } from "libphonenumber-js"
 import { motion } from "framer-motion"
 import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight, X } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { toast } from "sonner"
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
@@ -16,6 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { updateRide, fetchEditRideData } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
@@ -36,21 +39,46 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
   const [isToMapOpen, setIsToMapOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const isOnline = useOnlineStatus()
   const router = useRouter()
 
-  useEffect(() => {
-    const fetchRideData = async () => {
-      try {
-        const data = await fetchEditRideData(rideId)
-        setRideData(data.ride)
-      } catch {
+  const fetchData = useCallback(async (silent = false) => {
+    try {
+      if (!silent) {
+        setIsLoading(true)
+      } else {
+        setIsRefreshing(true)
+      }
+
+      const data = await fetchEditRideData(rideId)
+      setRideData(data.ride)
+    } catch {
+      if (!silent) {
         toast.error("Failed to fetch ride details. Please try again.")
       }
+    } finally {
+      setIsLoading(false)
+      setIsRefreshing(false)
     }
+  }, [rideId])
 
-    fetchRideData()
-  }, [currentUser.id, rideId])
+  useEffect(() => {
+    fetchData()
+
+    // Set up periodic refresh
+    refreshIntervalRef.current = setInterval(() => {
+      fetchData(true)
+    }, 30000) // Refresh every 30 seconds silently
+
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current)
+      }
+    }
+  }, [fetchData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -113,6 +141,57 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
   }
 
   const renderStepContent = () => {
+    if (isLoading) {
+      switch (currentStep) {
+        case 0:
+          return (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="from_location">From</Label>
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="to_location">To</Label>
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+          )
+        case 1:
+          return (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="time">Pick Date & Time</Label>
+                <Skeleton className="h-[300px] w-full" />
+              </div>
+            </div>
+          )
+        case 2:
+          return (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="rider_name">Rider Name</Label>
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rider_phone">Rider Phone (optional)</Label>
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+          )
+        case 3:
+          return (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="note">Note (optional)</Label>
+                <Skeleton className="h-24 w-full" />
+              </div>
+            </div>
+          )
+        default:
+          return null
+      }
+    }
+
     if (!rideData) return null
 
     switch (currentStep) {
@@ -224,6 +303,12 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
               You are currently offline. Ride editing is disabled.
             </div>
           )}
+          {isRefreshing && (
+            <div className="mb-6 p-3 bg-blue-50 text-blue-800 rounded-md text-sm flex items-center">
+              <Loader className="w-4 h-4 mr-2 animate-spin" />
+              Refreshing ride data...
+            </div>
+          )}
           <form onSubmit={handleSubmit}>
             <div className="mb-8">
               <div className="flex justify-between items-center mb-4">
@@ -270,18 +355,18 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
           </form>
         </CardContent>
         <CardFooter className="flex justify-between px-6 py-4">
-          <Button type="button" onClick={prevStep} disabled={currentStep === 0} variant="outline">
+          <Button type="button" onClick={prevStep} disabled={currentStep === 0 || isLoading} variant="outline">
             Previous
           </Button>
           {currentStep < steps.length - 1 ? (
-            <Button type="button" onClick={nextStep}>
+            <Button type="button" onClick={nextStep} disabled={isLoading}>
               Next
             </Button>
           ) : (
             <Button
               type="submit"
               onClick={handleSubmit}
-              disabled={isSubmitting || !isOnline}
+              disabled={isSubmitting || !isOnline || isLoading}
               className="bg-primary hover:bg-primary/90"
             >
               {isSubmitting ? (

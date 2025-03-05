@@ -4,46 +4,23 @@ import { ArrowBigLeft, Loader } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useParams } from "next/navigation"
-import { useState, useEffect, Suspense } from "react"
-import { toast } from "sonner"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 
 import Layout from "@/components/Layout"
 import { Button } from "@/components/ui/button"
-import type { User, Ride, Contact } from "@/types"
-import { fetchRideDetailsData } from "@/utils/api"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import type { User } from "@/types"
 
 const RideDetailsPage = dynamic(() => import("@/components/RideDetailsPage"), { ssr: false })
 
 export default function RideDetails() {
-  const [rideData, setRideData] = useState<{ ride: Ride; contacts: Contact[] } | null>(null)
-
   const router = useRouter()
   const { id } = useParams()
   const searchParams = useSearchParams()
   const fromTab = searchParams.get("from") || "available"
-  const isOnline = useOnlineStatus()
   const { data: session, status } = useSession()
   const currentUser = session?.user as User | null
   const [showLoader, setShowLoader] = useState(false)
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (isOnline && currentUser && id) {
-        try {
-          const data = await fetchRideDetailsData(id as string)
-          setRideData(data)
-        } catch {
-          toast.error("Failed to fetch ride details. Please try again.")
-        }
-      }
-    }
-
-    fetchData()
-    const intervalId = setInterval(fetchData, 10000) // Refresh every 10 seconds
-    return () => clearInterval(intervalId)
-  }, [isOnline, currentUser, id, router])
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -84,11 +61,7 @@ export default function RideDetails() {
         <ArrowBigLeft />
         Go Back to Dashboard
       </Button>
-      <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
-        {rideData && currentUser && (
-          <RideDetailsPage ride={rideData.ride} currentUser={currentUser} contacts={rideData.contacts} />
-        )}
-      </Suspense>
+      {currentUser && id && <RideDetailsPage currentUser={currentUser} rideId={id as string} />}
     </Layout>
   )
 }
