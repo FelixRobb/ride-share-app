@@ -3,8 +3,19 @@
 import { Search, Clock, MapPin, User2, CalendarIcon, ArrowRight, CheckCircle, Filter } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState, useEffect, useMemo } from "react"
-
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
+import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useMediaQuery } from "@/hooks/use-media-query"
+import type { User, Ride, Contact } from "../types"
+import { fetchDashboardData } from "@/utils/api"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import {
   Drawer,
   DrawerClose,
@@ -14,18 +25,11 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useMediaQuery } from "@/hooks/use-media-query"
-import type { User, Ride, Contact } from "../types"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+
+
 
 interface FilterProps {
   statusFilter: string | null
@@ -134,8 +138,6 @@ const FilterDrawer: React.FC<FilterProps> = (props) => {
 
 interface DashboardPageProps {
   currentUser: User
-  rides: Ride[]
-  contacts: Contact[]
   searchTerm: string
   setSearchTerm: (term: string) => void
   activeTab: string
@@ -144,27 +146,68 @@ interface DashboardPageProps {
 
 export default function DashboardPage({
   currentUser,
-  rides: initialRides,
-  contacts: initialContacts,
   searchTerm,
   setSearchTerm,
   activeTab,
   setActiveTab,
 }: DashboardPageProps) {
   const router = useRouter()
+  const isOnline = useOnlineStatus()
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [dateFilter, setDateFilter] = useState<Date | null>(null)
-  const [localRides, setLocalRides] = useState<Ride[]>(initialRides)
-  const [contacts, setContacts] = useState<Contact[]>(initialContacts)
+  const [rides, setRides] = useState<Ride[]>([])
+  const [contacts, setContacts] = useState<Contact[]>([])
   const isDesktop = useMediaQuery("(min-width: 500px)")
+  const previousRidesRef = useRef<Ride[]>([])
+  const previousContactsRef = useRef<Contact[]>([])
+
+  const fetchData = useCallback(async (isInitial: boolean = false) => {
+    if (isOnline && currentUser) {
+      try {
+        if (isInitial) {
+          setIsInitialLoading(true)
+        }
+
+        const data = await fetchDashboardData()
+
+        // Only update state if data has changed
+        const hasRidesChanged = JSON.stringify(data.rides) !== JSON.stringify(previousRidesRef.current)
+        const hasContactsChanged = JSON.stringify(data.contacts) !== JSON.stringify(previousContactsRef.current)
+
+        if (hasRidesChanged) {
+          setRides(data.rides)
+          previousRidesRef.current = data.rides
+        }
+
+        if (hasContactsChanged) {
+          setContacts(data.contacts)
+          previousContactsRef.current = data.contacts
+        }
+
+        // Only show toast if data has changed and it's not the initial load
+        if (!isInitial && (hasRidesChanged || hasContactsChanged)) {
+          toast.success("Dashboard updated")
+        }
+      } catch {
+        toast.error("Failed to fetch dashboard data. Please try again.")
+      } finally {
+        if (isInitial) {
+          setIsInitialLoading(false)
+        }
+      }
+    }
+  }, [isOnline, currentUser])
 
   useEffect(() => {
-    setLocalRides(initialRides)
-    setContacts(initialContacts)
-    setIsInitialLoading(false)
-  }, [initialRides, initialContacts])
+    // Initial data fetch
+    fetchData(true)
+
+    // Set up periodic refresh
+    const intervalId = setInterval(() => fetchData(), 10000) // Refresh every 10 seconds
+    return () => clearInterval(intervalId)
+  }, [fetchData])
 
   const formatDateTime = (timestamp: string) => {
     const date = new Date(timestamp)
@@ -187,7 +230,7 @@ export default function DashboardPage({
   }
 
   const filteredRides = useMemo(() => {
-    return localRides.filter((ride) => {
+    return rides.filter((ride) => {
       const matchesSearch =
         ride.from_location.toLowerCase().includes(localSearchTerm.toLowerCase()) ||
         ride.to_location.toLowerCase().includes(localSearchTerm.toLowerCase()) ||
@@ -199,7 +242,7 @@ export default function DashboardPage({
 
       return matchesSearch && matchesStatus && matchesDate
     })
-  }, [localRides, localSearchTerm, statusFilter, dateFilter])
+  }, [rides, localSearchTerm, statusFilter, dateFilter])
 
   const activeRides = useMemo(
     () =>

@@ -1,46 +1,19 @@
 "use client"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { useState, useEffect, Suspense, useCallback } from "react"
-import { toast } from "sonner"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Loader } from "lucide-react"
 import Layout from "@/components/Layout"
-import type { User, Contact, AssociatedPerson } from "@/types"
-import { fetchProfileData } from "@/utils/api"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import type { User } from "@/types"
 
 const ProfilePage = dynamic(() => import("@/components/ProfilePage"), { ssr: false })
 
 export default function Profile() {
-  const [profileData, setProfileData] = useState<{
-    user: User
-    contacts: Contact[]
-    associatedPeople: AssociatedPerson[]
-  } | null>(null)
   const router = useRouter()
-  const isOnline = useOnlineStatus()
   const { data: session, status } = useSession()
   const currentUser = session?.user as User | undefined
   const [showLoader, setShowLoader] = useState(false)
-  
-  // Wrap fetchData in useCallback
-  const fetchData = useCallback(async () => {
-    if (isOnline && currentUser) {
-      try {
-        const data = await fetchProfileData()
-        setProfileData(data)
-      } catch {
-        toast.error("Failed to fetch profile data. Please try again.")
-      }
-    }
-  }, [isOnline, currentUser])
-
-  useEffect(() => {
-    fetchData()
-    const intervalId = setInterval(fetchData, 20000) // Refresh every 20 seconds
-    return () => clearInterval(intervalId)
-  }, [fetchData])
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -60,7 +33,7 @@ export default function Profile() {
       return (
         <div className="flex flex-col items-center justify-center h-screen bg-black">
           <div className="flex items-center justify-center w-full">
-            <Loader />
+            <Loader className="animate-spin" />
           </div>
           <p className="mt-4 text-lg text-white">Please wait while we are checking your authentication status...</p>
         </div>
@@ -80,16 +53,8 @@ export default function Profile() {
 
   return (
     <Layout>
-      <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching your profile</div>}>
-        {profileData && (
-          <ProfilePage
-            currentUser={profileData.user}
-            contacts={profileData.contacts}
-            associatedPeople={profileData.associatedPeople}
-            refreshData={fetchData}
-          />
-        )}
-      </Suspense>
+      <ProfilePage currentUser={currentUser} />
     </Layout>
   )
 }
+
