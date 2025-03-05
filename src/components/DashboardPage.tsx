@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { Search, User2, ArrowRight, CheckCircle, Filter, MapPin } from "lucide-react"
 import { CalendarPlus2Icon as CalendarIcon2 } from "lucide-react"
 import { format, isToday, isYesterday, isThisWeek, isThisMonth } from "date-fns"

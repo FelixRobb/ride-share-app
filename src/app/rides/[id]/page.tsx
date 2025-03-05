@@ -21,6 +21,7 @@ export default function RideDetails() {
   const { data: session, status } = useSession()
   const currentUser = session?.user as User | null
   const [showLoader, setShowLoader] = useState(false)
+  const isFromRideHistory = fromTab === "ride-history"
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -57,9 +58,9 @@ export default function RideDetails() {
 
   return (
     <Layout>
-      <Button type="button" variant="ghost" onClick={() => router.push(`/dashboard?tab=${fromTab}`)} className="mb-2">
+      <Button type="button" variant="ghost" onClick={() => router.push(isFromRideHistory ? "/ride-history" : `/dashboard?tab=${fromTab}`)} className="mb-2">
         <ArrowBigLeft />
-        Go Back to Dashboard
+                {isFromRideHistory ? "Back to Ride History" : "Go Back to Dashboard"}
       </Button>
       {currentUser && id && <RideDetailsPage currentUser={currentUser} rideId={id as string} />}
     </Layout>

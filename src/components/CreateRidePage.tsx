@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
 import { motion } from "framer-motion"
