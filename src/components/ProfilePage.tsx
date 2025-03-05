@@ -122,7 +122,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
           toast.error("Failed to fetch profile data. Please try again.")
         }
       } finally {
-        setIsLoading(false)
+ 
         setIsRefreshing(false)
       }
     },
@@ -420,17 +420,17 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
           data-tutorial="profile-header"
         >
           {isLoading ? (
-            <div className="w-full flex items-center justify-between">
+            <div className="w-full flex items-center justify-between flex-col">
               <div className="flex items-center gap-4">
                 <Skeleton className="h-16 w-16 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-6 w-40" />
-                  <Skeleton className="h-4 w-60" />
+                <div className="space-y-2 w-full">
+                  <Skeleton className="h-6 w-4/12" />
+                  <Skeleton className="h-4 w-8/12" />
                 </div>
               </div>
               <div className="flex gap-2">
-                <Skeleton className="h-8 w-24" />
-                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-8 w-3/12" />
+                <Skeleton className="h-8 w-3/12" />
               </div>
             </div>
           ) : (
