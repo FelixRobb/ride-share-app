@@ -490,7 +490,6 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
           )}
 
           {/* Profile Tab */}
-          {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">
             {isLoading ? (
               <>
