@@ -122,7 +122,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
           toast.error("Failed to fetch profile data. Please try again.")
         }
       } finally {
- 
+        setIsLoading(false)
         setIsRefreshing(false)
       }
     },
@@ -469,9 +469,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
         {/* Main content tabs */}
         <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="w-full">
        {isLoading ? (
-  <div className="flex flex-wrap justify-center space-x-2 mb-6 w-full">
+  <div className="flex flex-nowrap justify-center space-x-2 mb-6 w-full">
     {[...Array(4)].map((_, i) => (
-      <Skeleton key={i} className="h-10 w-24 mb-2" />
+      <Skeleton key={i} className="h-10 w-24 mb-2 flex-1" />
     ))}
   </div>
 ) : (
