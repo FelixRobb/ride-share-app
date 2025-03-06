@@ -11,6 +11,7 @@ export async function GET() {
         users:user_id (name)
       `
       )
+      .eq("is_approved", true)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
