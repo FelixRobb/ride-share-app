@@ -419,21 +419,21 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
           className="mb-6 flex flex-col items-center sm:flex-row sm:justify-between"
           data-tutorial="profile-header"
         >
-      {isLoading ? (
-  <div className="w-full flex items-center justify-between flex-col sm:flex-row">
-    <div className="flex items-center gap-4 w-full mb-4 sm:mb-0">
-      <Skeleton className="h-16 w-16 rounded-full shrink-0" />
-      <div className="space-y-2 w-full max-w-[300px]">
-        <Skeleton className="h-6 w-full max-w-[200px]" />
-        <Skeleton className="h-4 w-full max-w-[250px]" />
-      </div>
-    </div>
-    <div className="flex gap-2 w-full sm:w-auto justify-center">
-      <Skeleton className="h-8 w-24" />
-      <Skeleton className="h-8 w-24" />
-    </div>
-  </div>
-) : (
+          {isLoading ? (
+            <div className="w-full flex items-center justify-between flex-col sm:flex-row">
+              <div className="flex items-center gap-4 w-full mb-4 sm:mb-0">
+                <Skeleton className="h-16 w-16 rounded-full shrink-0" />
+                <div className="space-y-2 w-full max-w-[300px]">
+                  <Skeleton className="h-6 w-full max-w-[200px]" />
+                  <Skeleton className="h-4 w-full max-w-[250px]" />
+                </div>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto justify-center">
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-8 w-24" />
+              </div>
+            </div>
+          ) : (
             <>
               <div className="flex items-center gap-4 mb-4 sm:mb-0">
                 <Avatar className="h-16 w-16 border-2 border-primary">
@@ -468,13 +468,13 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
 
         {/* Main content tabs */}
         <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="w-full">
-       {isLoading ? (
-  <div className="flex flex-nowrap justify-center space-x-2 mb-6 w-full">
-    {[...Array(4)].map((_, i) => (
-      <Skeleton key={i} className="h-10 w-24 mb-2 flex-1" />
-    ))}
-  </div>
-) : (
+          {isLoading ? (
+            <div className="flex flex-nowrap justify-center space-x-2 mb-6 w-full">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-10 w-24 mb-2 flex-1" />
+              ))}
+            </div>
+          ) : (
             <TabsList className="grid grid-cols-4 mb-6">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="security" data-tutorial="security-tab">
@@ -491,28 +491,28 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">
-          {isLoading ? (
-  <>
-    {[...Array(3)].map((_, cardIndex) => (
-      <Card key={cardIndex}>
-        <CardHeader>
-          <Skeleton className="h-6 w-40 mb-2" />
-          <Skeleton className="h-4 w-60" />
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[...Array(cardIndex === 0 ? 3 : 2)].map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-full max-w-[120px]" />
-                <Skeleton className="h-6 w-full max-w-[200px]" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    ))}
-  </>
-) : (
+            {isLoading ? (
+              <>
+                {[...Array(3)].map((_, cardIndex) => (
+                  <Card key={cardIndex}>
+                    <CardHeader>
+                      <Skeleton className="h-6 w-40 mb-2" />
+                      <Skeleton className="h-4 w-60" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {[...Array(cardIndex === 0 ? 3 : 2)].map((_, i) => (
+                          <div key={i} className="space-y-2">
+                            <Skeleton className="h-4 w-full max-w-[120px]" />
+                            <Skeleton className="h-6 w-full max-w-[200px]" />
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            ) : (
               // Original profile tab content remains the same
               <>
                 <Card data-tutorial="personal-info">
