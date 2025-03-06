@@ -52,9 +52,9 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
   }
 }
 
-export async function GET(request: Request, props: { params: { id: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
-    const params = props.params;
+    const params = (await props.params);
     const bugReportId = params.id;
 
     // Get bug report details

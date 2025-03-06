@@ -175,7 +175,6 @@ export default function ReportManagement() {
     const handleViewDialogClose = () => {
         setViewDialogOpen(false)
         // Small delay to prevent UI flicker
-        setTimeout(() => setSelectedReport(null), 200)
     }
 
     const handleUpdateDialogClose = () => {
@@ -529,9 +528,9 @@ export default function ReportManagement() {
                             Close
                         </Button>
                         <Button onClick={() => {
-                            handleViewDialogClose()
-                            // Small delay to ensure first dialog is closed
-                            setTimeout(() => handleOpenUpdateDialog(selectedReport!), 100)
+                            const reportToUpdate = selectedReport;
+                            handleViewDialogClose();
+                            setTimeout(() => handleOpenUpdateDialog(reportToUpdate!), 100);
                         }}>
                             Update Status
                         </Button>

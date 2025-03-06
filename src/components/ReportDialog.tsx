@@ -78,13 +78,7 @@ export function ReportDialog({ reportedId, reportedName, reportType, rideId, tri
 
             setIsSuccess(true)
             toast.success("Report submitted successfully")
-
-            // Reset form after 3 seconds and close dialog
-            setTimeout(() => {
-                setReason("")
-                setDetails("")
-                setIsSuccess(false)
-            }, 3000)
+            
         } catch {
             toast.error("Failed to submit report. Please try again.")
         } finally {
