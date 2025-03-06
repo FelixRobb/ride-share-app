@@ -514,7 +514,9 @@ export default function BugReportManagement() {
             <Button onClick={() => {
               const bugReportToUpdate = selectedBugReport;
               handleViewDialogClose();
-              setTimeout(() => handleOpenUpdateDialog(bugReportToUpdate!), 100);
+              if (bugReportToUpdate) {
+                setTimeout(() => handleOpenUpdateDialog(bugReportToUpdate), 100);
+              }
             }}>
               Update Status
             </Button>
