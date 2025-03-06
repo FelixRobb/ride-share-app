@@ -115,6 +115,8 @@ export default function RideHistoryPage() {
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [totalRides, setTotalRides] = useState(0)
+
 
   // State for filters
   const [searchTerm, setSearchTerm] = useState("")
@@ -182,8 +184,10 @@ export default function RideHistoryPage() {
 
       const data = await response.json()
       setRides(data.rides)
+
       setTotalPages(data.totalPages)
-      setCurrentPage(data.page) // Use the page returned from the API
+      setCurrentPage(data.page)
+      setTotalRides(data.total)
     } catch {
       setError("Failed to load ride history. Please try again.")
       setRides([])
@@ -442,7 +446,9 @@ export default function RideHistoryPage() {
               key={period.value}
               onClick={() => {
                 setTimePeriod(period.value)
-                if (period.value !== "custom") {
+                if (period.value === "custom") {
+                  setDateFilter(new Date())
+                } else {
                   setDateFilter(undefined)
                 }
               }}
@@ -548,16 +554,15 @@ export default function RideHistoryPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">Ride History</h1>
           <p className="text-muted-foreground">
-            {totalPages > 0 ? `Showing ${rides.length} of ${totalPages * ITEMS_PER_PAGE} rides` : "No rides found"}
+            {totalPages > 0 ? `Showing ${rides.length} of ${totalRides} rides` : "No rides found"}
           </p>
         </div>
 
         {/* Filter section */}
-        <div className="bg-card rounded-lg border shadow-sm p-4 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="bg-card rounded-lg border shadow-sm p-6 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
             {/* Search input */}
-            <div className="relative col-span-1 md:col-span-2">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            <div className="flex-1">
               <Input
                 type="text"
                 placeholder="Search locations, riders..."
@@ -566,22 +571,32 @@ export default function RideHistoryPage() {
                   setSearchTerm(e.target.value)
                   setCurrentPage(1)
                 }}
-                className="pl-10 pr-4 w-full"
+                className="pl-4 pr-4 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            {/* Time period filter */}
-            <div className="grid grid-cols-2 gap-2">
-              <TimePeriodFilter />
-              <DatePickerPopover />
+            {/* Time period and date filter */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex-1">
+                <TimePeriodFilter />
+              </div>
+              {timePeriod === "custom" && (
+                <div className="flex-1">
+                  <DatePickerPopover />
+                </div>
+              )}
             </div>
           </div>
 
           {/* Filter tabs for status */}
-          <FilterTabs />
+          <div className="mb-4">
+            <FilterTabs />
+          </div>
 
           {/* Active filters display */}
-          <ActiveFilters />
+          <div className="flex flex-wrap gap-2">
+            <ActiveFilters />
+          </div>
         </div>
 
         {/* Error message */}
