@@ -348,7 +348,7 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
                         <CardTitle className="text-sm font-semibold flex items-center gap-2">
                           {device.device_name}
                           {device.device_id === currentDeviceId && (
-                            <Badge variant="outline" className="text-xs">Current Device</Badge>
+                            <Badge variant="outline" className="text-xs text-nowrap truncate">Current Device</Badge>
                           )}
                         </CardTitle>
                         <CardDescription className="text-xs mt-1">
