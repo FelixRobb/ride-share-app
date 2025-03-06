@@ -97,3 +97,29 @@ export type PushSubscription = {
   last_used: string
 }
 
+// Report form data type
+export interface ReportFormData {
+  reason: string
+  details: string
+  report_type: "user" | "ride"
+  reported_id: string
+  ride_id?: string | null
+}
+
+// New Report type for user reporting feature
+export interface Report {
+  id: string
+  reporter_id: string
+  reported_id: string
+  reason: string
+  details: string
+  status: "pending" | "reviewed" | "resolved" | "dismissed"
+  report_type: "user" | "ride"
+  ride_id?: string | null
+  admin_notes?: string | null
+  created_at: string
+  updated_at: string
+  reporter_name?: string
+  reported_name?: string
+}
+

@@ -345,10 +345,12 @@ export default function DashboardPage({
               {/* Header with status and time */}
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 mb-1">
                     <CalendarIcon2 className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{relative}</span>
-                    <span className="text-sm text-muted-foreground">• {time}</span>
+                    <div className="flex flex-col items-start justify-center">
+                      <span className="text-sm font-medium">{relative}</span>
+                      <span className="text-sm text-muted-foreground">{time}</span>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <User2 className="w-4 h-4 text-muted-foreground" />

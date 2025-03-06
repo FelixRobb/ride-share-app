@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { toast } from "sonner"
 import { Star } from "lucide-react"
 
@@ -22,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { useCallback, useEffect, useState } from "react"
 import { debounce } from "lodash"
+import ReportManagement from "@/components/ReportManagement"
 
 interface AdminDashboardProps {
   onLogout: () => void
@@ -275,6 +278,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           <TabsTrigger value="stats">Statistics</TabsTrigger>
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stats">
@@ -488,6 +492,9 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
               </Table>
             )}
           </div>
+        </TabsContent>
+        <TabsContent value="reports">
+          <ReportManagement />
         </TabsContent>
       </Tabs>
 

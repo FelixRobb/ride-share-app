@@ -34,6 +34,8 @@ import {
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { AlertTriangle } from 'lucide-react'
+import { ReportDialog } from "@/components/ReportDialog"
 import type { User, Ride, Contact, Note } from "@/types"
 import {
   acceptRide,
@@ -399,18 +401,37 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">
-          {isLoading ? <div className="h-8 w-32 bg-muted animate-pulse rounded" /> : "Ride Details"}
-        </CardTitle>
-        <CardDescription className="text-lg">
-          {isLoading ? (
-            <div className="h-6 w-64 bg-muted animate-pulse rounded mt-2" />
-          ) : (
-            <>
-              From {ride?.from_location} to {ride?.to_location}
-            </>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="text-2xl font-bold">
+              {isLoading ? <div className="h-8 w-32 bg-muted animate-pulse rounded" /> : "Ride Details"}
+            </CardTitle>
+            <CardDescription className="text-lg">
+              {isLoading ? (
+                <div className="h-6 w-64 bg-muted animate-pulse rounded mt-2" />
+              ) : (
+                <>
+                  From {ride?.from_location} to {ride?.to_location}
+                </>
+              )}
+            </CardDescription>
+          </div>
+          {!isLoading && ride && (
+            <ReportDialog
+              reportedId={ride.requester_id === currentUser?.id ? ride.accepter_id || "" : ride.requester_id}
+              reportedName={ride.requester_id === currentUser?.id
+                ? (contacts.find(c => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact?.name || "User")
+                : getRequesterName(ride)}
+              reportType="ride"
+              rideId={ride.id}
+              trigger={
+                <Button variant="ghost" size="default" className="text-destructive hover:bg-destructive/10 ml-4">
+                  <AlertTriangle className="h-5 w-5" />
+                </Button>
+              }
+            />
           )}
-        </CardDescription>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div

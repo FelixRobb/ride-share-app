@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
+import { AlertTriangle } from 'lucide-react'
+import { ReportDialog } from "@/components/ReportDialog"
 import type { User, Contact } from "@/types"
 import { addContact, acceptContact, deleteContact } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
@@ -355,6 +357,19 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
             )}
             {selectedContact.user_id === currentUser.id ? "Remove Contact" : "Decline Request"}
           </Button>
+          {selectedContact.status === "accepted" && (
+            <ReportDialog
+              reportedId={selectedContact.user_id === currentUser.id ? selectedContact.contact_id : selectedContact.user_id}
+              reportedName={contactUser.name}
+              reportType="user"
+              trigger={
+                <Button variant="ghost" className="w-full text-destructive hover:bg-destructive/10">
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Report User
+                </Button>
+              }
+            />
+          )}
         </div>
       </div>
     )
