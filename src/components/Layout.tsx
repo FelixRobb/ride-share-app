@@ -174,6 +174,7 @@ export default function Layout({ children }: LayoutProps) {
                               { href: "/faq", label: "FAQ", icon: HelpCircle },
                               { href: "/reviews", label: "Leave a review", icon: Star },
                               { href: "https://github.com/FelixRobb/ride-share-app", label: "GitHub", icon: Code },
+                              { href: "/bug-report", label: "Bug Reports", icon: HelpCircle },
                             ].map(({ href, label, icon: Icon }) => (
                               <Link
                                 key={href}
@@ -215,6 +216,7 @@ export default function Layout({ children }: LayoutProps) {
                                 { href: "/faq", label: "FAQ", icon: HelpCircle },
                                 { href: "/reviews", label: "Leave a review", icon: Star },
                                 { href: "https://github.com/FelixRobb/ride-share-app", label: "GitHub", icon: Code },
+                                { href: "/bug-report", label: "Bug Reports", icon: HelpCircle },
                               ].map(({ href, label, icon: Icon }) => (
                                 <Link
                                   key={href}
