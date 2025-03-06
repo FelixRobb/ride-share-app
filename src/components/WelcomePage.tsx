@@ -436,7 +436,7 @@ export default function WelcomePage() {
       <footer className="bg-background py-8 text-center text-sm text-muted-foreground relative">
         <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid" />
         <div className="relative z-10">
-          <p><Link href="/admin" >copy;</Link>& {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
+          <p><Link href="/admin" >&copy;</Link> {new Date().getFullYear()} RideShare by Félix Robb. All rights reserved.</p>
           <div className="mt-2 space-x-4">
             <Link href="/privacy-policy" className="hover:text-primary transition-colors duration-300">
               Privacy Policy
