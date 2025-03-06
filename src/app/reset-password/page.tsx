@@ -163,7 +163,16 @@ function ResetPasswordForm() {
 
 export default function ResetPassword() {
   return (
-    <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center"><Loader className="w-8 h-8 animate-spin text-primary" /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black">
+        <Card className="w-full max-w-[350px]">
+          <CardContent className="flex items-center justify-center h-[200px]">
+            <p>Checking reset token...</p>
+            <div>
+              <Loader className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>}>
       <ResetPasswordForm />
     </Suspense>
   )
