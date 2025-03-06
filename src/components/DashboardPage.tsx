@@ -30,6 +30,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Separator } from "./ui/separator"
 
 interface FilterProps {
   statusFilter: string | null
@@ -392,17 +393,23 @@ export default function DashboardPage({
 
               {/* Additional information */}
               {(ride.status === "accepted" || ride.status === "completed") && ride.accepter_id && (
-                <div className="flex items-center space-x-2 pt-2 border-t">
-                  <User2 className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Offered by: {getOfferedByText(ride)}</span>
-                </div>
+                <>
+                  <Separator className="my-1" />
+                  <div className="flex items-center space-x-2">
+                    <User2 className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Offered by: {getOfferedByText(ride)}</span>
+                  </div>
+                </>
               )}
               {ride.note && (
-                <div className="pt-2 border-t">
-                  <p className="text-sm text-muted-foreground line-clamp-1">
-                    <span className="font-medium">Note:</span> {ride.note}
-                  </p>
-                </div>
+                <>
+                  <Separator className="my-1" />
+                  <div>
+                    <p className="text-sm text-muted-foreground line-clamp-1">
+                      <span className="font-medium">Note:</span> {ride.note}
+                    </p>
+                  </div>
+                </>
               )}
             </div>
           </CardContent>

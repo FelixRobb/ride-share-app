@@ -337,7 +337,7 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
           </div>
         </div>
 
-        <div className="flex justify-center gap-3 mt-4">
+        <div className="flex justify-center gap-3 mt-4 flex-col">
           {selectedContact.status === "pending" && selectedContact.contact_id === currentUser.id ? (
             <Button className="w-full" onClick={() => handleAcceptContact(selectedContact.id)} disabled={!isOnline}>
               <UserCheck className="w-4 h-4 mr-2" />
@@ -355,7 +355,13 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
             ) : (
               <UserX className="w-4 h-4 mr-2" />
             )}
-            {selectedContact.user_id === currentUser.id ? "Remove Contact" : "Decline Request"}
+            {selectedContact.status === "pending" && selectedContact.user_id === currentUser.id
+              ? "Cancel Request"
+              : selectedContact.user_id === currentUser.id
+              ? "Remove Contact"
+              : selectedContact.status === "accepted"
+              ? "Remove Contact"
+              : "Decline Request"}
           </Button>
           {selectedContact.status === "accepted" && (
             <ReportDialog
