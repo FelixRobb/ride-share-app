@@ -43,10 +43,10 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
   }
 }
 
-export async function GET(props: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request) {
   try {
-    const params = await props.params;
-    const reportId = params.id;
+    const url = new URL(request.url);
+    const reportId = url.pathname.split('/').pop(); // Extracting the report ID from the URL
 
     // Get report details
     const { data: report, error } = await supabase
