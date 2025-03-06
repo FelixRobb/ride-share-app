@@ -213,9 +213,6 @@ export default function BugReportForm() {
                     </CardContent>
 
                     <CardFooter className="flex justify-between">
-                        <Button type="button" variant="outline" onClick={() => window.history.back()}>
-                            Cancel
-                        </Button>
                         <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting ? (
                                 <>
