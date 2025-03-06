@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { toast } from "sonner"
 import { AlertTriangle, Loader } from "lucide-react"
@@ -86,7 +84,6 @@ export function ReportDialog({ reportedId, reportedName, reportType, rideId, tri
                 setReason("")
                 setDetails("")
                 setIsSuccess(false)
-                setIsOpen(false)
             }, 3000)
         } catch {
             toast.error("Failed to submit report. Please try again.")
@@ -108,7 +105,7 @@ export function ReportDialog({ reportedId, reportedName, reportType, rideId, tri
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] rounded-lg">
+            <DialogContent className="sm:max-w-[425px] max-h-[calc(100vh-25%)] rounded-lg">
                 {!isSuccess ? (
                     <>
                         <DialogHeader>

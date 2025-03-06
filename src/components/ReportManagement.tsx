@@ -465,7 +465,7 @@ export default function ReportManagement() {
 
             {/* View Report Dialog */}
             <Dialog open={viewDialogOpen} onOpenChange={handleViewDialogClose}>
-                <DialogContent className="sm:max-w-[600px] rounded-lg">
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] rounded-lg overflow-auto w-11/12">
                     <DialogHeader>
                         <DialogTitle>Report Details</DialogTitle>
                         <DialogDescription>Detailed information about the report</DialogDescription>
@@ -541,7 +541,7 @@ export default function ReportManagement() {
 
             {/* Update Report Dialog */}
             <Dialog open={updateDialogOpen} onOpenChange={handleUpdateDialogClose}>
-                <DialogContent className="sm:max-w-[500px] rounded-lg">
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] rounded-lg overflow-auto w-11/12">
                     <DialogHeader>
                         <DialogTitle>Update Report Status</DialogTitle>
                         <DialogDescription>Change the status of this report and add admin notes</DialogDescription>
