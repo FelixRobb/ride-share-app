@@ -163,7 +163,7 @@ function ResetPasswordForm() {
 
 export default function ResetPassword() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div><Loader className="w-8 h-8 animate-spin text-primary" /></div>}>
       <ResetPasswordForm />
     </Suspense>
   )
