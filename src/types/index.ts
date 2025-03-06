@@ -123,3 +123,38 @@ export interface Report {
   reported_name?: string
 }
 
+// Bug report form data type
+export interface BugReportFormData {
+  title: string
+  description: string
+  steps_to_reproduce?: string
+  severity: "low" | "medium" | "high" | "critical"
+  device_info?: string
+  browser_info?: string
+}
+
+// Bug report type
+export interface BugReport {
+  id: string
+  user_id: string
+  title: string
+  description: string
+  steps_to_reproduce?: string
+  severity: "low" | "medium" | "high" | "critical"
+  status: "new" | "in_progress" | "resolved" | "closed"
+  device_info?: string
+  browser_info?: string
+  admin_notes?: string
+  created_at: string
+  updated_at: string
+  user_name?: string
+}
+
+// Bug report stats
+export interface BugReportStats {
+  totalBugs: number
+  openBugs: number
+  bySeverity: { severity: string; count: number }[]
+  byStatus: { status: string; count: number }[]
+}
+
