@@ -28,6 +28,8 @@ body {
     --destructive-foreground: 60 9.1% 97.8%;
     --ring: 24.6 95% 53.1%;
     --radius: 0.5rem;
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 355.7 100% 97.3%;
   }
 
   .dark {
@@ -50,6 +52,8 @@ body {
     --destructive: 0 77.43% 45.95%;
     --destructive-foreground: 60 9.1% 97.8%;
     --ring: 20.5 90.2% 48.2%;
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 144.9 80.4% 10%;
   }
 }
 
@@ -112,3 +116,4 @@ html {
 *::-webkit-scrollbar {
   display: none;
 }
+
