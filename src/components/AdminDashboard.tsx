@@ -464,7 +464,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                             <TableCell className="hidden md:table-cell">{user.email}</TableCell>
                             <TableCell className="hidden lg:table-cell">{user.phone}</TableCell>
                             <TableCell>
-                              <Badge variant={user.isVerified ? "success" : "secondary"} className="gap-1">
+                              <Badge variant={user.isVerified ? "default" : "secondary"} className="gap-1">
                                 {user.isVerified ? (
                                   <>
                                     <CheckCircle className="h-3 w-3" />
