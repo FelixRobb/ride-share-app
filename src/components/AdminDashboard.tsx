@@ -65,6 +65,13 @@ interface Review {
   userName: string
 }
 
+interface User { id: string 
+name: string 
+email: string 
+phone: string 
+isVerified: boolean 
+}
+
 interface Stats {
   totalUsers: number
   totalRides: number
