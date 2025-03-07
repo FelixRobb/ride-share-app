@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -27,10 +27,12 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
   const router = useRouter()
   const { data: session } = useSession()
 
-  if (session) {
-    router.push("/dashboard")
-    return null
-  }
+  useEffect(() => {
+    if (session) {
+      toast.success("You're still logged in. Redirecting to dashboard")
+      router.push("/dashboard")
+    }
+  }, [session, router])
 
   const handleRegister = async (name: string, phone: string, email: string, password: string) => {
     setIsLoading(true)

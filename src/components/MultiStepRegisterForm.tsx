@@ -29,10 +29,25 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
   })
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [passwordStrength, setPasswordStrength] = useState<string>("")
+
+  const evaluatePasswordStrength = (password: string) => {
+    const lengthCriteria = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    
+    if (password.length < 6) return "Too short";
+    if (lengthCriteria && hasUppercase && hasNumber) return "Strong";
+    if (lengthCriteria) return "Medium";
+    return "Weak";
+  }
 
   const updateFormData = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     setError(null)
+    if (field === "password") {
+      setPasswordStrength(evaluatePasswordStrength(value))
+    }
   }
 
   const handleNext = () => {
@@ -167,6 +182,21 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
                 required
               />
             </div>
+            {formData.password && (
+              <div className="relative">
+                <div className="h-2 rounded bg-gray-200">
+                  <div
+                    className={`h-full rounded ${passwordStrength === "Strong" ? "bg-green-500" : passwordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
+                    style={{
+                      width: passwordStrength === "Strong" ? "100%" : passwordStrength === "Medium" ? "66%" : passwordStrength === "Weak" ? "33%" : "0%",
+                    }}
+                  />
+                </div>
+                <p className={`text-sm mt-1 ${passwordStrength === "Strong" ? "text-green-500" : passwordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}>
+                  {passwordStrength}
+                </p>
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>

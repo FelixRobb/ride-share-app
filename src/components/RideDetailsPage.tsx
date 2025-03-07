@@ -14,6 +14,8 @@ import {
   Trash,
   Loader,
   Pencil,
+  AlertCircleIcon,
+  ArrowBigLeft,
 } from "lucide-react"
 import maplibregl from "maplibre-gl"
 import { useRouter } from "next/navigation"
@@ -34,6 +36,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertTriangle } from 'lucide-react'
 import { ReportDialog } from "@/components/ReportDialog"
 import type { User, Ride, Contact, Note } from "@/types"
@@ -83,6 +86,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
   const [isDeleteNoteDialogOpen, setIsDeleteNoteDialogOpen] = useState(false)
   const [noteToDeleteId, setNoteToDeleteId] = useState<string | null>(null)
   const [messageLength, setMessageLength] = useState(0)
+  const [permissionDenied, setPermissionDenied] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const scrollToBottom = useCallback(() => {
@@ -126,8 +130,11 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
           // Scroll to bottom after setting notes
           scrollToBottom();
         }
-      } catch {
-        if (isOnline) {
+      } catch (error) {
+        if (error instanceof Error && error.message === "permissionDenied") {
+          // Set a permission denied state
+          setPermissionDenied(true)
+        } else if (isOnline) {
           toast.error("Failed to fetch ride details. Please try again.")
         }
       } finally {
@@ -400,6 +407,19 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
 
   return (
     <Card className="w-full max-w-3xl mx-auto">
+      {permissionDenied && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircleIcon className="h-4 w-4" />
+          <AlertTitle>Access Denied</AlertTitle>
+          <AlertDescription className="flex flex-col gap-2">
+            <p>You don&apos;t have permission to view this ride details.</p>
+            <Button variant="outline" size="sm" className="w-fit flex items-center gap-2" onClick={() => router.back()}>
+              <ArrowBigLeft className="h-4 w-4" />
+              Go Back
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>

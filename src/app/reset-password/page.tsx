@@ -15,12 +15,24 @@ import Link from 'next/link'
 function ResetPasswordForm() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [newPasswordStrength, setNewPasswordStrength] = useState<string>("")
   const [isLoading, setIsLoading] = useState(true)
   const [isTokenValid, setIsTokenValid] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
+
+  const evaluatePasswordStrength = (password: string) => {
+    const lengthCriteria = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+
+    if (password.length < 6) return "Too short";
+    if (lengthCriteria && hasUppercase && hasNumber) return "Strong";
+    if (lengthCriteria) return "Medium";
+    return "Weak";
+  }
 
   useEffect(() => {
     const checkToken = async () => {
@@ -131,9 +143,27 @@ function ResetPasswordForm() {
                   <PasswordInput
                     id="new-password"
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    onChange={(e) => {
+                      setNewPassword(e.target.value)
+                      setNewPasswordStrength(evaluatePasswordStrength(e.target.value))
+                    }}
                     required
                   />
+                  {newPassword && (
+                    <div className="relative">
+                      <div className="h-2 rounded bg-gray-200">
+                        <div
+                          className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-green-500" : newPasswordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
+                          style={{
+                            width: newPasswordStrength === "Strong" ? "100%" : newPasswordStrength === "Medium" ? "66%" : newPasswordStrength === "Weak" ? "33%" : "0%",
+                          }}
+                        />
+                      </div>
+                      <p className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-green-500" : newPasswordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}>
+                        {newPasswordStrength}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="confirm-password">Confirm Password</Label>
@@ -164,15 +194,15 @@ function ResetPasswordForm() {
 export default function ResetPassword() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black">
-        <Card className="w-full max-w-[350px]">
-          <CardContent className="flex items-center justify-center h-[200px]">
-            <p>Checking reset token...</p>
-            <div>
-              <Loader className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>}>
+      <Card className="w-full max-w-[350px]">
+        <CardContent className="flex items-center justify-center h-[200px]">
+          <p>Checking reset token...</p>
+          <div>
+            <Loader className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>}>
       <ResetPasswordForm />
     </Suspense>
   )

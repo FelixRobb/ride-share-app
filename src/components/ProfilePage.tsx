@@ -100,6 +100,20 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
     return "system"
   })
 
+  const [newPasswordStrength, setNewPasswordStrength] = useState<string>("")
+
+  // Function to evaluate password strength
+  const evaluatePasswordStrength = (password: string) => {
+    const lengthCriteria = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+
+    if (password.length < 6) return "Too short";
+    if (lengthCriteria && hasUppercase && hasNumber) return "Strong";
+    if (lengthCriteria) return "Medium";
+    return "Weak";
+  }
+
   // Fetch profile data
   const fetchData = useCallback(
     async (silent = false) => {
@@ -326,6 +340,10 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
     e.preventDefault()
     if (newPassword !== confirmNewPassword) {
       toast.error("New passwords do not match")
+      return
+    }
+    if (newPasswordStrength === "Too short" || newPasswordStrength === "Weak") {
+      toast.error("Please choose a stronger password")
       return
     }
     try {
@@ -1024,9 +1042,27 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                   <PasswordInput
                     id="new-password"
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    onChange={(e) => {
+                      setNewPassword(e.target.value)
+                      setNewPasswordStrength(evaluatePasswordStrength(e.target.value))
+                    }}
                     required
                   />
+                  {newPassword && (
+                    <div className="relative">
+                      <div className="h-2 rounded bg-gray-200">
+                        <div
+                          className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-green-500" : newPasswordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
+                          style={{
+                            width: newPasswordStrength === "Strong" ? "100%" : newPasswordStrength === "Medium" ? "66%" : newPasswordStrength === "Weak" ? "33%" : "0%",
+                          }}
+                        />
+                      </div>
+                      <p className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-green-500" : newPasswordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}>
+                        {newPasswordStrength}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="confirm-new-password">Confirm New Password</Label>
