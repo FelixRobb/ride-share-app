@@ -17,7 +17,7 @@ import {
   Send,
   Star,
   Trash2,
-  User,
+  Users,
   User as UserIcon,
   XCircle,
 } from "lucide-react"
