@@ -12,7 +12,6 @@ import {
   Edit,
   LogOut,
   MessageSquareWarning,
-  MoreHorizontal,
   Search,
   Send,
   Star,
@@ -39,13 +38,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import ReportManagement from "@/components/ReportManagement"
@@ -65,11 +57,12 @@ interface Review {
   userName: string
 }
 
-interface User { id: string 
-name: string 
-email: string 
-phone: string 
-isVerified: boolean 
+interface User {
+  id: string
+  name: string
+  email: string
+  phone: string
+  isVerified: boolean
 }
 
 interface Stats {
@@ -316,26 +309,26 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       {/* Main content */}
       <main className="container px-4 py-6">
         <Tabs defaultValue="stats" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 gap-2 sm:grid-cols-5">
-            <TabsTrigger value="stats" className="flex items-center gap-2">
+          <TabsList className="w-full">
+            <TabsTrigger value="stats" className="flex flex-1 items-center gap-2">
               <ClipboardList className="h-4 w-4" />
-              <span>Statistics</span>
+              <span className="hidden sm:inline">Statistics</span>
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
+            <TabsTrigger value="users" className="flex flex-1 items-center gap-2">
               <Users className="h-4 w-4" />
-              <span>Users</span>
+              <span className="hidden sm:inline">Users</span>
             </TabsTrigger>
-            <TabsTrigger value="reviews" className="flex items-center gap-2">
+            <TabsTrigger value="reviews" className="flex flex-1 items-center gap-2">
               <Star className="h-4 w-4" />
-              <span>Reviews</span>
+              <span className="hidden sm:inline">Reviews</span>
             </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
+            <TabsTrigger value="reports" className="flex flex-1 items-center gap-2">
               <MessageSquareWarning className="h-4 w-4" />
-              <span>Reports</span>
+              <span className="hidden sm:inline">Reports</span>
             </TabsTrigger>
-            <TabsTrigger value="bugs" className="flex items-center gap-2">
+            <TabsTrigger value="bugs" className="flex flex-1 items-center gap-2">
               <XCircle className="h-4 w-4" />
-              <span>Bugs</span>
+              <span className="hidden sm:inline">Bugs</span>
             </TabsTrigger>
           </TabsList>
 
@@ -395,7 +388,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     Notify All Users
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-[600px] w-11/12">
                   <DialogHeader>
                     <DialogTitle>Send Notification to All Users</DialogTitle>
                     <DialogDescription>This will send a push notification to all users.</DialogDescription>
@@ -479,42 +472,36 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                    <span className="sr-only">Open menu</span>
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setSelectedUser(user)
-                                      setIsEditDialogOpen(true)
-                                    }}
-                                  >
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setSelectedUser(user)
-                                      setIsNotifyUserDialogOpen(true)
-                                    }}
-                                  >
-                                    <Bell className="mr-2 h-4 w-4" />
-                                    Notify
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive"
-                                    onClick={() => handleDeleteUser(user.id)}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <div className="flex space-x-2 gap-1 overflow-auto">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setSelectedUser(user)
+                                    setIsEditDialogOpen(true)
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setSelectedUser(user)
+                                    setIsNotifyUserDialogOpen(true)
+                                  }}
+                                >
+                                  <Bell className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => handleDeleteUser(user.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))
@@ -600,9 +587,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                   {[...Array(5)].map((_, i) => (
                                     <Star
                                       key={i}
-                                      className={`h-4 w-4 ${
-                                        i < review.rating ? "fill-primary text-primary" : "text-muted"
-                                      }`}
+                                      className={`h-4 w-4 ${i < review.rating ? "fill-primary text-primary" : "text-muted"
+                                        }`}
                                     />
                                   ))}
                                 </div>
@@ -677,7 +663,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
       {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-[600px] w-11/12">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>Make changes to the user&apos;s information.</DialogDescription>
@@ -729,7 +715,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
       {/* Notify User Dialog */}
       <Dialog open={isNotifyUserDialogOpen} onOpenChange={setIsNotifyUserDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-[600px] w-11/12">
           <DialogHeader>
             <DialogTitle>Send Notification to User</DialogTitle>
             <DialogDescription>Send a push notification to {selectedUser?.name}.</DialogDescription>
@@ -775,7 +761,6 @@ function StatCard({
   value,
   description,
   icon,
-  trend,
 }: {
   title: string
   value: number

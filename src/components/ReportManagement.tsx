@@ -471,7 +471,7 @@ export default function ReportManagement() {
                     </DialogHeader>
 
                     {selectedReport && (
-                        <ScrollArea className="max-h-[70vh]">
+                        <ScrollArea className="max-h-[60vh]">
                             <div className="space-y-4 pr-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>

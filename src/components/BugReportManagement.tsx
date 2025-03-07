@@ -158,10 +158,20 @@ export default function BugReportManagement() {
   }
 
   // Reset dialog states when closed
+  const handleViewToUpdateTransition = (bugReport: BugReport) => {
+    setViewDialogOpen(false);
+    setTimeout(() => {
+      setSelectedBugReport(bugReport);
+      setNewStatus(bugReport.status);
+      setAdminNotes(bugReport.admin_notes || "");
+      setUpdateDialogOpen(true);
+    }, 100);
+  }
+
   const handleViewDialogClose = () => {
-    setViewDialogOpen(false)
+    setViewDialogOpen(false);
     // Small delay to prevent UI flicker
-    setTimeout(() => setSelectedBugReport(null), 200)
+    setTimeout(() => setSelectedBugReport(null), 200);
   }
 
   const handleUpdateDialogClose = () => {
@@ -451,7 +461,7 @@ export default function BugReportManagement() {
           </DialogHeader>
 
           {selectedBugReport && (
-            <ScrollArea className="max-h-[70vh]">
+            <ScrollArea className="max-h-[60vh]">
               <div className="space-y-4 pr-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -511,13 +521,7 @@ export default function BugReportManagement() {
             <Button variant="outline" onClick={handleViewDialogClose}>
               Close
             </Button>
-            <Button onClick={() => {
-              const bugReportToUpdate = selectedBugReport;
-              handleViewDialogClose();
-              if (bugReportToUpdate) {
-                setTimeout(() => handleOpenUpdateDialog(bugReportToUpdate), 100);
-              }
-            }}>
+            <Button onClick={() => handleViewToUpdateTransition(selectedBugReport!)}>
               Update Status
             </Button>
           </DialogFooter>
