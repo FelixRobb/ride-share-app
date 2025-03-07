@@ -18,7 +18,7 @@ import {
   Star,
   Trash2,
   User,
-  Users,
+  User as UserIcon,
   XCircle,
 } from "lucide-react"
 
@@ -361,7 +361,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     title="Total Contacts"
                     value={stats?.totalContacts || 0}
                     description="User connections made"
-                    icon={<User className="h-5 w-5" />}
+                    icon={<UserIcon className="h-5 w-5" />}
                     trend="up"
                   />
                 </>
