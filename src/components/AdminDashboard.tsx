@@ -612,7 +612,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                               </TableCell>
                               <TableCell>
                                 <Badge
-                                  variant={review.is_approved ? "success" : "outline"}
+                                  variant={review.is_approved ? "default" : "outline"}
                                   className="gap-1 whitespace-nowrap"
                                 >
                                   {review.is_approved ? (
