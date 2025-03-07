@@ -52,15 +52,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to create bug report" }, { status: 500 });
     }
 
-    // Notify admins (optional)
-
-    await supabase.from("notifications").insert({
-      user_id: "admin", // Special admin user ID or use a specific admin ID
-      message: `New bug report: "${data.title}" submitted by ${userData.name}`,
-      type: "bug_report",
-      is_read: false,
-    });
-
     return NextResponse.json({ success: true, bugReport });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

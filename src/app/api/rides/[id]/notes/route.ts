@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     if (insertError) throw insertError;
 
     // Create a notification for the other user involved in the ride
-    const { data: ride } = await supabase.from("rides").select("requester_id, accepter_id").eq("id", rideId).single();
+    const { data: ride } = await supabase.from("rides").select("*").eq("id", rideId).single();
 
     if (ride) {
       const otherUserId = userId === ride.requester_id ? ride.accepter_id : ride.requester_id;
@@ -57,10 +57,10 @@ export async function POST(request: Request) {
 
         if (authorError) throw authorError;
 
-        await sendImmediateNotification(otherUserId, "New Ride Message", `${noteAuthor.name} has added a new message to your ride: "${note}"`);
+        await sendImmediateNotification(otherUserId, "New Ride Message", `${noteAuthor.name} has added a new message to your ride from ${ride.from_location} to ${ride.to_location}: "${note}"`);
         await supabase.from("notifications").insert({
           user_id: otherUserId,
-          message: `${noteAuthor.name} has added a new message to your ride: "${note}"`,
+          message: `${noteAuthor.name} has added a new message to your ride from ${ride.from_location} to ${ride.to_location}: "${note}"`,
           type: "newNote",
           related_id: rideId,
         });

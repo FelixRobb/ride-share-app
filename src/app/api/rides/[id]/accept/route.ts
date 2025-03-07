@@ -28,10 +28,10 @@ export async function POST(request: Request) {
 
     if (userError) throw userError;
 
-    await sendImmediateNotification(ride.requester_id, "Ride Accepted", `Your ride request has been accepted by ${currentUser.name}`);
+    await sendImmediateNotification(ride.requester_id, "Ride Accepted", `Your ride request from ${ride.from_location} to ${ride.to_location} has been accepted by ${currentUser.name}`);
     await supabase.from("notifications").insert({
       user_id: ride.requester_id,
-      message: `Your ride request has been accepted by ${currentUser.name}`,
+      message: `Your ride request from ${ride.from_location} to ${ride.to_location} has been accepted by ${currentUser.name}`,
       type: "rideAccepted",
       related_id: rideId,
     });

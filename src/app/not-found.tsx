@@ -34,7 +34,7 @@ export default function NotFound() {
           The page you&apos;re looking for seems to have driven off into the sunset.
         </p>
 
-        <div className="relative w-full h-24 overflow-hidden my-12">
+        <div className="relative w-full h-12 overflow-hidden my-12">
           <motion.div
             className="absolute inset-0 flex items-center"
             variants={carVariants}

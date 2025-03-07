@@ -416,7 +416,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
               )}
             </CardDescription>
           </div>
-          {!isLoading && ride && (
+          {!isLoading && ride && (ride.status !== "pending" && ride.status !== "cancelled") && (
             <ReportDialog
               reportedId={ride.requester_id === currentUser?.id ? ride.accepter_id || "" : ride.requester_id}
               reportedName={ride.requester_id === currentUser?.id

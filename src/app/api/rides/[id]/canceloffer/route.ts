@@ -29,11 +29,11 @@ export async function POST(request: Request) {
     if (accepterError) throw accepterError;
 
     if (ride.requester_id) {
-      await sendImmediateNotification(ride.requester_id, "Ride Offer Cancelled", `The accepted offer for your ride has been cancelled by ${accepter.name}`);
+      await sendImmediateNotification(ride.requester_id, "Ride Offer Cancelled", `The accepted offer for your ride from ${ride.from_location} to ${ride.to_location} has been cancelled by ${accepter.name}`);
 
       await supabase.from("notifications").insert({
         user_id: ride.requester_id,
-        message: `The accepted offer for your ride has been cancelled by ${accepter.name}`,
+        message: `The accepted offer for your ride from ${ride.from_location} to ${ride.to_location} has been cancelled by ${accepter.name}`,
         type: "Ride Offer Cancelled",
         related_id: rideId,
       });

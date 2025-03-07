@@ -34,10 +34,10 @@ export async function POST(request: Request) {
 
     if (finisherError) throw finisherError;
 
-    await sendImmediateNotification(otherUserId, "Ride Completed", `Your ride has been marked as completed by ${finisher.name}`);
+    await sendImmediateNotification(otherUserId, "Ride Completed", `Your ride from ${ride.from_location} to ${ride.to_location} has been marked as completed by ${finisher.name}`);
     await supabase.from("notifications").insert({
       user_id: otherUserId,
-      message: `Your ride has been marked as completed by ${finisher.name}`,
+      message: `Your ride from ${ride.from_location} to ${ride.to_location} has been marked as completed by ${finisher.name}`,
       type: "rideCompleted",
       related_id: rideId,
     });

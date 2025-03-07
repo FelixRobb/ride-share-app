@@ -669,13 +669,11 @@ export default function DashboardPage({
                         {tab === "history" && (
                           <>
                             {renderRides(historyRides)}
-                            {historyRides.length > 0 && (
-                              <div className="mt-4 text-center">
-                                <Button onClick={() => router.push("/ride-history")} variant="outline">
-                                  View Full Ride History
-                                </Button>
-                              </div>
-                            )}
+                            <div className="mt-4 text-center">
+                              <Button onClick={() => router.push("/ride-history")} variant="outline">
+                                View Full Ride History
+                              </Button>
+                            </div>
                           </>
                         )}
                       </>

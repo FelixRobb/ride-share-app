@@ -89,10 +89,12 @@ export function ReportDialog({ reportedId, reportedName, reportType, rideId, tri
 
     const handleOpenChange = (open: boolean) => {
         if (!open) {
-            // Reset form when dialog is closed
-            setReason("")
-            setDetails("")
-            setIsSuccess(false)
+            // Delay resetting the form state to prevent flashing
+            setTimeout(() => {
+                setReason("")
+                setDetails("")
+                setIsSuccess(false)
+            }, 300); // Adjust the delay as needed
         }
         setIsOpen(open)
     }
@@ -103,7 +105,6 @@ export function ReportDialog({ reportedId, reportedName, reportType, rideId, tri
             <DialogContent className="w-11/12 max-h-[calc(90vh)] rounded-lg">
                 {!isSuccess ? (
                     <>
-
                         <DialogHeader>
                             <DialogTitle>Report {reportType === "user" ? "User" : "Ride"}</DialogTitle>
                             <DialogDescription>
@@ -111,56 +112,56 @@ export function ReportDialog({ reportedId, reportedName, reportType, rideId, tri
                             </DialogDescription>
                         </DialogHeader>
                         <ScrollArea className="max-h-[60vh]">
-                            <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-                                <Alert variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    <AlertDescription>
-                                        False reports may result in action against your account. Please only submit genuine concerns.
-                                    </AlertDescription>
-                                </Alert>
 
-                                <div className="space-y-2">
-                                    <label htmlFor="reason" className="text-sm font-medium">
-                                        Reason for report
-                                    </label>
-                                    <Select value={reason} onValueChange={setReason}>
-                                        <SelectTrigger className="w-11/12 mx-auto">
-                                            <SelectValue placeholder="Select a reason" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {reasonOptions.map((option) => (
-                                                <SelectItem key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                            <Alert variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertDescription>
+                                    False reports may result in action against your account. Please only submit genuine concerns.
+                                </AlertDescription>
+                            </Alert>
 
-                                <div className="space-y-2">
-                                    <label htmlFor="details" className="text-sm font-medium">
-                                        Details
-                                    </label>
-                                    <Textarea
-                                        id="details"
-                                        placeholder="Please provide specific details about the issue..."
-                                        value={details}
-                                        onChange={(e) => setDetails(e.target.value)}
-                                        rows={5}
-                                        className="resize-none"
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        Minimum 10 characters. Be specific and include relevant information.
-                                    </p>
-                                </div>
-                            </form>
+                            <div className="space-y-2 w-11/12 mx-auto mb-3">
+                                <label htmlFor="reason" className="text-sm font-medium">
+                                    Reason for report
+                                </label>
+                                <Select value={reason} onValueChange={setReason}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a reason" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {reasonOptions.map((option) => (
+                                            <SelectItem key={option.value} value={option.value}>
+                                                {option.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2 w-11/12 mx-auto">
+                                <label htmlFor="details" className="text-sm font-medium">
+                                    Details
+                                </label>
+                                <Textarea
+                                    id="details"
+                                    placeholder="Please provide specific details about the issue..."
+                                    value={details}
+                                    onChange={(e) => setDetails(e.target.value)}
+                                    rows={5}
+                                    className="resize-none"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Minimum 10 characters. Be specific and include relevant information.
+                                </p>
+                            </div>
+
                         </ScrollArea>
 
                         <DialogFooter>
                             <Button type="button" variant="outline" className="mb-2" onClick={() => setIsOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit" className="mb-2" disabled={isSubmitting}>
+                            <Button type="submit" className="mb-2" disabled={isSubmitting} onClick={handleSubmit}>
                                 {isSubmitting ? (
                                     <Loader className="h-4 w-4 mr-2 animate-spin" />
                                 ) : (
@@ -169,7 +170,6 @@ export function ReportDialog({ reportedId, reportedName, reportType, rideId, tri
                                 Submit Report
                             </Button>
                         </DialogFooter>
-
                     </>
                 ) : (
                     <div className="py-6 text-center space-y-4">

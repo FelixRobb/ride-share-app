@@ -25,10 +25,10 @@ export async function POST(request: Request) {
 
       if (requesterError) throw requesterError;
 
-      await sendImmediateNotification(ride.accepter_id, "Ride Cancelled", `The ride you accepted has been cancelled by ${requester.name}`);
+      await sendImmediateNotification(ride.accepter_id, "Ride Cancelled", `Your ride from ${ride.from_location} to ${ride.to_location} you accepted has been cancelled by ${requester.name}`);
       await supabase.from("notifications").insert({
         user_id: ride.accepter_id,
-        message: `The ride you accepted has been cancelled by ${requester.name}`,
+        message: `Your ride from ${ride.from_location} to ${ride.to_location} you accepted has been cancelled by ${requester.name}`,
         type: "rideCancelled",
         related_id: rideId,
       });
