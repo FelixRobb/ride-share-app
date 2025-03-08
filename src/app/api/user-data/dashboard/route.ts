@@ -15,22 +15,38 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    const { data: rides, error: ridesError } = await supabase.from("rides").select("*").or(`requester_id.eq.${userId},accepter_id.eq.${userId},status.eq.pending`).order("time", { ascending: false });
-
-    if (ridesError) throw ridesError;
-
     const { data: contacts, error: contactsError } = await supabase
       .from("contacts")
       .select(
         `
-        *,
-        user:users!contacts_user_id_fkey (id, name, phone),
-        contact:users!contacts_contact_id_fkey (id, name, phone)
-      `
+      *,
+      user:users!contacts_user_id_fkey (id, name, phone),
+      contact:users!contacts_contact_id_fkey (id, name, phone)
+    `
       )
       .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
 
     if (contactsError) throw contactsError;
+
+    // Extract connected user IDs (only for accepted contacts)
+    const connectedUserIds = contacts.filter((contact) => contact.status === "accepted").map((contact) => (contact.user_id === userId ? contact.contact_id : contact.user_id));
+
+    // Fetch active rides and limited history
+    const { data: rides, error: ridesError } = await supabase
+      .from("rides")
+      .select(
+        `
+        *,
+        requester:users!rides_requester_id_fkey (id, name, phone),
+        accepter:users!rides_accepter_id_fkey (id, name, phone)
+      `
+      )
+      .or(`requester_id.eq.${userId},accepter_id.eq.${userId},requester_id.in.(${connectedUserIds.join(",")})`)
+      .or("status.eq.pending,status.eq.accepted,status.in.(completed,cancelled)")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (ridesError) throw ridesError;
 
     return new NextResponse(JSON.stringify({ rides, contacts }), {
       status: 200,
