@@ -15,12 +15,24 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from "lucide-react"
 import { ReportDialog } from "@/components/ReportDialog"
 import type { User, Contact } from "@/types"
 import { addContact, acceptContact, deleteContact } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import { useMediaQuery } from "@/hooks/use-media-query"
+
+// First, import the AlertDialog components
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface ExtendedUser extends User {
   contactStatus?: "pending" | "accepted" | null
@@ -166,6 +178,8 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
   const [isContactDetailsOpen, setIsContactDetailsOpen] = useState(false)
   const [addingUserId, setAddingUserId] = useState<string | null>(null)
   const [deletingContactId, setDeletingContactId] = useState<string | null>(null)
+  // Add this near the other state declarations in the ContactManager component
+  const [contactToDelete, setContactToDelete] = useState<{ id: string; name: string; status: string } | null>(null)
   const isOnline = useOnlineStatus()
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [activeTab, setActiveTab] = useState("all")
@@ -221,25 +235,45 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
     [currentUser.id, isOnline, fetchProfileData],
   )
 
-  const handleDeleteContact = useCallback(
-    async (contactId: string) => {
-      if (!isOnline) return
-      setDeletingContactId(contactId)
-      try {
-        await deleteContact(contactId, currentUser.id)
-        await fetchProfileData()
-        setIsContactDetailsOpen(false)
-        toast.success("Contact deleted successfully!")
-      } catch (error) {
-        if (isOnline) {
-          toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+  // Replace the handleDeleteContact function with this updated version
+  const handleDeleteContact = useCallback(async (contactId: string, contactName: string, status: string) => {
+    // Show confirmation dialog first
+    setContactToDelete({ id: contactId, name: contactName, status })
+  }, [])
+
+  // Add this new function to perform the actual deletion after confirmation
+  const confirmDeleteContact = useCallback(async () => {
+    if (!contactToDelete || !isOnline) return
+
+    const contactId = contactToDelete.id
+    setDeletingContactId(contactId)
+    try {
+      const result = await deleteContact(contactId, currentUser.id)
+      await fetchProfileData()
+      setIsContactDetailsOpen(false)
+
+      // Show a more detailed success message based on the response
+      if (result.deletedData) {
+        const { rides, notes, notifications } = result.deletedData
+        if (rides > 0) {
+          toast.success(
+            `Contact removed and ${rides} shared rides deleted with ${notes} notes and ${notifications} notifications.`,
+          )
+        } else {
+          toast.success("Contact removed successfully!")
         }
-      } finally {
-        setDeletingContactId(null)
+      } else {
+        toast.success("Contact removed successfully!")
       }
-    },
-    [currentUser.id, isOnline, fetchProfileData],
-  )
+    } catch (error) {
+      if (isOnline) {
+        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+      }
+    } finally {
+      setDeletingContactId(null)
+      setContactToDelete(null)
+    }
+  }, [contactToDelete, currentUser.id, isOnline, fetchProfileData])
 
   const getContactStatus = useCallback(
     (user: ExtendedUser | Contact): string | null => {
@@ -347,7 +381,13 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
           <Button
             variant="destructive"
             className="w-full"
-            onClick={() => handleDeleteContact(selectedContact.id)}
+            onClick={() =>
+              handleDeleteContact(
+                selectedContact.id,
+                selectedContact.user_id === currentUser.id ? selectedContact.contact.name : selectedContact.user.name,
+                selectedContact.status,
+              )
+            }
             disabled={!isOnline || deletingContactId === selectedContact.id}
           >
             {deletingContactId === selectedContact.id ? (
@@ -358,14 +398,16 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
             {selectedContact.status === "pending" && selectedContact.user_id === currentUser.id
               ? "Cancel Request"
               : selectedContact.user_id === currentUser.id
-              ? "Remove Contact"
-              : selectedContact.status === "accepted"
-              ? "Remove Contact"
-              : "Decline Request"}
+                ? "Remove Contact"
+                : selectedContact.status === "accepted"
+                  ? "Remove Contact"
+                  : "Decline Request"}
           </Button>
           {selectedContact.status === "accepted" && (
             <ReportDialog
-              reportedId={selectedContact.user_id === currentUser.id ? selectedContact.contact_id : selectedContact.user_id}
+              reportedId={
+                selectedContact.user_id === currentUser.id ? selectedContact.contact_id : selectedContact.user_id
+              }
               reportedName={contactUser.name}
               reportType="user"
               trigger={
@@ -655,7 +697,13 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => handleDeleteContact(contact.id)}
+                                      onClick={() =>
+                                        handleDeleteContact(
+                                          contact.id,
+                                          isCurrentUserRequester ? contact.contact.name : contact.user.name,
+                                          contact.status,
+                                        )
+                                      }
                                       disabled={!isOnline || deletingContactId === contact.id}
                                       className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                                     >
@@ -714,6 +762,43 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
             </DialogContent>
           </Dialog>
         )}
+        {/* Confirmation Dialog */}
+        <AlertDialog open={contactToDelete !== null} onOpenChange={(open) => !open && setContactToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {contactToDelete?.status === "accepted" ? (
+                  <>
+                    This will permanently delete your connection with <strong>{contactToDelete?.name}</strong> and all
+                    related rides and messages between you two. This action cannot be undone.
+                  </>
+                ) : (
+                  <>
+                    This will{" "}
+                    {contactToDelete?.status === "pending" ? "cancel the contact request" : "decline the request"} with{" "}
+                    <strong>{contactToDelete?.name}</strong>.
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDeleteContact}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deletingContactId ? (
+                  <Loader className="w-4 h-4 animate-spin mr-2" />
+                ) : contactToDelete?.status === "accepted" ? (
+                  "Delete"
+                ) : (
+                  "Confirm"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   )

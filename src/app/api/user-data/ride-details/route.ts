@@ -54,20 +54,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Check if the current user is either the requester or the accepter of the ride
-    if (ride.requester_id !== userId && ride.accepter_id !== userId) {
-      return new NextResponse(
-        JSON.stringify({
-          error: "permission_denied",
-          message: "You do not have permission to view this ride",
-        }),
-        {
-          status: 403,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
+    // Query contacts before checking permissions
     const { data: contacts, error: contactsError } = await supabase
       .from("contacts")
       .select(
@@ -77,7 +64,7 @@ export async function GET(req: NextRequest) {
       contact:users!contacts_contact_id_fkey (id, name, phone)
     `
       )
-      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
+      .or(`user_id.eq.${userId},contact_id.eq.${userId},status.eq.accepted`);
 
     if (contactsError) {
       return new NextResponse(
@@ -90,6 +77,40 @@ export async function GET(req: NextRequest) {
           headers: { "Content-Type": "application/json" },
         }
       );
+    }
+
+    // Check if the current user is either the requester or the accepter of the ride
+    if (ride.status !== "pending") {
+      if (ride.requester_id !== userId && ride.accepter_id !== userId) {
+        return new NextResponse(
+          JSON.stringify({
+            error: "permission_denied",
+            message: "You do not have permission to view this ride",
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    } else {
+      // New check: Allow access if the user is a contact of the requester
+      const isContactOfRequester = contacts.some(contact => 
+        contact.user_id === ride.requester_id && contact.contact_id === userId
+      );
+
+      if (!isContactOfRequester) {
+        return new NextResponse(
+          JSON.stringify({
+            error: "permission_denied",
+            message: "You do not have permission to view this ride",
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
     }
 
     return new NextResponse(JSON.stringify({ ride, contacts }), {
