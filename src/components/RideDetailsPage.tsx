@@ -12,17 +12,12 @@ import {
   Clock,
   AlertCircle,
   FileText,
-  MessageSquare,
-  Send,
-  Edit,
-  Trash,
-  Loader,
-  Pencil,
   AlertTriangle,
   Wifi,
   Search,
   ShieldAlert,
   ServerCrash,
+  Loader
 } from "lucide-react"
 import maplibregl from "maplibre-gl"
 import { useRouter } from "next/navigation"
@@ -34,24 +29,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { ReportDialog } from "@/components/ReportDialog"
-import type { User, Ride, Contact, Note } from "@/types"
-import {
-  acceptRide,
-  cancelRequest,
-  cancelOffer,
-  addNote,
-  fetchNotes,
-  editNote,
-  deleteNote,
-  markNoteAsSeen,
-  fetchRideDetailsData,
-  finishRide,
-} from "@/utils/api"
+import type { User, Ride, Contact } from "@/types"
+import { acceptRide, cancelRequest, cancelOffer, fetchRideDetailsData, finishRide } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
-import { Textarea } from "./ui/textarea"
+import { Pencil } from "lucide-react"
+import { RideMessages } from "@/components/RideMessages"
 
 import "maplibre-gl/dist/maplibre-gl.css"
 
@@ -69,16 +53,10 @@ interface ErrorState {
   status?: number
 }
 
-const MAX_MESSAGE_LENGTH = 1000 // Set the maximum message length
-
 export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPageProps) {
   const [isFetching, setIsFetching] = useState(true)
   const [ride, setRide] = useState<Ride | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [notes, setNotes] = useState<Note[]>([])
-  const [newNote, setNewNote] = useState("")
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
-  const [editedNoteContent, setEditedNoteContent] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isActionLoading, setIsActionLoading] = useState(false)
@@ -86,26 +64,12 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
   const [isCancelRequestDialogOpen, setIsCancelRequestDialogOpen] = useState(false)
   const [isCancelOfferDialogOpen, setIsCancelOfferDialogOpen] = useState(false)
   const [isFinishRideDialogOpen, setIsFinishRideDialogOpen] = useState(false)
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<HTMLDivElement | null>(null)
   const [map, setMap] = useState<maplibregl.Map | null>(null)
   const [isLoadingMap, setIsLoadingMap] = useState(true)
   const isOnline = useOnlineStatus()
-  const [isDeleteNoteDialogOpen, setIsDeleteNoteDialogOpen] = useState(false)
-  const [noteToDeleteId, setNoteToDeleteId] = useState<string | null>(null)
-  const [messageLength, setMessageLength] = useState(0)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
   // Replace simple permission error with comprehensive error state
   const [error, setError] = useState<ErrorState | null>(null)
-
-  const scrollToBottom = useCallback(() => {
-    if (typeof window !== "undefined" && scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
-      }
-    }
-  }, [])
 
   const fetchData = useCallback(
     async (silent = false) => {
@@ -115,45 +79,27 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
             type: "network",
             message: "You're currently offline. Please check your internet connection and try again.",
             status: 0,
-          });
+          })
         }
-        return;
+        return
       }
 
       try {
         if (!silent) {
-          setIsLoading(true);
+          setIsLoading(true)
         } else {
-          setIsRefreshing(true);
+          setIsRefreshing(true)
         }
 
-        const data = await fetchRideDetailsData(rideId);
-        setRide(data.ride);
-        setContacts(data.contacts);
-        setError(null); // Clear any previous errors
-
-        // Also fetch notes if ride is in a state that should have notes
-        if (data.ride.status === "accepted" || data.ride.status === "cancelled" || data.ride.status === "completed") {
-          const fetchedNotes = await fetchNotes(rideId);
-          setNotes(fetchedNotes || []);
-
-          // Automatically mark new notes as seen
-          const unseenNotes = fetchedNotes.filter(
-            (note) => note.user_id !== currentUser.id && (!note.seen_by || !note.seen_by.includes(currentUser.id)),
-          );
-
-          if (unseenNotes.length > 0) {
-            await Promise.all(unseenNotes.map((note) => markNoteAsSeen(note.id, currentUser.id)));
-          }
-
-          // Scroll to bottom after setting notes
-          scrollToBottom();
-        }
+        const data = await fetchRideDetailsData(rideId)
+        setRide(data.ride)
+        setContacts(data.contacts)
+        setError(null) // Clear any previous errors
       } catch (err) {
-        const typedError = err as { message?: string; status?: number; code?: string };
+        const typedError = err as { message?: string; status?: number; code?: string }
 
         // Set fetching to false on error
-        setIsFetching(false);
+        setIsFetching(false)
 
         if (!silent) {
           // Determine error type based on status code and error code
@@ -162,61 +108,61 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
               type: "permission",
               message: typedError.message || "You do not have permission to view this ride",
               status: 403,
-            });
+            })
           } else if (typedError.status === 404) {
             setError({
               type: "not_found",
               message: typedError.message || "The requested ride could not be found",
               status: 404,
-            });
+            })
           } else if (typedError.status === 0 || typedError.code === "network_error") {
             setError({
               type: "network",
               message: "Unable to connect to the server. Please check your internet connection and try again.",
               status: 0,
-            });
+            })
           } else if (typedError.status && typedError.status >= 500) {
             setError({
               type: "server",
               message: typedError.message || "A server error occurred. Please try again later.",
               status: typedError.status,
-            });
+            })
           } else {
             setError({
               type: "unknown",
               message: typedError.message || "An unexpected error occurred. Please try again.",
               status: typedError.status,
-            });
+            })
           }
         } else if (isOnline && silent && !error) {
           // Only show toast for silent refreshes (background updates)
           // and don't show it when we're displaying the error UI
-          toast.error("Failed to refresh ride details. Please try again.");
+          toast.error("Failed to refresh ride details. Please try again.")
         }
       } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
+        setIsLoading(false)
+        setIsRefreshing(false)
       }
     },
-    [isOnline, rideId, scrollToBottom, currentUser.id, error],
-  );
+    [isOnline, rideId, error],
+  )
 
   useEffect(() => {
     if (isFetching) {
-      fetchData();
+      fetchData()
     }
 
     // Set up periodic refresh
     const intervalId = setInterval(() => {
       if (isFetching) {
-        fetchData(true); // Silent refresh
+        fetchData(true) // Silent refresh
       }
-    }, 10000);
+    }, 10000)
 
     return () => {
-      clearInterval(intervalId);
-    };
-  }, [fetchData, isFetching]);
+      clearInterval(intervalId)
+    }
+  }, [fetchData, isFetching])
 
   const getRequesterName = (ride: Ride) => {
     if (ride.requester_id === currentUser.id) {
@@ -274,48 +220,6 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
 
     buildMap()
   }, [ride, map])
-
-  const handleEditNote = async (noteId: string) => {
-    const noteToEdit = notes.find((note) => note.id === noteId)
-    if (noteToEdit) {
-      setEditingNoteId(noteId)
-      setEditedNoteContent(noteToEdit.note)
-    }
-  }
-
-  const handleSaveEdit = async () => {
-    if (editingNoteId && editedNoteContent.trim()) {
-      try {
-        const updatedNote = await editNote(editingNoteId, currentUser.id, editedNoteContent)
-        setNotes((prevNotes) => prevNotes.map((note) => (note.id === editingNoteId ? updatedNote : note)))
-        setEditingNoteId(null)
-        setEditedNoteContent("")
-        toast.success("Message edited successfully.")
-      } catch {
-        toast.error("Failed to edit message. Please try again.")
-      }
-    }
-  }
-
-  const confirmDeleteNote = async () => {
-    if (noteToDeleteId) {
-      try {
-        await deleteNote(noteToDeleteId, currentUser.id)
-        setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteToDeleteId))
-        toast.success("Message deleted successfully.")
-      } catch {
-        toast.error("Failed to delete message. Please try again.")
-      } finally {
-        setIsDeleteNoteDialogOpen(false)
-        setNoteToDeleteId(null)
-      }
-    }
-  }
-
-  const handleDeleteNote = (noteId: string) => {
-    setNoteToDeleteId(noteId)
-    setIsDeleteNoteDialogOpen(true)
-  }
 
   const handleAcceptRide = async () => {
     if (!ride) return
@@ -389,14 +293,6 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
     } finally {
       setIsActionLoading(false)
     }
-  }
-
-  const getUserName = (userId: string) => {
-    if (userId === currentUser.id) {
-      return currentUser.name
-    }
-    const contact = contacts.find((c) => c.user_id === userId || c.contact_id === userId)
-    return contact ? (contact.user_id === userId ? contact.user.name : contact.contact.name) : "Unknown User"
   }
 
   const copyToClipboard = async (text: string) => {
@@ -575,9 +471,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
           </div>
           {errorDetails}
         </CardContent>
-        <CardFooter className="flex flex-col sm:flex-row gap-2 justify-center">
-          {actionButton}
-        </CardFooter>
+        <CardFooter className="flex flex-col sm:flex-row gap-2 justify-center">{actionButton}</CardFooter>
       </Card>
     )
   }
@@ -790,325 +684,16 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
           </div>
         )}
         <Separator />
-        {/* Messages section with improved styling */}
         {!isLoading &&
           ride &&
           (ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <MessageSquare className="w-5 h-5 text-primary" />
-                  <Label className="font-semibold">Messages</Label>
-                </div>
-                {notes.length > 0 && (
-                  <Badge variant="outline" className="text-xs">
-                    {notes.length} {notes.length === 1 ? "message" : "messages"}
-                  </Badge>
-                )}
-              </div>
-
-              <div className="rounded-lg border bg-card">
-                <ScrollArea className="h-[400px] px-4 pt-4" ref={scrollAreaRef}>
-                  {isRefreshing && notes.length === 0 ? (
-                    <div className="flex flex-col space-y-4 p-4">
-                      <div className="flex items-start space-x-2">
-                        <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-                          <div className="h-16 w-full max-w-[70%] bg-muted animate-pulse rounded" />
-                        </div>
-                      </div>
-                      <div className="flex items-end justify-end space-x-2">
-                        <div className="flex-1 flex justify-end space-y-2">
-                          <div className="h-12 w-full max-w-[70%] bg-primary/30 animate-pulse rounded" />
-                        </div>
-                        <div className="w-8 h-8 rounded-full bg-primary/30 animate-pulse" />
-                      </div>
-                    </div>
-                  ) : notes.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-[350px] space-y-3">
-                      <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center">
-                        <MessageSquare className="w-6 h-6 text-muted-foreground" />
-                      </div>
-                      <p className="text-muted-foreground text-center">No messages yet</p>
-                      <p className="text-xs text-muted-foreground text-center">
-                        Messages between you and other participants will appear here
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="pb-4">
-                      {notes.reduce((acc: React.ReactNode[], note, index) => {
-                        const currentDate = new Date(note.created_at).toLocaleDateString()
-                        const previousDate =
-                          index > 0 ? new Date(notes[index - 1].created_at).toLocaleDateString() : null
-                        const nextNote = index < notes.length - 1 ? notes[index + 1] : null
-
-                        // Add date separator
-                        if (currentDate !== previousDate) {
-                          acc.push(
-                            <div key={`date-separator-${currentDate}-${index}`} className="relative flex py-3 my-2">
-                              <div className="flex-grow border-t border-muted"></div>
-                              <span className="flex-shrink mx-4 text-xs font-medium text-muted-foreground">
-                                {currentDate === new Date().toLocaleDateString() ? "Today" : currentDate}
-                              </span>
-                              <div className="flex-grow border-t border-muted"></div>
-                            </div>,
-                          )
-                        }
-
-                        const isCurrentUser = note.user_id === currentUser?.id
-
-                        // Check if this message is at the end of a consecutive group from the same user
-                        const isLastInGroup =
-                          !nextNote ||
-                          nextNote.user_id !== note.user_id ||
-                          new Date(nextNote.created_at).toLocaleDateString() !== currentDate
-
-                        // Check if this is part of a message group
-                        const isFirstInGroup =
-                          index === 0 || notes[index - 1].user_id !== note.user_id || currentDate !== previousDate
-
-                        acc.push(
-                          <div
-                            key={`message-${note.id}-${index}`}
-                            className={`group relative flex flex-col ${isCurrentUser ? "items-end" : "items-start"} 
-         ${isFirstInGroup ? "mt-4" : "mt-3"} 
-         ${!isLastInGroup ? "mb-3" : "mb-4"}`}
-                          >
-                            {/* Show name only for first message in a group when it's not current user */}
-                            {isFirstInGroup && !isCurrentUser && (
-                              <span className="text-xs font-medium text-muted-foreground ml-10 mb-1">
-                                {getUserName(note.user_id)}
-                              </span>
-                            )}
-
-                            <div className="flex items-end gap-2 max-w-[70%]">
-                              {/* Show user icon only at the bottom of a group for non-current users */}
-                              {!isCurrentUser && isLastInGroup && (
-                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                  <LucideUser className="w-4 h-4 text-primary" />
-                                </div>
-                              )}
-
-                              {/* Fixed spacer width for consistent alignment */}
-                              {!isCurrentUser && !isLastInGroup && (
-                                <div className="w-8 flex-shrink-0 invisible">
-                                  <span className="sr-only">Other User</span>
-                                </div>
-                              )}
-
-                              {/* Message content with hover-activated action buttons for current user */}
-                              <div className="relative max-w-full">
-                                <div
-                                  className={`px-4 py-2 shadow-sm overflow-hidden
-              ${isCurrentUser
-                                      ? "bg-primary text-primary-foreground rounded-lg rounded-br-none"
-                                      : "bg-secondary text-secondary-foreground rounded-lg rounded-bl-none"
-                                    }
-            `}
-                                >
-                                  {editingNoteId === note.id ? (
-                                    <div className="space-y-2 w-full">
-                                      <Textarea
-                                        value={editedNoteContent}
-                                        onChange={(e) => setEditedNoteContent(e.target.value)}
-                                        className="bg-background resize-none"
-                                        placeholder="Edit your message..."
-                                      />
-                                      <div className="flex justify-end gap-2 mt-2">
-                                        <Button
-                                          onClick={() => setEditingNoteId(null)}
-                                          size="sm"
-                                          variant="outline"
-                                          disabled={!isOnline}
-                                          className="h-8 px-3"
-                                        >
-                                          Cancel
-                                        </Button>
-                                        <Button
-                                          onClick={handleSaveEdit}
-                                          size="sm"
-                                          disabled={!isOnline || !editedNoteContent.trim()}
-                                          className="h-8 px-3"
-                                        >
-                                          Save changes
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div>
-                                      <p className="text-sm whitespace-pre-wrap break-words">{note.note}</p>
-                                      <div
-                                        className={`flex items-center text-xs opacity-70 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}
-                                      >
-                                        <span>
-                                          {new Date(note.created_at).toLocaleTimeString([], {
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                          })}
-                                          {note.is_edited && " • edited"}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Action buttons overlay for current user messages */}
-                                {isCurrentUser && !editingNoteId && (
-                                  <div className="absolute -top-3 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out z-20">
-                                    <div className="bg-background/90 backdrop-blur-sm rounded-full shadow-md border border-border flex overflow-hidden p-0.5">
-                                      <Button
-                                        onClick={() => handleEditNote(note.id)}
-                                        size="sm"
-                                        variant="ghost"
-                                        className="h-6 w-6 p-0 rounded-full hover:bg-primary/10 hover:text-primary"
-                                        disabled={!isOnline}
-                                      >
-                                        <Edit className="h-3 w-3" />
-                                        <span className="sr-only">Edit</span>
-                                      </Button>
-                                      <Button
-                                        onClick={() => handleDeleteNote(note.id)}
-                                        size="sm"
-                                        variant="ghost"
-                                        className="h-6 w-6 p-0 rounded-full hover:bg-destructive/10 hover:text-destructive"
-                                        disabled={!isOnline}
-                                      >
-                                        <Trash className="h-3 w-3" />
-                                        <span className="sr-only">Delete</span>
-                                      </Button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Current user icon at the bottom of their message group */}
-                              {isCurrentUser && isLastInGroup && (
-                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                                  <LucideUser className="w-4 h-4 text-primary-foreground" />
-                                </div>
-                              )}
-
-                              {/* Fixed spacer width for consistent alignment */}
-                              {isCurrentUser && !isLastInGroup && (
-                                <div className="w-8 flex-shrink-0 invisible">
-                                  <span className="sr-only">Me</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>,
-                        )
-                        return acc
-                      }, [])}
-                    </div>
-                  )}
-                </ScrollArea>
-
-                {/* Message input area with improved styling */}
-                {ride && (ride.status === "accepted" || ride.status === "completed") && (
-                  <div className="border-t p-3">
-                    <div className="flex flex-col">
-                      {/* Character count display */}
-                      <div className="text-sm text-muted-foreground mb-1">
-                        {MAX_MESSAGE_LENGTH - messageLength} characters remaining
-                      </div>
-
-                      <form
-                        className="flex items-center gap-2"
-                        onSubmit={(e) => {
-                          e.preventDefault()
-                          if (newNote.trim() && currentUser && ride) {
-                            addNote(ride.id, currentUser.id, newNote)
-                              .then((addedNote) => {
-                                if (addedNote) {
-                                  setNotes((prevNotes) => [...prevNotes, addedNote])
-                                  setNewNote("")
-                                  setMessageLength(0)
-                                  scrollToBottom()
-
-                                  // Reset textarea height using ref
-                                  if (textareaRef.current) {
-                                    textareaRef.current.style.height = "40px"
-                                  }
-
-                                  toast.success("Message sent successfully.")
-                                }
-                              })
-                              .catch(() => toast.error("Failed to send message. Please try again."))
-                          }
-                        }}
-                      >
-                        <Textarea
-                          ref={textareaRef}
-                          value={newNote}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            if (value.length <= MAX_MESSAGE_LENGTH) {
-                              setNewNote(value)
-                              setMessageLength(value.length)
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                              e.preventDefault()
-                              if (newNote.trim() && currentUser && ride) {
-                                addNote(ride.id, currentUser.id, newNote)
-                                  .then((addedNote) => {
-                                    if (addedNote) {
-                                      setNotes((prevNotes) => [...prevNotes, addedNote])
-                                      setNewNote("")
-                                      setMessageLength(0)
-                                      scrollToBottom()
-
-                                      // Reset textarea height using ref
-                                      if (textareaRef.current) {
-                                        textareaRef.current.style.height = "40px"
-                                      }
-
-                                      toast.success("Message sent successfully.")
-                                    }
-                                  })
-                                  .catch(() => {
-                                    toast.error("Failed to send message. Please try again.")
-                                  })
-                              }
-                            }
-                          }}
-                          placeholder="Type your message..."
-                          className="flex-grow bg-background border-muted resize-none overflow-y-auto max-w-full min-h-[40px] max-h-[150px]"
-                          rows={1}
-                          onInput={() => {
-                            // Reset to minimum height before calculating new height
-                            if (textareaRef.current) {
-                              textareaRef.current.style.height = "40px"
-                              // Set new height based on content
-                              textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`
-                            }
-                          }}
-                          disabled={!isOnline}
-                        />
-                        <Button
-                          type="submit"
-                          size="icon"
-                          disabled={!isOnline || !newNote.trim()}
-                          className="h-10 w-10 shrink-0 rounded-full"
-                          title="Send message (Ctrl+Enter)"
-                        >
-                          <Send className="h-4 w-4" />
-                          <span className="sr-only">Send message</span>
-                        </Button>
-                      </form>
-
-                      {!isOnline && (
-                        <p className="mt-2 text-xs text-destructive">
-                          You&apos;re offline. Messages will be sent when you reconnect.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <RideMessages
+              ride={ride}
+              currentUser={currentUser}
+              contacts={contacts}
+              isOnline={isOnline}
+              isRefreshing={isRefreshing}
+            />
           )}
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row gap-2">
@@ -1218,23 +803,6 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
             </Button>
             <Button className="mb-2" onClick={handleFinishRide}>
               Yes, Finish Ride
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isDeleteNoteDialogOpen} onOpenChange={setIsDeleteNoteDialogOpen}>
-        <DialogContent className="rounded-lg w-11/12">
-          <DialogHeader>
-            <DialogTitle>Confirm Delete Message</DialogTitle>
-            <DialogDescription>Are you sure you want to delete this message?</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button className="mb-2" variant="outline" onClick={() => setIsDeleteNoteDialogOpen(false)}>
-              No, Keep Message
-            </Button>
-            <Button className="mb-2" variant="destructive" onClick={confirmDeleteNote}>
-              Yes, Delete Message
             </Button>
           </DialogFooter>
         </DialogContent>
