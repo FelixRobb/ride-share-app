@@ -1,5 +1,9 @@
 "use client"
 
+import { DialogFooter } from "@/components/ui/dialog"
+
+import type React from "react"
+
 import { parsePhoneNumber } from "libphonenumber-js"
 import {
   MapPin,
@@ -14,8 +18,11 @@ import {
   Trash,
   Loader,
   Pencil,
-  AlertCircleIcon,
-  ArrowBigLeft,
+  AlertTriangle,
+  Wifi,
+  Search,
+  ShieldAlert,
+  ServerCrash,
 } from "lucide-react"
 import maplibregl from "maplibre-gl"
 import { useRouter } from "next/navigation"
@@ -25,19 +32,10 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertTriangle } from 'lucide-react'
 import { ReportDialog } from "@/components/ReportDialog"
 import type { User, Ride, Contact, Note } from "@/types"
 import {
@@ -62,9 +60,19 @@ interface RideDetailsPageProps {
   rideId: string
 }
 
+// Define error types for better handling
+type ErrorType = "permission" | "not_found" | "network" | "server" | "unknown"
+
+interface ErrorState {
+  type: ErrorType
+  message: string
+  status?: number
+}
+
 const MAX_MESSAGE_LENGTH = 1000 // Set the maximum message length
 
 export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPageProps) {
+  const [isFetching, setIsFetching] = useState(true)
   const [ride, setRide] = useState<Ride | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [notes, setNotes] = useState<Note[]>([])
@@ -86,8 +94,9 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
   const [isDeleteNoteDialogOpen, setIsDeleteNoteDialogOpen] = useState(false)
   const [noteToDeleteId, setNoteToDeleteId] = useState<string | null>(null)
   const [messageLength, setMessageLength] = useState(0)
-  const [permissionDenied, setPermissionDenied] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // Replace simple permission error with comprehensive error state
+  const [error, setError] = useState<ErrorState | null>(null)
 
   const scrollToBottom = useCallback(() => {
     if (typeof window !== "undefined" && scrollAreaRef.current) {
@@ -100,50 +109,114 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
 
   const fetchData = useCallback(
     async (silent = false) => {
-      if (!isOnline) return
+      if (!isOnline) {
+        if (!silent) {
+          setError({
+            type: "network",
+            message: "You're currently offline. Please check your internet connection and try again.",
+            status: 0,
+          });
+        }
+        return;
+      }
 
       try {
         if (!silent) {
-          setIsLoading(true)
+          setIsLoading(true);
         } else {
-          setIsRefreshing(true)
+          setIsRefreshing(true);
         }
 
-        const data = await fetchRideDetailsData(rideId)
-        setRide(data.ride)
-        setContacts(data.contacts)
+        const data = await fetchRideDetailsData(rideId);
+        setRide(data.ride);
+        setContacts(data.contacts);
+        setError(null); // Clear any previous errors
 
         // Also fetch notes if ride is in a state that should have notes
         if (data.ride.status === "accepted" || data.ride.status === "cancelled" || data.ride.status === "completed") {
-          const fetchedNotes = await fetchNotes(rideId)
-          setNotes(fetchedNotes || [])
+          const fetchedNotes = await fetchNotes(rideId);
+          setNotes(fetchedNotes || []);
 
           // Automatically mark new notes as seen
           const unseenNotes = fetchedNotes.filter(
             (note) => note.user_id !== currentUser.id && (!note.seen_by || !note.seen_by.includes(currentUser.id)),
-          )
+          );
 
           if (unseenNotes.length > 0) {
-            await Promise.all(unseenNotes.map((note) => markNoteAsSeen(note.id, currentUser.id)))
+            await Promise.all(unseenNotes.map((note) => markNoteAsSeen(note.id, currentUser.id)));
           }
 
           // Scroll to bottom after setting notes
           scrollToBottom();
         }
-      } catch (error) {
-        if (error instanceof Error && error.message === "permissionDenied") {
-          // Set a permission denied state
-          setPermissionDenied(true)
-        } else if (isOnline) {
-          toast.error("Failed to fetch ride details. Please try again.")
+      } catch (err) {
+        const typedError = err as { message?: string; status?: number; code?: string };
+
+        // Set fetching to false on error
+        setIsFetching(false);
+
+        if (!silent) {
+          // Determine error type based on status code and error code
+          if (typedError.status === 403) {
+            setError({
+              type: "permission",
+              message: typedError.message || "You do not have permission to view this ride",
+              status: 403,
+            });
+          } else if (typedError.status === 404) {
+            setError({
+              type: "not_found",
+              message: typedError.message || "The requested ride could not be found",
+              status: 404,
+            });
+          } else if (typedError.status === 0 || typedError.code === "network_error") {
+            setError({
+              type: "network",
+              message: "Unable to connect to the server. Please check your internet connection and try again.",
+              status: 0,
+            });
+          } else if (typedError.status && typedError.status >= 500) {
+            setError({
+              type: "server",
+              message: typedError.message || "A server error occurred. Please try again later.",
+              status: typedError.status,
+            });
+          } else {
+            setError({
+              type: "unknown",
+              message: typedError.message || "An unexpected error occurred. Please try again.",
+              status: typedError.status,
+            });
+          }
+        } else if (isOnline && silent && !error) {
+          // Only show toast for silent refreshes (background updates)
+          // and don't show it when we're displaying the error UI
+          toast.error("Failed to refresh ride details. Please try again.");
         }
       } finally {
-        setIsLoading(false)
-        setIsRefreshing(false)
+        setIsLoading(false);
+        setIsRefreshing(false);
       }
     },
-    [rideId, isOnline, currentUser.id, scrollToBottom],
-  )
+    [isOnline, rideId, scrollToBottom, currentUser.id, error],
+  );
+
+  useEffect(() => {
+    if (isFetching) {
+      fetchData();
+    }
+
+    // Set up periodic refresh
+    const intervalId = setInterval(() => {
+      if (isFetching) {
+        fetchData(true); // Silent refresh
+      }
+    }, 10000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [fetchData, isFetching]);
 
   const getRequesterName = (ride: Ride) => {
     if (ride.requester_id === currentUser.id) {
@@ -152,19 +225,6 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
     const contact = contacts.find((c) => c.user_id === ride.requester_id || c.contact_id === ride.requester_id)
     return contact ? (contact.user_id === ride.requester_id ? contact.user.name : contact.contact.name) : "Unknown User"
   }
-
-  useEffect(() => {
-    fetchData()
-
-    // Set up periodic refresh
-    const intervalId = setInterval(() => {
-      fetchData(true) // Silent refresh
-    }, 10000)
-
-    return () => {
-      clearInterval(intervalId)
-    }
-  }, [fetchData])
 
   useEffect(() => {
     const buildMap = async () => {
@@ -405,21 +465,125 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
     </div>
   )
 
+  // Render different error states based on error type
+  if (error) {
+    let errorTitle = "Error"
+    let errorIcon = <AlertTriangle className="h-8 w-8 text-destructive mb-2" />
+    const errorDescription = error.message
+    let errorDetails: React.ReactNode = null
+    const actionButton = (
+      <Button onClick={() => router.push("/dashboard")} className="w-full sm:w-auto">
+        Return to Dashboard
+      </Button>
+    )
+
+    switch (error.type) {
+      case "permission":
+        errorTitle = "Access Denied"
+        errorIcon = <ShieldAlert className="h-8 w-8 text-destructive mb-2" />
+        errorDetails = (
+          <>
+            <p className="text-muted-foreground mb-4">
+              You don&apos;t have permission to view this ride. This could be because:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground mb-6">
+              <li>You are not the requester or accepter of this ride</li>
+              <li>The ride may have been deleted</li>
+              <li>There might be a system error</li>
+            </ul>
+          </>
+        )
+        break
+
+      case "not_found":
+        errorTitle = "Ride Not Found"
+        errorIcon = <Search className="h-8 w-8 text-destructive mb-2" />
+        errorDetails = (
+          <>
+            <p className="text-muted-foreground mb-4">
+              We couldn&apos;t find the ride you&apos;re looking for. This could be because:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground mb-6">
+              <li>The ride has been deleted</li>
+              <li>The ride ID is incorrect</li>
+              <li>The ride never existed</li>
+            </ul>
+          </>
+        )
+        break
+
+      case "network":
+        errorTitle = "Connection Error"
+        errorIcon = <Wifi className="h-8 w-8 text-destructive mb-2" />
+        errorDetails = (
+          <>
+            <p className="text-muted-foreground mb-4">
+              We couldn&apos;t connect to our servers. This could be because:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground mb-6">
+              <li>Your internet connection is offline</li>
+              <li>Our servers are temporarily unavailable</li>
+              <li>There might be a network issue</li>
+            </ul>
+          </>
+        )
+        break
+
+      case "server":
+        errorTitle = "Server Error"
+        errorIcon = <ServerCrash className="h-8 w-8 text-destructive mb-2" />
+        errorDetails = (
+          <>
+            <p className="text-muted-foreground mb-4">
+              Our servers encountered an error while processing your request. This could be because:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground mb-6">
+              <li>Our servers are experiencing high load</li>
+              <li>There&apos;s a temporary issue with our database</li>
+              <li>We&apos;re currently performing maintenance</li>
+            </ul>
+          </>
+        )
+        break
+
+      default:
+        errorTitle = "Unexpected Error"
+        errorIcon = <AlertCircle className="h-8 w-8 text-destructive mb-2" />
+        errorDetails = (
+          <p className="text-muted-foreground mb-6">
+            An unexpected error occurred while trying to load this ride. Please try again or contact support if the
+            problem persists.
+          </p>
+        )
+    }
+
+    return (
+      <Card className="w-full max-w-3xl mx-auto">
+        <CardHeader className="text-center">
+          <div className="flex justify-center">{errorIcon}</div>
+          <CardTitle className="text-2xl font-bold">{errorTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-destructive/10 border border-destructive rounded-lg p-4 mb-4">
+            <div className="flex items-start">
+              <AlertTriangle className="h-5 w-5 text-destructive mr-2 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-destructive">Error Details</h3>
+                <p className="text-destructive/90 mt-1">{errorDescription}</p>
+              </div>
+            </div>
+          </div>
+          {errorDetails}
+        </CardContent>
+        <CardFooter className="flex flex-col sm:flex-row gap-2 justify-center">
+          {actionButton}
+        </CardFooter>
+      </Card>
+    )
+  }
+
   return (
     <Card className="w-full max-w-3xl mx-auto">
-      {permissionDenied && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircleIcon className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
-          <AlertDescription className="flex flex-col gap-2">
-            <p>You don&apos;t have permission to view this ride details.</p>
-            <Button variant="outline" size="sm" className="w-fit flex items-center gap-2" onClick={() => router.back()}>
-              <ArrowBigLeft className="h-4 w-4" />
-              Go Back
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
@@ -436,12 +600,15 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
               )}
             </CardDescription>
           </div>
-          {!isLoading && ride && (ride.status !== "pending" && ride.status !== "cancelled") && (
+          {!isLoading && ride && ride.status !== "pending" && ride.status !== "cancelled" && (
             <ReportDialog
               reportedId={ride.requester_id === currentUser?.id ? ride.accepter_id || "" : ride.requester_id}
-              reportedName={ride.requester_id === currentUser?.id
-                ? (contacts.find(c => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact?.name || "User")
-                : getRequesterName(ride)}
+              reportedName={
+                ride.requester_id === currentUser?.id
+                  ? contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact
+                    ?.name || "User"
+                  : getRequesterName(ride)
+              }
               reportType="ride"
               rideId={ride.id}
               trigger={
@@ -670,7 +837,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
                     </div>
                   ) : (
                     <div className="pb-4">
-                      {notes.reduce((acc: JSX.Element[], note, index) => {
+                      {notes.reduce((acc: React.ReactNode[], note, index) => {
                         const currentDate = new Date(note.created_at).toLocaleDateString()
                         const previousDate =
                           index > 0 ? new Date(notes[index - 1].created_at).toLocaleDateString() : null
@@ -945,6 +1112,12 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
           )}
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row gap-2">
+        {error && (
+          <div className="text-red-500">
+            <AlertTriangle className="inline-block h-4 w-4 mr-1 align-text-top" />
+            {(error as ErrorState).message}
+          </div>
+        )}
         {!isLoading && ride && ride.status === "pending" && ride.requester_id === currentUser?.id && (
           <Button
             variant="outline"
