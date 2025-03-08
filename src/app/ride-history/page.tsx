@@ -274,10 +274,12 @@ export default function RideHistoryPage() {
               {/* Header with status and time */}
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 mb-1">
                     <CalendarIcon2 className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{relative}</span>
-                    <span className="text-sm text-muted-foreground">• {time}</span>
+                    <div className="flex flex-col items-start justify-center">
+                      <span className="text-sm font-medium">{relative}</span>
+                      <span className="text-sm text-muted-foreground">{time}</span>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <User2 className="w-4 h-4 text-muted-foreground" />
@@ -349,9 +351,9 @@ export default function RideHistoryPage() {
           </div>
           <div className="flex items-center space-x-3">
             <div className="flex flex-col items-center space-y-1">
-              <div className="w-3 h-3 rounded-full bg-muted"></div>
+              <MapPin className="w-3 h-3 rounded-full text-muted"></MapPin>
               <div className="w-0.5 h-10 bg-muted"></div>
-              <div className="w-3 h-3 rounded-full bg-muted"></div>
+              <MapPin className="w-3 h-3 rounded-full text-muted"></MapPin>
             </div>
             <div className="flex-1 space-y-4">
               <Skeleton className="h-5 w-full" />
