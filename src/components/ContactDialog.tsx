@@ -254,16 +254,26 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
 
       // Show a more detailed success message based on the response
       if (result.deletedData) {
-        const { rides, notes, notifications } = result.deletedData
-        if (rides > 0) {
+        const { rides, notes } = result.deletedData
+        if (contactToDelete.status === "accepted" && rides > 0) {
           toast.success(
-            `Contact removed and ${rides} shared rides deleted with ${notes} notes and ${notifications} notifications.`,
+            `Contact removed and ${rides} shared rides deleted with ${notes} notes.`,
+          )
+        } else if (contactToDelete.status === "pending") {
+          toast.success(
+            contactToDelete.status === "pending" ? "Contact request cancelled." : "Contact request declined.",
           )
         } else {
           toast.success("Contact removed successfully!")
         }
       } else {
-        toast.success("Contact removed successfully!")
+        toast.success(
+          contactToDelete.status === "accepted"
+            ? "Contact removed successfully!"
+            : contactToDelete.status === "pending"
+              ? "Contact request cancelled."
+              : "Contact request declined.",
+        )
       }
     } catch (error) {
       if (isOnline) {

@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
       contact:users!contacts_contact_id_fkey (id, name, phone)
     `
       )
-      .or(`user_id.eq.${userId},contact_id.eq.${userId},status.eq.accepted`);
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
 
     if (contactsError) {
       return new NextResponse(
@@ -94,12 +94,11 @@ export async function GET(req: NextRequest) {
         );
       }
     } else {
-      // New check: Allow access if the user is a contact of the requester
-      const isContactOfRequester = contacts.some(contact => 
-        contact.user_id === ride.requester_id && contact.contact_id === userId
-      );
+      // Allow access if the user is an accepted contact of the requester
 
-      if (!isContactOfRequester) {
+      const isAcceptedContactOfRequester = contacts.some((contact) => contact.user_id === ride.requester_id && contact.contact_id === userId && contact.status === "accepted");
+
+      if (!isAcceptedContactOfRequester) {
         return new NextResponse(
           JSON.stringify({
             error: "permission_denied",
