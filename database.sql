@@ -9,6 +9,27 @@ CREATE TABLE public.associated_people (
 );
 CREATE INDEX IF NOT EXISTS idx_associated_people_user_id ON public.associated_people USING btree (user_id);
 
+CREATE TABLE public.bug_reports (
+  id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
+  user_id uuid NULL,
+  title character varying(255) NOT NULL,
+  description text NOT NULL,
+  steps_to_reproduce text NULL,
+  severity character varying(20) NOT NULL,
+  status character varying(20) NOT NULL DEFAULT 'new'::character varying,
+  device_info text NULL,
+  browser_info text NULL,
+  admin_notes text NULL,
+  created_at timestamp with time zone NULL DEFAULT now(),
+  updated_at timestamp with time zone NULL DEFAULT now(),
+  CONSTRAINT bug_reports_pkey PRIMARY KEY (id),
+  CONSTRAINT bug_reports_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT bug_reports_severity_check CHECK (((severity)::text = ANY ((ARRAY['low'::character varying, 'medium'::character varying, 'high'::character varying, 'critical'::character varying])::text[]))),
+  CONSTRAINT bug_reports_status_check CHECK (((status)::text = ANY ((ARRAY['new'::character varying, 'in_progress'::character varying, 'resolved'::character varying, 'closed'::character varying])::text[])))
+);
+CREATE INDEX IF NOT EXISTS bug_reports_user_id_idx ON public.bug_reports USING btree (user_id);
+CREATE INDEX IF NOT EXISTS bug_reports_status_idx ON public.bug_reports USING btree (status);
+
 CREATE TABLE public.contacts (
   id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
   user_id uuid NOT NULL,
@@ -80,6 +101,28 @@ CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON public.push_subscri
 CREATE INDEX IF NOT EXISTS idx_push_subscriptions_device_id ON public.push_subscriptions USING btree (device_id);
 CREATE INDEX IF NOT EXISTS idx_push_subscriptions_last_used ON public.push_subscriptions USING btree (last_used);
 
+CREATE TABLE public.reports (
+  id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
+  reporter_id uuid NOT NULL,
+  reported_id uuid NOT NULL,
+  reason text NOT NULL,
+  details text NOT NULL,
+  status text NOT NULL DEFAULT 'pending'::text,
+  report_type text NOT NULL,
+  ride_id uuid NULL,
+  admin_notes text NULL,
+  created_at timestamp with time zone NULL DEFAULT now(),
+  updated_at timestamp with time zone NULL DEFAULT now(),
+  CONSTRAINT reports_pkey PRIMARY KEY (id),
+  CONSTRAINT reports_reported_id_fkey FOREIGN KEY (reported_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT reports_ride_id_fkey FOREIGN KEY (ride_id) REFERENCES rides(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_reports_reporter_id ON public.reports USING btree (reporter_id);
+CREATE INDEX IF NOT EXISTS idx_reports_reported_id ON public.reports USING btree (reported_id);
+CREATE INDEX IF NOT EXISTS idx_reports_status ON public.reports USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_reports_ride_id ON public.reports USING btree (ride_id);
+
 CREATE TABLE public.reviews (
   id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
   user_id uuid NOT NULL,
@@ -149,3 +192,146 @@ CREATE TABLE public.users (
   CONSTRAINT users_email_key UNIQUE (email)
 );
 CREATE INDEX IF NOT EXISTS idx_users_phone ON public.users USING btree (phone);
+
+-- Functions
+CREATE OR REPLACE FUNCTION public.count_reports_by_type()
+RETURNS TABLE(report_type text, count bigint) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT r.report_type, COUNT(*)::BIGINT
+  FROM reports r
+  GROUP BY r.report_type
+  ORDER BY r.report_type;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.count_reports_by_status()
+RETURNS TABLE(status text, count bigint) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT r.status, COUNT(*)::BIGINT
+  FROM reports r
+  GROUP BY r.status
+  ORDER BY r.status;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.count_reports_by_reason()
+RETURNS TABLE(reason text, count bigint) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT r.reason, COUNT(*)::BIGINT
+  FROM reports r
+  GROUP BY r.reason
+  ORDER BY COUNT(*) DESC
+  LIMIT 10;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.delete_contact_and_related_data(contact_id_param uuid, user_id_param uuid, contact_user_id_param uuid)
+RETURNS void AS $$
+BEGIN
+  WITH rides_to_delete AS (
+    SELECT id FROM rides 
+    WHERE (requester_id = user_id_param AND accepter_id = contact_user_id_param)
+       OR (requester_id = contact_user_id_param AND accepter_id = user_id_param)
+  )
+  
+  DELETE FROM ride_notes
+  WHERE ride_id IN (SELECT id FROM rides_to_delete);
+  
+  DELETE FROM rides
+  WHERE id IN (SELECT id FROM rides_to_delete);
+  
+  DELETE FROM notifications
+  WHERE (user_id = user_id_param AND message LIKE '%' || (SELECT name FROM users WHERE id = contact_user_id_param) || '%')
+     OR (user_id = contact_user_id_param AND message LIKE '%' || (SELECT name FROM users WHERE id = user_id_param) || '%');
+  
+  DELETE FROM contacts
+  WHERE id = contact_id_param;
+  
+  DELETE FROM contacts
+  WHERE user_id = contact_user_id_param AND contact_id = user_id_param;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS trigger AS $$
+BEGIN
+   NEW.updated_at = now();
+   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.create_password_reset_token(user_email character varying, token_validity_hours integer)
+RETURNS uuid AS $$
+DECLARE
+  user_id UUID;
+  new_token UUID;
+BEGIN
+  SELECT id INTO user_id FROM users WHERE email = user_email;
+  
+  IF user_id IS NULL THEN
+    RAISE EXCEPTION 'User not found';
+  END IF;
+
+  new_token := uuid_generate_v4();
+
+  UPDATE password_reset_tokens
+  SET expires_at = CURRENT_TIMESTAMP
+  WHERE user_id = user_id AND expires_at > CURRENT_TIMESTAMP;
+
+  INSERT INTO password_reset_tokens (user_id, token, expires_at)
+  VALUES (user_id, new_token, CURRENT_TIMESTAMP + (token_validity_hours || ' hours')::INTERVAL);
+
+  RETURN new_token;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.use_password_reset_token(reset_token uuid, new_password character varying)
+RETURNS boolean AS $$
+DECLARE
+  user_id UUID;
+BEGIN
+  SELECT user_id INTO user_id
+  FROM password_reset_tokens
+  WHERE token = reset_token AND expires_at > CURRENT_TIMESTAMP;
+
+  IF user_id IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  UPDATE users
+  SET password = new_password
+  WHERE id = user_id;
+
+  UPDATE password_reset_tokens
+  SET expires_at = CURRENT_TIMESTAMP
+  WHERE token = reset_token;
+
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.cleanup_expired_tokens()
+RETURNS void AS $$
+BEGIN
+  DELETE FROM password_reset_tokens
+  WHERE expires_at <= CURRENT_TIMESTAMP;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.format_to_e164(country_code character varying, phone character varying)
+RETURNS character varying AS $$
+BEGIN
+  RETURN country_code || regexp_replace(phone, '\\D', '', 'g');
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.update_bug_reports_updated_at()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;

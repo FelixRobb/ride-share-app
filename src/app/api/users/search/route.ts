@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import type { User, Contact } from "@/types";
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -26,14 +27,19 @@ export async function GET(request: Request) {
 
   try {
     // Search for users by name or phone number (partial matches)
-    const { data: users, error: usersError } = await supabase
-      .from("users")
-      .select("id, name, phone")
-      .or(`name.ilike.%${query}%,phone.ilike.%${query}%`)
-      .neq("id", userId)
-      .limit(7);
+    // Using unaccent to ignore accents and diacritical marks
+    const { data: users, error: usersError } = await supabase.rpc(
+      "search_users_with_unaccent",
+      {
+        search_query: query.toLowerCase(),
+        current_user_id: userId,
+        limit_count: 7,
+      }
+    );
 
-    if (usersError) throw usersError;
+    if (usersError) {
+      throw usersError;
+    }
 
     // Fetch all contacts for the current user (both ways)
     const { data: contacts, error: contactsError } = await supabase
@@ -41,12 +47,16 @@ export async function GET(request: Request) {
       .select("*")
       .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
 
-    if (contactsError) throw contactsError;
+    if (contactsError) {
+      throw contactsError;
+    }
 
-    // Process users and add contact status
-    const processedUsers = users.map((user) => {
-      const contact = contacts.find(
-        (c) =>
+    const processedUsers: (User & {
+      contactStatus: string | null;
+      contactId: string | null;
+    })[] = users.map((user: User) => {
+      const contact: Contact | undefined = contacts.find(
+        (c: Contact) =>
           (c.user_id === userId && c.contact_id === user.id) ||
           (c.contact_id === userId && c.user_id === user.id)
       );

@@ -54,20 +54,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Check if the current user is either the requester or the accepter of the ride
-    if (ride.requester_id !== userId && ride.accepter_id !== userId) {
-      return new NextResponse(
-        JSON.stringify({
-          error: "permission_denied",
-          message: "You do not have permission to view this ride",
-        }),
-        {
-          status: 403,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
+    // Query contacts before checking permissions
     const { data: contacts, error: contactsError } = await supabase
       .from("contacts")
       .select(
@@ -90,6 +77,39 @@ export async function GET(req: NextRequest) {
           headers: { "Content-Type": "application/json" },
         }
       );
+    }
+
+    // Check if the current user is either the requester or the accepter of the ride
+    if (ride.status !== "pending") {
+      if (ride.requester_id !== userId && ride.accepter_id !== userId) {
+        return new NextResponse(
+          JSON.stringify({
+            error: "permission_denied",
+            message: "You do not have permission to view this ride1",
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    } else {
+      // Allow access if the user is an accepted contact of the requester
+
+      const isAcceptedContactOfRequester = contacts.some((contact) => (contact.user_id === ride.requester_id && contact.contact_id === userId && contact.status === "accepted" || contact.user_id === userId && contact.contact_id === ride.requester_id && contact.status === "accepted"));
+
+      if (!isAcceptedContactOfRequester) {
+        return new NextResponse(
+          JSON.stringify({
+            error: "permission_denied",
+            message: "You do not have permission to view this ride",
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
     }
 
     return new NextResponse(JSON.stringify({ ride, contacts }), {
