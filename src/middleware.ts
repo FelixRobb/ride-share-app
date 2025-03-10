@@ -15,7 +15,6 @@ const publicRoutes = [
   "/api/register",
   "/logout",
   "/verify-email",
-  "/api/reviews/approved",
   "/api/auth/reset-password",
   "/api/auth/check-reset-token",
   "/api/admin/login",
