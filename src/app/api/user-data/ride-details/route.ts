@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
         return new NextResponse(
           JSON.stringify({
             error: "permission_denied",
-            message: "You do not have permission to view this ride",
+            message: "You do not have permission to view this ride1",
           }),
           {
             status: 403,
@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
     } else {
       // Allow access if the user is an accepted contact of the requester
 
-      const isAcceptedContactOfRequester = contacts.some((contact) => contact.user_id === ride.requester_id && contact.contact_id === userId && contact.status === "accepted");
+      const isAcceptedContactOfRequester = contacts.some((contact) => (contact.user_id === ride.requester_id && contact.contact_id === userId && contact.status === "accepted" || contact.user_id === userId && contact.contact_id === ride.requester_id && contact.status === "accepted"));
 
       if (!isAcceptedContactOfRequester) {
         return new NextResponse(
