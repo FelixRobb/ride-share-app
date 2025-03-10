@@ -307,7 +307,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       </header>
 
       {/* Main content */}
-      <main className="container px-4 py-6">
+      <main className="px-4 py-6">
         <Tabs defaultValue="stats" className="space-y-6">
           <TabsList className="w-full">
             <TabsTrigger value="stats" className="flex flex-1 items-center gap-2">
