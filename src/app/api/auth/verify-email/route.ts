@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/db";
+import { sendEmail, getWelcomeEmailContent } from "@/lib/emailService";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -27,6 +28,15 @@ export async function GET(request: Request) {
 
     if (updateError) {
       throw updateError;
+    }
+
+    // Get user's name for the welcome email
+    const { data: userData } = await supabase.from("users").select("name, email").eq("id", tokenData.user_id).single();
+
+    // Send welcome email
+    if (userData) {
+      const welcomeEmailContent = getWelcomeEmailContent(userData.name);
+      await sendEmail(userData.email, "Welcome to RideShare!", welcomeEmailContent);
     }
 
     // Delete the used token

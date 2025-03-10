@@ -21,31 +21,58 @@ export function getWelcomeEmailContent(name: string): string {
   return `
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Welcome to RideShare</title>
   <style>
-    :root {
-      --background: #080808;
-      --foreground: #dadada;
-      --muted: #f5f5f4;
-      --muted-foreground: #78716c;
-      --card: #0f0f0f;
-      --card-foreground: #0c0a09;
-      --border: #e7e5e4;
-      --primary: #dd5d02;
-      --primary-foreground: #fafaf9;
-      --secondary: #3a1d6e;
-      --secondary-foreground: #e2d9f3;
-      --accent: #086375;
-      --accent-foreground: #d0f0f7;
-      --success: #107869;
-      --success-foreground: #d0f0e8;
-      --destructive: #ef4444;
-      --destructive-foreground: #fafaf9;
-      --ring: #f97316;
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #080808;
+        --foreground: #dadada;
+        --muted: #f5f5f4;
+        --muted-foreground: #78716c;
+        --card: #0f0f0f;
+        --card-foreground: #dadada;
+        --border: #333333;
+        --primary: #dd5d02;
+        --primary-foreground: #fafaf9;
+        --secondary: #3a1d6e;
+        --secondary-foreground: #e2d9f3;
+        --accent: #086375;
+        --accent-foreground: #d0f0f7;
+        --success: #107869;
+        --success-foreground: #d0f0e8;
+        --destructive: #ef4444;
+        --destructive-foreground: #fafaf9;
+        --ring: #f97316;
+      }
     }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --background: #ffffff;
+        --foreground: #0f0f0f;
+        --muted: #f5f5f4;
+        --muted-foreground: #6c6c6c;
+        --card: #ffffff;
+        --card-foreground: #0c0a09;
+        --border: #e7e5e4;
+        --primary: #dd5d02;
+        --primary-foreground: #fafaf9;
+        --secondary: #3a1d6e;
+        --secondary-foreground: #e2d9f3;
+        --accent: #086375;
+        --accent-foreground: #ffffff;
+        --success: #107869;
+        --success-foreground: #ffffff;
+        --destructive: #ef4444;
+        --destructive-foreground: #ffffff;
+        --ring: #f97316;
+      }
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       line-height: 1.6;
@@ -54,11 +81,13 @@ export function getWelcomeEmailContent(name: string): string {
       margin: 0;
       padding: 0;
     }
+
     .container {
       max-width: 600px;
       margin: 0 auto;
       padding: 2rem;
     }
+
     h1 {
       color: var(--primary);
       font-size: 1.875rem;
@@ -66,6 +95,7 @@ export function getWelcomeEmailContent(name: string): string {
       margin-bottom: 1.5rem;
       text-align: center;
     }
+
     .feature {
       background-color: var(--card);
       border: 1px solid var(--border);
@@ -73,12 +103,14 @@ export function getWelcomeEmailContent(name: string): string {
       padding: 1.5rem;
       margin-bottom: 1rem;
     }
+
     .feature h2 {
       color: var(--primary);
       font-size: 1.25rem;
       margin-top: 0;
       margin-bottom: 0.75rem;
     }
+
     .cta-button {
       display: inline-block;
       padding: 0.75rem 1.5rem;
@@ -90,28 +122,34 @@ export function getWelcomeEmailContent(name: string): string {
       text-align: center;
       transition: background-color 0.2s;
     }
+
     .cta-button:hover {
-      background-color: #ea580c;
+      background-color: var(--primary);
+      opacity: 0.8;
+      transition: opacity 0.3s;
     }
+
     .welcome-features {
-      background-color: #0a131b;
-      background-image: linear-gradient(135deg, #0a131b, #0c0f17);
+      background-color: var(--background);
       padding: 1rem;
       border-radius: 0.5rem;
       margin: 1.5rem 0;
-      box-shadow: #dd5d02 0px 0px 10px inset;
-      border: 1px solid #1e3a5f;
+      border: 1px solid var(--border);
+      box-shadow: var(--ring) 0px 0px 10px inset;
     }
+
     .welcome-features h2 {
       color: var(--primary);
       font-size: 1.25rem;
       margin-top: 0;
     }
+
     .feature-item {
       display: flex;
       margin-bottom: 0.75rem;
       align-items: flex-start;
     }
+
     .feature-icon {
       width: 24px;
       height: 24px;
@@ -126,22 +164,27 @@ export function getWelcomeEmailContent(name: string): string {
       font-weight: bold;
       font-size: 12px;
     }
+
     .feature-1-bg {
       background-color: var(--accent);
       color: var(--accent-foreground);
     }
+
     .feature-2-bg {
       background-color: var(--secondary);
       color: var(--secondary-foreground);
     }
+
     .feature-3-bg {
       background-color: var(--success);
       color: var(--success-foreground);
     }
+
     .feature-4-bg {
       background-color: var(--primary);
       color: var(--primary-foreground);
     }
+
     .footer {
       margin-top: 2rem;
       text-align: center;
@@ -150,14 +193,16 @@ export function getWelcomeEmailContent(name: string): string {
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>Welcome to RideShare, ${name}!</h1>
-    <p>We're thrilled to have you join our community of ride-sharers. Get ready for a smoother, more connected way to travel!</p>
-    
+    <p>We're thrilled to have you join our community of ride-sharers. Get ready for a smoother, more connected way to
+      travel!</p>
+
     <div class="welcome-features">
       <h2>What RideShare Offers</h2>
-      
+
       <div class="feature-item">
         <div class="feature-icon feature-1-bg">1</div>
         <div>
@@ -165,7 +210,7 @@ export function getWelcomeEmailContent(name: string): string {
           <p>Find or offer rides with ease using our intuitive interface</p>
         </div>
       </div>
-      
+
       <div class="feature-item">
         <div class="feature-icon feature-2-bg">2</div>
         <div>
@@ -173,7 +218,7 @@ export function getWelcomeEmailContent(name: string): string {
           <p>Connect with trusted ride-sharing partners</p>
         </div>
       </div>
-      
+
       <div class="feature-item">
         <div class="feature-icon feature-3-bg">3</div>
         <div>
@@ -181,7 +226,7 @@ export function getWelcomeEmailContent(name: string): string {
           <p>Receive real-time notifications about your rides</p>
         </div>
       </div>
-      
+
       <div class="feature-item">
         <div class="feature-icon feature-4-bg">4</div>
         <div>
@@ -190,22 +235,25 @@ export function getWelcomeEmailContent(name: string): string {
         </div>
       </div>
     </div>
-    
+
     <div style="text-align: center; margin: 2rem 0;">
       <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="cta-button">Start Sharing Rides</a>
     </div>
-    
-    <div style="text-align: center; color: var(--muted-foreground); background-color: rgba(221, 93, 2, 0.1); padding: 1rem; border-radius: 0.5rem;">
+
+    <div
+      style="text-align: center; color: var(--muted-foreground); background-color: rgba(221, 93, 2, 0.1); padding: 1rem; border-radius: 0.5rem;">
       <p>This link will connect you to your personal dashboard.</p>
     </div>
-    
+
     <div class="footer">
-      <p>Questions? Contact our support team at <a href="mailto:${process.env.GMAIL_USER}" style="color: var(--primary);">${process.env.GMAIL_USER}</a></p>
+      <p>Questions? Contact our support team at <a href="mailto:${process.env.GMAIL_USER}"
+          style="color: var(--primary);">${process.env.GMAIL_USER}</a></p>
       <p>© ${new Date().getFullYear()} RideShare. All rights reserved.</p>
       <p>You're receiving this email because you signed up for RideShare.</p>
     </div>
   </div>
 </body>
+
 </html>
   `;
 }
@@ -214,31 +262,58 @@ export function getVerificationEmailContent(name: string, verificationUrl: strin
   return `
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Verify Your Email for RideShare</title>
   <style>
-    :root {
-      --background: #080808;
-      --foreground: #dadada;
-      --muted: #f5f5f4;
-      --muted-foreground: #78716c;
-      --card: #0f0f0f;
-      --card-foreground: #0c0a09;
-      --border: #e7e5e4;
-      --primary: #dd5d02;
-      --primary-foreground: #fafaf9;
-      --secondary: #3a1d6e;
-      --secondary-foreground: #e2d9f3;
-      --accent: #086375;
-      --accent-foreground: #d0f0f7;
-      --success: #107869;
-      --success-foreground: #d0f0e8;
-      --destructive: #ef4444;
-      --destructive-foreground: #fafaf9;
-      --ring: #f97316;
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #080808;
+        --foreground: #dadada;
+        --muted: #f5f5f4;
+        --muted-foreground: #78716c;
+        --card: #0f0f0f;
+        --card-foreground: #dadada;
+        --border: #333333;
+        --primary: #dd5d02;
+        --primary-foreground: #fafaf9;
+        --secondary: #3a1d6e;
+        --secondary-foreground: #e2d9f3;
+        --accent: #086375;
+        --accent-foreground: #d0f0f7;
+        --success: #107869;
+        --success-foreground: #d0f0e8;
+        --destructive: #ef4444;
+        --destructive-foreground: #fafaf9;
+        --ring: #f97316;
+      }
     }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --background: #ffffff;
+        --foreground: #0f0f0f;
+        --muted: #f5f5f4;
+        --muted-foreground: #6c6c6c;
+        --card: #ffffff;
+        --card-foreground: #0c0a09;
+        --border: #e7e5e4;
+        --primary: #dd5d02;
+        --primary-foreground: #fafaf9;
+        --secondary: #3a1d6e;
+        --secondary-foreground: #e2d9f3;
+        --accent: #086375;
+        --accent-foreground: #ffffff;
+        --success: #107869;
+        --success-foreground: #ffffff;
+        --destructive: #ef4444;
+        --destructive-foreground: #ffffff;
+        --ring: #f97316;
+      }
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       line-height: 1.6;
@@ -247,11 +322,13 @@ export function getVerificationEmailContent(name: string, verificationUrl: strin
       margin: 0;
       padding: 0;
     }
+
     .container {
       max-width: 600px;
       margin: 0 auto;
       padding: 2rem;
     }
+
     h1 {
       color: var(--primary);
       font-size: 1.875rem;
@@ -259,6 +336,7 @@ export function getVerificationEmailContent(name: string, verificationUrl: strin
       margin-bottom: 1.5rem;
       text-align: center;
     }
+
     .verify-button {
       display: inline-block;
       padding: 0.75rem 1.5rem;
@@ -270,9 +348,13 @@ export function getVerificationEmailContent(name: string, verificationUrl: strin
       text-align: center;
       transition: background-color 0.2s;
     }
+
     .verify-button:hover {
-      background-color: #ea580c;
+      background-color: var(--primary);
+      opacity: 0.8;
+      transition: opacity 0.3s;
     }
+
     .link-text {
       word-break: break-all;
       color: var(--primary);
@@ -283,6 +365,7 @@ export function getVerificationEmailContent(name: string, verificationUrl: strin
       border-radius: 0.5rem;
       border: 1px solid #1e3a5f;
     }
+
     .verification-info {
       background-color: #081a12;
       background-image: linear-gradient(135deg, #081a12, #0a1c16);
@@ -292,11 +375,13 @@ export function getVerificationEmailContent(name: string, verificationUrl: strin
       box-shadow: #107869 0px 0px 10px inset;
       border: 1px solid #164a3f;
     }
+
     .verification-info h2 {
       color: var(--success);
       font-size: 1.25rem;
       margin-top: 0;
     }
+
     .warning {
       background-color: #1a0808;
       background-image: linear-gradient(135deg, #1a0808, #1c0a0a);
@@ -307,41 +392,47 @@ export function getVerificationEmailContent(name: string, verificationUrl: strin
       color: var(--destructive-foreground);
       box-shadow: #ef4444 0px 0px 10px inset;
     }
+
     .warning strong {
       color: var(--destructive);
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>Verify Your Email</h1>
     <p>Hello ${name},</p>
-    <p>Thank you for registering with RideShare. To complete your registration and start using our service, please verify your email address by clicking the button below:</p>
-    
+    <p>Thank you for registering with RideShare. To complete your registration and start using our service, please
+      verify your email address by clicking the button below:</p>
+
     <div style="text-align: center; margin: 2rem 0;">
       <a href="${verificationUrl}" class="verify-button">Verify Email</a>
     </div>
-    
+
     <div class="verification-info">
       <h2>Verification Information</h2>
       <p>• This link will expire in 24 hours for security reasons</p>
       <p>• After verification, you'll be automatically directed to your dashboard</p>
       <p>• Verification helps us ensure that our community remains secure</p>
     </div>
-    
+
     <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
     <p class="link-text">${verificationUrl}</p>
-    
+
     <div class="warning">
-      <strong>⚠️ Important:</strong> If you didn't create an account with RideShare, please ignore this email or contact our support team at <a href="mailto:${process.env.GMAIL_USER}" style="color: var(--destructive);">${process.env.GMAIL_USER}</a>
+      <strong>⚠️ Important:</strong> If you didn't create an account with RideShare, please ignore this email or contact
+      our support team at <a href="mailto:${process.env.GMAIL_USER}"
+        style="color: var(--destructive);">${process.env.GMAIL_USER}</a>
     </div>
-    
+
     <div style="margin-top: 2rem; text-align: center; color: var(--muted-foreground); font-size: 0.875rem;">
       <p>© ${new Date().getFullYear()} RideShare. All rights reserved.</p>
       <p>This is an automated verification email. Please do not reply directly to this email.</p>
     </div>
   </div>
 </body>
+
 </html>
   `;
 }
@@ -350,30 +441,58 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
   return `
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reset Your RideShare Password</title>
   <style>
-    :root {
-      --background: #080808;
-      --foreground: #dadada;
-      --muted: #f5f5f4;
-      --muted-foreground: #78716c;
-      --card: #0f0f0f;
-      --card-foreground: #0c0a09;
-      --border: #e7e5e4;
-      --primary: #dd5d02;
-      --primary-foreground: #fafaf9;
-      --secondary: #3a1d6e;
-      --secondary-foreground: #e2d9f3;
-      --accent: #086375;
-      --accent-foreground: #d0f0f7;
-      --success: #107869;
-      --success-foreground: #d0f0e8;
-      --destructive: #ef4444;
-      --destructive-foreground: #6c6c6c;
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #080808;
+        --foreground: #dadada;
+        --muted: #f5f5f4;
+        --muted-foreground: #78716c;
+        --card: #0f0f0f;
+        --card-foreground: #dadada;
+        --border: #333333;
+        --primary: #dd5d02;
+        --primary-foreground: #fafaf9;
+        --secondary: #3a1d6e;
+        --secondary-foreground: #e2d9f3;
+        --accent: #086375;
+        --accent-foreground: #d0f0f7;
+        --success: #107869;
+        --success-foreground: #d0f0e8;
+        --destructive: #ef4444;
+        --destructive-foreground: #fafaf9;
+        --ring: #f97316;
+      }
     }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --background: #ffffff;
+        --foreground: #0f0f0f;
+        --muted: #f5f5f4;
+        --muted-foreground: #6c6c6c;
+        --card: #ffffff;
+        --card-foreground: #0c0a09;
+        --border: #e7e5e4;
+        --primary: #dd5d02;
+        --primary-foreground: #fafaf9;
+        --secondary: #3a1d6e;
+        --secondary-foreground: #e2d9f3;
+        --accent: #086375;
+        --accent-foreground: #ffffff;
+        --success: #107869;
+        --success-foreground: #ffffff;
+        --destructive: #ef4444;
+        --destructive-foreground: #ffffff;
+        --ring: #f97316;
+      }
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       line-height: 1.6;
@@ -382,11 +501,13 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
       margin: 0;
       padding: 0;
     }
+
     .container {
       max-width: 600px;
       margin: 0 auto;
       padding: 2rem;
     }
+
     h1 {
       color: var(--primary);
       font-size: 1.875rem;
@@ -394,6 +515,7 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
       margin-bottom: 1.5rem;
       text-align: center;
     }
+
     .reset-button {
       display: inline-block;
       padding: 0.75rem 1.5rem;
@@ -405,38 +527,47 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
       text-align: center;
       transition: background-color 0.2s;
     }
+
     .reset-button:hover {
-      background-color: #ea580c;
+      background-color: var(--primary);
+      opacity: 0.8;
+      transition: opacity 0.3s;
     }
+
     .warning {
-      background-color: #1a0808;
-      background-image: linear-gradient(135deg, #1a0808, #1c0a0a);
-      border: 1px solid #4f1c1c;
+      background-color: var(--background);
+      background-image: linear-gradient(135deg, --background, --ring);
+      border: 1px solid --border;
       color: var(--destructive);
       padding: 1rem;
       border-radius: 0.5rem;
       margin: 1.5rem 0;
-      box-shadow: #ef4444 0px 0px 10px inset;
+      box-shadow: var(--destructive) 0px 0px 10px inset;
+      border: 1px solid var(--destructive);
     }
+
     .security-tips {
-      background-color: #0a131b;
-      background-image: linear-gradient(135deg, #0a131b, #0c0f17);
+      background-color: var(--background);
+      background-image: linear-gradient(135deg, --background, --primary);
       padding: 1rem;
       border-radius: 0.5rem;
       margin: 1.5rem 0;
-      box-shadow: #ef4444 0px 0px 10px inset;
-      border: 1px solid #1e3a5f;
+      box-shadow: var(--primary) 0px 0px 10px inset;
+      border: 1px solid var(--ring);
     }
+
     .security-tips h2 {
       color: var(--primary);
       font-size: 1.25rem;
       margin-top: 0;
     }
+
     .security-tip-item {
       display: flex;
       margin-bottom: 0.75rem;
       align-items: flex-start;
     }
+
     .security-icon {
       width: 24px;
       height: 24px;
@@ -453,47 +584,51 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>Reset Your Password</h1>
-    <p>We received a request to reset the password for your RideShare account. If you didn't make this request, you can safely ignore this email.</p>
-    
+    <p>We received a request to reset the password for your RideShare account. If you didn't make this request, you can
+      safely ignore this email.</p>
+
     <div style="text-align: center; margin: 2rem 0;">
       <a href="${resetUrl}" class="reset-button">Reset My Password</a>
     </div>
-    
-    <div style="text-align: center; color: var(--muted-foreground); background-color: rgba(221, 93, 2, 0.1); padding: 1rem; border-radius: 0.5rem;">
+
+    <div
+      style="text-align: center; color: var(--muted-foreground); background-color: rgba(221, 93, 2, 0.1); padding: 1rem; border-radius: 0.5rem;">
       <p>This link will expire in 1 hour for security reasons.</p>
     </div>
-    
+
     <div class="warning">
-      <strong>Important:</strong> If you didn't request a password reset, please contact our support team immediately at <a href="mailto:${process.env.GMAIL_USER}" style="color: var(--destructive);">${process.env.GMAIL_USER}</a>
+      <strong>Important:</strong> If you didn't request a password reset, please contact our support team immediately at
+      <a href="mailto:${process.env.GMAIL_USER}" style="color: var(--destructive);">${process.env.GMAIL_USER}</a>
     </div>
-    
+
     <div class="security-tips">
       <h2>Keeping Your Account Secure</h2>
-      
+
       <div class="security-tip-item">
         <div class="security-icon">1</div>
         <div>Never share your password with anyone</div>
       </div>
-      
+
       <div class="security-tip-item">
         <div class="security-icon">2</div>
         <div>Use a strong, unique password for your RideShare account</div>
       </div>
-      
+
       <div class="security-tip-item">
         <div class="security-icon">3</div>
         <div>Regularly update your password to maintain account safety</div>
       </div>
-      
+
       <div class="security-tip-item">
         <div class="security-icon">4</div>
         <div>Enable two-factor authentication when available</div>
       </div>
     </div>
-    
+
     <div style="margin-top: 2rem; text-align: center; color: var(--muted-foreground); font-size: 0.875rem;">
       <p>Need help? Our support team is always here to assist you.</p>
       <p>© ${new Date().getFullYear()} RideShare. All rights reserved.</p>
@@ -501,6 +636,7 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
     </div>
   </div>
 </body>
+
 </html>
   `;
 }
@@ -509,31 +645,58 @@ export function getEmailChangeNotificationContent(name: string, newEmail: string
   return `
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Email Change Notification - RideShare</title>
   <style>
-    :root {
-      --background: #080808;
-      --foreground: #dadada;
-      --muted: #f5f5f4;
-      --muted-foreground: #78716c;
-      --card: #0f0f0f;
-      --card-foreground: #0c0a09;
-      --border: #e7e5e4;
-      --primary: #dd5d02;
-      --primary-foreground: #fafaf9;
-      --secondary: #3a1d6e;
-      --secondary-foreground: #e2d9f3;
-      --accent: #086375;
-      --accent-foreground: #d0f0f7;
-      --success: #107869;
-      --success-foreground: #d0f0e8;
-      --destructive: #ef4444;
-      --destructive-foreground: #fafaf9;
-      --ring: #f97316;
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #080808;
+        --foreground: #dadada;
+        --muted: #f5f5f4;
+        --muted-foreground: #78716c;
+        --card: #0f0f0f;
+        --card-foreground: #dadada;
+        --border: #333333;
+        --primary: #dd5d02;
+        --primary-foreground: #fafaf9;
+        --secondary: #3a1d6e;
+        --secondary-foreground: #e2d9f3;
+        --accent: #086375;
+        --accent-foreground: #d0f0f7;
+        --success: #107869;
+        --success-foreground: #d0f0e8;
+        --destructive: #ef4444;
+        --destructive-foreground: #fafaf9;
+        --ring: #f97316;
+      }
     }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --background: #ffffff;
+        --foreground: #0f0f0f;
+        --muted: #f5f5f4;
+        --muted-foreground: #6c6c6c;
+        --card: #ffffff;
+        --card-foreground: #0c0a09;
+        --border: #e7e5e4;
+        --primary: #dd5d02;
+        --primary-foreground: #fafaf9;
+        --secondary: #3a1d6e;
+        --secondary-foreground: #e2d9f3;
+        --accent: #086375;
+        --accent-foreground: #ffffff;
+        --success: #107869;
+        --success-foreground: #ffffff;
+        --destructive: #ef4444;
+        --destructive-foreground: #ffffff;
+        --ring: #f97316;
+      }
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       line-height: 1.6;
@@ -542,11 +705,13 @@ export function getEmailChangeNotificationContent(name: string, newEmail: string
       margin: 0;
       padding: 0;
     }
+
     .container {
       max-width: 600px;
       margin: 0 auto;
       padding: 2rem;
     }
+
     h1 {
       color: var(--primary);
       font-size: 1.875rem;
@@ -554,21 +719,23 @@ export function getEmailChangeNotificationContent(name: string, newEmail: string
       margin-bottom: 1.5rem;
       text-align: center;
     }
+
     .warning {
-      background-color: #1a0808;
-      background-image: linear-gradient(135deg, #1a0808, #1c0a0a);
-      border: 1px solid #4f1c1c;
+      background-color: var(--background);
+      border: 1px solid var(--ring);
       border-radius: 0.5rem;
       padding: 1.5rem;
       margin: 1.5rem 0;
-      box-shadow: #ef4444 0px 0px 10px inset;
+      box-shadow: var(--ring) 0px 0px 10px inset;
     }
+
     .warning h2 {
       color: var(--destructive);
       font-size: 1.25rem;
       margin-top: 0;
       margin-bottom: 0.75rem;
     }
+
     .action-button {
       display: inline-block;
       padding: 0.75rem 1.5rem;
@@ -580,32 +747,39 @@ export function getEmailChangeNotificationContent(name: string, newEmail: string
       text-align: center;
       transition: background-color 0.2s;
     }
+
     .action-button:hover {
-      background-color: #ea580c;
+      background-color: var(--primary);
+      opacity: 0.8;
+      transition: opacity 0.3s;
     }
+
     .security-tips {
-      background-color: #0a131b;
-      background-image: linear-gradient(135deg, #0a131b, #0c0f17);
+      background-color: var(--background);
       padding: 1rem;
       border-radius: 0.5rem;
       margin: 1.5rem 0;
       box-shadow: #3a1d6e 0px 0px 10px inset;
       border: 1px solid #1e3a5f;
     }
+
     .security-tips h2 {
       color: var(--secondary);
       font-size: 1.25rem;
       margin-top: 0;
     }
+
     .email-change-info {
-      background-color: #081219;
-      border: 1px solid #1e3a5f;
+      background-color: var(--background);
+      border: 1px solid var(--accent);
       border-radius: 0.5rem;
       padding: 1rem;
       margin: 1rem 0;
       display: flex;
       align-items: center;
+      box-shadow: var(--accent) 0px 0px 10px inset;
     }
+
     .email-icon {
       background-color: var(--accent);
       width: 40px;
@@ -620,17 +794,20 @@ export function getEmailChangeNotificationContent(name: string, newEmail: string
       font-weight: bold;
       font-size: 18px;
     }
+
     .footer {
       margin-top: 2rem;
       text-align: center;
       color: var(--muted-foreground);
       font-size: 0.875rem;
     }
+
     .action-item {
       display: flex;
       margin-bottom: 0.75rem;
       align-items: flex-start;
     }
+
     .action-number {
       width: 24px;
       height: 24px;
@@ -647,11 +824,12 @@ export function getEmailChangeNotificationContent(name: string, newEmail: string
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>Email Change Notification</h1>
     <p>Hello ${name},</p>
-    
+
     <div class="email-change-info">
       <div class="email-icon">@</div>
       <div>
@@ -659,27 +837,27 @@ export function getEmailChangeNotificationContent(name: string, newEmail: string
         <p style="margin: 0; font-weight: bold; color: var(--accent);">${newEmail}</p>
       </div>
     </div>
-    
+
     <div class="warning">
       <h2>⚠️ Security Alert</h2>
       <p>If you did not authorize this change, please take immediate action:</p>
-      
+
       <div class="action-item">
         <div class="action-number">1</div>
         <div>Change your password immediately</div>
       </div>
-      
+
       <div class="action-item">
         <div class="action-number">2</div>
         <div>Contact our support team</div>
       </div>
-      
+
       <div class="action-item">
         <div class="action-number">3</div>
         <div>Review your account for any suspicious activity</div>
       </div>
     </div>
-    
+
     <div class="security-tips">
       <h2>Recommended Security Steps</h2>
       <ul>
@@ -689,22 +867,25 @@ export function getEmailChangeNotificationContent(name: string, newEmail: string
         <li>Update passwords on other services if you use the same password</li>
       </ul>
     </div>
-    
+
     <div style="text-align: center; margin: 2rem 0;">
       <a href="${process.env.NEXT_PUBLIC_APP_URL}/profile" class="action-button">Review Account Security</a>
     </div>
-    
-    <div style="text-align: center; color: var(--muted-foreground); background-color: rgba(58, 29, 110, 0.1); padding: 1rem; border-radius: 0.5rem;">
+
+    <div
+      style="text-align: center; color: var(--muted-foreground); background-color: rgba(58, 29, 110, 0.1); padding: 1rem; border-radius: 0.5rem;">
       <p>This link will take you to your account security settings.</p>
     </div>
-    
+
     <div class="footer">
-      <p>Need help? Contact our support team at <a href="mailto:${process.env.GMAIL_USER}" style="color: var(--primary);">${process.env.GMAIL_USER}</a></p>
+      <p>Need help? Contact our support team at <a href="mailto:${process.env.GMAIL_USER}"
+          style="color: var(--primary);">${process.env.GMAIL_USER}</a></p>
       <p>© ${new Date().getFullYear()} RideShare. All rights reserved.</p>
       <p>This is an automated security notification. Please do not reply to this email.</p>
     </div>
   </div>
 </body>
+
 </html>
   `;
 }
