@@ -1,4 +1,3 @@
-
 import "./globals.css"
 import { Providers } from "./Providers"
 import { Toaster } from "@/components/ui/sonner"
@@ -40,13 +39,17 @@ export const metadata = {
   metadataBase: new URL(siteUrl),
 }
 
+export const viewport = {
+  themeColor: "#000000",
+}
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" style={{ colorScheme: 'dark' }}>
       <body>
         <Toaster closeButton richColors position="top-right"/>
         <Providers>
@@ -55,9 +58,5 @@ export default function RootLayout({
       </body>
     </html>
   )
-}
-
-export const viewport = {
-  themeColor: "#f97316",
 }
 
