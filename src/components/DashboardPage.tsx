@@ -15,7 +15,7 @@ import {ScrollArea} from "@/components/ui/scroll-area"
 import {Skeleton} from "@/components/ui/skeleton"
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
 import {useMediaQuery} from "@/hooks/use-media-query"
-import type {User, Ride, Contact} from "../types"
+import type {User, Ride, Contact} from "@/types"
 import {fetchDashboardData} from "@/utils/api"
 import {useOnlineStatus} from "@/utils/useOnlineStatus"
 import {

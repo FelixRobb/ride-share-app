@@ -395,14 +395,16 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
       <>
         {SettingsButton}
         <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px] max-h-[90svh]">
             <DialogHeader>
               <DialogTitle className="text-2xl">Notification Preferences</DialogTitle>
               <DialogDescription>
                 Customize how and where you receive notifications across your devices
               </DialogDescription>
             </DialogHeader>
-            {SettingsContent}
+            <ScrollArea className="max-h-[60vh] px-4">
+              {SettingsContent}
+            </ScrollArea>
             <DialogFooter>
               <Button onClick={() => setIsSettingsOpen(false)} variant="outline">
                 Close
