@@ -1,30 +1,30 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { type NextRequest, NextResponse } from "next/server"
+import { supabase } from "@/lib/db"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions)
     if (!session || !session.user || !session.user.id) {
       return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
-      });
+      })
     }
 
-    const userId = session.user.id;
+    const userId = session.user.id
 
-    const rideId = req.nextUrl.searchParams.get("rideId");
+    const rideId = req.nextUrl.searchParams.get("rideId")
 
     if (!rideId) {
       return new NextResponse(JSON.stringify({ error: "Ride ID is required", message: "Ride ID is required" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
-      });
+      })
     }
 
-    const { data: ride, error: rideError } = await supabase.from("rides").select("*").eq("id", rideId).single();
+    const { data: ride, error: rideError } = await supabase.from("rides").select("*").eq("id", rideId).single()
 
     // Handle case where ride doesn't exist
     if (rideError) {
@@ -38,8 +38,8 @@ export async function GET(req: NextRequest) {
           {
             status: 404,
             headers: { "Content-Type": "application/json" },
-          }
-        );
+          },
+        )
       }
 
       return new NextResponse(
@@ -50,8 +50,8 @@ export async function GET(req: NextRequest) {
         {
           status: 500,
           headers: { "Content-Type": "application/json" },
-        }
-      );
+        },
+      )
     }
 
     // Query contacts before checking permissions
@@ -62,9 +62,9 @@ export async function GET(req: NextRequest) {
       *,
       user:users!contacts_user_id_fkey (id, name, phone),
       contact:users!contacts_contact_id_fkey (id, name, phone)
-    `
+    `,
       )
-      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`)
 
     if (contactsError) {
       return new NextResponse(
@@ -75,28 +75,23 @@ export async function GET(req: NextRequest) {
         {
           status: 500,
           headers: { "Content-Type": "application/json" },
-        }
-      );
+        },
+      )
     }
 
-    // Check if the current user is either the requester or the accepter of the ride
-    if (ride.status !== "pending") {
-      if (ride.requester_id !== userId && ride.accepter_id !== userId) {
-        return new NextResponse(
-          JSON.stringify({
-            error: "permission_denied",
-            message: "You do not have permission to view this ride1",
-          }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
-    } else {
-      // Allow access if the user is an accepted contact of the requester
-
-      const isAcceptedContactOfRequester = contacts.some((contact) => (contact.user_id === ride.requester_id && contact.contact_id === userId && contact.status === "accepted" || contact.user_id === userId && contact.contact_id === ride.requester_id && contact.status === "accepted"));
+    // Check permissions based on the requirements
+    // 1. If the user is the requester, they can always see the ride
+    if (ride.requester_id === userId) {
+      // Requester can always see their own rides
+    }
+    // 2. If the ride is pending, only accepted contacts of the requester can see it
+    else if (ride.status === "pending") {
+      // Check if the user is an accepted contact of the requester
+      const isAcceptedContactOfRequester = contacts.some(
+        (contact) =>
+          (contact.user_id === ride.requester_id && contact.contact_id === userId && contact.status === "accepted") ||
+          (contact.user_id === userId && contact.contact_id === ride.requester_id && contact.status === "accepted"),
+      )
 
       if (!isAcceptedContactOfRequester) {
         return new NextResponse(
@@ -107,15 +102,30 @@ export async function GET(req: NextRequest) {
           {
             status: 403,
             headers: { "Content-Type": "application/json" },
-          }
-        );
+          },
+        )
+      }
+    }
+    // 3. If the ride is accepted/cancelled/completed, only the requester and accepter can see it
+    else if (["accepted", "cancelled", "completed"].includes(ride.status)) {
+      if (ride.requester_id !== userId && ride.accepter_id !== userId) {
+        return new NextResponse(
+          JSON.stringify({
+            error: "permission_denied",
+            message: "You do not have permission to view this ride",
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          },
+        )
       }
     }
 
     return new NextResponse(JSON.stringify({ ride, contacts }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
-    });
+    })
   } catch {
     return new NextResponse(
       JSON.stringify({
@@ -125,7 +135,8 @@ export async function GET(req: NextRequest) {
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
-      }
-    );
+      },
+    )
   }
 }
+
