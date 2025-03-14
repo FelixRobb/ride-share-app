@@ -182,12 +182,16 @@ export function RideMessages({ ride, currentUser, contacts, isOnline, isRefreshi
                 // Reset form
                 setNewNote("")
                 setMessageLength(0)
-                scrollToBottom()
-
+                
                 // Reset textarea height
                 if (textareaRef.current) {
                     textareaRef.current.style.height = "40px"
                 }
+                
+                // Use setTimeout to ensure scrolling happens after state update and re-render
+                setTimeout(() => {
+                    scrollToBottom()
+                }, 100)
             } catch {
                 toast.error(isEditing ? "Failed to edit message. Please try again." : "Failed to send message. Please try again.")
             }

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Drawer as DrawerPrimitive } from "vaul"
+import { Drawer as DrawerPrimitive, Handle } from "vaul"
 
 import { cn } from "@/lib/utils"
 
@@ -48,7 +48,10 @@ const DrawerContent = React.forwardRef<
       )}
       {...props}
     >
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+      <Handle className="mx-auto flex h-7 w-full items-center justify-center">
+        <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted-foreground/20" />
+      </Handle>
+
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>
