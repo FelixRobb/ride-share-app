@@ -1,8 +1,14 @@
 "use client"
-
-import { DialogFooter } from "@/components/ui/dialog"
-
-import type React from "react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 import { parsePhoneNumber } from "libphonenumber-js"
 import {
@@ -17,7 +23,7 @@ import {
   Search,
   ShieldAlert,
   ServerCrash,
-  Loader
+  Loader,
 } from "lucide-react"
 import maplibregl from "maplibre-gl"
 import { useRouter } from "next/navigation"
@@ -27,7 +33,6 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { ReportDialog } from "@/components/ReportDialog"
@@ -500,7 +505,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
               reportedName={
                 ride.requester_id === currentUser?.id
                   ? contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact
-                    ?.name || "User"
+                      ?.name || "User"
                   : getRequesterName(ride)
               }
               reportType="ride"
@@ -679,7 +684,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
               {ride.accepter_id === currentUser?.id
                 ? "Me"
                 : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact
-                  ?.name || "Unknown"}
+                    ?.name || "Unknown"}
             </p>
           </div>
         )}
@@ -757,56 +762,48 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
           )}
       </CardFooter>
 
-      <Dialog open={isCancelRequestDialogOpen} onOpenChange={setIsCancelRequestDialogOpen}>
-        <DialogContent className="rounded-lg w-11/12">
-          <DialogHeader>
-            <DialogTitle>Confirm Cancel Request</DialogTitle>
-            <DialogDescription>Are you sure you want to cancel this ride request?</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button className="mb-2" variant="outline" onClick={() => setIsCancelRequestDialogOpen(false)}>
-              No, Keep Request
-            </Button>
-            <Button className="mb-2" variant="destructive" onClick={confirmCancelRequest}>
+      <AlertDialog open={isCancelRequestDialogOpen} onOpenChange={setIsCancelRequestDialogOpen}>
+        <AlertDialogContent className="w-11/12 rounded-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Cancel Request</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure you want to cancel this ride request?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsCancelRequestDialogOpen(false)}>No, Keep Request</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancelRequest}>
               Yes, Cancel Request
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      <Dialog open={isCancelOfferDialogOpen} onOpenChange={setIsCancelOfferDialogOpen}>
-        <DialogContent className="rounded-lg w-11/12">
-          <DialogHeader>
-            <DialogTitle>Confirm Cancel Offer</DialogTitle>
-            <DialogDescription>Are you sure you want to cancel this ride offer?</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button className="mb-2" variant="outline" onClick={() => setIsCancelOfferDialogOpen(false)}>
-              No, Keep Offer
-            </Button>
-            <Button className="mb-2" variant="destructive" onClick={confirmCancelOffer}>
+      <AlertDialog open={isCancelOfferDialogOpen} onOpenChange={setIsCancelOfferDialogOpen}>
+        <AlertDialogContent className="w-11/12 rounded-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Cancel Offer</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure you want to cancel this ride offer?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsCancelOfferDialogOpen(false)}>No, Keep Offer</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancelOffer}>
               Yes, Cancel Offer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      <Dialog open={isFinishRideDialogOpen} onOpenChange={setIsFinishRideDialogOpen}>
-        <DialogContent className="rounded-lg w-11/12">
-          <DialogHeader>
-            <DialogTitle>Confirm Finish Ride</DialogTitle>
-            <DialogDescription>Are you sure you want to mark this ride as completed?</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button className="mb-2" variant="outline" onClick={() => setIsFinishRideDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button className="mb-2" onClick={handleFinishRide}>
-              Yes, Finish Ride
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AlertDialog open={isFinishRideDialogOpen} onOpenChange={setIsFinishRideDialogOpen}>
+        <AlertDialogContent className="w-11/12 rounded-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Finish Ride</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure you want to mark this ride as completed?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsFinishRideDialogOpen(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleFinishRide}>Yes, Finish Ride</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }

@@ -420,7 +420,8 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
     <>
       {SettingsButton}
       <Drawer open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DrawerContent className="h-[70svh]">
+        <DrawerContent>
+          <div className="max-h-[60svh]">
           <DrawerHeader className="text-center">
             <DrawerTitle className="text-xl">Notification Preferences</DrawerTitle>
             <DrawerDescription>
@@ -437,6 +438,7 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
               Close
             </Button>
           </DrawerFooter>
+          </div>
         </DrawerContent>
       </Drawer>
     </>
@@ -571,15 +573,17 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
     <>
       {NotificationButton}
       <Drawer open={isOpen} onOpenChange={handleOpenChange}>
-        <DrawerContent className="h-[90svh]">
-          <DrawerHeader className="flex flex-row items-center justify-between pr-4">
-            <div>
-              <DrawerTitle>Notifications</DrawerTitle>
-              <DrawerDescription>Your recent notifications</DrawerDescription>
-            </div>
-            <NotificationSettings userId={userId} />
-          </DrawerHeader>
-          <div className="px-4">{NotificationContent}</div>
+        <DrawerContent>
+          <div className="h-[90svh]">
+            <DrawerHeader className="flex flex-row items-center justify-between pr-4">
+              <div>
+                <DrawerTitle>Notifications</DrawerTitle>
+                <DrawerDescription>Your recent notifications</DrawerDescription>
+              </div>
+              <NotificationSettings userId={userId} />
+            </DrawerHeader>
+            <div className="px-4">{NotificationContent}</div>
+          </div>
         </DrawerContent>
       </Drawer>
     </>

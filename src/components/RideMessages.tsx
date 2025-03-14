@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useRef, useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { Edit, LucideUser, MessageSquare, Send, Trash } from "lucide-react"
