@@ -215,121 +215,126 @@ export default function WelcomePage() {
           </nav>
         </div>
       </motion.header>
+  {/* Responsive Hero Section */}
+<section className="relative min-h-svh flex flex-col justify-between items-center text-center px-4 py-16 overflow-hidden">
+  {/* Title and Description - Top Section */}
+  <div className="w-full pt-8 md:pt-16 flex-grow-0">
+    <motion.div
+      className="relative"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <h1 className="text-5xl sm:text-6xl md:text-8xl font-bold mb-4 md:mb-6 bg-clip-text text-transparent bg-primary bg-gradient-to-r from-primary to-secondary-foreground">
+        RideShare
+      </h1>
+      <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-8 md:mb-12">
+        Connect with friends, share rides, and travel together safely.
+      </p>
+    </motion.div>
+  </div>
 
-      {/* Modified Hero Section with Adjusted Car Position */}
-      <section className="relative h-svh flex flex-col justify-center items-center text-center px-4 overflow-hidden">
-        {/* Title and Description */}
+  {/* Middle section - Flexible space */}
+  <div className="flex-grow relative w-full">
+    {/* Car Animation */}
+    <motion.div
+      className="absolute left-1/2 -translate-x-1/2 bottom-4 sm:bottom-8 md:bottom-16"
+      style={{
+        x: carX,
+        scale: carScale,
+        opacity: carOpacity,
+      }}
+      initial={{
+        x: -200,
+        opacity: 0,
+      }}
+      transition={{
+        duration: 1,
+        ease: "easeOut",
+        opacity: { duration: 0.5, ease: "easeOut" },
+      }}
+      animate={{
+        x: 0,
+        opacity: 1,
+      }}
+    >
+      <div className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-64 md:h-64">
+        <Car className="w-full h-full text-primary" />
         <motion.div
-          className="relative"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-6xl md:text-8xl font-bold mb-6 bg-clip-text text-transparent bg-primary bg-gradient-to-r from-primary to-secondary-foreground">
-            RideShare
-          </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-12">
-            Connect with friends, share rides, and travel together safely.
-          </p>
-        </motion.div>
-
-        {/* Car Animation */}
-        <motion.div
-          className="absolute top-[70vh]"
-          style={{
-            x: carX,
-            scale: carScale,
-            opacity: carOpacity,
-            transform: "translateY(-50%)",
-          }}
-          initial={{
-            x: -200,
-            opacity: 0,
+          className="absolute -inset-4 bg-primary/20 rounded-full blur-xl"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3],
           }}
           transition={{
-            duration: 1,
-            ease: "easeOut",
-            opacity: { duration: 0.5, ease: "easeOut" },
+            duration: 4,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "easeInOut",
           }}
-          animate={{
-            x: 0,
-            opacity: 1,
-          }}
-        >
-          <div className="relative w-40 h-40 sm:w-64 sm:h-64">
-            <Car className="w-full h-full text-primary" />
-            <motion.div
-              className="absolute -inset-4 bg-primary/20 rounded-full blur-xl"
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.3, 0.5, 0.3],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "easeInOut",
-              }}
-            />
-          </div>
-        </motion.div>
+        />
+      </div>
+    </motion.div>
+  </div>
 
-        {/* CTA Button */}
-        <motion.div
-          className="flex flex-col items-center gap-6 relative z-10"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          {status === "authenticated" ? (
-            <Link href="/dashboard">
-              <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-black px-8 py-6 text-lg rounded-full group relative overflow-hidden"
-              >
-                <span className="relative z-10">Go to Dashboard</span>
-                <motion.div
-                  className="absolute inset-0 bg-white/20"
-                  initial={{ x: "-100%" }}
-                  whileHover={{ x: "100%" }}
-                  transition={{ duration: 0.5 }}
-                />
-                <ArrowRight className="w-6 h-6 ml-2 inline-block group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-          ) : (
-            <Button
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-black px-8 py-6 text-lg rounded-full group relative overflow-hidden"
-              onClick={scrollToContent}
-            >
-              <span className="relative z-10">Start Your Journey</span>
-              <motion.div
-                className="absolute inset-0 bg-white/20"
-                initial={{ x: "-100%" }}
-                whileHover={{ x: "100%" }}
-                transition={{ duration: 0.5 }}
-              />
-              <ArrowRight className="w-6 h-6 ml-2 inline-block group-hover:translate-x-1 transition-transform" />
-            </Button>
-          )}
-
-          <motion.div
-            animate={{
-              y: [0, 10, 0],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "easeInOut",
-            }}
+  {/* CTA Button - Bottom Section */}
+  <div className="w-full flex-grow-0 mt-4 sm:mt-8 md:mt-12">
+    <motion.div
+      className="flex flex-col items-center gap-4 md:gap-6 relative z-10"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.5 }}
+    >
+      {status === "authenticated" ? (
+        <Link href="/dashboard">
+          <Button
+            size="lg"
+            className="bg-primary hover:bg-primary/90 text-black px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg rounded-full group relative overflow-hidden"
           >
-            <ChevronDown
-              className="w-8 h-8 text-primary cursor-pointer"
-              onClick={scrollToContent}
+            <span className="relative z-10">Go to Dashboard</span>
+            <motion.div
+              className="absolute inset-0 bg-white/20"
+              initial={{ x: "-100%" }}
+              whileHover={{ x: "100%" }}
+              transition={{ duration: 0.5 }}
             />
-          </motion.div>
-        </motion.div>
-      </section>
+            <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 ml-2 inline-block group-hover:translate-x-1 transition-transform" />
+          </Button>
+        </Link>
+      ) : (
+        <Button
+          size="lg"
+          className="bg-primary hover:bg-primary/90 text-black px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg rounded-full group relative overflow-hidden"
+          onClick={scrollToContent}
+        >
+          <span className="relative z-10">Start Your Journey</span>
+          <motion.div
+            className="absolute inset-0 bg-white/20"
+            initial={{ x: "-100%" }}
+            whileHover={{ x: "100%" }}
+            transition={{ duration: 0.5 }}
+          />
+          <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 ml-2 inline-block group-hover:translate-x-1 transition-transform" />
+        </Button>
+      )}
+
+      <motion.div
+        animate={{
+          y: [0, 10, 0],
+        }}
+        transition={{
+          duration: 2,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: "easeInOut",
+        }}
+      >
+        <ChevronDown
+          className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-primary cursor-pointer"
+          onClick={scrollToContent}
+        />
+      </motion.div>
+    </motion.div>
+  </div>
+</section>
 
       {/* Features Section with Inline Animations */}
       <section className="py-20 bg-background relative">
