@@ -215,7 +215,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent
         side={isDesktop ? "right" : "bottom"}
-        className={`w-11/12 rounded-md p-0 ${isDesktop ? "max-w-xl" : "h-[85vh]"}`}
+        className={`rounded-md p-0 ${isDesktop ? " w-11/12 max-w-xl" : "w-full h-[85vh]"}`}
       >
         <div className="flex flex-col h-full">
           <SheetHeader className="px-6 py-4 border-b flex-shrink-0">
