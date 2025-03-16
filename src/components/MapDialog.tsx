@@ -190,9 +190,8 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
 
         newMap.on("click", handleMapClick)
         mapInstanceRef.current = newMap
-      } catch (error) {
+      } catch {
         setIsLoading(false)
-        console.error("Map initialization error:", error)
       }
     }
 
