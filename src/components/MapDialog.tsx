@@ -67,6 +67,15 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     const handleResize = () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.resize()
+
+        // For mobile, do an additional delayed resize to ensure proper rendering
+        if (isMobile) {
+          setTimeout(() => {
+            if (mapInstanceRef.current) {
+              mapInstanceRef.current.resize()
+            }
+          }, 200)
+        }
       }
     }
 
@@ -76,24 +85,20 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
         handleResize()
       })
 
-      // Store the current ref value in a variable to use in cleanup
       const currentMapRef = mapRef.current
-
       resizeObserver.observe(currentMapRef)
 
       return () => {
-        // Use the captured variable instead of mapRef.current
         resizeObserver.unobserve(currentMapRef)
         resizeObserver.disconnect()
       }
     } else {
-      // Fallback to window resize for older browsers
       window.addEventListener("resize", handleResize)
       return () => {
         window.removeEventListener("resize", handleResize)
       }
     }
-  }, [isOpen])
+  }, [isOpen, isMobile])
 
   useEffect(() => {
     // Only run if the component is open and the mobile state has changed
@@ -142,6 +147,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   }, [isMobile, isOpen, handleMapClick])
 
   // Map initialization effect with isMobile as dependency
+  // Update in the useEffect for map initialization
   useEffect(() => {
     let timeoutId: NodeJS.Timeout
 
@@ -169,6 +175,12 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
 
         // Important: Resize the map after initialization to fix rendering issues
         newMap.once("load", () => {
+          // More aggressive resize handling for mobile
+          if (isMobile) {
+            setTimeout(() => {
+              newMap.resize()
+            }, 300)
+          }
           newMap.resize()
           const newMarker = new maplibregl.Marker({ color: "#0ea5e9" }).setLngLat([lon, lat]).addTo(newMap)
           markerRef.current = newMarker
@@ -185,7 +197,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     }
 
     if (isOpen) {
-      timeoutId = setTimeout(initializeMap, 200) // Slightly longer timeout for DOM to be ready
+      timeoutId = setTimeout(initializeMap, 300) // Longer timeout for better mobile loading
     }
 
     return () => {
@@ -195,7 +207,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
         mapInstanceRef.current = null
       }
     }
-  }, [isOpen, handleMapClick, isMobile]) // Added isMobile as dependency
+  }, [isOpen, handleMapClick, isMobile])
 
   const updateMarker = (lat: number, lon: number, shouldCenter = false) => {
     if (!mapInstanceRef.current) return
@@ -309,35 +321,36 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
           </DialogTitle>
         </DialogHeader>
       )}
-
       {isMobile ? (
-        <div className="flex flex-col h-full overflow-y-auto">
-          <div className="p-4 flex flex-col flex-1 ">
-            <div className="relative flex-shrink-0 mb-4">
-              <div className="relative">
-                <Input
-                  placeholder="Search for a location"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="pl-10 pr-10 bg-background border-input rounded-full"
-                />
-                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                {searchQuery && (
-                  <button
-                    onClick={() => {
-                      setSearchQuery("")
-                      setSearchResults([])
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground hover:text-foreground rounded-full flex items-center justify-center"
-                    aria-label="Clear search"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col p-4">
+
+            {/* Search with properly positioned results */}
+            <div className="relative mb-3">
+              <Input
+                placeholder="Search for a location"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                className="pl-10 pr-10 bg-background border-input rounded-full"
+              />
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("")
+                    setSearchResults([])
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground hover:text-foreground rounded-full flex items-center justify-center"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Popup results list positioned directly under input */}
               {searchResults.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 z-10 bg-background shadow-lg rounded-lg border border-input max-h-60 overflow-y-auto">
+                <div className="absolute left-0 right-0 top-full mt-1 bg-background shadow-lg rounded-lg border border-input max-h-48 overflow-y-auto z-20">
                   <ul className="py-1">
                     {searchResults.map((result) => (
                       <li key={result.id} className="hover:bg-accent cursor-pointer transition-colors">
@@ -351,11 +364,26 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
                       </li>
                     ))}
                   </ul>
+                  {/* Clear results button */}
+                  <div className="p-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-sm"
+                      onClick={() => {
+                        setSearchQuery("")
+                        setSearchResults([])
+                      }}
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Clear results
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-2 mt-2 flex-shrink-0 mb-4">
+            <div className="flex gap-2 mb-4">
               <Button onClick={handleSearch} className="flex-1">
                 <SearchIcon className="w-4 h-4 mr-2" />
                 Search
@@ -366,7 +394,8 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
               </Button>
             </div>
 
-            <div className="mb-4 p-4 rounded-lg border bg-background shadow-sm">
+            {/* Selected location info */}
+            <div className="mb-4 p-3 rounded-lg border bg-muted/30">
               <h3 className="text-sm font-medium mb-2 flex items-center">
                 <MapPin className="w-4 h-4 mr-2 text-primary" />
                 Selected Location
@@ -391,34 +420,32 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
                   </div>
                 </>
               ) : (
-                <p className="text-sm mb-3 text-muted-foreground">Click on the map to select a location</p>
+                <p className="text-sm mb-3 text-muted-foreground">Tap on the map to select a location</p>
               )}
             </div>
-          </div>
 
-          {/* Map section with improved styling */}
-          <div className="px-4 pb-4 flex-shrink-0">
-            <div className="rounded-t-xl border border-b-0 bg-muted/30 pt-3 px-3">
-              <div className="flex items-center justify-between mb-2 px-1">
-                <h3 className="text-sm font-medium flex items-center">
-                  <MapPin className="w-4 h-4 mr-2 text-primary" />
-                  Map View
-                </h3>
-                <span className="text-xs text-muted-foreground">Tap to select location</span>
-              </div>
-              <div
-                className="rounded-t-lg overflow-hidden border bg-background shadow-inner"
-                ref={mapRef}
-                style={{ height: "220px", width: "100%" }}
-              />
-              {isLoading && (
-                <div className="inset-x-4 rounded-t-lg bg-background/50 backdrop-blur-sm flex items-center justify-center z-10">
-                  <div className="bg-background/90 p-4 rounded-lg shadow-lg flex items-center gap-2">
-                    <Loader className="w-5 h-5 animate-spin text-primary" />
-                    <span className="text-sm font-medium">Loading map...</span>
+            {/* Map section with improved styling */}
+            <div className="p-3 mb-4">
+              <div className="relative rounded-md overflow-hidden border shadow-sm h-[280px]" >
+                <div
+                  ref={mapRef}
+                  style={{ height: "280px" }}
+                  className="absolute inset-0 w-full"
+                />
+                {isLoading && (
+                  <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex items-center justify-center z-10">
+                    <div className="bg-background p-4 rounded-lg shadow-lg flex items-center gap-2">
+                      <Loader className="w-5 h-5 animate-spin text-primary" />
+                      <span className="text-sm font-medium">Loading map...</span>
+                    </div>
+                  </div>
+                )}
+                <div className="absolute top-2 right-2 z-10">
+                  <div className="bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium shadow-sm border border-muted">
+                    Tap to select location
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -541,56 +568,67 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
             )}
           </div>
         </div>
-      )}
+      )
+      }
 
-      {isMobile ? (
-        <div className="flex gap-2 p-4 border-t mt-auto sticky bottom-0 bg-background shadow-lg">
-          <Button variant="outline" onClick={onClose} className="flex-1">
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              onSelectLocation({ ...selectedLocation, display_name: address })
-              onClose()
-            }}
-            className="flex-1"
-            disabled={!address}
-          >
-            Confirm
-          </Button>
-        </div>
-      ) : (
-        <DialogFooter className="flex gap-2 p-4 border-t mt-auto bg-background">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              onSelectLocation({ ...selectedLocation, display_name: address })
-              onClose()
-            }}
-            disabled={!address}
-          >
-            <MapPin className="w-4 h-4 mr-2" />
-            Confirm Location
-          </Button>
-        </DialogFooter>
-      )}
-    </div>
+      {
+        isMobile ? (
+          <div className="flex gap-2 p-4 border-t mt-auto sticky bottom-0 bg-background shadow-lg">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                onSelectLocation({ ...selectedLocation, display_name: address })
+                onClose()
+              }}
+              className="flex-1"
+              disabled={!address}
+            >
+              Confirm
+            </Button>
+          </div>
+        ) : (
+          <DialogFooter className="flex gap-2 p-4 border-t mt-auto bg-background">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                onSelectLocation({ ...selectedLocation, display_name: address })
+                onClose()
+              }}
+              disabled={!address}
+            >
+              <MapPin className="w-4 h-4 mr-2" />
+              Confirm Location
+            </Button>
+          </DialogFooter>
+        )
+      }
+    </div >
   )
 
   // Render different components based on screen size
   return isMobile ? (
-    <Drawer.Root open={isOpen} onOpenChange={onClose} handleOnly>
+    <Drawer.Root open={isOpen} onOpenChange={(open) => {
+      if (!open) onClose();
+    }} handleOnly>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
+        <Drawer.Overlay
+          className="fixed inset-0 bg-black/40 z-40"
+          onClick={() => onClose()} // Add click handler to the overlay
+        />
         <Drawer.Content
           className="bg-background flex flex-col rounded-t-[16px] fixed bottom-0 left-0 right-0 z-50 border-t border-border shadow-xl"
           style={{
             height: "85svh",
             maxHeight: "85svh",
           }}
-          onInteractOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => {
+            e.preventDefault();
+            onClose(); // Close when clicking outside
+          }}
         >
           {renderContent()}
         </Drawer.Content>
