@@ -73,19 +73,34 @@ export default function WelcomePage() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  useEffect(() => {
-    const fetchApprovedReviews = async () => {
-      const response = await fetch("/api/reviews/approved")
-      if (response.ok) {
-        const data = await response.json()
-        setApprovedReviews(data)
-      } else {
-        throw new Error("Failed to fetch approved reviews")
-      }
-    }
+  const fetchApprovedReviews = async () => {
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    fetchApprovedReviews()
-  }, [])
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error("Missing Supabase environment variables");
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      const { data, error } = await supabase.rpc("get_approved_reviews");
+
+      if (error) throw error;
+      return data || [];
+    } catch {
+      return [];
+    }
+  };
+
+  // Update the useEffect that fetches reviews
+  useEffect(() => {
+    const getReviews = async () => {
+      const reviews = await fetchApprovedReviews();
+      setApprovedReviews(reviews);
+    };
+
+    getReviews();
+  }, []);
 
   const handleAcceptCookies = () => {
     localStorage.setItem("cookiePreferences", "accepted")
