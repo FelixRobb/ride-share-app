@@ -68,10 +68,32 @@ export default function WelcomePage() {
   const [showCookieNotice, setShowCookieNotice] = useState(false);
   const [showHeader, setShowHeader] = useState(false);
   const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
+  const [windowHeight, setWindowHeight] = useState(0);
   const { scrollY } = useScroll();
 
-  const carX = useTransform(scrollY, [0, 500], [0, 1000]);
-  const carOpacity = useTransform(scrollY, [0, 300], [1, 0]);
+  // Enhanced parallax effects
+  useEffect(() => {
+    // Set window height after component mounts
+    setWindowHeight(window.innerHeight);
+
+    // Optional: Update on resize
+    const handleResize = () => setWindowHeight(window.innerHeight);
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const carX = useTransform(
+    scrollY,
+    [windowHeight * (1 / 3), windowHeight * (1 / 3) + 500],
+    [0, 1000]
+  );
+
+  const carOpacity = useTransform(
+    scrollY,
+    [windowHeight * (1 / 3), windowHeight * (1 / 3) + 300],
+    [1, 0]
+  );
 
   const { status } = useSession();
 
@@ -249,7 +271,7 @@ export default function WelcomePage() {
               </Link>
             ) : (
               <button
-                className="px-8 py-6 text-lg groinline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow bg-primary hover:bg-primary/90 text-black rounded-full group relative overflow-hidden"
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-10 bg-primary hover:bg-primary/90 text-black px-8 py-6 text-lg rounded-full group relative overflow-hidden"
                 onClick={scrollToContent}
               >
                 <span className="relative z-10">Start Your Journey</span>
