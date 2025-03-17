@@ -68,32 +68,10 @@ export default function WelcomePage() {
   const [showCookieNotice, setShowCookieNotice] = useState(false);
   const [showHeader, setShowHeader] = useState(false);
   const [approvedReviews, setApprovedReviews] = useState<Review[]>([]);
-  const [windowHeight, setWindowHeight] = useState(0);
   const { scrollY } = useScroll();
 
-  // Enhanced parallax effects
-  useEffect(() => {
-    // Set window height after component mounts
-    setWindowHeight(window.innerHeight);
-
-    // Optional: Update on resize
-    const handleResize = () => setWindowHeight(window.innerHeight);
-    window.addEventListener('resize', handleResize);
-
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const carX = useTransform(
-    scrollY,
-    [windowHeight * (1 / 3), windowHeight * (1 / 3) + 500],
-    [0, 1000]
-  );
-
-  const carOpacity = useTransform(
-    scrollY,
-    [windowHeight * (1 / 3), windowHeight * (1 / 3) + 300],
-    [1, 0]
-  );
+  const carX = useTransform(scrollY, [0, 500], [0, 1000]);
+  const carOpacity = useTransform(scrollY, [0, 300], [1, 0]);
 
   const { status } = useSession();
 
