@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight, X } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
@@ -38,8 +38,6 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const isOnline = useOnlineStatus()
   const router = useRouter()
 
@@ -47,8 +45,6 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
     try {
       if (!silent) {
         setIsLoading(true)
-      } else {
-        setIsRefreshing(true)
       }
 
       const data = await fetchEditRideData(rideId)
@@ -59,23 +55,11 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
       }
     } finally {
       setIsLoading(false)
-      setIsRefreshing(false)
     }
   }, [rideId])
 
   useEffect(() => {
     fetchData()
-
-    // Set up periodic refresh
-    refreshIntervalRef.current = setInterval(() => {
-      fetchData(true)
-    }, 30000) // Refresh every 30 seconds silently
-
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current)
-      }
-    }
   }, [fetchData])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -299,12 +283,6 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
           {!isOnline && (
             <div className="mb-6 p-3 bg-yellow-100 text-yellow-800 rounded-md text-sm">
               You are currently offline. Ride editing is disabled.
-            </div>
-          )}
-          {isRefreshing && (
-            <div className="mb-6 p-3 bg-blue-50 text-blue-800 rounded-md text-sm flex items-center">
-              <Loader className="w-4 h-4 mr-2 animate-spin" />
-              Refreshing ride data...
             </div>
           )}
           <form onSubmit={handleSubmit}>
