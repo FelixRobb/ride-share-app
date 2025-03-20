@@ -1,23 +1,23 @@
 "use client"
 
-import {Search, User2, ArrowRight, CheckCircle, Filter, MapPin} from "lucide-react"
-import {CalendarPlus2Icon as CalendarIcon2} from "lucide-react"
-import {format, isToday, isYesterday, isThisWeek, isThisMonth} from "date-fns"
+import { Search, User2, ArrowRight, CheckCircle, Filter, MapPin } from "lucide-react"
+import { CalendarPlus2Icon as CalendarIcon2 } from "lucide-react"
+import { format, isToday, isYesterday, isThisWeek, isThisMonth } from "date-fns"
 import Link from "next/link"
-import {useRouter} from "next/navigation"
-import {useState, useEffect, useMemo, useRef, useCallback} from "react"
-import {toast} from "sonner"
-import {Badge} from "@/components/ui/badge"
-import {Button} from "@/components/ui/button"
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
-import {Input} from "@/components/ui/input"
-import {ScrollArea} from "@/components/ui/scroll-area"
-import {Skeleton} from "@/components/ui/skeleton"
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
-import {useMediaQuery} from "@/hooks/use-media-query"
-import type {User, Ride, Contact} from "@/types"
-import {fetchDashboardData} from "@/utils/api"
-import {useOnlineStatus} from "@/utils/useOnlineStatus"
+import { useRouter } from "next/navigation"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
+import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useMediaQuery } from "@/hooks/use-media-query"
+import type { User, Ride, Contact } from "@/types"
+import { fetchDashboardData } from "@/utils/api"
+import { useOnlineStatus } from "@/utils/useOnlineStatus"
 import {
     Drawer,
     DrawerClose,
@@ -27,10 +27,10 @@ import {
     DrawerTitle,
     DrawerTrigger,
 } from "@/components/ui/drawer"
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select"
-import {Calendar} from "@/components/ui/calendar"
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover"
-import {Separator} from "./ui/separator"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Separator } from "./ui/separator"
 
 interface FilterProps {
     statusFilter: string | null
@@ -39,7 +39,7 @@ interface FilterProps {
     setDateFilter: (date: Date | null) => void
 }
 
-const FilterContent: React.FC<FilterProps> = ({statusFilter, setStatusFilter, dateFilter, setDateFilter}) => {
+const FilterContent: React.FC<FilterProps> = ({ statusFilter, setStatusFilter, dateFilter, setDateFilter }) => {
     return (
         <div className="grid gap-4 p-4">
             <div className="space-y-2">
@@ -49,7 +49,7 @@ const FilterContent: React.FC<FilterProps> = ({statusFilter, setStatusFilter, da
                     onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
                 >
                     <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select status"/>
+                        <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All</SelectItem>
@@ -78,10 +78,10 @@ const FilterPopover: React.FC<FilterProps> = (props) => {
         <Popover>
             <PopoverTrigger asChild>
                 <Button variant="outline" className="h-10 w-full">
-                    <Filter className="mr-2 h-4 w-4"/>
+                    <Filter className="mr-2 h-4 w-4" />
                     Filters
                     {(props.statusFilter || props.dateFilter) &&
-                        <span className="ml-2 h-2 w-2 rounded-full bg-primary"/>}
+                        <span className="ml-2 h-2 w-2 rounded-full bg-primary" />}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0">
@@ -109,10 +109,10 @@ const FilterDrawer: React.FC<FilterProps> = (props) => {
         <Drawer>
             <DrawerTrigger asChild>
                 <Button variant="outline" className="h-10 w-full">
-                    <Filter className="mr-2 h-4 w-4"/>
+                    <Filter className="mr-2 h-4 w-4" />
                     Filters
                     {(props.statusFilter || props.dateFilter) &&
-                        <span className="ml-2 h-2 w-2 rounded-full bg-primary"/>}
+                        <span className="ml-2 h-2 w-2 rounded-full bg-primary" />}
                 </Button>
             </DrawerTrigger>
             <DrawerContent>
@@ -139,7 +139,7 @@ const FilterDrawer: React.FC<FilterProps> = (props) => {
     )
 }
 
-const StatusBadge = ({status}: { status: string }) => {
+const StatusBadge = ({ status }: { status: string }) => {
     switch (status) {
         case "pending":
             return (
@@ -179,12 +179,12 @@ interface DashboardPageProps {
 }
 
 export default function DashboardPage({
-                                          currentUser,
-                                          searchTerm,
-                                          setSearchTerm,
-                                          activeTab,
-                                          setActiveTab,
-                                      }: DashboardPageProps) {
+    currentUser,
+    searchTerm,
+    setSearchTerm,
+    activeTab,
+    setActiveTab,
+}: DashboardPageProps) {
     const router = useRouter()
     const isOnline = useOnlineStatus()
     const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm)
@@ -245,9 +245,9 @@ export default function DashboardPage({
 
     const formatDateTime = (timestamp: string) => {
         const date = new Date(timestamp)
-        const options: Intl.DateTimeFormatOptions = {year: "numeric", month: "long", day: "numeric"}
+        const options: Intl.DateTimeFormatOptions = { year: "numeric", month: "long", day: "numeric" }
         const formattedDate = date.toLocaleDateString(undefined, options)
-        const formattedTime = date.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"})
+        const formattedTime = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         return {
             date: formattedDate,
             time: formattedTime,
@@ -275,7 +275,7 @@ export default function DashboardPage({
         return contact ? (contact.user_id === ride.requester_id ? contact.user.name : contact.contact.name) : "Unknown"
     }
 
-// This replaces the current filteredRides useMemo hook in the component
+    // This replaces the current filteredRides useMemo hook in the component
 
     const filteredRides = useMemo(() => {
         if (!localSearchTerm) {
@@ -394,8 +394,8 @@ export default function DashboardPage({
         setSearchTerm(localSearchTerm)
     }, [localSearchTerm, setSearchTerm])
 
-    const RideCard = ({ride}: { ride: Ride }) => {
-        const {time, relative} = formatDateTime(ride.time)
+    const RideCard = ({ ride }: { ride: Ride }) => {
+        const { time, relative } = formatDateTime(ride.time)
 
         // Extract just the first part of the location for a cleaner display
         const fromLocationParts = ride.from_location.split(",")
@@ -408,15 +408,15 @@ export default function DashboardPage({
                 <Card
                     className={`mb-4 hover:bg-accent/50 transition-all duration-200 group border-l-4 hover:shadow-md 
             ${ride.status === "completed"
-                        ? "border-l-blue-500"
-                        : ride.status === "accepted"
-                            ? "border-l-green-500"
-                            : ride.status === "cancelled"
-                                ? "border-l-destructive"
-                                : ride.status === "pending"
-                                    ? "border-l-secondary"
-                                    : "border-l-border"
-                    }`}
+                            ? "border-l-blue-500"
+                            : ride.status === "accepted"
+                                ? "border-l-green-500"
+                                : ride.status === "cancelled"
+                                    ? "border-l-destructive"
+                                    : ride.status === "pending"
+                                        ? "border-l-secondary"
+                                        : "border-l-border"
+                        }`}
                 >
                     <CardContent className="p-4 sm:p-6">
                         <div className="flex flex-col space-y-4">
@@ -424,18 +424,18 @@ export default function DashboardPage({
                             <div className="flex items-start justify-between">
                                 <div className="space-y-1">
                                     <div className="flex items-center space-x-2 mb-1">
-                                        <CalendarIcon2 className="w-4 h-4 text-muted-foreground"/>
+                                        <CalendarIcon2 className="w-4 h-4 text-muted-foreground" />
                                         <div className="flex flex-col items-start justify-center">
                                             <span className="text-sm font-medium">{relative}</span>
                                             <span className="text-sm text-muted-foreground">{time}</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <User2 className="w-4 h-4 text-muted-foreground"/>
+                                        <User2 className="w-4 h-4 text-muted-foreground" />
                                         <span className="text-sm text-muted-foreground">{getRequesterName(ride)}</span>
                                     </div>
                                 </div>
-                                <StatusBadge status={ride.status}/>
+                                <StatusBadge status={ride.status} />
                             </div>
 
                             {/* Route information */}
@@ -461,10 +461,10 @@ export default function DashboardPage({
                                 </div>
                                 <div className="flex-shrink-0">
                                     {ride.status === "completed" ? (
-                                        <CheckCircle className="w-5 h-5 text-blue-500"/>
+                                        <CheckCircle className="w-5 h-5 text-blue-500" />
                                     ) : (
                                         <ArrowRight
-                                            className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"/>
+                                            className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                                     )}
                                 </div>
                             </div>
@@ -472,9 +472,9 @@ export default function DashboardPage({
                             {/* Additional information */}
                             {(ride.status === "accepted" || ride.status === "completed") && ride.accepter_id && (
                                 <>
-                                    <Separator className="my-1"/>
+                                    <Separator className="my-1" />
                                     <div className="flex items-center space-x-2">
-                                        <User2 className="w-4 h-4 text-muted-foreground"/>
+                                        <User2 className="w-4 h-4 text-muted-foreground" />
                                         <span
                                             className="text-sm text-muted-foreground">Offered by: {getOfferedByText(ride)}</span>
                                     </div>
@@ -482,7 +482,7 @@ export default function DashboardPage({
                             )}
                             {ride.note && (
                                 <>
-                                    <Separator className="my-1"/>
+                                    <Separator className="my-1" />
                                     <div>
                                         <p className="text-sm text-muted-foreground line-clamp-1">
                                             <span className="font-medium">Note:</span> {ride.note}
@@ -503,8 +503,8 @@ export default function DashboardPage({
             <CardContent className="p-4 sm:p-6">
                 <div className="flex flex-col space-y-4">
                     <div className="flex items-start justify-between">
-                        <Skeleton className="h-5 w-32"/>
-                        <Skeleton className="h-6 w-20"/>
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-6 w-20" />
                     </div>
                     <div className="flex items-center space-x-3">
                         <div className="flex flex-col items-center space-y-1">
@@ -513,11 +513,11 @@ export default function DashboardPage({
                             <MapPin className="w-3 h-3 rounded-full text-muted"></MapPin>
                         </div>
                         <div className="flex-1 space-y-4">
-                            <Skeleton className="h-5 w-full"/>
-                            <Skeleton className="h-5 w-full"/>
+                            <Skeleton className="h-5 w-full" />
+                            <Skeleton className="h-5 w-full" />
                         </div>
                     </div>
-                    <Skeleton className="h-4 w-3/4"/>
+                    <Skeleton className="h-4 w-3/4" />
                 </div>
             </CardContent>
         </Card>
@@ -527,7 +527,7 @@ export default function DashboardPage({
         if (rides.length === 0) {
             return <div className="text-center py-8 text-muted-foreground">No rides available</div>
         }
-        return rides.map((ride) => <RideCard key={ride.id} ride={ride}/>)
+        return rides.map((ride) => <RideCard key={ride.id} ride={ride} />)
     }
 
     const ImportantRides = () => {
@@ -546,7 +546,7 @@ export default function DashboardPage({
 
         // Update the ImportantRides component to use the new card design
         const renderImportantRide = (ride: Ride) => {
-            const {time, relative} = formatDateTime(ride.time)
+            const { time, relative } = formatDateTime(ride.time)
             const isUserRequester = ride.requester_id === currentUser.id
             const actionNeeded = ride.status === "pending" ? (isUserRequester ? "Waiting for offer" : "Offer a ride") : ""
 
@@ -561,22 +561,22 @@ export default function DashboardPage({
                     key={ride.id}
                     className={`mb-4 hover:bg-accent/50 transition-all duration-200 group border-l-4 hover:shadow-md 
             ${ride.status === "completed"
-                        ? "border-blue-500"
-                        : ride.status === "accepted"
-                            ? "border-green-500"
-                            : ride.status === "cancelled"
-                                ? "border-destructive"
-                                : ride.status === "pending"
-                                    ? "border-secondary"
-                                    : "border-border"
-                    }`}>
+                            ? "border-blue-500"
+                            : ride.status === "accepted"
+                                ? "border-green-500"
+                                : ride.status === "cancelled"
+                                    ? "border-destructive"
+                                    : ride.status === "pending"
+                                        ? "border-secondary"
+                                        : "border-border"
+                        }`}>
                     <Link href={`/rides/${ride.id}?from=active`}>
                         <CardHeader className="pb-2 bg-primary/5">
                             <div className="flex justify-between items-start flex-col sm:flex-row">
                                 <div className="">
                                     <CardTitle className="text-md flex items-center">
                                         <div className="flex items-center space-x-2 mb-1">
-                                            <CalendarIcon2 className="w-4 h-4 text-muted-foreground"/>
+                                            <CalendarIcon2 className="w-4 h-4 text-muted-foreground" />
                                             <div className="flex flex-col items-start justify-center">
                                                 <span className="text-sm font-medium">{relative}</span>
                                                 <span className="text-sm text-muted-foreground">{time}</span>
@@ -585,13 +585,13 @@ export default function DashboardPage({
                                     </CardTitle>
                                     <CardDescription className="flex items-center gap-2 ml-1 mb-1">
                                         <User2
-                                            className="h-4 w-4 inline text-muted-foreground"/> {getRequesterName(ride)}
+                                            className="h-4 w-4 inline text-muted-foreground" /> {getRequesterName(ride)}
                                     </CardDescription>
                                 </div>
                                 <div
                                     className="flex flex-row justify-between items-center sm:justify-end sm:flex-col sm:items-end gap-4 sm:gap-1">
                                     <div>
-                                        <StatusBadge status={ride.status}/>
+                                        <StatusBadge status={ride.status} />
                                     </div>
                                     <div>{actionNeeded && <Badge variant="destructive">{actionNeeded}</Badge>}</div>
                                 </div>
@@ -681,7 +681,7 @@ export default function DashboardPage({
                     <div className="flex flex-col sm:flex-row gap-4" data-tutorial="search-filter">
                         <div className="relative flex-grow">
                             <Search
-                                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"/>
+                                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 id="search"
                                 type="text"
@@ -719,12 +719,12 @@ export default function DashboardPage({
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <ImportantRides/>
+                    <ImportantRides />
                     <Tabs
                         defaultValue={activeTab}
                         onValueChange={(value) => {
                             setActiveTab(value)
-                            router.push(`/dashboard?tab=${value}`, {scroll: false})
+                            router.push(`/dashboard?tab=${value}`, { scroll: false })
                         }}
                         className="w-full"
                     >
@@ -747,7 +747,7 @@ export default function DashboardPage({
                                         {isInitialLoading ? (
                                             Array(7)
                                                 .fill(0)
-                                                .map((_, i) => <RideCardSkeleton key={i}/>)
+                                                .map((_, i) => <RideCardSkeleton key={i} />)
                                         ) : (
                                             <>
                                                 {tab === "active" && renderRides(activeRides)}
@@ -757,7 +757,7 @@ export default function DashboardPage({
                                                         {renderRides(historyRides)}
                                                         <div className="mt-4 text-center">
                                                             <Button onClick={() => router.push("/ride-history")}
-                                                                    variant="outline">
+                                                                variant="outline">
                                                                 View Full Ride History
                                                             </Button>
                                                         </div>

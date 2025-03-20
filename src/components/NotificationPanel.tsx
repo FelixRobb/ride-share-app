@@ -161,17 +161,95 @@ const NotificationList = ({
   isDesktop: boolean
 }) => {
   const filteredNotifications = useMemo(() => {
+    if (!searchTerm) {
+      // If no search term, just apply other filters
+      return notifications
+        .filter((notification) => {
+          const matchesType = selectedType === "all" || notification.type === selectedType
+          const matchesFilter =
+            selectedFilter === "all" ||
+            (selectedFilter === "unread" && !notification.is_read) ||
+            (selectedFilter === "read" && notification.is_read)
+          return matchesType && matchesFilter
+        })
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    }
+
+    // For search with term, calculate relevance score for each notification
     return notifications
-      .filter((notification) => {
+      .map((notification) => {
+        let score = 0
+        const searchTermLower = searchTerm.toLowerCase()
+        const message = notification.message.toLowerCase()
+        const notificationType =
+          notificationTypes[notification.type as keyof typeof notificationTypes]?.toLowerCase() || ""
+
+        // Exact matches get highest priority
+        if (message === searchTermLower) score += 100
+        if (notificationType === searchTermLower) score += 100
+
+        // Beginning of text/phrase matches get very high priority
+        if (message.startsWith(searchTermLower)) score += 90
+        if (notificationType.startsWith(searchTermLower)) score += 90
+
+        // Beginning of word matches get high priority
+        const messageWords = message.split(/\s+|,|\.|!|\?/)
+        const typeWords = notificationType.split(/\s+|,|\.|!|\?/)
+
+        if (messageWords.some((word) => word.startsWith(searchTermLower))) score += 75
+        if (typeWords.some((word) => word.startsWith(searchTermLower))) score += 75
+
+        // Contains matches get medium priority
+        if (message.includes(searchTermLower)) score += 50
+        if (notificationType.includes(searchTermLower)) score += 50
+
+        // Check for word boundaries to prioritize whole word matches
+        const wordBoundaryCheck = (text: string) => {
+          const words = text.split(/\s+|,|\.|!|\?/)
+          return words.some((word) => word === searchTermLower) ? 25 : 0
+        }
+
+        score += wordBoundaryCheck(message)
+        score += wordBoundaryCheck(notificationType)
+
+        // If this is a multi-word search term, check for matches of individual words
+        if (searchTermLower.includes(" ")) {
+          const searchWords = searchTermLower.split(" ")
+          searchWords.forEach((word) => {
+            if (word.length > 2) {
+              // Only consider meaningful words (longer than 2 chars)
+              if (message.includes(word)) score += 10
+              if (notificationType.includes(word)) score += 10
+
+              // Give extra points if the word is at the beginning of the message
+              if (message.startsWith(word)) score += 15
+              if (notificationType.startsWith(word)) score += 15
+            }
+          })
+        }
+
+        // Check for date matches if the search term looks like a date
+        const dateInNotification = formatDate(notification.created_at).toLowerCase()
+        if (dateInNotification.includes(searchTermLower)) {
+          score += 40
+        }
+
+        // Apply other filters
         const matchesType = selectedType === "all" || notification.type === selectedType
         const matchesFilter =
           selectedFilter === "all" ||
           (selectedFilter === "unread" && !notification.is_read) ||
           (selectedFilter === "read" && notification.is_read)
-        const matchesSearch = notification.message.toLowerCase().includes(searchTerm.toLowerCase())
-        return matchesType && matchesFilter && matchesSearch
+
+        return {
+          notification,
+          score,
+          matchesFilters: matchesType && matchesFilter,
+        }
       })
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .filter((item) => item.score > 0 && item.matchesFilters) // Only keep matches that pass all filters
+      .sort((a, b) => b.score - a.score) // Sort by descending score
+      .map((item) => item.notification) // Extract just the notification objects
   }, [notifications, selectedType, selectedFilter, searchTerm])
 
   return (
@@ -348,7 +426,9 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
                         <CardTitle className="text-sm font-semibold flex items-center gap-2">
                           {device.device_name}
                           {device.device_id === currentDeviceId && (
-                            <Badge variant="outline" className="text-xs text-nowrap truncate">Current Device</Badge>
+                            <Badge variant="outline" className="text-xs text-nowrap truncate">
+                              Current Device
+                            </Badge>
                           )}
                         </CardTitle>
                         <CardDescription className="text-xs mt-1">
@@ -402,9 +482,7 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
                 Customize how and where you receive notifications across your devices
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="max-h-[60vh] px-4">
-              {SettingsContent}
-            </ScrollArea>
+            <ScrollArea className="max-h-[60vh] px-4">{SettingsContent}</ScrollArea>
             <DialogFooter>
               <Button onClick={() => setIsSettingsOpen(false)} variant="outline">
                 Close
@@ -421,24 +499,16 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
       {SettingsButton}
       <Drawer open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
         <DrawerContent>
-          <div className="max-h-[60svh]">
           <DrawerHeader className="text-center">
             <DrawerTitle className="text-xl">Notification Preferences</DrawerTitle>
-            <DrawerDescription>
-              Customize how and where you receive notifications
-            </DrawerDescription>
+            <DrawerDescription>Customize how and where you receive notifications</DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 overflow-auto">{SettingsContent}</div>
+          <div className="px-4 max-h-[60svh] overflow-auto">{SettingsContent}</div>
           <DrawerFooter className="pt-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsSettingsOpen(false)}
-              className="w-full"
-            >
+            <Button variant="outline" onClick={() => setIsSettingsOpen(false)} className="w-full">
               Close
             </Button>
           </DrawerFooter>
-          </div>
         </DrawerContent>
       </Drawer>
     </>

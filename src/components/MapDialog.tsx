@@ -40,9 +40,9 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   const prevIsMobileRef = useRef(isMobile)
 
   const initialCoordinatesRef = useRef({
-    lat: initialLocation?.lat || null,
-    lon: initialLocation?.lon || null,
-})
+    lat: initialLocation?.lat || 38.70749,
+    lon: initialLocation?.lon || -9.136398,
+  })
 
   const handleMapClick = useCallback((e: maplibregl.MapMouseEvent) => {
     const { lng, lat } = e.lngLat
@@ -55,18 +55,18 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
 
   // Update initial coordinates when initialLocation prop changes
   useEffect(() => {
-  if (initialLocation) {
-    initialCoordinatesRef.current = initialLocation
-    setSelectedLocation(initialLocation)
-    
-    // Update marker if map is already initialized
-    if (mapInstanceRef.current && markerRef.current) {
-      markerRef.current.setLngLat([initialLocation.lon, initialLocation.lat])
-      mapInstanceRef.current.setCenter([initialLocation.lon, initialLocation.lat])
-      reverseGeocode(initialLocation.lat, initialLocation.lon)
+    if (initialLocation) {
+      initialCoordinatesRef.current = initialLocation
+      setSelectedLocation(initialLocation)
+
+      // If map is already initialized, update its center and marker
+      if (mapInstanceRef.current && markerRef.current) {
+        mapInstanceRef.current.setCenter([initialLocation.lon, initialLocation.lat])
+        markerRef.current.setLngLat([initialLocation.lon, initialLocation.lat])
+        reverseGeocode(initialLocation.lat, initialLocation.lon)
+      }
     }
-  }
-}, [initialLocation])
+  }, [initialLocation])
 
   useEffect(() => {
     if (!mapInstanceRef.current || !isOpen) return
@@ -153,108 +153,94 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     prevIsMobileRef.current = isMobile
   }, [isMobile, isOpen, handleMapClick])
 
-  // Map initialization effect with isMobile as dependency
-  // Update in the useEffect for map initialization
+  // Map initialization effect
   useEffect(() => {
-  let timeoutId: NodeJS.Timeout
+    let timeoutId: NodeJS.Timeout
 
-  const initializeMap = async () => {
-    if (!isOpen || !mapRef.current) return
-    setIsLoading(true)
+    const initializeMap = async () => {
+      if (!isOpen || !mapRef.current) return
+      setIsLoading(true)
 
-    // Allow DOM to fully render before initializing map
-    await new Promise((resolve) => setTimeout(resolve, 100))
+      // Get current location if available
+      if (navigator.geolocation && !initialLocation) {
+        navigator.geolocation.getCurrentPosition(
+          ({ coords }) => {
+            const { latitude, longitude } = coords
+            initialCoordinatesRef.current = { lat: latitude, lon: longitude }
+            setSelectedLocation({ lat: latitude, lon: longitude })
 
-    try {
+            // Initialize map with current location
+            createMap(latitude, longitude)
+            reverseGeocode(latitude, longitude)
+          },
+          () => {
+            // Fallback to initial coordinates if geolocation fails
+            const { lat, lon } = initialCoordinatesRef.current
+            createMap(lat, lon)
+            reverseGeocode(lat, lon)
+          }
+        )
+      } else {
+        // Use initial location from props or default
+        const { lat, lon } = initialCoordinatesRef.current
+        createMap(lat, lon)
+        reverseGeocode(lat, lon)
+      }
+    }
+
+    // Helper function to create the map with given coordinates
+    const createMap = (lat: number, lon: number) => {
+      try {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove()
+          mapInstanceRef.current = null
+        }
+
+        // Allow DOM to fully render before initializing map
+        setTimeout(() => {
+          if (!mapRef.current) return
+
+          const newMap = new maplibregl.Map({
+            container: mapRef.current,
+            style: `https://api.maptiler.com/maps/streets/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
+            center: [lon, lat],
+            zoom: 13,
+          })
+
+          // Important: Resize the map after initialization to fix rendering issues
+          newMap.once("load", () => {
+            // More aggressive resize handling for mobile
+            if (isMobile) {
+              setTimeout(() => {
+                newMap.resize()
+              }, 300)
+            }
+            newMap.resize()
+            const newMarker = new maplibregl.Marker({ color: "#0ea5e9" }).setLngLat([lon, lat]).addTo(newMap)
+            markerRef.current = newMarker
+            setIsLoading(false)
+          })
+
+          newMap.on("click", handleMapClick)
+          mapInstanceRef.current = newMap
+        }, 100)
+      } catch {
+        setIsLoading(false)
+      }
+    }
+
+    if (isOpen) {
+      timeoutId = setTimeout(initializeMap, 300) // Longer timeout for better mobile loading
+    }
+
+    return () => {
+      clearTimeout(timeoutId)
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove()
         mapInstanceRef.current = null
       }
-
-      // Check if we have initialLocation or need to get current location
-      if (initialCoordinatesRef.current.lat === null) {
-        // Try to get current location first
-        const getCurrentPosition = (): Promise<GeolocationPosition> => {
-          return new Promise((resolve, reject) => {
-            if (!navigator.geolocation) {
-              reject(new Error("Geolocation not supported"))
-              return
-            }
-            
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 5000,
-              maximumAge: 0
-            })
-          })
-        }
-        
-        try {
-          const position = await getCurrentPosition()
-          initialCoordinatesRef.current = {
-            lat: position.coords.latitude,
-            lon: position.coords.longitude
-          }
-          setSelectedLocation({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude
-          })
-        } catch (error) {
-          // Fall back to default coordinates if geolocation fails
-          initialCoordinatesRef.current = {
-            lat: 38.70749,
-            lon: -9.136398
-          }
-          setSelectedLocation({
-            lat: 38.70749,
-            lon: -9.136398
-          })
-        }
-      }
-
-      const { lat, lon } = initialCoordinatesRef.current
-
-      const newMap = new maplibregl.Map({
-        container: mapRef.current,
-        style: `https://api.maptiler.com/maps/streets/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
-        center: [lon, lat],
-        zoom: 13,
-      })
-
-      // Important: Resize the map after initialization to fix rendering issues
-      newMap.once("load", () => {
-        // More aggressive resize handling for mobile
-        if (isMobile) {
-          setTimeout(() => {
-            newMap.resize()
-          }, 300)
-        }
-        newMap.resize()
-        const newMarker = new maplibregl.Marker({ color: "#0ea5e9" }).setLngLat([lon, lat]).addTo(newMap)
-        markerRef.current = newMarker
-        reverseGeocode(lat, lon)
-        setIsLoading(false)
-      })
-
-      newMap.on("click", handleMapClick)
-      mapInstanceRef.current = newMap
-    } catch {
-      setIsLoading(false)
     }
-  }
-
-  if (isOpen) {
-    timeoutId = setTimeout(initializeMap, 300) // Longer timeout for better mobile loading
-  }
-
-  return () => {
-    clearTimeout(timeoutId)
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove()
-      mapInstanceRef.current = null
-    }
-  }
-}, [isOpen, handleMapClick, isMobile])
+  }, [isOpen, handleMapClick, isMobile, initialLocation])
 
   const updateMarker = (lat: number, lon: number, shouldCenter = false) => {
     if (!mapInstanceRef.current) return
@@ -370,7 +356,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
       )}
       {isMobile ? (
         <div className="flex-1 overflow-y-auto">
-          <div className="flex flex-col p-4">
+          <div className="flex flex-col h-full p-4">
 
             {/* Search with properly positioned results */}
             <div className="relative mb-3">
@@ -472,12 +458,11 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
             </div>
 
             {/* Map section with improved styling */}
-            <div className="p-3 mb-4">
-              <div className="relative rounded-md overflow-hidden border shadow-sm h-[280px]" >
+            <div className="p-3 flex-1 min-h-0 flex flex-col">
+              <div className="relative rounded-md overflow-hidden border shadow-sm flex-1 min-h-0" >
                 <div
                   ref={mapRef}
-                  style={{ height: "280px" }}
-                  className="absolute inset-0 w-full"
+                  className="absolute inset-0 w-full h-full"
                 />
                 {isLoading && (
                   <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex items-center justify-center z-10">
