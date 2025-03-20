@@ -82,7 +82,7 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
    npm run dev
    ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+5. Open [https://localhost:3000](https://localhost:3000) in your browser to see the application.
 
 ## Usage
 
@@ -101,7 +101,6 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 - `hooks/`: Custom React hooks
 - `lib/`: Utility functions and configuration files
 - `public/`: Static assets
-- `styles/`: Global styles and Tailwind CSS configuration
 - `types/`: TypeScript type definitions
 - `utils/`: Helper functions and API calls
 

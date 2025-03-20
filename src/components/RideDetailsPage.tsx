@@ -189,7 +189,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
               const customStyles = document.createElement('style');
               customStyles.id = 'maplibre-custom-styles';
               customStyles.textContent = `
-              .maplibregl-popup {
+               .maplibregl-popup {
                 z-index: 10;
               }
               .maplibregl-popup-content {
@@ -337,8 +337,8 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
       // Add label as a separate marker (without clickable behavior)
       new maplibregl.Marker({
         element: labelEl,
-        anchor: 'bottom',
-        offset: [0, -15] // Offset to position above the pin marker
+        anchor: 'center',
+        offset: [0, -45] // Offset to position above the pin marker
       })
         .setLngLat(lngLat)
         .addTo(map);

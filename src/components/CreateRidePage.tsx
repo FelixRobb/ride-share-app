@@ -47,11 +47,12 @@ const initialRideData: RideData = {
   to_location: "",
   to_lat: 0,
   to_lon: 0,
-  time: "", // Changed from null to an empty string to match type
+  time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Default to the same time tomorrow
   rider_name: "",
-  rider_phone: "", // Changed from null to an empty string to match type
+  rider_phone: "",
   note: "",
 }
+
 
 export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
   const [rideData, setRideData] = useState<RideData>({
