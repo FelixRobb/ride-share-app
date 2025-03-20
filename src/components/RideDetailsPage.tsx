@@ -11,21 +11,8 @@ import {
 } from "@/components/ui/alert-dialog"
 
 import { parsePhoneNumber } from "libphonenumber-js"
-import {
-  MapPin,
-  LucideUser,
-  Phone,
-  Clock,
-  AlertCircle,
-  FileText,
-  AlertTriangle,
-  Wifi,
-  Search,
-  ShieldAlert,
-  ServerCrash,
-  Loader,
-} from "lucide-react"
-import maplibregl from "maplibre-gl"
+import { MapPin, LucideUser, Phone, Clock, AlertCircle, FileText, AlertTriangle, Wifi, Search, ShieldAlert, ServerCrash, Loader } from 'lucide-react'
+import maplibregl, { Map } from "maplibre-gl"
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
@@ -39,7 +26,7 @@ import { ReportDialog } from "@/components/ReportDialog"
 import type { User, Ride, Contact } from "@/types"
 import { acceptRide, cancelRequest, cancelOffer, fetchRideDetailsData, finishRide } from "@/utils/api"
 import { useOnlineStatus } from "@/utils/useOnlineStatus"
-import { Pencil } from "lucide-react"
+import { Pencil } from 'lucide-react'
 import { RideMessages } from "@/components/RideMessages"
 
 import "maplibre-gl/dist/maplibre-gl.css"
@@ -63,7 +50,6 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
   const [ride, setRide] = useState<Ride | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const [isActionLoading, setIsActionLoading] = useState(false)
   const router = useRouter()
   const [isCancelRequestDialogOpen, setIsCancelRequestDialogOpen] = useState(false)
@@ -92,8 +78,6 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
       try {
         if (!silent) {
           setIsLoading(true)
-        } else {
-          setIsRefreshing(true)
         }
 
         const data = await fetchRideDetailsData(rideId)
@@ -140,13 +124,10 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
             })
           }
         } else if (isOnline && silent && !error) {
-          // Only show toast for silent refreshes (background updates)
-          // and don't show it when we're displaying the error UI
           toast.error("Failed to refresh ride details. Please try again.")
         }
       } finally {
         setIsLoading(false)
-        setIsRefreshing(false)
       }
     },
     [isOnline, rideId, error],
@@ -177,6 +158,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
     return contact ? (contact.user_id === ride.requester_id ? contact.user.name : contact.contact.name) : "Unknown User"
   }
 
+  // Replace the existing buildMap useEffect with this improved version
   useEffect(() => {
     const buildMap = async () => {
       if (mapRef.current && !map && ride) {
@@ -200,31 +182,172 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
 
           setMap(newMap)
 
+          // Add custom styles for popups and markers only once
+          const addCustomStyles = () => {
+            // Check if styles are already added to avoid duplication
+            if (!document.getElementById('maplibre-custom-styles')) {
+              const customStyles = document.createElement('style');
+              customStyles.id = 'maplibre-custom-styles';
+              customStyles.textContent = `
+              .maplibregl-popup {
+                z-index: 10;
+              }
+              .maplibregl-popup-content {
+                padding: 12px 16px;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                font-family: inherit;
+                font-size: 14px;
+                font-weight: 500;
+                border: 1px solid rgba(0, 0, 0, 0.1);
+              }
+              .maplibregl-popup-close-button {
+                font-size: 16px;
+                padding: 5px 8px;
+                color: #666;
+              }
+              .from-popup .maplibregl-popup-content {
+                background-color: #ecfdf5;
+                border-left: 4px solid #10b981;
+                color: #065f46;
+              }
+              .to-popup .maplibregl-popup-content {
+                background-color: #eff6ff;
+                border-left: 4px solid #3b82f6;
+                color: #1e40af;
+              }
+              .location-label {
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: 600;
+                color: white;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                pointer-events: none;
+                white-space: nowrap;
+                text-align: center;
+                transform: translate(-50%, -120%);
+                margin-top: -5px;
+              }
+              .from-label {
+                background-color: #10b981;
+              }
+              .to-label {
+                background-color: #3b82f6;
+              }
+            `;
+              document.head.appendChild(customStyles);
+            }
+          };
+
+          addCustomStyles();
+
           newMap.on("load", () => {
             if (ride) {
-              // Add markers for the starting and ending points
-              new maplibregl.Marker().setLngLat([ride.from_lon, ride.from_lat]).addTo(newMap)
-              new maplibregl.Marker().setLngLat([ride.to_lon, ride.to_lat]).addTo(newMap)
+              // Create markers with popups and labels
+              createMarkers(newMap, ride);
 
-              // Fit map bounds to markers
+              // Fit map bounds to markers with proper padding
               newMap.fitBounds(
                 [
                   [ride.from_lon, ride.from_lat],
                   [ride.to_lon, ride.to_lat],
                 ],
-                { padding: 50 },
-              )
+                { padding: 70, maxZoom: 15 }
+              );
             }
-            setIsLoadingMap(false)
-          })
+            setIsLoadingMap(false);
+          });
         } catch {
-          setIsLoadingMap(false)
+          setIsLoadingMap(false);
         }
       }
+    };
+
+    // Function to create markers, popups, and labels as a single unit
+    const createMarkers = (map: Map, ride: Ride) => {
+      // Extract location names up to the first comma for labels
+      const fromName = ride.from_location.split(',')[0].trim();
+      const toName = ride.to_location.split(',')[0].trim();
+
+      // Create origin marker (from)
+      createLocationMarker({
+        map,
+        lngLat: [ride.from_lon, ride.from_lat],
+        labelText: fromName,
+        popupTitle: "From",
+        popupContent: ride.from_location,
+        type: "from"
+      });
+
+      // Create destination marker (to)
+      createLocationMarker({
+        map,
+        lngLat: [ride.to_lon, ride.to_lat],
+        labelText: toName,
+        popupTitle: "To",
+        popupContent: ride.to_location,
+        type: "to"
+      });
+    };
+
+    // Helper function to create a location marker with popup and label
+    // Helper function to create a location marker with popup and label
+    interface CreateLocationMarkerProps {
+      map: maplibregl.Map;
+      lngLat: [number, number];
+      labelText: string;
+      popupTitle: string;
+      popupContent: string;
+      type: "from" | "to";
     }
 
-    buildMap()
-  }, [ride, map])
+    const createLocationMarker = ({
+      map,
+      lngLat,
+      labelText,
+      popupTitle,
+      popupContent,
+      type
+    }: CreateLocationMarkerProps) => {
+      // Create popup
+      const popup = new maplibregl.Popup({
+        offset: 25,
+        className: `${type}-popup`,
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: '300px',
+        focusAfterOpen: false
+      }).setHTML(`<strong>${popupTitle}:</strong> ${popupContent}`);
+
+      // Create marker
+      const marker = new maplibregl.Marker({
+        color: type === "from" ? '#10b981' : '#3b82f6',
+        scale: 1
+      })
+        .setLngLat(lngLat)
+        .setPopup(popup)
+        .addTo(map);
+
+      // Create label element
+      const labelEl = document.createElement('div');
+      labelEl.className = `location-label ${type}-label`;
+      labelEl.textContent = labelText;
+
+      // Add label as a separate marker (without clickable behavior)
+      new maplibregl.Marker({
+        element: labelEl,
+        anchor: 'bottom',
+        offset: [0, -15] // Offset to position above the pin marker
+      })
+        .setLngLat(lngLat)
+        .addTo(map);
+
+      return { marker, popup };
+    };
+
+    buildMap();
+  }, [ride, map]);
 
   const handleAcceptRide = async () => {
     if (!ride) return
@@ -505,7 +628,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
               reportedName={
                 ride.requester_id === currentUser?.id
                   ? contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact
-                      ?.name || "User"
+                    ?.name || "User"
                   : getRequesterName(ride)
               }
               reportType="ride"
@@ -684,7 +807,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
               {ride.accepter_id === currentUser?.id
                 ? "Me"
                 : contacts.find((c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id)?.contact
-                    ?.name || "Unknown"}
+                  ?.name || "Unknown"}
             </p>
           </div>
         )}
@@ -697,7 +820,6 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
               currentUser={currentUser}
               contacts={contacts}
               isOnline={isOnline}
-              isRefreshing={isRefreshing}
             />
           )}
       </CardContent>
