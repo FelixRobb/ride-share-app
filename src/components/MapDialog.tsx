@@ -3,15 +3,15 @@
 import type React from "react"
 
 import { SearchIcon, MapPin, Crosshair, Loader, Copy, ExternalLink, X } from "lucide-react"
-import maplibregl from "maplibre-gl"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { toast } from "sonner"
 import { Drawer } from "vaul"
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import "maplibre-gl/dist/maplibre-gl.css"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface SearchResult {
@@ -33,19 +33,34 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   const [selectedLocation, setSelectedLocation] = useState({ lat: 38.70749, lon: -9.136398 })
   const [address, setAddress] = useState("")
   const mapRef = useRef<HTMLDivElement | null>(null)
-  const mapInstanceRef = useRef<maplibregl.Map | null>(null)
-  const markerRef = useRef<maplibregl.Marker | null>(null)
+  const mapInstanceRef = useRef<L.Map | null>(null)
+  const markerRef = useRef<L.Marker | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const isMobile = useMediaQuery("(max-width: 768px)")
   const initializeTriggeredRef = useRef(false)
   const previousIsMobileRef = useRef<boolean | null>(null)
 
+  useEffect(() => {
+    // This needs to run only on the client side
+    if (typeof window !== 'undefined') {
+      // Type-safe approach with ESLint compatibility
+      const iconProto = L.Icon.Default.prototype as unknown as { _getIconUrl?: () => string };
+      delete iconProto._getIconUrl;
+
+      L.Icon.Default.mergeOptions({
+        iconUrl: '/leaflet/marker-icon.svg',
+        iconRetinaUrl: '/leaflet/marker-icon.svg',
+        shadowUrl: '/leaflet/marker-shadow.svg',
+      });
+    }
+  }, []);
+
   // Handle map clicks
-  const handleMapClick = useCallback((e: maplibregl.MapMouseEvent) => {
-    const { lng, lat } = e.lngLat
+  const handleMapClick = useCallback((e: L.LeafletMouseEvent) => {
+    const { lat, lng } = e.latlng
     setSelectedLocation({ lat, lon: lng })
     if (markerRef.current) {
-      markerRef.current.setLngLat([lng, lat])
+      markerRef.current.setLatLng([lat, lng])
     }
     reverseGeocode(lat, lng)
   }, [])
@@ -70,18 +85,15 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     if (!mapInstanceRef.current) return
 
     if (markerRef.current) {
-      markerRef.current.setLngLat([lon, lat])
+      markerRef.current.setLatLng([lat, lon])
     } else {
-      const newMarker = new maplibregl.Marker({ color: "#0ea5e9" })
-        .setLngLat([lon, lat])
-        .addTo(mapInstanceRef.current)
+      const newMarker = L.marker([lat, lon]).addTo(mapInstanceRef.current)
       markerRef.current = newMarker
     }
 
     if (shouldCenter && mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo({
-        center: [lon, lat],
-        essential: true,
+      mapInstanceRef.current.setView([lat, lon], 13, {
+        animate: true
       })
     }
   }, [])
@@ -113,47 +125,40 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
       }
 
       try {
-        const map = new maplibregl.Map({
-          container: mapRef.current,
-          style: `https://api.maptiler.com/maps/streets/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
-          center: [lon, lat],
-          zoom: 13,
-        });
+        // Create the map instance
+        const map = L.map(mapRef.current).setView([lat, lon], 13);
 
-        // Add navigation controls
-        // Add navigation controls
-        map.addControl(new maplibregl.NavigationControl({}), 'top-right')
+        // Add MapTiler tiles
+        L.tileLayer(
+          `https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
+          {
+            attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 18,
+            tileSize: 512,
+            zoomOffset: -1,
+          }
+        ).addTo(map);
 
-        // Add scale control
-        map.addControl(new maplibregl.ScaleControl({
-          maxWidth: 100,
-          unit: 'metric'
-        }), 'bottom-left')
-
-        // Add fullscreen control
-        map.addControl(new maplibregl.FullscreenControl({}), 'top-right')
-
+        // Add control elements
+        L.control.scale({ imperial: false, maxWidth: 100, position: 'bottomleft' }).addTo(map);
 
         // Set up map event handlers
         map.on("click", handleMapClick);
 
-        // Handle map load completion
-        map.once("load", () => {
-          // Ensure the map renders correctly
-          map.resize();
-
-          // Add marker after map is loaded
-          const marker = new maplibregl.Marker({ color: "#0ea5e9" })
-            .setLngLat([lon, lat])
-            .addTo(map);
-          markerRef.current = marker;
-
-          // Update state after map is ready
-          setIsLoading(false);
-        });
+        // Add marker
+        const marker = L.marker([lat, lon]).addTo(map);
+        markerRef.current = marker;
 
         // Store map reference
         mapInstanceRef.current = map;
+
+        // Update state after map is ready
+        setIsLoading(false);
+
+        // Trigger a resize after a short delay to ensure correct rendering
+        setTimeout(() => {
+          map.invalidateSize();
+        }, 100);
 
         // Reverse geocode to get address
         reverseGeocode(lat, lon);
@@ -165,7 +170,6 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
 
     return () => clearTimeout(timeoutId); // Cleanup timeout on unmount
   }, [isOpen, cleanupMap, handleMapClick]);
-
 
   // Main effect to initialize map when dialog opens
   useEffect(() => {
@@ -249,7 +253,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
 
     const handleResize = () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.resize()
+        mapInstanceRef.current.invalidateSize()
       }
     }
 
@@ -283,7 +287,7 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     setSelectedLocation({ lat: initialLocation.lat, lon: initialLocation.lon })
 
     // Update map center and marker
-    mapInstanceRef.current.setCenter([initialLocation.lon, initialLocation.lat])
+    mapInstanceRef.current.setView([initialLocation.lat, initialLocation.lon], 13)
     updateMarker(initialLocation.lat, initialLocation.lon)
 
     // Update address
@@ -361,6 +365,8 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   const openInGoogleMaps = (lat: number, lon: number) => {
     window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, "_blank")
   }
+
+  // Render functions and UI components follow...
 
   const renderContent = () => (
     <div className="flex flex-col h-full">
@@ -497,11 +503,6 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
                     </div>
                   </div>
                 )}
-                <div className="absolute top-2 left-2 z-10">
-                  <div className="bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium shadow-sm border border-muted">
-                    Tap to select location
-                  </div>
-                </div>
               </div>
             </div>
           </div>

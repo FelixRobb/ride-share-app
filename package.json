@@ -37,6 +37,7 @@
     "date-fns": "^3.6.0",
     "framer-motion": "^10.12.0",
     "jose": "^5.9.6",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.453.0",
     "maplibre-gl": "^2.4.0",
     "next": "^15.0.3",
