@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { SearchIcon, MapPin, Crosshair, Loader, Copy, ExternalLink, X } from "lucide-react"
 import maplibregl from "maplibre-gl"
 import { useState, useEffect, useRef, useCallback } from "react"
@@ -40,15 +38,17 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   const initializeTriggeredRef = useRef(false)
   const previousIsMobileRef = useRef<boolean | null>(null)
 
-  // Handle map clicks
   const handleMapClick = useCallback((e: maplibregl.MapMouseEvent) => {
-    const { lng, lat } = e.lngLat
-    setSelectedLocation({ lat, lon: lng })
+    const { lng, lat } = e.lngLat;
+    setSelectedLocation({ lat, lon: lng });
+
+    // Only update marker position, don't reinitialize map
     if (markerRef.current) {
-      markerRef.current.setLngLat([lng, lat])
+      markerRef.current.setLngLat([lng, lat]);
     }
-    reverseGeocode(lat, lng)
-  }, [])
+
+    reverseGeocode(lat, lng);
+  }, []);
 
   // Reverse geocode to get address from coordinates
   const reverseGeocode = async (lat: number, lon: number) => {
@@ -105,10 +105,16 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
     // Clear previous map instance
     cleanupMap();
 
-    // Create new map instance with delay to ensure container is ready
+    // Create new map instance with longer delay to ensure container is fully ready after layout change
     const timeoutId = setTimeout(() => {
       if (!mapRef.current) {
         setIsLoading(false);
+        return;
+      }
+
+      // Check if the map container is still valid
+      if (mapRef.current.offsetParent === null) {
+        setTimeout(() => initializeMapWithCoordinates(lat, lon), 300);
         return;
       }
 
@@ -121,51 +127,58 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
         });
 
         // Add navigation controls
-        // Add navigation controls
-        map.addControl(new maplibregl.NavigationControl({}), 'top-right')
+        map.addControl(new maplibregl.NavigationControl({}), 'top-right');
 
         // Add scale control
         map.addControl(new maplibregl.ScaleControl({
           maxWidth: 100,
           unit: 'metric'
-        }), 'bottom-left')
+        }), 'bottom-left');
 
         // Add fullscreen control
-        map.addControl(new maplibregl.FullscreenControl({}), 'top-right')
-
+        map.addControl(new maplibregl.FullscreenControl({}), 'top-right');
 
         // Set up map event handlers
         map.on("click", handleMapClick);
 
         // Handle map load completion
         map.once("load", () => {
-          // Ensure the map renders correctly
           map.resize();
-
-          // Add marker after map is loaded
           const marker = new maplibregl.Marker({ color: "#0ea5e9" })
             .setLngLat([lon, lat])
             .addTo(map);
           markerRef.current = marker;
-
-          // Update state after map is ready
           setIsLoading(false);
         });
 
-        // Store map reference
         mapInstanceRef.current = map;
-
-        // Reverse geocode to get address
         reverseGeocode(lat, lon);
       } catch {
         setIsLoading(false);
         toast.error("Failed to initialize map");
       }
-    }, 150); // Short delay to ensure DOM is ready
+    }, 300);
 
-    return () => clearTimeout(timeoutId); // Cleanup timeout on unmount
+    return () => clearTimeout(timeoutId);
   }, [isOpen, cleanupMap, handleMapClick]);
 
+
+  useEffect(() => {
+    if (!isOpen || !mapRef.current) return;
+
+    // Check if map container is visible after a short delay
+    const visibilityCheckTimeout = setTimeout(() => {
+      if (mapRef.current && mapInstanceRef.current && mapRef.current.offsetParent === null) {
+        const currentLat = selectedLocation.lat;
+        const currentLon = selectedLocation.lon;
+
+        cleanupMap();
+        initializeMapWithCoordinates(currentLat, currentLon);
+      }
+    }, 500);
+
+    return () => clearTimeout(visibilityCheckTimeout);
+  }, [isOpen, selectedLocation, cleanupMap, initializeMapWithCoordinates]);
 
   // Main effect to initialize map when dialog opens
   useEffect(() => {
@@ -223,25 +236,27 @@ const MapDialog: React.FC<MapDialogProps> = ({ isOpen, onClose, onSelectLocation
   useEffect(() => {
     // Check if there was a change in layout mode (mobile <-> desktop)
     if (previousIsMobileRef.current !== null && previousIsMobileRef.current !== isMobile && isOpen) {
+      // When layout changes, we need to properly handle the map container
 
-      // Reset initialization flag to force reinitialization
-      initializeTriggeredRef.current = false
-
-      // Small delay to allow DOM to update before reinitializing
+      // Force cleanup and reinitialize the map for the new container
       setTimeout(() => {
-        cleanupMap()
+        // Store current coordinates before cleanup
+        const currentLat = selectedLocation.lat;
+        const currentLon = selectedLocation.lon;
 
-        if (initialLocation) {
-          initializeMapWithCoordinates(initialLocation.lat, initialLocation.lon)
-        } else {
-          initializeMapWithCoordinates(selectedLocation.lat, selectedLocation.lon)
-        }
-      }, 300)
+        // Clean up existing map instance
+        cleanupMap();
+
+        // Reinitialize with the same coordinates
+        setTimeout(() => {
+          initializeMapWithCoordinates(currentLat, currentLon);
+        }, 300);
+      }, 100);
     }
 
     // Update previous layout mode reference
-    previousIsMobileRef.current = isMobile
-  }, [isMobile, isOpen, cleanupMap, initializeMapWithCoordinates, initialLocation, selectedLocation])
+    previousIsMobileRef.current = isMobile;
+  }, [isMobile, isOpen, cleanupMap, initializeMapWithCoordinates, selectedLocation]);
 
   // Handle window resize and responsive layout changes
   useEffect(() => {
