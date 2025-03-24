@@ -4,7 +4,6 @@ import { getToken } from "next-auth/jwt";
 
 // List of public routes that don't require authentication
 const publicRoutes = [
-  "/",
   "/login",
   "/register",
   "/privacy-policy",
@@ -31,6 +30,7 @@ const publicRoutes = [
   "/api/auth/logout",
   "/about",
   "/faq",
+  "/welcome", // Added welcome page as a public route
 ];
 
 // List of admin routes that require admin authentication
@@ -38,6 +38,22 @@ const adminRoutes = ["/api/admin/stats", "/api/admin/users", "/api/admin/notify-
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+
+  // Special handling for the homepage
+  if (path === "/") {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    // If user is authenticated, redirect to dashboard
+    if (token) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    // Otherwise, allow access to the homepage
+    return NextResponse.next();
+  }
 
   // Allow public routes
   if (publicRoutes.includes(path)) {
@@ -79,7 +95,11 @@ async function handleProtectedRoute(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = await getToken({ req: request });
+  // Get token with proper secret and secure handling
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
   if (!token) {
     return handleInvalidToken(request);
@@ -130,6 +150,6 @@ export const config = {
      * - _next (static files and images)
      * - public assets and icons
      */
-    "/((?!api/auth|_next|favicon\\.ico|manifest\\.webmanifest|icon-\\d+x\\d+\\.png|icon\\.svg|service-worker\\.js|wide-pwa\\.png|narrow-pwa\\.png|twitter-image\\.png|og-image\\.png|web-app-manifest-192x192\\.png|web-app-manifest-512x512\\.png|robots\\.txt|sitemap\\.xml).*)",
+    "/((?!_next|favicon\\.ico|manifest\\.webmanifest|icon-\\d+x\\d+\\.png|icon\\.svg|service-worker\\.js|wide-pwa\\.png|narrow-pwa\\.png|twitter-image\\.png|og-image\\.png|web-app-manifest-192x192\\.png|web-app-manifest-512x512\\.png|robots\\.txt|sitemap\\.xml).*)",
   ],
 };
