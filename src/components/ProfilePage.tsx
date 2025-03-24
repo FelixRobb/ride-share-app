@@ -91,6 +91,8 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
   const [pushDevices, setPushDevices] = useState<PushSubscription[]>([])
   const [isPushLoading, setIsPushLoading] = useState(true)
   const [currentDeviceId] = useState(() => getDeviceId())
+  const [editedUserData, setEditedUserData] = useState<User | null>(null)
+
 
   const { setTheme } = useTheme()
   const [currentMode, setCurrentMode] = useState<"system" | "light" | "dark">(() => {
@@ -174,7 +176,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
   }
 
   const handleEditProfileOpen = () => {
-    setEditedUser(user)
+    setEditedUserData({ ...user })
     setIsEditProfileOpen(true)
   }
 
@@ -252,33 +254,33 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (editedUser) {
+    if (editedUserData) {
       try {
         setIsUpdatingProfile(true)
 
         // Validate phone number
-        const phoneNumber = parsePhoneNumber(editedUser.phone)
+        const phoneNumber = parsePhoneNumber(editedUserData.phone)
         if (!phoneNumber || !phoneNumber.isValid()) {
           throw new Error("Invalid phone number")
         }
         const e164PhoneNumber = phoneNumber.format("E.164")
 
         // Check if email is being changed
-        const isEmailChanged = user.email.toLowerCase() !== editedUser.email.toLowerCase()
+        const isEmailChanged = user.email.toLowerCase() !== editedUserData.email.toLowerCase()
 
         if (isEmailChanged) {
           // Validate email format
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-          if (!emailRegex.test(editedUser.email)) {
+          if (!emailRegex.test(editedUserData.email)) {
             throw new Error("Invalid email format")
           }
         }
 
         // Update profile
         const updatedUser = await updateProfile(user.id, {
-          ...editedUser,
+          ...editedUserData,
           phone: e164PhoneNumber,
-          email: editedUser.email.toLowerCase(),
+          email: editedUserData.email.toLowerCase(),
         })
 
         if (!updatedUser) {
@@ -330,6 +332,8 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
         } else {
           toast.error("An unexpected error occurred")
         }
+        setIsEditProfileOpen(false)
+        await fetchData(true)
       } finally {
         setIsUpdatingProfile(false)
       }
@@ -965,7 +969,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
           open={isEditProfileOpen}
           onOpenChange={(open) => {
             if (!open) {
-              setEditedUser(user)
+              setEditedUserData(null)
             }
             setIsEditProfileOpen(open)
           }}
@@ -981,8 +985,8 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                   <Label htmlFor="edit-name">Name</Label>
                   <Input
                     id="edit-name"
-                    value={editedUser?.name || ""}
-                    onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, name: e.target.value } : null))}
+                    value={editedUserData?.name || ""}
+                    onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, name: e.target.value } : null))}
                     required
                   />
                 </div>
@@ -990,8 +994,8 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                   <Label htmlFor="edit-phone">Phone</Label>
                   <PhoneInput
                     id="edit-phone"
-                    value={editedUser?.phone || ""}
-                    onChange={(value) => setEditedUser((prev) => (prev ? { ...prev, phone: value || "" } : null))}
+                    value={editedUserData?.phone || ""}
+                    onChange={(value) => setEditedUserData((prev) => (prev ? { ...prev, phone: value || "" } : null))}
                     defaultCountry="PT"
                     international
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1001,8 +1005,8 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                   <Label htmlFor="edit-email">Email</Label>
                   <Input
                     id="edit-email"
-                    value={editedUser?.email || ""}
-                    onChange={(e) => setEditedUser((prev) => (prev ? { ...prev, email: e.target.value } : null))}
+                    value={editedUserData?.email || ""}
+                    onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, email: e.target.value } : null))}
                     required
                   />
                 </div>
