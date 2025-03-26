@@ -18,7 +18,7 @@ body {
     --card-foreground: 20 14.3% 4.1%;
     --border: 20 5.9% 90%;
     --input: 20 5.9% 90%;
-    --primary: 24.6 95% 53.1%;
+    --primary: 27.17 82.4% 49.13%;
     --primary-foreground: 60 9.1% 97.8%;
     --secondary: 60 4.8% 95.9%;
     --secondary-foreground: 24 9.8% 10%;
@@ -27,35 +27,43 @@ body {
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 60 9.1% 97.8%;
     --ring: 24.6 95% 53.1%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-    --success: 142.1 76.2% 36.3%;
-    --success-foreground: 355.7 100% 97.3%;
   }
 
   .dark {
-    --background: 20 0.22% 1.54%;
+    --background: 20 2.93% 3.36%;
     --foreground: 60 9.1% 97.8%;
-    --muted: 12 6.5% 15.1%;
-    --muted-foreground: 24 5.4% 63.9%;
-    --popover: 20 0% 0%;
+    --muted: 12 10.68% 10.77%;
+    --muted-foreground: 24 7.55% 47.56%;
+    --popover: 20 14.86% 6.36%;
     --popover-foreground: 60 9.1% 97.8%;
-    --card: 20 13.15% 0.68%;
-    --card-foreground: 60 9.1% 97.8%;
-    --border: 12 14.86% 12.05%;
-    --input: 12 6.5% 15.1%;
-    --primary: 20.5 87.65% 48.37%;
+    --card: 20 0% 0%;
+    --card-foreground: 60 0% 100%;
+    --border: 12 39.02% 22.96%;
+    --input: 12 16.92% 27.3%;
+    --primary: 20.5 100% 36.35%;
     --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 12 4.35% 22.12%;
+    --secondary: 12 14.86% 31.81%;
     --secondary-foreground: 60 9.1% 97.8%;
-    --accent: 12 6.79% 15.13%;
+    --accent: 12 6.5% 15.1%;
     --accent-foreground: 60 9.1% 97.8%;
-    --destructive: 0 77.43% 45.95%;
-    --destructive-foreground: 60 9.1% 97.8%;
+    --destructive: 0 100% 43.27%;
+    --destructive-foreground: 60 0% 100%;
     --ring: 20.5 90.2% 48.2%;
-    --success: 142.1 70.6% 45.3%;
-    --success-foreground: 144.9 80.4% 10%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
+
+
 
 @layer base {
   * {
@@ -116,4 +124,3 @@ html {
 *::-webkit-scrollbar {
   display: none;
 }
-

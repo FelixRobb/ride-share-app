@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ArrowRight,
   Star,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -394,7 +395,7 @@ export default function WelcomePage() {
       <section className="py-20 bg-background relative">
         <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid" />
         <div className="container mx-auto px-4 relative z-10">
-          <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center text-orange-500">
+          <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center text-primary">
             Why Choose RideShare?
           </h2>
           <div className="space-y-6 max-w-2xl mx-auto">
@@ -419,13 +420,13 @@ export default function WelcomePage() {
                 }}
               >
                 <motion.div
-                  className="bg-orange-500 rounded-full p-2"
+                  className="bg-primary rounded-full p-2"
                   whileHover={{
                     rotate: 180,
                     transition: { duration: 0.4 },
                   }}
                 >
-                  <ChevronDown className="w-6 h-6 text-black" />
+                  <ChevronRight className="w-6 h-6 text-black" />
                 </motion.div>
                 <p className="text-lg">{benefit}</p>
               </motion.div>
