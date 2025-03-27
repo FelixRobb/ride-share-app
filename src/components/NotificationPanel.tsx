@@ -526,8 +526,20 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const isOnline = useOnlineStatus()
 
+  // Debug logging function
+  const debugLog = useCallback((message: string, data?: unknown) => {
+    console.log(`[NotificationPanel Debug] ${message}`, data)
+  }, [])
+
   const fetchNotificationsCallback = useCallback(async () => {
-    if (isOnline) {
+    debugLog('Fetch Callback Called', { isOnline, etag })
+
+    if (!isOnline) {
+      debugLog('Not online, skipping fetch')
+      return null
+    }
+
+    try {
       const headers: HeadersInit = {}
       if (etag) {
         headers["If-None-Match"] = etag
@@ -535,31 +547,61 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
 
       const response = await fetch(`/api/notifications`, { headers })
 
+      debugLog('Fetch Response', {
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries())
+      })
+
       if (response.status === 304) {
-        return null // Data hasn't changed
+        debugLog('Not Modified - No New Data')
+        return null
       }
 
       if (response.ok) {
         const newEtag = response.headers.get("ETag")
         const data = await response.json()
+        
+        debugLog('Parsed Response Data', { 
+          notifications: data.notifications, 
+          notificationsLength: data.notifications?.length 
+        })
+
         if (newEtag !== etag) {
-          setEtag(newEtag)
-          setNotifications(data.notifications)
-          setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length)
+          debugLog('Updating Notifications', { newEtag })
+          
+          // Wrap state updates in a microtask to ensure rendering
+          queueMicrotask(() => {
+            setEtag(newEtag)
+            setNotifications(data.notifications)
+            setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length)
+          })
         }
       }
+    } catch (error) {
+      debugLog('Fetch Error', error)
     }
-  }, [etag, isOnline])
-
-  console.log(notifications)
+  }, [debugLog, etag, isOnline])
 
   useEffect(() => {
+    debugLog('Effect Triggered', { isOnline })
+
     if (isOnline) {
       void fetchNotificationsCallback()
       const interval = setInterval(() => void fetchNotificationsCallback(), 15000)
       return () => clearInterval(interval)
     }
-  }, [fetchNotificationsCallback, isOnline])
+  }, [debugLog, fetchNotificationsCallback, isOnline])
+
+  // Add extensive logging to track state changes
+  useEffect(() => {
+    debugLog('Notifications State Changed', { 
+      notifications, 
+      unreadCount,
+      notificationsLength: notifications.length 
+    })
+  }, [debugLog, notifications, unreadCount])
+
+  console.log('Notifications Render Log:', notifications)
 
   const handleOpenChange = useCallback(
     async (open: boolean) => {
