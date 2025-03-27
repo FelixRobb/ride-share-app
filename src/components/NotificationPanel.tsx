@@ -551,8 +551,6 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
     }
   }, [etag, isOnline])
 
-  console.log(notifications)
-
   useEffect(() => {
     if (isOnline) {
       void fetchNotificationsCallback()
