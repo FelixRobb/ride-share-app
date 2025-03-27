@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-bold">Privacy Policy</CardTitle>
-          <CardDescription>Last updated: [Insert Date]</CardDescription>
+          <CardDescription>Last updated: 4/4/2025</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <section>
