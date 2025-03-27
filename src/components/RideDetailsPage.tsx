@@ -649,8 +649,8 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
           style={{ width: "100%", height: "300px" }}
         >
           {(isLoadingMap || isLoading || !ride) && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-              <Loader className="w-8 h-8 animate-spin text-white" />
+            <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center z-10">
+              <Loader className="w-8 h-8 animate-spin text-primary" />
             </div>
           )}
         </div>
