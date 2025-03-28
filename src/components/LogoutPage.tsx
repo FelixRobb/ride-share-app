@@ -58,6 +58,7 @@ export default function LogoutPage() {
         localStorage.removeItem("rideData")
         localStorage.removeItem("theme")
         localStorage.removeItem("pushNotificationDeclined")
+        localStorage.removeItem("rideshare_device_id")
 
         // Sign out using NextAuth
         await signOut({ redirect: false })

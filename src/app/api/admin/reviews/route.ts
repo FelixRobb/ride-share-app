@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/db";
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export async function GET() {
   try {
     const { data, error } = await supabase
@@ -25,8 +28,31 @@ export async function GET() {
       userName: review.users.name,
     }));
 
-    return NextResponse.json(reviews);
+    return NextResponse.json(
+      { reviews },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+          "Surrogate-Control": "no-store",
+        },
+      }
+    );
   } catch {
-    return NextResponse.json({ error: "Failed to fetch reviews" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch reviews" },
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+          "Surrogate-Control": "no-store",
+        },
+      }
+    );
   }
 }

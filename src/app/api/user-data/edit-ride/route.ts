@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
-export const revalidate = 0 // Disable caching
+export const revalidate = 0
 
 export async function GET(req: NextRequest) {
   try {

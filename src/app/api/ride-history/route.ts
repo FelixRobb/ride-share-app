@@ -4,8 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { startOfDay, endOfDay, startOfYesterday, endOfYesterday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0; // Disable caching
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 const ITEMS_PER_PAGE = 10;
 
