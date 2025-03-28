@@ -4,7 +4,7 @@ import { createHash } from "crypto";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 export const revalidate = 0; // Disable caching
 
 export async function GET(request: Request) {
@@ -13,7 +13,13 @@ export async function GET(request: Request) {
   if (!session || !session.user || !session.user.id) {
     return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+        "Surrogate-Control": "no-store",
+      },
     });
   }
 
@@ -37,12 +43,22 @@ export async function GET(request: Request) {
       {
         headers: {
           ETag: etag,
-          "Cache-Control": "private, no-cache",
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+          "Surrogate-Control": "no-store",
         },
       }
     );
   } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500,  headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
+      "Surrogate-Control": "no-store",
+    }, });
   }
 }
 
@@ -50,7 +66,7 @@ export async function POST(request: Request) {
   const { userId, notificationIds } = await request.json();
 
   if (!userId || !notificationIds || !Array.isArray(notificationIds)) {
-    return NextResponse.json({ error: "Invalid request data" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request data" }, { status: 400,  });
   }
 
   try {

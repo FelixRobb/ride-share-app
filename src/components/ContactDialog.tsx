@@ -545,7 +545,7 @@ export function ContactManager({
             onClick={() =>
               document
                 .querySelector<HTMLInputElement>(
-                  'input[placeholder="Search contacts"]'
+                  'input[placeholder="Search contacts, start by tiping two characters"]'
                 )
                 ?.focus()
             }
@@ -568,7 +568,7 @@ export function ContactManager({
           <div className="flex items-center h-12 w-full rounded-md border border-input bg-background px-4 py-2 ring-offset-background focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 transition-all">
             <Search className="h-5 w-5 text-muted-foreground mr-3 shrink-0" />
             <Input
-              placeholder="Search contacts"
+              placeholder="earch contacts, start by tiping two characters"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent w-full h-full text-base"
