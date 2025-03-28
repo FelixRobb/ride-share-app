@@ -244,9 +244,14 @@ export default function WelcomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-6xl md:text-8xl font-bold mb-6 bg-clip-text text-transparent bg-primary bg-gradient-to-r from-primary to-secondary-foreground">
-              RideShare
-            </h1>
+    <h1 className="text-6xl md:text-8xl font-bold mb-6 
+      text-primary 
+      bg-clip-text text-transparent bg-primary bg-gradient-to-r from-primary to-secondary-foreground 
+      supports-[background-clip]:bg-clip-text supports-[background-clip]:text-transparent
+      supports-not-[background-clip]:text-primary"
+    >
+      RideShare
+    </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-xl mx-auto">
               Connect with friends, share rides, and travel together safely.
             </p>
