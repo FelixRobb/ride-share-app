@@ -246,7 +246,6 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
   ]
 
   return (
-    <form onSubmit={handleSubmit}>
       <AnimatePresence mode="wait">
         <motion.div
           key={step}
@@ -280,7 +279,7 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
                   Next <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button type="submit" disabled={isLoading || !agreedToTerms} className="w-full sm:w-auto sm:ml-auto">
+                <Button onClick={handleSubmit} disabled={isLoading || !agreedToTerms} className="w-full sm:w-auto sm:ml-auto">
                   {isLoading ? (
                     <>
                       <motion.div className="animate-spin mr-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -299,7 +298,6 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
           </Card>
         </motion.div>
       </AnimatePresence>
-    </form>
   )
 }
 
