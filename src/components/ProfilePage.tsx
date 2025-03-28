@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import {
   LucideUser,
   Mail,
@@ -45,6 +47,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
+import { signOut } from "next-auth/react"
 
 import type { User, Contact, AssociatedPerson, PushSubscription } from "../types"
 import {
@@ -57,6 +60,7 @@ import {
   fetchProfileData,
 } from "../utils/api"
 import { getDeviceId, formatLastUsed } from "@/utils/deviceUtils"
+import { unregisterServiceWorker } from "@/utils/cleanupService"
 
 import { ContactManager } from "./ContactDialog"
 
@@ -93,7 +97,6 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
   const [currentDeviceId] = useState(() => getDeviceId())
   const [editedUserData, setEditedUserData] = useState<User | null>(null)
 
-
   const { setTheme } = useTheme()
   const [currentMode, setCurrentMode] = useState<"system" | "light" | "dark">(() => {
     if (typeof window !== "undefined") {
@@ -106,14 +109,14 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
 
   // Function to evaluate password strength
   const evaluatePasswordStrength = (password: string) => {
-    const lengthCriteria = password.length >= 8;
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
+    const lengthCriteria = password.length >= 8
+    const hasUppercase = /[A-Z]/.test(password)
+    const hasNumber = /[0-9]/.test(password)
 
-    if (password.length < 6) return "Too short";
-    if (lengthCriteria && hasUppercase && hasNumber) return "Strong";
-    if (lengthCriteria) return "Medium";
-    return "Weak";
+    if (password.length < 6) return "Too short"
+    if (lengthCriteria && hasUppercase && hasNumber) return "Strong"
+    if (lengthCriteria) return "Medium"
+    return "Weak"
   }
 
   // Fetch profile data
@@ -398,10 +401,52 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
     }
     try {
       setIsDeletingAccount(true)
+
+      // Delete the user account
       await deleteUser(user.id)
+
+      // Get the current push subscription
+      let currentSubscription: PushSubscription | null = null
+      if ("serviceWorker" in navigator && "PushManager" in window) {
+        const registration = await navigator.serviceWorker.ready
+        currentSubscription = await registration.pushManager.getSubscription()
+      }
+
+      // Get the device ID
+      const deviceId = getDeviceId()
+
+      // Call the logout API with the current subscription and device ID
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subscription: currentSubscription ? currentSubscription.toJSON() : null,
+          deviceId,
+        }),
+        credentials: "include",
+      })
+
+      // Unregister service worker and unsubscribe from push notifications
+      if (currentSubscription) {
+        await currentSubscription.unsubscribe()
+      }
+      await unregisterServiceWorker()
+
+      // Clear specific data from localStorage
+      localStorage.removeItem("tutorialstep")
+      localStorage.removeItem("rideData")
+      localStorage.removeItem("theme")
+      localStorage.removeItem("pushNotificationDeclined")
+      localStorage.removeItem("rideshare_device_id")
+
+      // Sign out using NextAuth
+      await signOut({ redirect: false })
+
       toast.success("Your account has been successfully deleted.")
       setIsDeleteAccountDialogOpen(false)
-      router.push("/")
+      router.push("/login")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
     } finally {
@@ -437,10 +482,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
     <div className="w-full max-w-4xl mx-auto pb-8">
       <>
         {/* Profile header with avatar */}
-        <div
-          className="mb-6 flex flex-col items-center sm:flex-row sm:justify-between"
-          data-tutorial="profile-header"
-        >
+        <div className="mb-6 flex flex-col items-center sm:flex-row sm:justify-between" data-tutorial="profile-header">
           {isLoading ? (
             <div className="w-full flex items-center justify-between flex-col sm:flex-row">
               <div className="flex items-center gap-4 w-full mb-4 sm:mb-0">
@@ -910,24 +952,27 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                       </div>
                       <div className="inline-flex w-fit gap-1 md:self-end self-center items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
                         <button
-                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
-                            }`}
+                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                            currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
+                          }`}
                           onClick={() => toggleTheme("system")}
                           aria-label="System theme"
                         >
                           <Monitor className="h-4 w-4" />
                         </button>
                         <button
-                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
-                            }`}
+                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                            currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
+                          }`}
                           onClick={() => toggleTheme("light")}
                           aria-label="Light theme"
                         >
                           <Sun className="h-4 w-4" />
                         </button>
                         <button
-                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
-                            }`}
+                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                            currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
+                          }`}
                           onClick={() => toggleTheme("dark")}
                           aria-label="Dark theme"
                         >
@@ -1058,11 +1103,20 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                         <div
                           className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-green-500" : newPasswordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
                           style={{
-                            width: newPasswordStrength === "Strong" ? "100%" : newPasswordStrength === "Medium" ? "66%" : newPasswordStrength === "Weak" ? "33%" : "0%",
+                            width:
+                              newPasswordStrength === "Strong"
+                                ? "100%"
+                                : newPasswordStrength === "Medium"
+                                  ? "66%"
+                                  : newPasswordStrength === "Weak"
+                                    ? "33%"
+                                    : "0%",
                           }}
                         />
                       </div>
-                      <p className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-green-500" : newPasswordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}>
+                      <p
+                        className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-green-500" : newPasswordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}
+                      >
                         {newPasswordStrength}
                       </p>
                     </div>
@@ -1079,12 +1133,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                 </div>
               </div>
               <DialogFooter className="mt-4">
-                <Button
-                  className="mb-2"
-                  variant="outline"
-                  type="button"
-                  onClick={() => setIsChangePasswordOpen(false)}
-                >
+                <Button className="mb-2" variant="outline" type="button" onClick={() => setIsChangePasswordOpen(false)}>
                   Cancel
                 </Button>
                 <Button className="mb-2" type="submit" disabled={isChangingPassword || !isOnline}>
@@ -1123,11 +1172,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
               />
             </div>
             <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsDeleteAccountDialogOpen(false)}
-                className="sm:order-1 mb-2"
-              >
+              <Button variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)} className="sm:order-1 mb-2">
                 Cancel
               </Button>
               <Button
@@ -1160,7 +1205,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
           </DialogContent>
         </Dialog>
       </>
-    </div >
+    </div>
   )
 }
 
