@@ -3,8 +3,8 @@ import { supabase } from "@/lib/db"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0; // Disable caching
+export const dynamic = "force_dynamic"
+export const revalidate = 0 // Disable caching
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,7 +12,13 @@ export async function GET(req: NextRequest) {
     if (!session || !session.user || !session.user.id) {
       return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+          "Surrogate-Control": "no-store",
+        },
       })
     }
 
@@ -40,7 +46,13 @@ export async function GET(req: NextRequest) {
           }),
           {
             status: 404,
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
+              "Surrogate-Control": "no-store",
+            },
           },
         )
       }
@@ -52,7 +64,13 @@ export async function GET(req: NextRequest) {
         }),
         {
           status: 500,
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+            "Surrogate-Control": "no-store",
+          },
         },
       )
     }
@@ -77,7 +95,13 @@ export async function GET(req: NextRequest) {
         }),
         {
           status: 500,
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+            "Surrogate-Control": "no-store",
+          },
         },
       )
     }
@@ -104,7 +128,13 @@ export async function GET(req: NextRequest) {
           }),
           {
             status: 403,
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
+              "Surrogate-Control": "no-store",
+            },
           },
         )
       }
@@ -119,7 +149,13 @@ export async function GET(req: NextRequest) {
           }),
           {
             status: 403,
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
+              "Surrogate-Control": "no-store",
+            },
           },
         )
       }
@@ -127,7 +163,13 @@ export async function GET(req: NextRequest) {
 
     return new NextResponse(JSON.stringify({ ride, contacts }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+        "Surrogate-Control": "no-store",
+      },
     })
   } catch {
     return new NextResponse(
@@ -137,7 +179,13 @@ export async function GET(req: NextRequest) {
       }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+          "Surrogate-Control": "no-store",
+        },
       },
     )
   }
