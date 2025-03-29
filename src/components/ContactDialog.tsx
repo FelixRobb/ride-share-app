@@ -809,7 +809,7 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
         )}
         {/* Confirmation Dialog */}
         <AlertDialog open={contactToDelete !== null} onOpenChange={(open) => !open && setContactToDelete(null)}>
-          <AlertDialogContent className="rounded-lg">
+          <AlertDialogContent className="rounded-lg w-11/12">
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
