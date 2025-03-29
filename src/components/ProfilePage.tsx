@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import {
   LucideUser,
   Mail,
@@ -26,14 +28,6 @@ import { parsePhoneNumber } from "libphonenumber-js"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
 import { Label } from "@/components/ui/label"
@@ -46,6 +40,15 @@ import { Skeleton } from "@/components/ui/skeleton"
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
 import { signOut } from "next-auth/react"
+import {
+  Credenza,
+  CredenzaContent,
+  CredenzaDescription,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaBody,
+  CredenzaFooter,
+} from "@/components/ui/credenza"
 
 import type { User, Contact, AssociatedPerson, PushSubscription as AppPushSubscription } from "../types"
 import {
@@ -494,6 +497,12 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
       .substring(0, 2)
   }
 
+  useEffect(() => {
+    if (isEditProfileOpen) {
+      setEditedUserData({ ...user })
+    }
+  }, [isEditProfileOpen, user])
+
   return (
     <div className="w-full max-w-4xl mx-auto pb-8">
       <>
@@ -529,7 +538,11 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleEditProfileOpen} disabled={!isOnline} size="sm" variant="outline">
+                <Button
+                  onClick={handleEditProfileOpen}
+                  disabled={!isOnline}
+                  size="sm"
+                  variant="outline">
                   <Settings className="h-4 w-4 mr-2" /> Edit Profile
                 </Button>
                 <Button
@@ -620,9 +633,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                       onClick={handleEditProfileOpen}
                       disabled={!isOnline}
                       size="sm"
-                      variant="outline"
-                      className="w-full sm:w-auto"
-                    >
+                      variant="outline" className="w-full sm:w-auto">
                       Edit Information
                     </Button>
                   </CardFooter>
@@ -1023,7 +1034,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
         </Tabs>
 
         {/* Dialogs */}
-        <Dialog
+        <Credenza
           open={isEditProfileOpen}
           onOpenChange={(open) => {
             if (!open) {
@@ -1031,63 +1042,72 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
             }
             setIsEditProfileOpen(open)
           }}
+          breakpoint="(min-width: 624px)"
         >
-          <DialogContent className="rounded-lg w-11/12 max-w-md">
-            <DialogHeader>
-              <DialogTitle>Edit Profile</DialogTitle>
-              <DialogDescription>Update your personal information</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleUpdateProfile}>
-              <div className="grid w-full items-center gap-4 py-2">
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="edit-name">Name</Label>
-                  <Input
-                    id="edit-name"
-                    value={editedUserData?.name || ""}
-                    onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, name: e.target.value } : null))}
-                    required
-                  />
+          <CredenzaContent drawerClassName="p-6 pt-0" dialogClassName="rounded-lg max-w-md">
+            <CredenzaHeader>
+              <CredenzaTitle>Edit Profile</CredenzaTitle>
+              <CredenzaDescription>Update your personal information</CredenzaDescription>
+            </CredenzaHeader>
+            <CredenzaBody>
+              <form onSubmit={handleUpdateProfile}>
+                <div className="grid w-full items-center gap-4 py-2">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="edit-name">Name</Label>
+                    <Input
+                      id="edit-name"
+                      value={editedUserData?.name || ""}
+                      onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, name: e.target.value } : null))}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="edit-phone">Phone</Label>
+                    <PhoneInput
+                      id="edit-phone"
+                      value={editedUserData?.phone || ""}
+                      onChange={(value) => setEditedUserData((prev) => (prev ? { ...prev, phone: value || "" } : null))}
+                      defaultCountry="PT"
+                      international
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="edit-email">Email</Label>
+                    <Input
+                      id="edit-email"
+                      value={editedUserData?.email || ""}
+                      onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, email: e.target.value } : null))}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="edit-phone">Phone</Label>
-                  <PhoneInput
-                    id="edit-phone"
-                    value={editedUserData?.phone || ""}
-                    onChange={(value) => setEditedUserData((prev) => (prev ? { ...prev, phone: value || "" } : null))}
-                    defaultCountry="PT"
-                    international
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="edit-email">Email</Label>
-                  <Input
-                    id="edit-email"
-                    value={editedUserData?.email || ""}
-                    onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, email: e.target.value } : null))}
-                    required
-                  />
-                </div>
-              </div>
-              <DialogFooter className="mt-4">
-                <Button className="mb-2" variant="outline" type="button" onClick={() => setIsEditProfileOpen(false)}>
-                  Cancel
-                </Button>
-                <Button className="mb-2" type="submit" disabled={isUpdatingProfile || !isOnline}>
-                  {isUpdatingProfile ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
-                  {isUpdatingProfile ? "Updating..." : "Save Changes"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <CredenzaFooter className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+                  <Button
+                    className="mt-2 sm:mt-0"
+                    variant="outline"
+                    type="button"
+                    onClick={() => setIsEditProfileOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button className="sm:ml-2" type="submit" disabled={isUpdatingProfile || !isOnline}>
+                    {isUpdatingProfile ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
+                    {isUpdatingProfile ? "Updating..." : "Save Changes"}
+                  </Button>
+                </CredenzaFooter>
+              </form>
+            </CredenzaBody>
+          </CredenzaContent>
+        </Credenza>
 
-        <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
-          <DialogContent className="rounded-lg w-11/12 max-w-md">
-            <DialogHeader>
-              <DialogTitle>Change Password</DialogTitle>
-              <DialogDescription>Enter your current password and a new password</DialogDescription>
-            </DialogHeader>
+        <Credenza open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} breakpoint="(min-width: 624px)"
+        >
+          <CredenzaContent drawerClassName="p-6 pt-0" dialogClassName="rounded-lg max-w-md">
+            <CredenzaHeader>
+              <CredenzaTitle>Change Password</CredenzaTitle>
+              <CredenzaDescription>Enter your current password and a new password</CredenzaDescription>
+            </CredenzaHeader>
             <form onSubmit={handleChangePassword}>
               <div className="grid w-full items-center gap-4 py-2">
                 <div className="flex flex-col space-y-1.5">
@@ -1145,7 +1165,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                   />
                 </div>
               </div>
-              <DialogFooter className="mt-4">
+              <CredenzaFooter className="mt-4">
                 <Button className="mb-2" variant="outline" type="button" onClick={() => setIsChangePasswordOpen(false)}>
                   Cancel
                 </Button>
@@ -1153,38 +1173,40 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                   {isChangingPassword ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
                   {isChangingPassword ? "Changing..." : "Change Password"}
                 </Button>
-              </DialogFooter>
+              </CredenzaFooter>
             </form>
-          </DialogContent>
-        </Dialog>
+          </CredenzaContent>
+        </Credenza>
 
-        <Dialog open={isDeleteAccountDialogOpen} onOpenChange={setIsDeleteAccountDialogOpen}>
-          <DialogContent className="rounded-lg w-11/12 max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-destructive">Confirm Account Deletion</DialogTitle>
-              <DialogDescription>
+        <Credenza open={isDeleteAccountDialogOpen} onOpenChange={setIsDeleteAccountDialogOpen} breakpoint="(min-width: 624px)">
+          <CredenzaContent drawerClassName="p-6 pt-0" dialogClassName="rounded-lg max-w-md">
+            <CredenzaHeader>
+              <CredenzaTitle className="text-destructive">Confirm Account Deletion</CredenzaTitle>
+              <CredenzaDescription>
                 Are you sure you want to delete your account? This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20 my-2">
-              <p className="text-sm">All your data will be permanently removed, including:</p>
-              <ul className="text-sm list-disc list-inside mt-2 space-y-1">
-                <li>Your personal information</li>
-                <li>Ride history</li>
-                <li>Contacts and associated people</li>
-                <li>Account settings</li>
-              </ul>
-            </div>
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="delete-confirmation">Type &quot;delete&quot; to confirm:</Label>
-              <Input
-                id="delete-confirmation"
-                value={deleteConfirmation}
-                onChange={(e) => setDeleteConfirmation(e.target.value)}
-                placeholder="Type 'delete'"
-              />
-            </div>
-            <DialogFooter className="flex-col sm:flex-row gap-2">
+              </CredenzaDescription>
+            </CredenzaHeader>
+            <CredenzaBody>
+              <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20 my-2">
+                <p className="text-sm">All your data will be permanently removed, including:</p>
+                <ul className="text-sm list-disc list-inside mt-2 space-y-1">
+                  <li>Your personal information</li>
+                  <li>Ride history</li>
+                  <li>Contacts and associated people</li>
+                  <li>Account settings</li>
+                </ul>
+              </div>
+              <div className="flex flex-col space-y-2">
+                <Label htmlFor="delete-confirmation">Type &quot;delete&quot; to confirm:</Label>
+                <Input
+                  id="delete-confirmation"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  placeholder="Type 'delete'"
+                />
+              </div>
+            </CredenzaBody>
+            <CredenzaFooter className="flex-col sm:flex-row gap-2 mt-5">
               <Button variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)} className="sm:order-1 mb-2">
                 Cancel
               </Button>
@@ -1197,26 +1219,26 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                 {isDeletingAccount ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
                 Delete Permanently
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </CredenzaFooter>
+          </CredenzaContent>
+        </Credenza>
 
-        <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-          <DialogContent className="rounded-lg w-11/12">
-            <DialogHeader>
-              <DialogTitle>Confirm Logout</DialogTitle>
-              <DialogDescription>Are you sure you want to log out?</DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
+        <Credenza open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen} breakpoint="(min-width: 624px)">
+          <CredenzaContent drawerClassName="p-6 pt-0" dialogClassName="rounded-lg max-w-md">
+            <CredenzaHeader>
+              <CredenzaTitle>Confirm Logout</CredenzaTitle>
+              <CredenzaDescription>Are you sure you want to log out?</CredenzaDescription>
+            </CredenzaHeader>
+            <CredenzaFooter>
               <Button className="mb-2" variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
                 Cancel
               </Button>
               <Button className="mb-2" variant="destructive" onClick={confirmLogout}>
                 Logout
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </CredenzaFooter>
+          </CredenzaContent>
+        </Credenza>
       </>
     </div>
   )
