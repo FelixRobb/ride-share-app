@@ -47,6 +47,20 @@ import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
 import { signOut } from "next-auth/react"
 
+// First, import the Drawer components
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer"
+
+// Add this to the imports at the top (after the existing useMediaQuery import)
+import { useMediaQuery } from "@/hooks/use-media-query"
+
 import type { User, Contact, AssociatedPerson, PushSubscription as AppPushSubscription } from "../types"
 import {
   updateProfile,
@@ -94,6 +108,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
   const [isPushLoading, setIsPushLoading] = useState(true)
   const [currentDeviceId] = useState(() => getDeviceId())
   const [editedUserData, setEditedUserData] = useState<User | null>(null)
+
+  // Add this line in the component, near the other state declarations
+  const isMobile = useMediaQuery("(max-width: 768px)")
 
   const { setTheme } = useTheme()
   const [currentMode, setCurrentMode] = useState<"system" | "light" | "dark">(() => {
@@ -968,24 +985,27 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                       </div>
                       <div className="inline-flex w-fit gap-1 md:self-end self-center items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
                         <button
-                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
-                            }`}
+                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                            currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
+                          }`}
                           onClick={() => toggleTheme("system")}
                           aria-label="System theme"
                         >
                           <Monitor className="h-4 w-4" />
                         </button>
                         <button
-                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
-                            }`}
+                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                            currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
+                          }`}
                           onClick={() => toggleTheme("light")}
                           aria-label="Light theme"
                         >
                           <Sun className="h-4 w-4" />
                         </button>
                         <button
-                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
-                            }`}
+                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
+                            currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
+                          }`}
                           onClick={() => toggleTheme("dark")}
                           aria-label="Dark theme"
                         >
@@ -1023,202 +1043,418 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
         </Tabs>
 
         {/* Dialogs */}
-        <Dialog
-          open={isEditProfileOpen}
-          onOpenChange={(open) => {
-            if (!open) {
-              setEditedUserData(null)
-            }
-            setIsEditProfileOpen(open)
-          }}
-        >
-          <DialogContent className="rounded-lg w-11/12 max-w-md">
-            <DialogHeader>
-              <DialogTitle>Edit Profile</DialogTitle>
-              <DialogDescription>Update your personal information</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleUpdateProfile}>
-              <div className="grid w-full items-center gap-4 py-2">
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="edit-name">Name</Label>
-                  <Input
-                    id="edit-name"
-                    value={editedUserData?.name || ""}
-                    onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, name: e.target.value } : null))}
-                    required
-                  />
+        {isMobile ? (
+          <Drawer
+            open={isEditProfileOpen}
+            onOpenChange={(open) => {
+              if (!open) {
+                setEditedUserData(null)
+              }
+              setIsEditProfileOpen(open)
+            }}
+          >
+            <DrawerContent className="px-4 pb-6">
+              <DrawerHeader className="text-left">
+                <DrawerTitle>Edit Profile</DrawerTitle>
+                <DrawerDescription>Update your personal information</DrawerDescription>
+              </DrawerHeader>
+              <form onSubmit={handleUpdateProfile} className="px-4">
+                <div className="grid w-full items-center gap-4 py-2">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="edit-name">Name</Label>
+                    <Input
+                      id="edit-name"
+                      value={editedUserData?.name || ""}
+                      onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, name: e.target.value } : null))}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="edit-phone">Phone</Label>
+                    <PhoneInput
+                      id="edit-phone"
+                      value={editedUserData?.phone || ""}
+                      onChange={(value) => setEditedUserData((prev) => (prev ? { ...prev, phone: value || "" } : null))}
+                      defaultCountry="PT"
+                      international
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="edit-email">Email</Label>
+                    <Input
+                      id="edit-email"
+                      value={editedUserData?.email || ""}
+                      onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, email: e.target.value } : null))}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="edit-phone">Phone</Label>
-                  <PhoneInput
-                    id="edit-phone"
-                    value={editedUserData?.phone || ""}
-                    onChange={(value) => setEditedUserData((prev) => (prev ? { ...prev, phone: value || "" } : null))}
-                    defaultCountry="PT"
-                    international
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
+                <DrawerFooter className="px-0 pt-6">
+                  <Button type="submit" disabled={isUpdatingProfile || !isOnline}>
+                    {isUpdatingProfile ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
+                    {isUpdatingProfile ? "Updating..." : "Save Changes"}
+                  </Button>
+                  <DrawerClose asChild>
+                    <Button variant="outline" type="button">
+                      Cancel
+                    </Button>
+                  </DrawerClose>
+                </DrawerFooter>
+              </form>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Dialog
+            open={isEditProfileOpen}
+            onOpenChange={(open) => {
+              if (!open) {
+                setEditedUserData(null)
+              }
+              setIsEditProfileOpen(open)
+            }}
+          >
+            <DialogContent className="rounded-lg w-11/12 max-w-md">
+              <DialogHeader>
+                <DialogTitle>Edit Profile</DialogTitle>
+                <DialogDescription>Update your personal information</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleUpdateProfile}>
+                <div className="grid w-full items-center gap-4 py-2">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="edit-name">Name</Label>
+                    <Input
+                      id="edit-name"
+                      value={editedUserData?.name || ""}
+                      onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, name: e.target.value } : null))}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="edit-phone">Phone</Label>
+                    <PhoneInput
+                      id="edit-phone"
+                      value={editedUserData?.phone || ""}
+                      onChange={(value) => setEditedUserData((prev) => (prev ? { ...prev, phone: value || "" } : null))}
+                      defaultCountry="PT"
+                      international
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="edit-email">Email</Label>
+                    <Input
+                      id="edit-email"
+                      value={editedUserData?.email || ""}
+                      onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, email: e.target.value } : null))}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="edit-email">Email</Label>
-                  <Input
-                    id="edit-email"
-                    value={editedUserData?.email || ""}
-                    onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, email: e.target.value } : null))}
-                    required
-                  />
-                </div>
-              </div>
-              <DialogFooter className="mt-4">
-                <Button className="mb-2" variant="outline" type="button" onClick={() => setIsEditProfileOpen(false)}>
-                  Cancel
-                </Button>
-                <Button className="mb-2" type="submit" disabled={isUpdatingProfile || !isOnline}>
-                  {isUpdatingProfile ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
-                  {isUpdatingProfile ? "Updating..." : "Save Changes"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <DialogFooter className="mt-4">
+                  <Button className="mb-2" variant="outline" type="button" onClick={() => setIsEditProfileOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button className="mb-2" type="submit" disabled={isUpdatingProfile || !isOnline}>
+                    {isUpdatingProfile ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
+                    {isUpdatingProfile ? "Updating..." : "Save Changes"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
 
-        <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
-          <DialogContent className="rounded-lg w-11/12 max-w-md">
-            <DialogHeader>
-              <DialogTitle>Change Password</DialogTitle>
-              <DialogDescription>Enter your current password and a new password</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleChangePassword}>
-              <div className="grid w-full items-center gap-4 py-2">
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="current-password">Current Password</Label>
-                  <PasswordInput
-                    id="current-password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="new-password">New Password</Label>
-                  <PasswordInput
-                    id="new-password"
-                    value={newPassword}
-                    onChange={(e) => {
-                      setNewPassword(e.target.value)
-                      setNewPasswordStrength(evaluatePasswordStrength(e.target.value))
-                    }}
-                    required
-                  />
-                  {newPassword && (
-                    <div className="relative">
-                      <div className="h-2 rounded bg-gray-200">
-                        <div
-                          className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-green-500" : newPasswordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
-                          style={{
-                            width:
-                              newPasswordStrength === "Strong"
-                                ? "100%"
-                                : newPasswordStrength === "Medium"
-                                  ? "66%"
-                                  : newPasswordStrength === "Weak"
-                                    ? "33%"
-                                    : "0%",
-                          }}
-                        />
+        {isMobile ? (
+          <Drawer open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
+            <DrawerContent className="px-4 pb-6">
+              <DrawerHeader className="text-left">
+                <DrawerTitle>Change Password</DrawerTitle>
+                <DrawerDescription>Enter your current password and a new password</DrawerDescription>
+              </DrawerHeader>
+              <form onSubmit={handleChangePassword} className="px-4">
+                <div className="grid w-full items-center gap-4 py-2">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="current-password">Current Password</Label>
+                    <PasswordInput
+                      id="current-password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="new-password">New Password</Label>
+                    <PasswordInput
+                      id="new-password"
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value)
+                        setNewPasswordStrength(evaluatePasswordStrength(e.target.value))
+                      }}
+                      required
+                    />
+                    {newPassword && (
+                      <div className="relative">
+                        <div className="h-2 rounded bg-gray-200">
+                          <div
+                            className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-green-500" : newPasswordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
+                            style={{
+                              width:
+                                newPasswordStrength === "Strong"
+                                  ? "100%"
+                                  : newPasswordStrength === "Medium"
+                                    ? "66%"
+                                    : newPasswordStrength === "Weak"
+                                      ? "33%"
+                                      : "0%",
+                            }}
+                          />
+                        </div>
+                        <p
+                          className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-green-500" : newPasswordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}
+                        >
+                          {newPasswordStrength}
+                        </p>
                       </div>
-                      <p
-                        className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-green-500" : newPasswordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}
-                      >
-                        {newPasswordStrength}
-                      </p>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+                    <PasswordInput
+                      id="confirm-new-password"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="confirm-new-password">Confirm New Password</Label>
-                  <PasswordInput
-                    id="confirm-new-password"
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    required
+                <DrawerFooter className="px-0 pt-6">
+                  <Button type="submit" disabled={isChangingPassword || !isOnline}>
+                    {isChangingPassword ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
+                    {isChangingPassword ? "Changing..." : "Change Password"}
+                  </Button>
+                  <DrawerClose asChild>
+                    <Button variant="outline" type="button">
+                      Cancel
+                    </Button>
+                  </DrawerClose>
+                </DrawerFooter>
+              </form>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
+            <DialogContent className="rounded-lg w-11/12 max-w-md">
+              <DialogHeader>
+                <DialogTitle>Change Password</DialogTitle>
+                <DialogDescription>Enter your current password and a new password</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleChangePassword}>
+                <div className="grid w-full items-center gap-4 py-2">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="current-password">Current Password</Label>
+                    <PasswordInput
+                      id="current-password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="new-password">New Password</Label>
+                    <PasswordInput
+                      id="new-password"
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value)
+                        setNewPasswordStrength(evaluatePasswordStrength(e.target.value))
+                      }}
+                      required
+                    />
+                    {newPassword && (
+                      <div className="relative">
+                        <div className="h-2 rounded bg-gray-200">
+                          <div
+                            className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-green-500" : newPasswordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
+                            style={{
+                              width:
+                                newPasswordStrength === "Strong"
+                                  ? "100%"
+                                  : newPasswordStrength === "Medium"
+                                    ? "66%"
+                                    : newPasswordStrength === "Weak"
+                                      ? "33%"
+                                      : "0%",
+                            }}
+                          />
+                        </div>
+                        <p
+                          className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-green-500" : newPasswordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}
+                        >
+                          {newPasswordStrength}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+                    <PasswordInput
+                      id="confirm-new-password"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <DialogFooter className="mt-4">
+                  <Button
+                    className="mb-2"
+                    variant="outline"
+                    type="button"
+                    onClick={() => setIsChangePasswordOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button className="mb-2" type="submit" disabled={isChangingPassword || !isOnline}>
+                    {isChangingPassword ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
+                    {isChangingPassword ? "Changing..." : "Change Password"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {isMobile ? (
+          <Drawer open={isDeleteAccountDialogOpen} onOpenChange={setIsDeleteAccountDialogOpen}>
+            <DrawerContent className="px-4 pb-6">
+              <DrawerHeader className="text-left">
+                <DrawerTitle className="text-destructive">Confirm Account Deletion</DrawerTitle>
+                <DrawerDescription>
+                  Are you sure you want to delete your account? This action cannot be undone.
+                </DrawerDescription>
+              </DrawerHeader>
+              <div className="px-4">
+                <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20 my-2">
+                  <p className="text-sm">All your data will be permanently removed, including:</p>
+                  <ul className="text-sm list-disc list-inside mt-2 space-y-1">
+                    <li>Your personal information</li>
+                    <li>Ride history</li>
+                    <li>Contacts and associated people</li>
+                    <li>Account settings</li>
+                  </ul>
+                </div>
+                <div className="flex flex-col space-y-2 mt-4">
+                  <Label htmlFor="delete-confirmation">Type &quot;delete&quot; to confirm:</Label>
+                  <Input
+                    id="delete-confirmation"
+                    value={deleteConfirmation}
+                    onChange={(e) => setDeleteConfirmation(e.target.value)}
+                    placeholder="Type 'delete'"
                   />
                 </div>
+                <DrawerFooter className="px-0 pt-6">
+                  <Button
+                    variant="destructive"
+                    onClick={confirmDeleteUser}
+                    disabled={isDeletingAccount || !isOnline || deleteConfirmation !== "delete"}
+                  >
+                    {isDeletingAccount ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
+                    Delete Permanently
+                  </Button>
+                  <DrawerClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                  </DrawerClose>
+                </DrawerFooter>
               </div>
-              <DialogFooter className="mt-4">
-                <Button className="mb-2" variant="outline" type="button" onClick={() => setIsChangePasswordOpen(false)}>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Dialog open={isDeleteAccountDialogOpen} onOpenChange={setIsDeleteAccountDialogOpen}>
+            <DialogContent className="rounded-lg w-11/12 max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-destructive">Confirm Account Deletion</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete your account? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20 my-2">
+                <p className="text-sm">All your data will be permanently removed, including:</p>
+                <ul className="text-sm list-disc list-inside mt-2 space-y-1">
+                  <li>Your personal information</li>
+                  <li>Ride history</li>
+                  <li>Contacts and associated people</li>
+                  <li>Account settings</li>
+                </ul>
+              </div>
+              <div className="flex flex-col space-y-2">
+                <Label htmlFor="delete-confirmation">Type &quot;delete&quot; to confirm:</Label>
+                <Input
+                  id="delete-confirmation"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  placeholder="Type 'delete'"
+                />
+              </div>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDeleteAccountDialogOpen(false)}
+                  className="sm:order-1 mb-2"
+                >
                   Cancel
                 </Button>
-                <Button className="mb-2" type="submit" disabled={isChangingPassword || !isOnline}>
-                  {isChangingPassword ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
-                  {isChangingPassword ? "Changing..." : "Change Password"}
+                <Button
+                  variant="destructive"
+                  onClick={confirmDeleteUser}
+                  disabled={isDeletingAccount || !isOnline || deleteConfirmation !== "delete"}
+                  className="sm:order-2 mb-2"
+                >
+                  {isDeletingAccount ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
+                  Delete Permanently
                 </Button>
               </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
 
-        <Dialog open={isDeleteAccountDialogOpen} onOpenChange={setIsDeleteAccountDialogOpen}>
-          <DialogContent className="rounded-lg w-11/12 max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-destructive">Confirm Account Deletion</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete your account? This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20 my-2">
-              <p className="text-sm">All your data will be permanently removed, including:</p>
-              <ul className="text-sm list-disc list-inside mt-2 space-y-1">
-                <li>Your personal information</li>
-                <li>Ride history</li>
-                <li>Contacts and associated people</li>
-                <li>Account settings</li>
-              </ul>
-            </div>
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="delete-confirmation">Type &quot;delete&quot; to confirm:</Label>
-              <Input
-                id="delete-confirmation"
-                value={deleteConfirmation}
-                onChange={(e) => setDeleteConfirmation(e.target.value)}
-                placeholder="Type 'delete'"
-              />
-            </div>
-            <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)} className="sm:order-1 mb-2">
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={confirmDeleteUser}
-                disabled={isDeletingAccount || !isOnline || deleteConfirmation !== "delete"}
-                className="sm:order-2 mb-2"
-              >
-                {isDeletingAccount ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
-                Delete Permanently
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-          <DialogContent className="rounded-lg w-11/12">
-            <DialogHeader>
-              <DialogTitle>Confirm Logout</DialogTitle>
-              <DialogDescription>Are you sure you want to log out?</DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button className="mb-2" variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button className="mb-2" variant="destructive" onClick={confirmLogout}>
-                Logout
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {isMobile ? (
+          <Drawer open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+            <DrawerContent className="px-4 pb-6">
+              <DrawerHeader className="text-left">
+                <DrawerTitle>Confirm Logout</DrawerTitle>
+                <DrawerDescription>Are you sure you want to log out?</DrawerDescription>
+              </DrawerHeader>
+              <DrawerFooter className="px-4 pt-2">
+                <Button variant="destructive" onClick={confirmLogout}>
+                  Logout
+                </Button>
+                <DrawerClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+            <DialogContent className="rounded-lg w-11/12">
+              <DialogHeader>
+                <DialogTitle>Confirm Logout</DialogTitle>
+                <DialogDescription>Are you sure you want to log out?</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button className="mb-2" variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button className="mb-2" variant="destructive" onClick={confirmLogout}>
+                  Logout
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </>
     </div>
   )
 }
-
