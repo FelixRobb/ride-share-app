@@ -23,7 +23,6 @@ import { useTheme } from "next-themes"
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { parsePhoneNumber } from "libphonenumber-js"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import {
@@ -46,8 +45,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
 import { signOut } from "next-auth/react"
-
-// First, import the Drawer components
 import {
   Drawer,
   DrawerClose,
@@ -57,10 +54,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
-
-// Add this to the imports at the top (after the existing useMediaQuery import)
 import { useMediaQuery } from "@/hooks/use-media-query"
-
 import type { User, Contact, AssociatedPerson, PushSubscription as AppPushSubscription } from "../types"
 import {
   updateProfile,
@@ -73,7 +67,6 @@ import {
 } from "../utils/api"
 import { getDeviceId, formatLastUsed } from "@/utils/deviceUtils"
 import { unregisterServiceWorker } from "@/utils/cleanupService"
-
 import { ContactManager } from "./ContactDialog"
 
 interface ProfilePageProps {

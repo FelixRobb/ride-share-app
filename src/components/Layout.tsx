@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Car, Users, HelpCircle, Shield, FileText, Info, Star, Code } from "lucide-react"
+import { Home, Car, Users, HelpCircle, Shield, FileText, Info, Star, Code, Mail } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "./ui/drawer"
-import React from 'react'
+import type React from "react"
 
 import { NotificationPanel } from "@/components/NotificationPanel"
 import { Button } from "@/components/ui/button"
@@ -59,10 +59,12 @@ export default function Layout({ children }: LayoutProps) {
       <Button
         variant="default"
         size={isLargeScreen ? "default" : "sm"}
-        className="rounded-full w-full" onClick={() => {
-          restartTutorial();
-          setOpen(false);
-        }}>
+        className="rounded-full w-full"
+        onClick={() => {
+          restartTutorial()
+          setOpen(false)
+        }}
+      >
         <HelpCircle className="mr-2 h-4 w-4" />
         Restart Tutorial
       </Button>
@@ -95,7 +97,7 @@ export default function Layout({ children }: LayoutProps) {
                         key={item.href}
                         variant="ghost"
                         asChild
-                        className={`rounded-full px-4 py-2 transition-colors duration-200 ${pathname === item.href ? 'bg-accent' : ''}`}
+                        className={`rounded-full px-4 py-2 transition-colors duration-200 ${pathname === item.href ? "bg-accent" : ""}`}
                       >
                         <Link href={item.href} className={pathname === item.href ? "text-primary" : ""}>
                           <item.icon className="mr-2 h-4 w-4" /> {item.label}
@@ -139,15 +141,17 @@ export default function Layout({ children }: LayoutProps) {
                 ))}
               </div>
             </nav>
-            <footer className={`
+            <footer
+              className={`
         bg-gradient-to-r from-primary/5 to-secondary/5 
-        rounded-lg mx-${isLargeScreen ? '6' : '4'} 
+        rounded-lg mx-${isLargeScreen ? "6" : "4"} 
         mb-20 md:mb-6 py-6 px-4 
         shadow-md border border-border/50
-      `}>
+      `}
+            >
               <div className="container mx-auto">
                 <div className="flex flex-col md:flex-row justify-between items-center">
-                  <p className={`text-${isMediumScreen ? 'sm' : 'xs'} font-medium text-foreground/80`}>
+                  <p className={`text-${isMediumScreen ? "sm" : "xs"} font-medium text-foreground/80`}>
                     &copy; {new Date().getFullYear()} RideShare by Félix Robb.
                     <span className="text-muted-foreground ml-1">All rights reserved.</span>
                   </p>
@@ -156,7 +160,7 @@ export default function Layout({ children }: LayoutProps) {
                     {!isMediumScreen ? (
                       // Mobile Drawer with controlled open state
                       <Drawer open={open} onOpenChange={setOpen}>
-                        <DrawerTrigger className="h-9 px-4 py-2 items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 flex rounded-full border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground" >
+                        <DrawerTrigger className="h-9 px-4 py-2 items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 flex rounded-full border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground">
                           <span>More Links</span>
                           <HelpCircle className="h-4 w-4" />
                         </DrawerTrigger>
@@ -175,6 +179,7 @@ export default function Layout({ children }: LayoutProps) {
                               { href: "/reviews", label: "Leave a review", icon: Star },
                               { href: "https://github.com/FelixRobb/ride-share-app", label: "GitHub", icon: Code },
                               { href: "/bug-report", label: "Bug Reports", icon: HelpCircle },
+                              { href: `mailto:${process.env.GMAIL_USER}`, label: "Contact Us", icon: Mail },
                             ].map(({ href, label, icon: Icon }) => (
                               <Link
                                 key={href}
@@ -194,21 +199,20 @@ export default function Layout({ children }: LayoutProps) {
                     ) : (
                       // Desktop Popover with controlled open state
                       <Popover open={open} onOpenChange={setOpen}>
-                        <PopoverTrigger
-                          className="h-9 px-4 py-2 items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 flex rounded-full border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground"
-                        >
+                        <PopoverTrigger className="h-9 px-4 py-2 items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 flex rounded-full border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground">
                           <span>More Links</span>
-                          <HelpCircle className={`h-${isLargeScreen ? '5' : '4'} w-${isLargeScreen ? '5' : '4'}`} />
-
+                          <HelpCircle className={`h-${isLargeScreen ? "5" : "4"} w-${isLargeScreen ? "5" : "4"}`} />
                         </PopoverTrigger>
-                        <PopoverContent className={`w-${isLargeScreen ? '96' : '80'} p-0 bg-card/95 backdrop-blur-md border border-border/50 shadow-lg rounded-xl`}>
+                        <PopoverContent
+                          className={`w-${isLargeScreen ? "96" : "80"} p-0 bg-card/95 backdrop-blur-md border border-border/50 shadow-lg rounded-xl`}
+                        >
                           <div className="p-2">
                             <div className="py-3 px-4 border-b border-border/20">
                               <h3 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
                                 Explore RideShare
                               </h3>
                             </div>
-                            <div className={`grid ${isLargeScreen ? 'grid-cols-3' : 'grid-cols-2'} gap-2 p-3`}>
+                            <div className={`grid ${isLargeScreen ? "grid-cols-3" : "grid-cols-2"} gap-2 p-3`}>
                               {[
                                 { href: "/privacy-policy", label: "Privacy Policy", icon: Shield },
                                 { href: "/terms-of-service", label: "Terms of Service", icon: FileText },
@@ -217,6 +221,7 @@ export default function Layout({ children }: LayoutProps) {
                                 { href: "/reviews", label: "Leave a review", icon: Star },
                                 { href: "https://github.com/FelixRobb/ride-share-app", label: "GitHub", icon: Code },
                                 { href: "/bug-report", label: "Bug Reports", icon: HelpCircle },
+                                { href: `mailto:${process.env.GMAIL_USER}`, label: "Contact Us", icon: Mail },
                               ].map(({ href, label, icon: Icon }) => (
                                 <Link
                                   key={href}
@@ -238,11 +243,10 @@ export default function Layout({ children }: LayoutProps) {
                   </div>
                 </div>
               </div>
-            </footer >
+            </footer>
           </TutorialProvider>
-        </div >
-      )
-      }
+        </div>
+      )}
     </>
   )
 }
