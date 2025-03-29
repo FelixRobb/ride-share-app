@@ -179,7 +179,7 @@ export default function Layout({ children }: LayoutProps) {
                               { href: "/reviews", label: "Leave a review", icon: Star },
                               { href: "https://github.com/FelixRobb/ride-share-app", label: "GitHub", icon: Code },
                               { href: "/bug-report", label: "Bug Reports", icon: HelpCircle },
-                              { href: `mailto:${process.env.GMAIL_USER}`, label: "Contact Us", icon: Mail },
+                              { href: "mailto:rideshareapp.mail@gmail.com", label: "Contact Us", icon: Mail },
                             ].map(({ href, label, icon: Icon }) => (
                               <Link
                                 key={href}
@@ -221,7 +221,7 @@ export default function Layout({ children }: LayoutProps) {
                                 { href: "/reviews", label: "Leave a review", icon: Star },
                                 { href: "https://github.com/FelixRobb/ride-share-app", label: "GitHub", icon: Code },
                                 { href: "/bug-report", label: "Bug Reports", icon: HelpCircle },
-                                { href: `mailto:${process.env.GMAIL_USER}`, label: "Contact Us", icon: Mail },
+                                { href: "mailto:rideshareapp.mail@gmail.com", label: "Contact Us", icon: Mail },
                               ].map(({ href, label, icon: Icon }) => (
                                 <Link
                                   key={href}
