@@ -181,8 +181,10 @@ export default function LoginPage({ quote }: LoginPageProps) {
       <div className="min-h-screen flex flex-col bg-background">
         <header className="bg-background/80 backdrop-blur-sm p-4 shadow-sm border-b">
           <div className="container mx-auto flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-primary">RideShare</h1>
-            <div>
+           <Link href="/welcome" className="text-2xl font-bold text-primary">
+                    RideShare
+                  </Link>
+                  <div>
               <Button variant="ghost" asChild className="mr-2">
                 <Link href="/login">Login</Link>
               </Button>
