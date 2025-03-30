@@ -5,16 +5,16 @@
     },
     "editor.defaultFormatter": null,
     "[typescript]": {
-      "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+      "editor.defaultFormatter": "vscode.typescript-language-features"
     },
     "[typescriptreact]": {
-      "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+      "editor.defaultFormatter": "vscode.typescript-language-features"
     },
     "[javascript]": {
-      "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+      "editor.defaultFormatter": "vscode.typescript-language-features"
     },
     "[javascriptreact]": {
-      "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+      "editor.defaultFormatter": "vscode.typescript-language-features"
     },
     "prettier.requireConfig": true,
     "eslint.format.enable": true,

@@ -61,7 +61,20 @@ const initialRideData: RideData = {
   to_location: "",
   to_lat: 0,
   to_lon: 0,
-  time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Default to the same time tomorrow
+  time: (() => {
+    try {
+      // Create a date 24 hours from now in a safer way
+      const now = new Date();
+      const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      if (isNaN(tomorrow.getTime())) {
+        throw new Error("Invalid date created");
+      }
+      return tomorrow.toISOString();
+    } catch (error) {
+      console.error("Error creating default date:", error);
+      return new Date().toISOString(); // Fallback to current time
+    }
+  })(),
   rider_name: "",
   rider_phone: "",
   note: "",
@@ -302,17 +315,28 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
       case 1:
         return (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <InlineDateTimePicker
-                value={rideData.time ? new Date(rideData.time) : new Date()}
-                onChange={(date) =>
-                  setRideData((prev) => ({
+            <InlineDateTimePicker
+              value={rideData.time ? new Date(rideData.time) : new Date()}
+              onChange={(date) =>
+                setRideData((prev) => {
+                  // Ensure date is valid before calling toISOString
+                  if (!(date instanceof Date) || isNaN(date.getTime())) {
+                    console.error("Invalid date received from date picker");
+                    // Fallback to current date + 24h
+                    const fallbackDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+                    return {
+                      ...prev,
+                      time: fallbackDate.toISOString(),
+                    };
+                  }
+                  
+                  return {
                     ...prev,
                     time: date.toISOString(),
-                  }))
-                }
-              />
-            </div>
+                  };
+                })
+              }
+            />
           </div>
         );
       case 2:
