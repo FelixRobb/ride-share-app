@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+
 import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
 import type { BugReportFormData } from "@/types";
@@ -26,7 +27,11 @@ export async function POST(request: Request) {
     }
 
     // Get user name for notifications
-    const { data: userData, error: userError } = await supabase.from("users").select("name").eq("id", userId).single();
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("name")
+      .eq("id", userId)
+      .single();
 
     if (userError || !userData) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });

@@ -1,17 +1,16 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { Car, ArrowRight } from "lucide-react"
-import Link from "next/link"
-import { useSession } from "next-auth/react"
+import { motion } from "framer-motion";
+import { Car, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
 
-import { Button } from "@/components/ui/button"
-
+import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
-  const { status } = useSession()
+  const { status } = useSession();
 
-  const isLoggedIn = status === "authenticated"
+  const isLoggedIn = status === "authenticated";
 
   const carVariants = {
     initial: { x: "-100%" },
@@ -23,13 +22,15 @@ export default function NotFound() {
         repeat: Number.POSITIVE_INFINITY,
       },
     },
-  }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background">
       <div className="text-center space-y-8 max-w-2xl mx-5">
         <h1 className="text-6xl md:text-8xl font-bold text-primary">404</h1>
-        <p className="text-2xl md:text-4xl font-semibold text-foreground">Oops! You&apos;ve taken a wrong turn</p>
+        <p className="text-2xl md:text-4xl font-semibold text-foreground">
+          Oops! You&apos;ve taken a wrong turn
+        </p>
         <p className="text-lg md:text-xl text-muted-foreground">
           The page you&apos;re looking for seems to have driven off into the sunset.
         </p>
@@ -54,6 +55,5 @@ export default function NotFound() {
         </Button>
       </div>
     </div>
-  )
+  );
 }
-

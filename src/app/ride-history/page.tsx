@@ -1,15 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react"
-import Layout from "@/components/Layout"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { format, isToday, isYesterday, isThisWeek, isThisMonth } from "date-fns";
 import {
   ChevronLeft,
   ChevronRight,
@@ -22,39 +13,55 @@ import {
   CalendarPlus2Icon as CalendarIcon2,
   AlertCircle,
   ChevronDown,
-  MapPin
-} from "lucide-react"
-import { format, isToday, isYesterday, isThisWeek, isThisMonth } from "date-fns"
-import { cn } from "@/lib/utils"
-import type { Ride } from "@/types"
-import Link from "next/link"
+  MapPin,
+} from "lucide-react";
+import Link from "next/link";
+import { useState, useEffect, useCallback, useMemo } from "react";
+
+import Layout from "@/components/Layout";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Separator } from "@/components/ui/separator"
-import { useMediaQuery } from "@/hooks/use-media-query"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn } from "@/lib/utils";
+import type { Ride } from "@/types";
 
-const ITEMS_PER_PAGE = 10
+const ITEMS_PER_PAGE = 10;
 
 function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedValue(value)
-    }, delay)
+      setDebouncedValue(value);
+    }, delay);
 
     return () => {
-      clearTimeout(timer)
-    }
-  }, [value, delay])
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
 
-  return debouncedValue
+  return debouncedValue;
 }
 
 // Status badge component with improved visual design
@@ -65,29 +72,29 @@ const StatusBadge = ({ status }: { status: string }) => {
         <Badge variant="secondary" className="px-2 py-1 font-medium">
           Pending
         </Badge>
-      )
+      );
     case "accepted":
       return (
         <Badge variant="default" className="bg-green-500 px-2 py-1 font-medium">
           Accepted
         </Badge>
-      )
+      );
     case "cancelled":
       return (
         <Badge variant="destructive" className="px-2 py-1 font-medium">
           Cancelled
         </Badge>
-      )
+      );
     case "completed":
       return (
         <Badge variant="default" className="bg-blue-500 px-2 py-1 font-medium">
           Completed
         </Badge>
-      )
+      );
     default:
-      return null
+      return null;
   }
-}
+};
 
 // Time period filter options
 const TIME_PERIODS = [
@@ -96,7 +103,7 @@ const TIME_PERIODS = [
   { label: "This Week", value: "this-week" },
   { label: "This Month", value: "this-month" },
   { label: "Custom", value: "custom" },
-]
+];
 
 // Status filter options
 const STATUS_OPTIONS = [
@@ -105,33 +112,36 @@ const STATUS_OPTIONS = [
   { label: "Accepted", value: "accepted" },
   { label: "Completed", value: "completed" },
   { label: "Cancelled", value: "cancelled" },
-]
+];
 
 export default function RideHistoryPage() {
-
   // State for ride data and pagination
-  const [rides, setRides] = useState<Ride[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [totalRides, setTotalRides] = useState(0)
-
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRides, setTotalRides] = useState(0);
 
   // State for filters
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined)
-  const [timePeriod, setTimePeriod] = useState("all")
-  const [activeTab, setActiveTab] = useState("all")
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
+  const [timePeriod, setTimePeriod] = useState("all");
+  const [activeTab, setActiveTab] = useState("all");
 
   // Debounce search term to reduce API calls
-  const debouncedSearchTerm = useDebounce(searchTerm, 500)
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   // Determine if any filters are active
   const hasActiveFilters = useMemo(() => {
-    return statusFilter !== "all" || dateFilter !== undefined || timePeriod !== "all" || debouncedSearchTerm !== ""
-  }, [statusFilter, dateFilter, timePeriod, debouncedSearchTerm])
+    return (
+      statusFilter !== "all" ||
+      dateFilter !== undefined ||
+      timePeriod !== "all" ||
+      debouncedSearchTerm !== ""
+    );
+  }, [statusFilter, dateFilter, timePeriod, debouncedSearchTerm]);
 
   // Load filters from local storage on initial render
   useEffect(() => {
@@ -163,8 +173,8 @@ export default function RideHistoryPage() {
 
   // Function to fetch rides with current filters
   const fetchRides = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
       const queryParams = new URLSearchParams({
@@ -174,99 +184,100 @@ export default function RideHistoryPage() {
         status: statusFilter,
         timePeriod: timePeriod,
         date: dateFilter ? format(dateFilter, "yyyy-MM-dd") : "",
-      })
+      });
 
-      const response = await fetch(`/api/ride-history?${queryParams}`)
+      const response = await fetch(`/api/ride-history?${queryParams}`);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch rides")
+        throw new Error("Failed to fetch rides");
       }
 
-      const data = await response.json()
-      setRides(data.rides)
+      const data = await response.json();
+      setRides(data.rides);
 
-      setTotalPages(data.totalPages)
-      setCurrentPage(data.page)
-      setTotalRides(data.total)
+      setTotalPages(data.totalPages);
+      setCurrentPage(data.page);
+      setTotalRides(data.total);
     } catch {
-      setError("Failed to load ride history. Please try again.")
-      setRides([])
-      setTotalPages(0)
+      setError("Failed to load ride history. Please try again.");
+      setRides([]);
+      setTotalPages(0);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [currentPage, debouncedSearchTerm, statusFilter, dateFilter, timePeriod])
+  }, [currentPage, debouncedSearchTerm, statusFilter, dateFilter, timePeriod]);
 
   // Fetch rides when filters or pagination changes
   useEffect(() => {
-    fetchRides()
-  }, [fetchRides])
+    fetchRides();
+  }, [fetchRides]);
 
   // Handle page change
   const handlePageChange = (newPage: number): void => {
-    setCurrentPage(newPage)
-    window.scrollTo({ top: 0, behavior: "smooth" })
-  }
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Clear all filters
   const clearFilters = () => {
-    setStatusFilter("all")
-    setDateFilter(undefined)
-    setTimePeriod("all")
-    setSearchTerm("")
-    setCurrentPage(1)
-  }
+    setStatusFilter("all");
+    setDateFilter(undefined);
+    setTimePeriod("all");
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
 
   // Helper functions for the ride card
   const formatDateTime = (dateTimeString: string) => {
-    const dateObj = new Date(dateTimeString)
+    const dateObj = new Date(dateTimeString);
     return {
       date: format(dateObj, "MMM d, yyyy"),
       time: format(dateObj, "h:mm a"),
       relative: getRelativeTimeLabel(dateObj),
-    }
-  }
+    };
+  };
 
   // Get a human-readable relative time label
   const getRelativeTimeLabel = (date: Date) => {
-    if (isToday(date)) return "Today"
-    if (isYesterday(date)) return "Yesterday"
-    if (isThisWeek(date)) return format(date, "EEEE") // Day name
-    if (isThisMonth(date)) return format(date, "MMMM d") // Month and day
-    return format(date, "MMM d, yyyy") // Full date for older dates
-  }
+    if (isToday(date)) return "Today";
+    if (isYesterday(date)) return "Yesterday";
+    if (isThisWeek(date)) return format(date, "EEEE"); // Day name
+    if (isThisMonth(date)) return format(date, "MMMM d"); // Month and day
+    return format(date, "MMM d, yyyy"); // Full date for older dates
+  };
 
   // Get requester name (simplified for this example)
   const getRequesterName = (ride: Ride) => {
-    return ride.rider_name || "Unknown rider"
-  }
+    return ride.rider_name || "Unknown rider";
+  };
 
   // Get offered by text (simplified for this example)
   const getOfferedByText = (ride: Ride) => {
-    return ride.rider_name || "Unknown driver"
-  }
+    return ride.rider_name || "Unknown driver";
+  };
 
   // Render a ride card with improved design
   const RideCard = ({ ride }: { ride: Ride }) => {
-    const { time, relative } = formatDateTime(ride.time)
+    const { time, relative } = formatDateTime(ride.time);
 
     // Extract just the first part of the location for a cleaner display
-    const fromLocationShort = ride.from_location.split(",")[0]
-    const toLocationShort = ride.to_location.split(",")[0]
+    const fromLocationShort = ride.from_location.split(",")[0];
+    const toLocationShort = ride.to_location.split(",")[0];
 
     return (
       <Link href={`/rides/${ride.id}?from=ride-history`} className="block">
         <Card
           className={`mb-4 hover:bg-accent/50 transition-all duration-200 group border-l-4 hover:shadow-md 
-            ${ride.status === "completed"
-              ? "border-l-blue-500"
-              : ride.status === "accepted"
-                ? "border-l-green-500"
-                : ride.status === "cancelled"
-                  ? "border-l-destructive"
-                  : ride.status === "pending"
-                    ? "border-l-secondary"
-                    : "border-l-border"
+            ${
+              ride.status === "completed"
+                ? "border-l-blue-500"
+                : ride.status === "accepted"
+                  ? "border-l-green-500"
+                  : ride.status === "cancelled"
+                    ? "border-l-destructive"
+                    : ride.status === "pending"
+                      ? "border-l-secondary"
+                      : "border-l-border"
             }`}
         >
           <CardContent className="p-4 sm:p-6">
@@ -292,9 +303,9 @@ export default function RideHistoryPage() {
               {/* Route information */}
               <div className="flex items-center space-x-3">
                 <div className="flex flex-col items-center space-y-1">
-                  <MapPin className="w-3 h-3 rounded-full text-primary"></MapPin>
-                  <div className="w-0.5 h-10 bg-muted-foreground/30"></div>
-                  <MapPin className="w-3 h-3 rounded-full text-destructive"></MapPin>
+                  <MapPin className="w-3 h-3 rounded-full text-primary" />
+                  <div className="w-0.5 h-10 bg-muted-foreground/30" />
+                  <MapPin className="w-3 h-3 rounded-full text-destructive" />
                 </div>
                 <div className="flex-1 space-y-4">
                   <div className="flex-1">
@@ -323,7 +334,9 @@ export default function RideHistoryPage() {
               {(ride.status === "accepted" || ride.status === "completed") && ride.rider_name && (
                 <div className="flex items-center space-x-2 pt-2 border-t">
                   <User2 className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Offered by: {getOfferedByText(ride)}</span>
+                  <span className="text-sm text-muted-foreground">
+                    Offered by: {getOfferedByText(ride)}
+                  </span>
                 </div>
               )}
               {ride.note && (
@@ -337,8 +350,8 @@ export default function RideHistoryPage() {
           </CardContent>
         </Card>
       </Link>
-    )
-  }
+    );
+  };
 
   // Render skeleton loaders during loading state
   const RideCardSkeleton = () => (
@@ -351,9 +364,9 @@ export default function RideHistoryPage() {
           </div>
           <div className="flex items-center space-x-3">
             <div className="flex flex-col items-center space-y-1">
-              <MapPin className="w-3 h-3 rounded-full text-muted"></MapPin>
-              <div className="w-0.5 h-10 bg-muted"></div>
-              <MapPin className="w-3 h-3 rounded-full text-muted"></MapPin>
+              <MapPin className="w-3 h-3 rounded-full text-muted" />
+              <div className="w-0.5 h-10 bg-muted" />
+              <MapPin className="w-3 h-3 rounded-full text-muted" />
             </div>
             <div className="flex-1 space-y-4">
               <Skeleton className="h-5 w-full" />
@@ -364,10 +377,10 @@ export default function RideHistoryPage() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 
   // Check if the screen is small
-  const isSmallScreen = useMediaQuery("(max-width: 768px)")
+  const isSmallScreen = useMediaQuery("(max-width: 768px)");
 
   // Replace the FilterTabs component with conditional rendering
   const FilterTabs = () => {
@@ -376,9 +389,9 @@ export default function RideHistoryPage() {
         <Select
           value={activeTab}
           onValueChange={(value) => {
-            setActiveTab(value)
-            setStatusFilter(value === "all" ? "all" : value)
-            setCurrentPage(1)
+            setActiveTab(value);
+            setStatusFilter(value === "all" ? "all" : value);
+            setCurrentPage(1);
           }}
         >
           <SelectTrigger className="w-full mb-6">
@@ -391,16 +404,16 @@ export default function RideHistoryPage() {
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
     }
 
     return (
       <Tabs
         value={activeTab}
         onValueChange={(value) => {
-          setActiveTab(value)
-          setStatusFilter(value === "all" ? "all" : value)
-          setCurrentPage(1)
+          setActiveTab(value);
+          setStatusFilter(value === "all" ? "all" : value);
+          setCurrentPage(1);
         }}
         className="mb-6"
       >
@@ -411,8 +424,8 @@ export default function RideHistoryPage() {
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
         </TabsList>
       </Tabs>
-    )
-  }
+    );
+  };
 
   // Time period dropdown for filtering by time
   const TimePeriodFilter = () => (
@@ -436,8 +449,8 @@ export default function RideHistoryPage() {
         <DropdownMenuGroup>
           <DropdownMenuItem
             onClick={() => {
-              setTimePeriod("all")
-              setDateFilter(undefined)
+              setTimePeriod("all");
+              setDateFilter(undefined);
             }}
           >
             Any Time
@@ -447,11 +460,11 @@ export default function RideHistoryPage() {
             <DropdownMenuItem
               key={period.value}
               onClick={() => {
-                setTimePeriod(period.value)
+                setTimePeriod(period.value);
                 if (period.value === "custom") {
-                  setDateFilter(new Date())
+                  setDateFilter(new Date());
                 } else {
-                  setDateFilter(undefined)
+                  setDateFilter(undefined);
                 }
               }}
             >
@@ -461,7 +474,7 @@ export default function RideHistoryPage() {
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 
   // Calendar popover for custom date selection
   const DatePickerPopover = () => (
@@ -469,8 +482,10 @@ export default function RideHistoryPage() {
       <PopoverTrigger asChild>
         <Button
           variant={timePeriod === "custom" ? "default" : "outline"}
-          className={cn("w-full justify-start text-left font-normal", !dateFilter && "text-muted-foreground")}
-
+          className={cn(
+            "w-full justify-start text-left font-normal",
+            !dateFilter && "text-muted-foreground"
+          )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {dateFilter ? format(dateFilter, "PPP") : "Pick a date"}
@@ -481,26 +496,31 @@ export default function RideHistoryPage() {
           mode="single"
           selected={dateFilter}
           onSelect={(date) => {
-            setDateFilter(date)
-            setTimePeriod("custom")
-            setCurrentPage(1)
+            setDateFilter(date);
+            setTimePeriod("custom");
+            setCurrentPage(1);
           }}
           initialFocus
         />
       </PopoverContent>
     </Popover>
-  )
+  );
 
   // Active filters display with clear buttons
   const ActiveFilters = () => {
-    if (!hasActiveFilters) return null
+    if (!hasActiveFilters) return null;
 
     return (
       <div className="flex flex-wrap gap-2 mb-4">
         {debouncedSearchTerm && (
           <Badge variant="secondary" className="px-3 py-1">
             Search: {debouncedSearchTerm}
-            <Button variant="ghost" size="icon" className="h-4 w-4 ml-1 p-0" onClick={() => setSearchTerm("")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-4 w-4 ml-1 p-0"
+              onClick={() => setSearchTerm("")}
+            >
               <X className="h-3 w-3" />
             </Button>
           </Badge>
@@ -514,8 +534,8 @@ export default function RideHistoryPage() {
               size="icon"
               className="h-4 w-4 ml-1 p-0"
               onClick={() => {
-                setStatusFilter("all")
-                setActiveTab("all")
+                setStatusFilter("all");
+                setActiveTab("all");
               }}
             >
               <X className="h-3 w-3" />
@@ -534,8 +554,8 @@ export default function RideHistoryPage() {
               size="icon"
               className="h-4 w-4 ml-1 p-0"
               onClick={() => {
-                setTimePeriod("all")
-                setDateFilter(undefined)
+                setTimePeriod("all");
+                setDateFilter(undefined);
               }}
             >
               <X className="h-3 w-3" />
@@ -547,8 +567,8 @@ export default function RideHistoryPage() {
           Clear All
         </Button>
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <Layout>
@@ -570,8 +590,8 @@ export default function RideHistoryPage() {
                 placeholder="Search locations, riders..."
                 value={searchTerm}
                 onChange={(e) => {
-                  setSearchTerm(e.target.value)
-                  setCurrentPage(1)
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
                 }}
                 className="pl-4 pr-4 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -673,6 +693,5 @@ export default function RideHistoryPage() {
         )}
       </div>
     </Layout>
-  )
+  );
 }
-

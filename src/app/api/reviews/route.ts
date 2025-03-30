@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 
 export async function POST(request: Request) {
@@ -9,7 +10,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { data, error } = await supabase.from("reviews").insert({ user_id: userId, reviewer_name: reviewerName, review, rating }).select().single();
+    const { data, error } = await supabase
+      .from("reviews")
+      .insert({ user_id: userId, reviewer_name: reviewerName, review, rating })
+      .select()
+      .single();
 
     if (error) throw error;
 

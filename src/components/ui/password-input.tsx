@@ -1,21 +1,22 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Eye, EyeOff } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { Eye, EyeOff } from "lucide-react";
+import * as React from "react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string
+  label?: string;
 }
 
 export function PasswordInput({ label, ...props }: PasswordInputProps) {
-  const [showPassword, setShowPassword] = React.useState(false)
-  const inputId = React.useId()
+  const [showPassword, setShowPassword] = React.useState(false);
+  const inputId = React.useId();
 
   const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword)
-  }
+    setShowPassword(!showPassword);
+  };
 
   return (
     <div className="relative">
@@ -28,7 +29,12 @@ export function PasswordInput({ label, ...props }: PasswordInputProps) {
         </label>
       )}
       <div className="relative mt-2">
-        <Input id={inputId} type={showPassword ? "text" : "password"} className="pr-10" {...props} />
+        <Input
+          id={inputId}
+          type={showPassword ? "text" : "password"}
+          className="pr-10"
+          {...props}
+        />
         <Button
           type="button"
           variant="ghost"
@@ -46,6 +52,5 @@ export function PasswordInput({ label, ...props }: PasswordInputProps) {
         </Button>
       </div>
     </div>
-  )
+  );
 }
-

@@ -1,10 +1,11 @@
-"use client"
+"use client";
 
-import { useRef, useState, useEffect, useCallback } from "react"
-import { toast } from "sonner"
-import { Edit, LucideUser, MessageSquare, Send, Trash } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Edit, LucideUser, MessageSquare, Send, Trash } from "lucide-react";
+import { useRef, useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,204 +13,220 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Textarea } from "@/components/ui/textarea"
-import type { Note, User, Contact, Ride } from "@/types"
-import { addNote, editNote, deleteNote, markNoteAsSeen, fetchNotes } from "@/utils/api"
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import type { Note, User, Contact, Ride } from "@/types";
+import { addNote, editNote, deleteNote, markNoteAsSeen, fetchNotes } from "@/utils/api";
 
 interface RideMessagesProps {
-  ride: Ride
-  currentUser: User
-  contacts: Contact[]
-  isOnline: boolean
+  ride: Ride;
+  currentUser: User;
+  contacts: Contact[];
+  isOnline: boolean;
 }
 
-const MAX_MESSAGE_LENGTH = 1000 // Set the maximum message length
+const MAX_MESSAGE_LENGTH = 1000; // Set the maximum message length
 
 export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMessagesProps) {
-  const [notes, setNotes] = useState<Note[]>([])
-  const [newNote, setNewNote] = useState("")
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
-  const [isDeleteNoteDialogOpen, setIsDeleteNoteDialogOpen] = useState(false)
-  const [noteToDeleteId, setNoteToDeleteId] = useState<string | null>(null)
-  const [messageLength, setMessageLength] = useState(0)
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const [isEditing, setIsEditing] = useState(false)
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [newNote, setNewNote] = useState("");
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [isDeleteNoteDialogOpen, setIsDeleteNoteDialogOpen] = useState(false);
+  const [noteToDeleteId, setNoteToDeleteId] = useState<string | null>(null);
+  const [messageLength, setMessageLength] = useState(0);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const scrollToBottom = useCallback(() => {
     if (typeof window !== "undefined" && scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
+      const scrollContainer = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
       if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     }
-  }, [])
+  }, []);
 
   // Load notes when the component mounts
   useEffect(() => {
-    let isInitialLoad = true // Flag to track initial load
+    let isInitialLoad = true; // Flag to track initial load
 
     const loadNotes = async () => {
-      if (ride.status === "accepted" || ride.status === "cancelled" || ride.status === "completed") {
+      if (
+        ride.status === "accepted" ||
+        ride.status === "cancelled" ||
+        ride.status === "completed"
+      ) {
         try {
           // Only set loading state on the very first load
           if (isInitialLoad) {
-            setIsLoading(true)
+            setIsLoading(true);
           }
 
-          const fetchedNotes = await fetchNotes(ride.id)
-          setNotes(fetchedNotes || [])
+          const fetchedNotes = await fetchNotes(ride.id);
+          setNotes(fetchedNotes || []);
 
           // Automatically mark new notes as seen
           const unseenNotes = fetchedNotes.filter(
-            (note) => note.user_id !== currentUser.id && (!note.seen_by || !note.seen_by.includes(currentUser.id)),
-          )
+            (note) =>
+              note.user_id !== currentUser.id &&
+              (!note.seen_by || !note.seen_by.includes(currentUser.id))
+          );
 
           if (unseenNotes.length > 0) {
-            await Promise.all(unseenNotes.map((note) => markNoteAsSeen(note.id, currentUser.id)))
+            await Promise.all(unseenNotes.map((note) => markNoteAsSeen(note.id, currentUser.id)));
           }
 
           // Scroll to bottom after setting notes
-          scrollToBottom()
+          scrollToBottom();
         } catch {
-          toast.error("Failed to load messages")
+          toast.error("Failed to load messages");
         } finally {
           if (isInitialLoad) {
-            setIsLoading(false)
-            isInitialLoad = false // Mark initial load as complete
+            setIsLoading(false);
+            isInitialLoad = false; // Mark initial load as complete
           }
         }
       }
-    }
+    };
 
-    loadNotes()
+    loadNotes();
 
     // Set up periodic refresh for notes
     const intervalId = setInterval(() => {
-      loadNotes()
-    }, 10000)
+      loadNotes();
+    }, 10000);
 
     return () => {
-      clearInterval(intervalId)
-    }
-  }, [ride.id, ride.status, currentUser.id, scrollToBottom])
+      clearInterval(intervalId);
+    };
+  }, [ride.id, ride.status, currentUser.id, scrollToBottom]);
 
   const getUserName = (userId: string) => {
     if (userId === currentUser.id) {
-      return currentUser.name
+      return currentUser.name;
     }
-    const contact = contacts.find((c) => c.user_id === userId || c.contact_id === userId)
-    return contact ? (contact.user_id === userId ? contact.user.name : contact.contact.name) : "Unknown User"
-  }
+    const contact = contacts.find((c) => c.user_id === userId || c.contact_id === userId);
+    return contact
+      ? contact.user_id === userId
+        ? contact.user.name
+        : contact.contact.name
+      : "Unknown User";
+  };
 
   const handleEditNote = async (noteId: string) => {
-    const noteToEdit = notes.find((note) => note.id === noteId)
+    const noteToEdit = notes.find((note) => note.id === noteId);
     if (noteToEdit) {
-      const noteDate = new Date(noteToEdit.created_at)
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000) // Current time minus one hour
+      const noteDate = new Date(noteToEdit.created_at);
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000); // Current time minus one hour
 
       // Check if the note was created less than an hour ago
       if (noteDate < oneHourAgo) {
-        toast.error("You can only edit messages sent within the last hour.")
-        return // Prevent editing if the note is older than one hour
+        toast.error("You can only edit messages sent within the last hour.");
+        return; // Prevent editing if the note is older than one hour
       }
 
-      setEditingNoteId(noteId)
-      setNewNote(noteToEdit.note)
-      setMessageLength(noteToEdit.note.length)
-      setIsEditing(true)
+      setEditingNoteId(noteId);
+      setNewNote(noteToEdit.note);
+      setMessageLength(noteToEdit.note.length);
+      setIsEditing(true);
 
       // Focus the textarea
       setTimeout(() => {
         if (textareaRef.current) {
-          textareaRef.current.focus()
+          textareaRef.current.focus();
 
           // Adjust textarea height based on content
-          textareaRef.current.style.height = "40px"
-          textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`
+          textareaRef.current.style.height = "40px";
+          textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
         }
-      }, 0)
+      }, 0);
     }
-  }
+  };
 
   const cancelEdit = () => {
-    setEditingNoteId(null)
-    setNewNote("")
-    setMessageLength(0)
-    setIsEditing(false)
+    setEditingNoteId(null);
+    setNewNote("");
+    setMessageLength(0);
+    setIsEditing(false);
 
     // Reset textarea height
     if (textareaRef.current) {
-      textareaRef.current.style.height = "40px"
+      textareaRef.current.style.height = "40px";
     }
-  }
+  };
 
   const confirmDeleteNote = async () => {
     if (noteToDeleteId) {
       try {
-        await deleteNote(noteToDeleteId, currentUser.id)
-        setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteToDeleteId))
-        toast.success("Message deleted successfully.")
+        await deleteNote(noteToDeleteId, currentUser.id);
+        setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteToDeleteId));
+        toast.success("Message deleted successfully.");
       } catch {
-        toast.error("Failed to delete message. Please try again.")
+        toast.error("Failed to delete message. Please try again.");
       } finally {
-        setIsDeleteNoteDialogOpen(false)
-        setNoteToDeleteId(null)
+        setIsDeleteNoteDialogOpen(false);
+        setNoteToDeleteId(null);
       }
     }
-  }
+  };
 
   const handleDeleteNote = (noteId: string) => {
-    setNoteToDeleteId(noteId)
-    setIsDeleteNoteDialogOpen(true)
-  }
+    setNoteToDeleteId(noteId);
+    setIsDeleteNoteDialogOpen(true);
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (newNote.trim() && currentUser && ride) {
       try {
         if (isEditing && editingNoteId) {
           // Handle edit case
-          const updatedNote = await editNote(editingNoteId, currentUser.id, newNote)
-          setNotes((prevNotes) => prevNotes.map((note) => (note.id === editingNoteId ? updatedNote : note)))
-          toast.success("Message edited successfully.")
+          const updatedNote = await editNote(editingNoteId, currentUser.id, newNote);
+          setNotes((prevNotes) =>
+            prevNotes.map((note) => (note.id === editingNoteId ? updatedNote : note))
+          );
+          toast.success("Message edited successfully.");
 
           // Reset editing state
-          setEditingNoteId(null)
-          setIsEditing(false)
+          setEditingNoteId(null);
+          setIsEditing(false);
         } else {
           // Handle new message case
-          const addedNote = await addNote(ride.id, currentUser.id, newNote)
+          const addedNote = await addNote(ride.id, currentUser.id, newNote);
           if (addedNote) {
-            setNotes((prevNotes) => [...prevNotes, addedNote])
-            toast.success("Message sent successfully.")
+            setNotes((prevNotes) => [...prevNotes, addedNote]);
+            toast.success("Message sent successfully.");
           }
         }
 
         // Reset form
-        setNewNote("")
-        setMessageLength(0)
+        setNewNote("");
+        setMessageLength(0);
 
         // Reset textarea height
         if (textareaRef.current) {
-          textareaRef.current.style.height = "40px"
+          textareaRef.current.style.height = "40px";
         }
 
         // Use setTimeout to ensure scrolling happens after state update and re-render
         setTimeout(() => {
-          scrollToBottom()
-        }, 100)
+          scrollToBottom();
+        }, 100);
       } catch {
         toast.error(
-          isEditing ? "Failed to edit message. Please try again." : "Failed to send message. Please try again.",
-        )
+          isEditing
+            ? "Failed to edit message. Please try again."
+            : "Failed to send message. Please try again."
+        );
       }
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
@@ -256,37 +273,43 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
           ) : (
             <div className="pb-4">
               {notes.reduce((acc: React.ReactNode[], note, index) => {
-                const currentDate = new Date(note.created_at).toLocaleDateString()
-                const previousDate = index > 0 ? new Date(notes[index - 1].created_at).toLocaleDateString() : null
-                const nextNote = index < notes.length - 1 ? notes[index + 1] : null
+                const currentDate = new Date(note.created_at).toLocaleDateString();
+                const previousDate =
+                  index > 0 ? new Date(notes[index - 1].created_at).toLocaleDateString() : null;
+                const nextNote = index < notes.length - 1 ? notes[index + 1] : null;
 
                 // Add date separator
                 if (currentDate !== previousDate) {
                   acc.push(
-                    <div key={`date-separator-${currentDate}-${index}`} className="relative flex py-3 my-2">
-                      <div className="flex-grow border-t border-muted"></div>
+                    <div
+                      key={`date-separator-${currentDate}-${index}`}
+                      className="relative flex py-3 my-2"
+                    >
+                      <div className="flex-grow border-t border-muted" />
                       <span className="flex-shrink mx-4 text-xs font-medium text-muted-foreground">
                         {currentDate === new Date().toLocaleDateString() ? "Today" : currentDate}
                       </span>
-                      <div className="flex-grow border-t border-muted"></div>
-                    </div>,
-                  )
+                      <div className="flex-grow border-t border-muted" />
+                    </div>
+                  );
                 }
 
-                const isCurrentUser = note.user_id === currentUser?.id
-                const noteDate = new Date(note.created_at)
-                const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000) // Current time minus one hour
-                const isEditable = noteDate >= oneHourAgo // Check if the note is editable
+                const isCurrentUser = note.user_id === currentUser?.id;
+                const noteDate = new Date(note.created_at);
+                const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000); // Current time minus one hour
+                const isEditable = noteDate >= oneHourAgo; // Check if the note is editable
 
                 // Check if this message is at the end of a consecutive group from the same user
                 const isLastInGroup =
                   !nextNote ||
                   nextNote.user_id !== note.user_id ||
-                  new Date(nextNote.created_at).toLocaleDateString() !== currentDate
+                  new Date(nextNote.created_at).toLocaleDateString() !== currentDate;
 
                 // Check if this is part of a message group
                 const isFirstInGroup =
-                  index === 0 || notes[index - 1].user_id !== note.user_id || currentDate !== previousDate
+                  index === 0 ||
+                  notes[index - 1].user_id !== note.user_id ||
+                  currentDate !== previousDate;
 
                 acc.push(
                   <div
@@ -320,10 +343,11 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
                       {/* Message content with hover-activated action buttons for current user */}
                       <div className="relative max-w-full message-container">
                         <div
-                          className={`px-4 py-2 shadow-sm overflow-hidden ${isCurrentUser
+                          className={`px-4 py-2 shadow-sm overflow-hidden ${
+                            isCurrentUser
                               ? "bg-primary text-primary-foreground rounded-lg rounded-br-none"
                               : "bg-secondary text-secondary-foreground rounded-lg rounded-bl-none"
-                            }`}
+                          }`}
                         >
                           <div className="overflow-hidden whitespace-wrap">
                             <p className="text-sm break-words">{note.note}</p>
@@ -386,9 +410,9 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
                         </div>
                       )}
                     </div>
-                  </div>,
-                )
-                return acc
+                  </div>
+                );
+                return acc;
               }, [])}
             </div>
           )}
@@ -405,7 +429,12 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
                     <Edit className="h-4 w-4" />
                     <span className="text-sm font-medium">Editing message</span>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={cancelEdit} className="h-7 text-xs hover:text-destructive">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={cancelEdit}
+                    className="h-7 text-xs hover:text-destructive"
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -420,31 +449,32 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
                   ref={textareaRef}
                   value={newNote}
                   onChange={(e) => {
-                    const value = e.target.value
+                    const value = e.target.value;
                     if (value.length <= MAX_MESSAGE_LENGTH) {
-                      setNewNote(value)
-                      setMessageLength(value.length)
+                      setNewNote(value);
+                      setMessageLength(value.length);
                     }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Escape" && isEditing) {
-                      e.preventDefault()
-                      cancelEdit()
+                      e.preventDefault();
+                      cancelEdit();
                     } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                      e.preventDefault()
-                      handleSendMessage(e)
+                      e.preventDefault();
+                      handleSendMessage(e);
                     }
                   }}
                   placeholder={isEditing ? "Edit your message..." : "Type your message..."}
-                  className={`flex-grow border-muted resize-none overflow-y-auto max-w-full min-h-[40px] max-h-[150px] ${isEditing ? "bg-secondary/30 focus:bg-background" : "bg-background"
-                    }`}
+                  className={`flex-grow border-muted resize-none overflow-y-auto max-w-full min-h-[40px] max-h-[150px] ${
+                    isEditing ? "bg-secondary/30 focus:bg-background" : "bg-background"
+                  }`}
                   rows={1}
                   onInput={() => {
                     // Reset to minimum height before calculating new height
                     if (textareaRef.current) {
-                      textareaRef.current.style.height = "40px"
+                      textareaRef.current.style.height = "40px";
                       // Set new height based on content
-                      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`
+                      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
                     }
                   }}
                   disabled={!isOnline}
@@ -468,7 +498,9 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
               )}
 
               {isEditing && (
-                <p className="mt-2 text-xs text-muted-foreground">Press Esc to cancel, Ctrl+Enter to save changes</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Press Esc to cancel, Ctrl+Enter to save changes
+                </p>
               )}
             </div>
           </div>
@@ -482,7 +514,11 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
             <DialogDescription>Are you sure you want to delete this message?</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="mb-2" variant="outline" onClick={() => setIsDeleteNoteDialogOpen(false)}>
+            <Button
+              className="mb-2"
+              variant="outline"
+              onClick={() => setIsDeleteNoteDialogOpen(false)}
+            >
               No, Keep Message
             </Button>
             <Button className="mb-2" variant="destructive" onClick={confirmDeleteNote}>
@@ -492,6 +528,5 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
-

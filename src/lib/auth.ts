@@ -1,8 +1,10 @@
-import type { NextAuthOptions } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import { supabase } from "@/lib/db"
-import bcrypt from "bcrypt"
-import { parsePhoneNumber } from "libphonenumber-js"
+import { compare } from "bcrypt";
+import { parsePhoneNumber } from "libphonenumber-js";
+import type { NextAuthOptions } from "next-auth";
+// eslint-disable-next-line import/no-named-as-default
+import CredentialsProvider from "next-auth/providers/credentials";
+
+import { supabase } from "@/lib/db";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -14,33 +16,33 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.identifier || !credentials.password) {
-          return null
+          return null;
         }
 
-        let query
+        let query;
         const identifier = credentials.identifier.toLowerCase();
 
         if (identifier.includes("@")) {
-          query = supabase.from("users").select("*").eq("email", identifier).single()
+          query = supabase.from("users").select("*").eq("email", identifier).single();
         } else {
-          const phoneNumber = parsePhoneNumber(identifier, { defaultCountry: "PT" })
+          const phoneNumber = parsePhoneNumber(identifier, { defaultCountry: "PT" });
           if (!phoneNumber || !phoneNumber.isValid()) {
-            return null
+            return null;
           }
-          const e164PhoneNumber = phoneNumber.format("E.164")
-          query = supabase.from("users").select("*").eq("phone", e164PhoneNumber).single()
+          const e164PhoneNumber = phoneNumber.format("E.164");
+          query = supabase.from("users").select("*").eq("phone", e164PhoneNumber).single();
         }
 
-        const { data: user, error } = await query
+        const { data: user, error } = await query;
 
         if (error || !user) {
-          return null
+          return null;
         }
 
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+        const isPasswordValid = await compare(credentials.password, user.password);
 
         if (!isPasswordValid) {
-          return null
+          return null;
         }
 
         return {
@@ -48,7 +50,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           phone: user.phone,
-        }
+        };
       },
     }),
   ],
@@ -58,19 +60,18 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        token.phone = user.phone
+        token.id = user.id;
+        token.phone = user.phone;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string
-        session.user.phone = token.phone as string
+        session.user.id = token.id as string;
+        session.user.phone = token.phone as string;
       }
-      return session
+      return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
-}
-
+};

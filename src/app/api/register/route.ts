@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
-import bcrypt from "bcrypt";
-import { sendEmail, getVerificationEmailContent } from "@/lib/emailService";
-import { parsePhoneNumber } from "libphonenumber-js";
 import crypto from "crypto";
+
+import { hash } from "bcrypt";
+import { parsePhoneNumber } from "libphonenumber-js";
+import { NextResponse } from "next/server";
+
+import { supabase } from "@/lib/db";
+import { sendEmail, getVerificationEmailContent } from "@/lib/emailService";
 
 export async function POST(request: Request) {
   const { name, phone, email, password } = await request.json();
@@ -18,20 +20,34 @@ export async function POST(request: Request) {
     const e164PhoneNumber = phoneNumber.format("E.164");
 
     // Check if email already exists
-    const { data: existingEmail } = await supabase.from("users").select("email").eq("email", email.toLowerCase()).single();
+    const { data: existingEmail } = await supabase
+      .from("users")
+      .select("email")
+      .eq("email", email.toLowerCase())
+      .single();
 
     if (existingEmail) {
-      return NextResponse.json({ error: "Email already registered", type: "EMAIL_EXISTS" }, { status: 409 });
+      return NextResponse.json(
+        { error: "Email already registered", type: "EMAIL_EXISTS" },
+        { status: 409 }
+      );
     }
 
     // Check if phone already exists
-    const { data: existingPhone } = await supabase.from("users").select("phone").eq("phone", e164PhoneNumber).single();
+    const { data: existingPhone } = await supabase
+      .from("users")
+      .select("phone")
+      .eq("phone", e164PhoneNumber)
+      .single();
 
     if (existingPhone) {
-      return NextResponse.json({ error: "Phone number already registered", type: "PHONE_EXISTS" }, { status: 409 });
+      return NextResponse.json(
+        { error: "Phone number already registered", type: "PHONE_EXISTS" },
+        { status: 409 }
+      );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await hash(password, 10);
     const lowerCaseEmail = email.toLowerCase();
 
     const { data: newUser, error: insertError } = await supabase

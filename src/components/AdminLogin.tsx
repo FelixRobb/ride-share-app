@@ -1,13 +1,8 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { PasswordInput } from "./ui/password-input";
 
 interface AdminLoginProps {
@@ -27,9 +22,7 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Admin Login</CardTitle>
-          <CardDescription>
-            Enter the admin password to access the dashboard.
-          </CardDescription>
+          <CardDescription>Enter the admin password to access the dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>

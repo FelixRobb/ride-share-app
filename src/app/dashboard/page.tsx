@@ -1,47 +1,48 @@
-"use client"
-import dynamic from "next/dynamic"
-import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
-import Layout from "@/components/Layout"
-import AuthLoader from "@/components/AuthLoader"
-import type { User } from "@/types"
+"use client";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
 
-const DashboardPage = dynamic(() => import("@/components/DashboardPage"), { ssr: false })
+import AuthLoader from "@/components/AuthLoader";
+import Layout from "@/components/Layout";
+import type { User } from "@/types";
+
+const DashboardPage = dynamic(() => import("@/components/DashboardPage"), { ssr: false });
 
 export default function Dashboard() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState("active") // default tab
-  const router = useRouter()
-  const { data: session, status } = useSession()
-  const currentUser = session?.user as User | undefined
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("active"); // default tab
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const currentUser = session?.user as User | undefined;
 
   useEffect(() => {
-    const search = new URLSearchParams(window.location.search)
+    const search = new URLSearchParams(window.location.search);
     if (search) {
-      setActiveTab(search.get("tab") || "active")
+      setActiveTab(search.get("tab") || "active");
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login")
+      router.push("/login");
     }
-  }, [status, router])
+  }, [status, router]);
 
   // Show loading states
   if (status === "loading") {
-    return <AuthLoader />
+    return <AuthLoader />;
   }
 
   // Handle unauthenticated state
   if (status === "unauthenticated") {
-    router.push("/login")
-    return null
+    router.push("/login");
+    return null;
   }
 
   if (!currentUser) {
-    return <div>Error: User not found</div>
+    return <div>Error: User not found</div>;
   }
 
   return (
@@ -54,5 +55,5 @@ export default function Dashboard() {
         setActiveTab={setActiveTab}
       />
     </Layout>
-  )
+  );
 }

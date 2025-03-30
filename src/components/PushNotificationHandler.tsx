@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback, useRef } from "react"
-import { toast } from "sonner"
-import { motion, AnimatePresence } from "framer-motion"
-import { X } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { getDeviceId, getDeviceInfo } from "@/utils/deviceUtils"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { getDeviceId, getDeviceInfo } from "@/utils/deviceUtils";
 
 interface PushNotificationMessage {
   type: string;
@@ -15,39 +15,35 @@ interface PushNotificationMessage {
   body?: string;
 }
 
-export default function PushNotificationHandler({
-  userId,
-}: {
-  userId: string
-}) {
-  const [showPermissionPopup, setShowPermissionPopup] = useState(false)
-  const [hasSeenPopup, setHasSeenPopup] = useState(false)
-  const [deviceId] = useState(() => getDeviceId())
-  const [deviceInfo] = useState(() => getDeviceInfo())
-  const messageHandlerSet = useRef(false)
+export default function PushNotificationHandler({ userId }: { userId: string }) {
+  const [showPermissionPopup, setShowPermissionPopup] = useState(false);
+  const [hasSeenPopup, setHasSeenPopup] = useState(false);
+  const [deviceId] = useState(() => getDeviceId());
+  const [deviceInfo] = useState(() => getDeviceInfo());
+  const messageHandlerSet = useRef(false);
 
   // Function to register the service worker
   const registerServiceWorker = useCallback(async () => {
     if (!("serviceWorker" in navigator)) {
-      return null
+      return null;
     }
 
     try {
       // Force update by unregistering existing service workers first
-      const registrations = await navigator.serviceWorker.getRegistrations()
+      const registrations = await navigator.serviceWorker.getRegistrations();
       for (const registration of registrations) {
-        await registration.unregister()
+        await registration.unregister();
       }
 
       const registration = await navigator.serviceWorker.register("/service-worker.js", {
-        scope: "/"
-      })
-      return registration
+        scope: "/",
+      });
+      return registration;
     } catch {
-      toast.error("Failed to register service worker")
-      return null
+      toast.error("Failed to register service worker");
+      return null;
     }
-  }, [])
+  }, []);
 
   const saveSubscription = useCallback(
     async (subscription: PushSubscription) => {
@@ -62,62 +58,62 @@ export default function PushNotificationHandler({
           deviceId,
           deviceName: deviceInfo.name,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`Failed to save subscription: ${response.status}`)
+        throw new Error(`Failed to save subscription: ${response.status}`);
       }
 
-      const data = await response.json()
-      return data.enabled
+      const data = await response.json();
+      return data.enabled;
     },
-    [userId, deviceId, deviceInfo.name],
-  )
+    [userId, deviceId, deviceInfo.name]
+  );
 
   const handlePermissionGranted = useCallback(
     async (registration: ServiceWorkerRegistration) => {
       // First, unsubscribe from any existing subscription
-      let currentSubscription = await registration.pushManager.getSubscription()
+      let currentSubscription = await registration.pushManager.getSubscription();
       if (currentSubscription) {
-        await currentSubscription.unsubscribe()
+        await currentSubscription.unsubscribe();
       }
 
       // Create a new subscription
-      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
       if (!publicKey) {
-        throw new Error("VAPID public key is not set")
+        throw new Error("VAPID public key is not set");
       }
 
       // Use the VAPID key directly
-      const applicationServerKey = urlBase64ToUint8Array(publicKey)
+      const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
       currentSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey,
-      })
+      });
 
       if (currentSubscription) {
-        await saveSubscription(currentSubscription)
-        return true
+        await saveSubscription(currentSubscription);
+        return true;
       }
-      return false
+      return false;
     },
-    [saveSubscription],
-  )
+    [saveSubscription]
+  );
 
   // Setup push notification message handler
   useEffect(() => {
     if (!("serviceWorker" in navigator)) {
-      return
+      return;
     }
 
     // Prevent setting up multiple handlers
     if (messageHandlerSet.current) {
-      return
+      return;
     }
 
     const handleMessage = (event: MessageEvent) => {
-      const data = event.data as PushNotificationMessage
+      const data = event.data as PushNotificationMessage;
 
       // Handle push notification messages
       if (data && data.type === "PUSH_NOTIFICATION") {
@@ -125,91 +121,91 @@ export default function PushNotificationHandler({
         toast.info(data.title || "Notification", {
           description: data.body || "",
           duration: 5000,
-        })
+        });
       }
-    }
+    };
 
     // Setup listener directly on navigator.serviceWorker
-    navigator.serviceWorker.addEventListener("message", handleMessage)
-    messageHandlerSet.current = true
+    navigator.serviceWorker.addEventListener("message", handleMessage);
+    messageHandlerSet.current = true;
 
     return () => {
       if (navigator.serviceWorker) {
-        navigator.serviceWorker.removeEventListener("message", handleMessage)
-        messageHandlerSet.current = false
+        navigator.serviceWorker.removeEventListener("message", handleMessage);
+        messageHandlerSet.current = false;
       }
-    }
-  }, [])
+    };
+  }, []);
 
   // Initial setup for push notifications
   useEffect(() => {
     const setupPushNotifications = async () => {
       try {
         if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-          return
+          return;
         }
 
-        const registration = await registerServiceWorker()
+        const registration = await registerServiceWorker();
         if (!registration) {
-          return
+          return;
         }
 
-        const currentPermission = Notification.permission
+        const currentPermission = Notification.permission;
 
         if (currentPermission === "granted") {
-          const success = await handlePermissionGranted(registration)
+          const success = await handlePermissionGranted(registration);
           if (!success) {
-            toast.error("Failed to setup push notifications")
+            toast.error("Failed to setup push notifications");
           }
         } else if (currentPermission === "default" && !hasSeenPopup) {
-          const hasDeclined = localStorage.getItem("pushNotificationDeclined")
+          const hasDeclined = localStorage.getItem("pushNotificationDeclined");
           if (!hasDeclined) {
-            setShowPermissionPopup(true)
+            setShowPermissionPopup(true);
           }
         } else if (currentPermission === "denied") {
           // Do nothing
         }
       } catch {
-        toast.error("Failed to setup push notifications")
+        toast.error("Failed to setup push notifications");
       }
-    }
+    };
 
-    setupPushNotifications()
-  }, [hasSeenPopup, registerServiceWorker, handlePermissionGranted])
+    setupPushNotifications();
+  }, [hasSeenPopup, registerServiceWorker, handlePermissionGranted]);
 
   const handleDecline = () => {
-    setShowPermissionPopup(false)
-    setHasSeenPopup(true)
-    localStorage.setItem("pushNotificationDeclined", "true")
-  }
+    setShowPermissionPopup(false);
+    setHasSeenPopup(true);
+    localStorage.setItem("pushNotificationDeclined", "true");
+  };
 
   const handlePermissionRequest = async () => {
-    setShowPermissionPopup(false)
-    setHasSeenPopup(true)
+    setShowPermissionPopup(false);
+    setHasSeenPopup(true);
 
     try {
-      const permission = await Notification.requestPermission()
+      const permission = await Notification.requestPermission();
 
       if (permission !== "granted") {
-        toast.error("Permission denied for push notifications")
-        return
+        toast.error("Permission denied for push notifications");
+        return;
       }
 
-      const registration = await registerServiceWorker()
+      const registration = await registerServiceWorker();
       if (!registration) {
-        throw new Error("Failed to register service worker")
+        throw new Error("Failed to register service worker");
       }
 
-      const success = await handlePermissionGranted(registration)
+      const success = await handlePermissionGranted(registration);
       if (success) {
-        toast.success("Push notifications enabled successfully!")
+        toast.success("Push notifications enabled successfully!");
       } else {
-        throw new Error("Failed to setup push notifications")
+        throw new Error("Failed to setup push notifications");
       }
     } catch {
-      toast.error("Failed to enable push notifications")
+      toast.error("Failed to enable push notifications");
     }
-  }
+  };
 
   return (
     <AnimatePresence mode="wait">
@@ -232,7 +228,8 @@ export default function PushNotificationHandler({
             </CardHeader>
             <CardContent>
               <p className="text-sm">
-                Stay updated about your rides and important information with push notifications on this device.
+                Stay updated about your rides and important information with push notifications on
+                this device.
               </p>
             </CardContent>
             <CardFooter className="flex justify-end gap-2 pt-2">
@@ -247,29 +244,30 @@ export default function PushNotificationHandler({
         </motion.div>
       )}
     </AnimatePresence>
-  )
+  );
 }
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   // Remove any padding characters
-  const base64 = base64String.replace(/=/g, '')
+  const base64 = base64String
+    .replace(/=/g, "")
     // Replace URL-safe characters
-    .replace(/-/g, '+')
-    .replace(/_/g, '/')
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
 
   // Add padding back
-  const padding = '='.repeat((4 - (base64.length % 4)) % 4)
-  const base64Padded = base64 + padding
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const base64Padded = base64 + padding;
 
   try {
-    const rawData = window.atob(base64Padded)
-    const outputArray = new Uint8Array(rawData.length)
+    const rawData = window.atob(base64Padded);
+    const outputArray = new Uint8Array(rawData.length);
 
     for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i)
+      outputArray[i] = rawData.charCodeAt(i);
     }
-    return outputArray
+    return outputArray;
   } catch {
-    throw new Error('Invalid VAPID key format')
+    throw new Error("Invalid VAPID key format");
   }
 }

@@ -1,14 +1,15 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import AdminDashboard from "@/components/AdminDashboard"
-import AdminLogin from "@/components/AdminLogin"
-import { toast } from "sonner"
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+
+import AdminDashboard from "@/components/AdminDashboard";
+import AdminLogin from "@/components/AdminLogin";
 
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -18,20 +19,20 @@ export default function AdminPage() {
           headers: {
             "Content-Type": "application/json",
           },
-        })
+        });
 
         if (response.ok) {
-          setIsAuthenticated(true)
+          setIsAuthenticated(true);
         } else {
-          setIsAuthenticated(false)
+          setIsAuthenticated(false);
         }
       } catch {
-        setIsAuthenticated(false)
+        setIsAuthenticated(false);
       }
-    }
+    };
 
-    checkAuth()
-  }, [])
+    checkAuth();
+  }, []);
 
   const handleLogin = async (password: string) => {
     try {
@@ -41,17 +42,17 @@ export default function AdminPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ password }),
-      })
+      });
 
       if (response.ok) {
-        setIsAuthenticated(true)
+        setIsAuthenticated(true);
       } else {
-        toast.error("Invalid password")
+        toast.error("Invalid password");
       }
     } catch {
-      toast.error("An error occurred during login")
+      toast.error("An error occurred during login");
     }
-  }
+  };
 
   const handleLogout = async () => {
     try {
@@ -60,18 +61,17 @@ export default function AdminPage() {
         headers: {
           "Content-Type": "application/json",
         },
-      })
-      setIsAuthenticated(false)
-      router.push("/")
+      });
+      setIsAuthenticated(false);
+      router.push("/");
     } catch {
-      toast.error("An error occurred during logout")
+      toast.error("An error occurred during logout");
     }
-  }
+  };
 
   if (!isAuthenticated) {
-    return <AdminLogin onLogin={handleLogin} />
+    return <AdminLogin onLogin={handleLogin} />;
   }
 
-  return <AdminDashboard onLogout={handleLogout} />
+  return <AdminDashboard onLogout={handleLogout} />;
 }
-

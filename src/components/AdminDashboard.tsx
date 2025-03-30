@@ -1,8 +1,6 @@
-"use client"
+"use client";
 
-import { useCallback, useEffect, useState } from "react"
-import { debounce } from "lodash"
-import { toast } from "sonner"
+import { debounce } from "lodash";
 import {
   ArrowLeft,
   ArrowRight,
@@ -19,10 +17,15 @@ import {
   Users,
   User as UserIcon,
   XCircle,
-} from "lucide-react"
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import BugReportManagement from "@/components/BugReportManagement";
+import ReportManagement from "@/components/ReportManagement";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -31,101 +34,105 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Switch } from "@/components/ui/switch"
-import ReportManagement from "@/components/ReportManagement"
-import BugReportManagement from "@/components/BugReportManagement"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 
 interface AdminDashboardProps {
-  onLogout: () => void
+  onLogout: () => void;
 }
 
 interface Review {
-  id: string
-  userId: string
-  review: string
-  rating: number
-  createdAt: string
-  is_approved: boolean
-  userName: string
+  id: string;
+  userId: string;
+  review: string;
+  rating: number;
+  createdAt: string;
+  is_approved: boolean;
+  userName: string;
 }
 
 interface User {
-  id: string
-  name: string
-  email: string
-  phone: string
-  isVerified: boolean
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  isVerified: boolean;
 }
 
 interface Stats {
-  totalUsers: number
-  totalRides: number
-  totalContacts: number
+  totalUsers: number;
+  totalRides: number;
+  totalContacts: number;
 }
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [users, setUsers] = useState<User[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false)
-  const [isNotifyUserDialogOpen, setIsNotifyUserDialogOpen] = useState(false)
-  const [notificationTitle, setNotificationTitle] = useState("")
-  const [notificationBody, setNotificationBody] = useState("")
-  const [reviews, setReviews] = useState<Review[]>([])
-  const [isLoadingReviews, setIsLoadingReviews] = useState(true)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [isLoadingUsers, setIsLoadingUsers] = useState(true)
-  const [isLoadingStats, setIsLoadingStats] = useState(true)
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false);
+  const [isNotifyUserDialogOpen, setIsNotifyUserDialogOpen] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationBody, setNotificationBody] = useState("");
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // Fetch users function
   const fetchUsers = useCallback(async (page: number, search = "") => {
-    setIsLoadingUsers(true)
+    setIsLoadingUsers(true);
     try {
-      const response = await fetch(`/api/admin/users?page=${page}&search=${search}`)
-      const data = await response.json()
-      setUsers(data.users)
-      setTotalPages(data.totalPages)
+      const response = await fetch(`/api/admin/users?page=${page}&search=${search}`);
+      const data = await response.json();
+      setUsers(data.users);
+      setTotalPages(data.totalPages);
     } catch {
-      toast.error("Failed to fetch users")
+      toast.error("Failed to fetch users");
     } finally {
-      setIsLoadingUsers(false)
+      setIsLoadingUsers(false);
     }
-  }, [])
+  }, []);
 
   // Fetch users when component mounts or when page/search changes
   useEffect(() => {
-    fetchUsers(currentPage, searchTerm)
-  }, [currentPage, fetchUsers, searchTerm])
+    fetchUsers(currentPage, searchTerm);
+  }, [currentPage, fetchUsers, searchTerm]);
 
   // Fetch stats and reviews on component mount
   useEffect(() => {
-    fetchStats()
-    fetchReviews()
-  }, [])
+    fetchStats();
+    fetchReviews();
+  }, []);
 
   const fetchStats = async () => {
-    setIsLoadingStats(true)
+    setIsLoadingStats(true);
     try {
-      const response = await fetch("/api/admin/stats")
-      const data = await response.json()
-      setStats(data)
+      const response = await fetch("/api/admin/stats");
+      const data = await response.json();
+      setStats(data);
     } catch {
-      toast.error("Failed to fetch statistics")
+      toast.error("Failed to fetch statistics");
     } finally {
-      setIsLoadingStats(false)
+      setIsLoadingStats(false);
     }
-  }
+  };
 
   // In your fetchReviews function:
   const fetchReviews = async () => {
@@ -146,33 +153,36 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   // Search handler with debounce
   const handleSearch = debounce((value: string) => {
-    setSearchTerm(value)
-    setCurrentPage(1)
-    fetchUsers(1, value)
-  }, 300)
+    setSearchTerm(value);
+    setCurrentPage(1);
+    fetchUsers(1, value);
+  }, 300);
 
   // User management functions
   const handleDeleteUser = async (userId: string) => {
+    // eslint-disable-next-line no-alert
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
         const response = await fetch(`/api/admin/users/${userId}`, {
           method: "DELETE",
-        })
+        });
         if (response.ok) {
-          setUsers(users.filter((user) => user.id !== userId))
-          toast.success("User deleted successfully")
+          setUsers(users.filter((user) => user.id !== userId));
+          toast.success("User deleted successfully");
         } else {
-          throw new Error("Failed to delete user")
+          throw new Error("Failed to delete user");
         }
       } catch {
-        toast.error("Failed to delete user")
+        toast.error("Failed to delete user");
       }
     }
-  }
+  };
 
   const handleEditUser = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedUser) return
+    e.preventDefault();
+    if (!selectedUser) {
+      return;
+    }
     try {
       const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
         method: "PUT",
@@ -185,22 +195,22 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           phone: selectedUser.phone,
           isVerified: selectedUser.isVerified,
         }),
-      })
+      });
       if (response.ok) {
-        setUsers(users.map((user) => (user.id === selectedUser.id ? selectedUser : user)))
-        setIsEditDialogOpen(false)
-        toast.success("User updated successfully")
+        setUsers(users.map((user) => (user.id === selectedUser.id ? selectedUser : user)));
+        setIsEditDialogOpen(false);
+        toast.success("User updated successfully");
       } else {
-        throw new Error("Failed to update user")
+        throw new Error("Failed to update user");
       }
     } catch {
-      toast.error("Failed to update user")
+      toast.error("Failed to update user");
     }
-  }
+  };
 
   // Notification functions
   const handleNotifyAll = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
       const response = await fetch("/api/admin/notify-all", {
         method: "POST",
@@ -208,22 +218,22 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ title: notificationTitle, body: notificationBody }),
-      })
+      });
       if (response.ok) {
-        setIsNotifyDialogOpen(false)
-        setNotificationTitle("")
-        setNotificationBody("")
-        toast.success("Notification sent to all users")
+        setIsNotifyDialogOpen(false);
+        setNotificationTitle("");
+        setNotificationBody("");
+        toast.success("Notification sent to all users");
       } else {
-        throw new Error("Failed to send notification")
+        throw new Error("Failed to send notification");
       }
     } catch {
-      toast.error("Failed to send notification")
+      toast.error("Failed to send notification");
     }
-  }
+  };
 
   const handleNotifyUser = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
       const response = await fetch("/api/admin/notify-user", {
         method: "POST",
@@ -235,65 +245,69 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           title: notificationTitle,
           body: notificationBody,
         }),
-      })
+      });
       if (response.ok) {
-        setIsNotifyUserDialogOpen(false)
-        setNotificationTitle("")
-        setNotificationBody("")
-        toast.success(`Notification sent to ${selectedUser?.name}`)
+        setIsNotifyUserDialogOpen(false);
+        setNotificationTitle("");
+        setNotificationBody("");
+        toast.success(`Notification sent to ${selectedUser?.name}`);
       } else {
-        throw new Error("Failed to send notification")
+        throw new Error("Failed to send notification");
       }
     } catch {
-      toast.error("Failed to send notification")
+      toast.error("Failed to send notification");
     }
-  }
+  };
 
   // Review management functions
   const handleApproveReview = async (reviewId: string) => {
     try {
       const response = await fetch(`/api/admin/reviews/${reviewId}/approve`, {
         method: "POST",
-      })
+      });
       if (response.ok) {
-        setReviews(reviews.map((review) => (review.id === reviewId ? { ...review, is_approved: true } : review)))
-        toast.success("Review approved successfully")
+        setReviews(
+          reviews.map((review) =>
+            review.id === reviewId ? { ...review, is_approved: true } : review
+          )
+        );
+        toast.success("Review approved successfully");
       } else {
-        throw new Error("Failed to approve review")
+        throw new Error("Failed to approve review");
       }
     } catch {
-      toast.error("Failed to approve review")
+      toast.error("Failed to approve review");
     }
-  }
+  };
 
   const handleDeleteReview = async (reviewId: string) => {
     try {
       const response = await fetch(`/api/admin/reviews/${reviewId}`, {
         method: "DELETE",
-      })
+      });
       if (response.ok) {
-        setReviews(reviews.filter((review) => review.id !== reviewId))
-        toast.success("Review deleted successfully")
+        setReviews(reviews.filter((review) => review.id !== reviewId));
+        toast.success("Review deleted successfully");
       } else {
-        throw new Error("Failed to delete review")
+        throw new Error("Failed to delete review");
       }
     } catch {
-      toast.error("Failed to delete review")
+      toast.error("Failed to delete review");
     }
-  }
+  };
 
   // Pagination functions
   const handleNextPage = () => {
     if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
+      setCurrentPage(currentPage + 1);
     }
-  }
+  };
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
+      setCurrentPage(currentPage - 1);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -395,7 +409,9 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <DialogContent className="sm:max-w-[600px] w-11/12">
                   <DialogHeader>
                     <DialogTitle>Send Notification to All Users</DialogTitle>
-                    <DialogDescription>This will send a push notification to all users.</DialogDescription>
+                    <DialogDescription>
+                      This will send a push notification to all users.
+                    </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleNotifyAll}>
                     <div className="grid gap-4 py-4">
@@ -461,7 +477,10 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                             <TableCell className="hidden md:table-cell">{user.email}</TableCell>
                             <TableCell className="hidden lg:table-cell">{user.phone}</TableCell>
                             <TableCell>
-                              <Badge variant={user.isVerified ? "default" : "secondary"} className="gap-1">
+                              <Badge
+                                variant={user.isVerified ? "default" : "secondary"}
+                                className="gap-1"
+                              >
                                 {user.isVerified ? (
                                   <>
                                     <CheckCircle className="h-3 w-3" />
@@ -481,8 +500,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => {
-                                    setSelectedUser(user)
-                                    setIsEditDialogOpen(true)
+                                    setSelectedUser(user);
+                                    setIsEditDialogOpen(true);
                                   }}
                                 >
                                   <Edit className="h-4 w-4" />
@@ -491,8 +510,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => {
-                                    setSelectedUser(user)
-                                    setIsNotifyUserDialogOpen(true)
+                                    setSelectedUser(user);
+                                    setIsNotifyUserDialogOpen(true);
                                   }}
                                 >
                                   <Bell className="h-4 w-4" />
@@ -585,14 +604,19 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                           reviews.map((review) => (
                             <TableRow key={review.id}>
                               <TableCell className="font-medium">{review.userName}</TableCell>
-                              <TableCell className="hidden max-w-xs truncate md:table-cell">{review.review}</TableCell>
+                              <TableCell className="hidden max-w-xs truncate md:table-cell">
+                                {review.review}
+                              </TableCell>
                               <TableCell>
                                 <div className="flex">
                                   {[...Array(5)].map((_, i) => (
                                     <Star
                                       key={i}
-                                      className={`h-4 w-4 ${i < review.rating ? "fill-primary text-primary" : "text-muted"
-                                        }`}
+                                      className={`h-4 w-4 ${
+                                        i < review.rating
+                                          ? "fill-primary text-primary"
+                                          : "text-muted"
+                                      }`}
                                     />
                                   ))}
                                 </div>
@@ -679,7 +703,9 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <Input
                   id="name"
                   value={selectedUser?.name || ""}
-                  onChange={(e) => setSelectedUser(selectedUser ? { ...selectedUser, name: e.target.value } : null)}
+                  onChange={(e) =>
+                    setSelectedUser(selectedUser ? { ...selectedUser, name: e.target.value } : null)
+                  }
                 />
               </div>
               <div className="grid gap-2">
@@ -688,7 +714,11 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   id="email"
                   type="email"
                   value={selectedUser?.email || ""}
-                  onChange={(e) => setSelectedUser(selectedUser ? { ...selectedUser, email: e.target.value } : null)}
+                  onChange={(e) =>
+                    setSelectedUser(
+                      selectedUser ? { ...selectedUser, email: e.target.value } : null
+                    )
+                  }
                 />
               </div>
               <div className="grid gap-2">
@@ -696,7 +726,11 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <Input
                   id="phone"
                   value={selectedUser?.phone || ""}
-                  onChange={(e) => setSelectedUser(selectedUser ? { ...selectedUser, phone: e.target.value } : null)}
+                  onChange={(e) =>
+                    setSelectedUser(
+                      selectedUser ? { ...selectedUser, phone: e.target.value } : null
+                    )
+                  }
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -756,7 +790,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
 
 // Stat Card Component
@@ -766,11 +800,11 @@ function StatCard({
   description,
   icon,
 }: {
-  title: string
-  value: number
-  description: string
-  icon: React.ReactNode
-  trend: "up" | "down" | "neutral"
+  title: string;
+  value: number;
+  description: string;
+  icon: React.ReactNode;
+  trend: "up" | "down" | "neutral";
 }) {
   return (
     <Card>
@@ -783,7 +817,7 @@ function StatCard({
         <p className="text-xs text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 // Skeleton loaders
@@ -799,7 +833,7 @@ function StatCardSkeleton() {
         <Skeleton className="h-4 w-2/3" />
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function UserTableSkeleton() {
@@ -810,7 +844,7 @@ function UserTableSkeleton() {
         <Skeleton key={i} className="h-16 w-full" />
       ))}
     </div>
-  )
+  );
 }
 
 function ReviewTableSkeleton() {
@@ -821,6 +855,5 @@ function ReviewTableSkeleton() {
         <Skeleton key={i} className="h-16 w-full" />
       ))}
     </div>
-  )
+  );
 }
-

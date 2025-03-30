@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
@@ -15,7 +16,11 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     }
 
     // Check if report exists
-    const { data: existingReport, error: reportError } = await supabase.from("reports").select("*").eq("id", reportId).single();
+    const { data: existingReport, error: reportError } = await supabase
+      .from("reports")
+      .select("*")
+      .eq("id", reportId)
+      .single();
 
     if (reportError || !existingReport) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
@@ -46,7 +51,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
-    const reportId = url.pathname.split('/').pop(); // Extracting the report ID from the URL
+    const reportId = url.pathname.split("/").pop(); // Extracting the report ID from the URL
 
     // Get report details
     const { data: report, error } = await supabase

@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
-import { sendImmediateNotification } from "@/lib/pushNotificationService";
 import { parsePhoneNumber } from "libphonenumber-js";
+import { NextResponse } from "next/server";
+
+import { supabase } from "@/lib/db";
 import { sendEmail, getEmailChangeNotificationContent } from "@/lib/emailService";
+import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
 // PUT Handler: Update User Information
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
@@ -91,27 +92,42 @@ export async function DELETE(request: Request) {
 
   try {
     // Get user's contacts
-    const { data: contacts, error: contactsError } = await supabase.from("contacts").select("*").or(`user_id.eq.${userId},contact_id.eq.${userId}`);
+    const { data: contacts, error: contactsError } = await supabase
+      .from("contacts")
+      .select("*")
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
 
     if (contactsError) throw contactsError;
 
     // Delete user's contacts
-    const { error: deleteContactsError } = await supabase.from("contacts").delete().or(`user_id.eq.${userId},contact_id.eq.${userId}`);
+    const { error: deleteContactsError } = await supabase
+      .from("contacts")
+      .delete()
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
 
     if (deleteContactsError) throw deleteContactsError;
 
     // Update rides where user is requester or accepter
-    const { error: updateRidesError } = await supabase.from("rides").update({ status: "cancelled" }).or(`requester_id.eq.${userId},accepter_id.eq.${userId}`);
+    const { error: updateRidesError } = await supabase
+      .from("rides")
+      .update({ status: "cancelled" })
+      .or(`requester_id.eq.${userId},accepter_id.eq.${userId}`);
 
     if (updateRidesError) throw updateRidesError;
 
     // Get affected rides
-    const { data: affectedRides, error: affectedRidesError } = await supabase.from("rides").select("*").or(`requester_id.eq.${userId},accepter_id.eq.${userId}`);
+    const { data: affectedRides, error: affectedRidesError } = await supabase
+      .from("rides")
+      .select("*")
+      .or(`requester_id.eq.${userId},accepter_id.eq.${userId}`);
 
     if (affectedRidesError) throw affectedRidesError;
 
     // Delete user's notifications
-    const { error: deleteNotificationsError } = await supabase.from("notifications").delete().eq("user_id", userId);
+    const { error: deleteNotificationsError } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("user_id", userId);
 
     if (deleteNotificationsError) throw deleteNotificationsError;
 
@@ -134,7 +150,11 @@ export async function DELETE(request: Request) {
       .filter((notification) => notification.user_id);
 
     for (const notification of [...contactNotifications, ...rideNotifications]) {
-      await sendImmediateNotification(notification.user_id, "Account Deletion Notification", notification.message);
+      await sendImmediateNotification(
+        notification.user_id,
+        "Account Deletion Notification",
+        notification.message
+      );
       await supabase.from("notifications").insert(notification);
     }
 

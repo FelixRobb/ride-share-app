@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+
 import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
 import type { ReportFormData } from "@/types";
@@ -22,7 +23,10 @@ export async function POST(request: Request) {
 
     // Validate details length
     if (data.details.length < 10) {
-      return NextResponse.json({ error: "Please provide more details about the issue" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Please provide more details about the issue" },
+        { status: 400 }
+      );
     }
 
     // Check if user is reporting themselves
@@ -32,7 +36,11 @@ export async function POST(request: Request) {
 
     // Check if ride exists if reporting a ride
     if (data.report_type === "ride" && data.ride_id) {
-      const { data: rideData, error: rideError } = await supabase.from("rides").select("id").eq("id", data.ride_id).single();
+      const { data: rideData, error: rideError } = await supabase
+        .from("rides")
+        .select("id")
+        .eq("id", data.ride_id)
+        .single();
 
       if (rideError || !rideData) {
         return NextResponse.json({ error: "Ride not found" }, { status: 404 });
@@ -40,14 +48,22 @@ export async function POST(request: Request) {
     }
 
     // Check if user exists
-    const { data: userData, error: userError } = await supabase.from("users").select("id, name").eq("id", data.reported_id).single();
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("id, name")
+      .eq("id", data.reported_id)
+      .single();
 
     if (userError || !userData) {
       return NextResponse.json({ error: "Reported user not found" }, { status: 404 });
     }
 
     // Get reporter name
-    const { data: reporterData, error: reporterError } = await supabase.from("users").select("name").eq("id", reporterId).single();
+    const { data: reporterData, error: reporterError } = await supabase
+      .from("users")
+      .select("name")
+      .eq("id", reporterId)
+      .single();
 
     if (reporterError || !reporterData) {
       return NextResponse.json({ error: "Reporter not found" }, { status: 404 });

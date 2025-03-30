@@ -1,10 +1,11 @@
-import "./globals.css"
-import { Providers } from "./Providers"
-import { Toaster } from "@/components/ui/sonner"
+import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rideshareappweb.netlify.app" // Fallback URL
-const ogImageUrl = `${siteUrl}/og-image.png`
-const twitterImageUrl = `${siteUrl}/twitter-image.png`
+import { Providers } from "./Providers";
+
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rideshareappweb.netlify.app"; // Fallback URL
+const ogImageUrl = `${siteUrl}/og-image.png`;
+const twitterImageUrl = `${siteUrl}/twitter-image.png`;
 
 export const metadata = {
   title: "RideShare",
@@ -37,17 +38,13 @@ export const metadata = {
     images: [twitterImageUrl],
   },
   metadataBase: new URL(siteUrl),
-}
+};
 
 export const viewport = {
   themeColor: "#000000",
-}
+};
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
@@ -57,6 +54,5 @@ export default function RootLayout({
         </Providers>
       </body>
     </html>
-  )
+  );
 }
-

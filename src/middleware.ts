@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 // List of public routes that don't require authentication
@@ -34,7 +33,15 @@ const publicRoutes = [
 ];
 
 // List of admin routes that require admin authentication
-const adminRoutes = ["/api/admin/stats", "/api/admin/users", "/api/admin/notify-all", "/api/admin/notify-user", "/api/admin/bug-reports", "/api/admin/reports", "/api/admin/reviews"];
+const adminRoutes = [
+  "/api/admin/stats",
+  "/api/admin/users",
+  "/api/admin/notify-all",
+  "/api/admin/notify-user",
+  "/api/admin/bug-reports",
+  "/api/admin/reports",
+  "/api/admin/reviews",
+];
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;

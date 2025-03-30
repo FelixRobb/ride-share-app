@@ -1,7 +1,8 @@
+import { parsePhoneNumber } from "libphonenumber-js";
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
-import { parsePhoneNumber } from "libphonenumber-js";
 
 export async function POST(request: Request) {
   const { userId, contactPhone } = await request.json();
@@ -10,10 +11,7 @@ export async function POST(request: Request) {
     // Parse and validate the phone number
     const phoneNumber = parsePhoneNumber(contactPhone);
     if (!phoneNumber || !phoneNumber.isValid()) {
-      return NextResponse.json(
-        { error: "Invalid phone number" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid phone number" }, { status: 400 });
     }
 
     const e164PhoneNumber = phoneNumber.format("E.164");
@@ -25,10 +23,7 @@ export async function POST(request: Request) {
       .single();
 
     if (contactUserError || !contactUser) {
-      return NextResponse.json(
-        { error: "Contact user not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Contact user not found" }, { status: 404 });
     }
 
     const { data: existingContact } = await supabase
@@ -40,10 +35,7 @@ export async function POST(request: Request) {
       .single();
 
     if (existingContact) {
-      return NextResponse.json(
-        { error: "Contact already exists" },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: "Contact already exists" }, { status: 409 });
     }
 
     const { data: newContact, error: insertError } = await supabase
@@ -64,14 +56,12 @@ export async function POST(request: Request) {
       "You have a new contact request"
     );
 
-    const { error: notificationError } = await supabase
-      .from("notifications")
-      .insert({
-        user_id: contactUser.id,
-        message: "You have a new contact request",
-        type: "contactRequest",
-        related_id: newContact.id,
-      });
+    const { error: notificationError } = await supabase.from("notifications").insert({
+      user_id: contactUser.id,
+      message: "You have a new contact request",
+      type: "contactRequest",
+      related_id: newContact.id,
+    });
 
     if (notificationError) throw notificationError;
 
@@ -83,9 +73,6 @@ export async function POST(request: Request) {
       },
     });
   } catch {
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

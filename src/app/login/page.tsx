@@ -1,9 +1,8 @@
-import LoginPage from "@/components/LoginPage"
-import { getRandomQuote } from "@/utils/authUtils"
+import LoginPage from "@/components/LoginPage";
+import { getRandomQuote } from "@/utils/authUtils";
 
 export default function Login() {
-  const randomQuote = getRandomQuote()
+  const randomQuote = getRandomQuote();
 
-  return <LoginPage quote={randomQuote} />
+  return <LoginPage quote={randomQuote} />;
 }
-

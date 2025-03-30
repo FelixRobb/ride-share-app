@@ -1,37 +1,35 @@
-"use client"
+"use client";
 
-import dynamic from "next/dynamic"
-import { useRouter } from "next/navigation"
-import AuthLoader from "@/components/AuthLoader"
-import { useEffect } from "react"
-import { useSession } from "next-auth/react"
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 
-import Layout from "@/components/Layout"
-import type { User } from "@/types"
+import AuthLoader from "@/components/AuthLoader";
+import Layout from "@/components/Layout";
+import type { User } from "@/types";
 
-const CreateRidePage = dynamic(() => import("@/components/CreateRidePage"), { ssr: false })
+const CreateRidePage = dynamic(() => import("@/components/CreateRidePage"), { ssr: false });
 
 export default function CreateRide() {
-  const router = useRouter()
-  const { data: session, status } = useSession()
-  const currentUser = session?.user as User | null
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const currentUser = session?.user as User | null;
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login")
+      router.push("/login");
     }
-  }, [status, router])
-
+  }, [status, router]);
 
   if (status === "loading") {
-    return <AuthLoader />
+    return <AuthLoader />;
   }
 
   if (status === "unauthenticated") {
-    router.push("/login")
-    return null
+    router.push("/login");
+    return null;
   }
 
-  return <Layout>{currentUser && <CreateRidePage currentUser={currentUser} />}</Layout>
+  return <Layout>{currentUser && <CreateRidePage currentUser={currentUser} />}</Layout>;
 }
-

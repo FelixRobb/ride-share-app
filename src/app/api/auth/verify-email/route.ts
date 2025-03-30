@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 import { sendEmail, getWelcomeEmailContent } from "@/lib/emailService";
 
@@ -12,7 +13,11 @@ export async function GET(request: Request) {
 
   try {
     // Find the token in the database
-    const { data: tokenData, error: tokenError } = await supabase.from("email_verification_tokens").select("user_id, expires_at").eq("token", token).single();
+    const { data: tokenData, error: tokenError } = await supabase
+      .from("email_verification_tokens")
+      .select("user_id, expires_at")
+      .eq("token", token)
+      .single();
 
     if (tokenError || !tokenData) {
       return NextResponse.json({ error: "Invalid or expired token" }, { status: 400 });
@@ -24,14 +29,21 @@ export async function GET(request: Request) {
     }
 
     // Update user's verified status
-    const { error: updateError } = await supabase.from("users").update({ is_verified: true }).eq("id", tokenData.user_id);
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ is_verified: true })
+      .eq("id", tokenData.user_id);
 
     if (updateError) {
       throw updateError;
     }
 
     // Get user's name for the welcome email
-    const { data: userData } = await supabase.from("users").select("name, email").eq("id", tokenData.user_id).single();
+    const { data: userData } = await supabase
+      .from("users")
+      .select("name, email")
+      .eq("id", tokenData.user_id)
+      .single();
 
     // Send welcome email
     if (userData) {

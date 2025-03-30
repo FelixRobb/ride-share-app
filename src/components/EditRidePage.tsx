@@ -1,126 +1,138 @@
-"use client"
+"use client";
 
-import { parsePhoneNumber } from "libphonenumber-js"
-import { motion } from "framer-motion"
-import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight, X } from "lucide-react"
-import dynamic from "next/dynamic"
-import { useRouter } from "next/navigation"
-import { useState, useEffect, useCallback } from "react"
-import { toast } from "sonner"
-import PhoneInput from "react-phone-number-input"
-import "react-phone-number-input/style.css"
+import { motion } from "framer-motion";
+import { parsePhoneNumber } from "libphonenumber-js";
+import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight, X } from "lucide-react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import PhoneInput from "react-phone-number-input";
+import { toast } from "sonner";
+import "react-phone-number-input/style.css";
 
-import { InlineDateTimePicker } from "@/components/InlineDateTimePicker"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
-import { updateRide, fetchEditRideData } from "@/utils/api"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
+import { InlineDateTimePicker } from "@/components/InlineDateTimePicker";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { updateRide, fetchEditRideData } from "@/utils/api";
+import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
-import type { RideData, User } from "../types"
+import type { RideData, User } from "../types";
 
-const LocationSearch = dynamic(() => import("./LocationSearch"), { ssr: false })
-const MapDialog = dynamic(() => import("./MapDialog"), { ssr: false })
+const LocationSearch = dynamic(() => import("./LocationSearch"), { ssr: false });
+const MapDialog = dynamic(() => import("./MapDialog"), { ssr: false });
 
 interface EditRidePageProps {
-  currentUser: User
-  rideId: string
+  currentUser: User;
+  rideId: string;
 }
 
 export default function EditRidePage({ currentUser, rideId }: EditRidePageProps) {
-  const [rideData, setRideData] = useState<RideData | null>(null)
-  const [isFromMapOpen, setIsFromMapOpen] = useState(false)
-  const [isToMapOpen, setIsToMapOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [currentStep, setCurrentStep] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const isOnline = useOnlineStatus()
-  const router = useRouter()
+  const [rideData, setRideData] = useState<RideData | null>(null);
+  const [isFromMapOpen, setIsFromMapOpen] = useState(false);
+  const [isToMapOpen, setIsToMapOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const isOnline = useOnlineStatus();
+  const router = useRouter();
 
-  const fetchData = useCallback(async (silent = false) => {
-    try {
-      if (!silent) {
-        setIsLoading(true)
-      }
+  const fetchData = useCallback(
+    async (silent = false) => {
+      try {
+        if (!silent) {
+          setIsLoading(true);
+        }
 
-      const data = await fetchEditRideData(rideId)
-      setRideData(data.ride)
-    } catch {
-      if (!silent) {
-        toast.error("Failed to fetch ride details. Please try again.")
+        const data = await fetchEditRideData(rideId);
+        setRideData(data.ride);
+      } catch {
+        if (!silent) {
+          toast.error("Failed to fetch ride details. Please try again.");
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [rideId])
+    },
+    [rideId]
+  );
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    fetchData();
+  }, [fetchData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!rideData) return
+    e.preventDefault();
+    if (!rideData) return;
 
     try {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
       if (rideData.rider_phone) {
-        const phoneNumber = parsePhoneNumber(rideData.rider_phone)
+        const phoneNumber = parsePhoneNumber(rideData.rider_phone);
         if (!phoneNumber || !phoneNumber.isValid()) {
-          throw new Error("Invalid rider phone number")
+          throw new Error("Invalid rider phone number");
         }
-        rideData.rider_phone = phoneNumber.format("E.164")
+        rideData.rider_phone = phoneNumber.format("E.164");
       }
-      await updateRide(rideId, rideData, currentUser.id)
-      toast.success("Your ride has been updated successfully.")
-      router.push(`/rides/${rideId}`)
+      await updateRide(rideId, rideData, currentUser.id);
+      toast.success("Your ride has been updated successfully.");
+      router.push(`/rides/${rideId}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.")
+      toast.error(
+        error instanceof Error ? error.message : "An unexpected error occurred. Please try again."
+      );
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleLocationSelect =
     (type: "from" | "to") => (location: { lat: number; lon: number; display_name: string }) => {
       setRideData((prev) =>
         prev
           ? {
-            ...prev,
-            [`${type}_location`]: location.display_name,
-            [`${type}_lat`]: location.lat,
-            [`${type}_lon`]: location.lon,
-          }
-          : null,
-      )
-    }
+              ...prev,
+              [`${type}_location`]: location.display_name,
+              [`${type}_lat`]: location.lat,
+              [`${type}_lon`]: location.lon,
+            }
+          : null
+      );
+    };
 
   const steps = [
     { title: "Location", icon: MapPin },
     { title: "Time", icon: Clock },
     { title: "Rider", icon: UserIcon },
     { title: "Details", icon: FileText },
-  ]
+  ];
 
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(currentStep + 1);
     }
-  }
+  };
 
   const prevStep = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(currentStep - 1);
     }
-  }
+  };
 
   const handleCancel = () => {
-    router.push(`/rides/${rideId}`)
-  }
+    router.push(`/rides/${rideId}`);
+  };
 
   const renderStepContent = () => {
     if (isLoading) {
@@ -137,7 +149,7 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
                 <Skeleton className="h-10 w-full" />
               </div>
             </div>
-          )
+          );
         case 1:
           return (
             <div className="space-y-4">
@@ -146,7 +158,7 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
                 <Skeleton className="h-[300px] w-full" />
               </div>
             </div>
-          )
+          );
         case 2:
           return (
             <div className="space-y-4">
@@ -159,7 +171,7 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
                 <Skeleton className="h-10 w-full" />
               </div>
             </div>
-          )
+          );
         case 3:
           return (
             <div className="space-y-4">
@@ -168,13 +180,13 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
                 <Skeleton className="h-24 w-full" />
               </div>
             </div>
-          )
+          );
         default:
-          return null
+          return null;
       }
     }
 
-    if (!rideData) return null
+    if (!rideData) return null;
 
     switch (currentStep) {
       case 0:
@@ -205,7 +217,7 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
               />
             </div>
           </div>
-        )
+        );
       case 1:
         return (
           <div className="space-y-4">
@@ -213,11 +225,13 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
               <Label htmlFor="time">Pick Date & Time</Label>
               <InlineDateTimePicker
                 value={new Date(rideData.time)}
-                onChange={(date) => setRideData((prev) => (prev ? { ...prev, time: date.toISOString() } : null))}
+                onChange={(date) =>
+                  setRideData((prev) => (prev ? { ...prev, time: date.toISOString() } : null))
+                }
               />
             </div>
           </div>
-        )
+        );
       case 2:
         return (
           <div className="space-y-4">
@@ -226,7 +240,9 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
               <Input
                 id="rider_name"
                 value={rideData.rider_name}
-                onChange={(e) => setRideData((prev) => (prev ? { ...prev, rider_name: e.target.value } : null))}
+                onChange={(e) =>
+                  setRideData((prev) => (prev ? { ...prev, rider_name: e.target.value } : null))
+                }
                 placeholder="Enter rider's name"
                 required
               />
@@ -237,7 +253,9 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
                 id="rider_phone"
                 value={rideData.rider_phone || ""}
                 onChange={(value) =>
-                  setRideData((prev) => (prev ? { ...prev, rider_phone: value ? String(value) : null } : null))
+                  setRideData((prev) =>
+                    prev ? { ...prev, rider_phone: value ? String(value) : null } : null
+                  )
                 }
                 placeholder="Enter rider's phone number"
                 defaultCountry="PT"
@@ -246,7 +264,7 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
               />
             </div>
           </div>
-        )
+        );
       case 3:
         return (
           <div className="space-y-4">
@@ -255,17 +273,19 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
               <Textarea
                 id="note"
                 value={rideData.note || ""}
-                onChange={(e) => setRideData((prev) => (prev ? { ...prev, note: e.target.value } : null))}
+                onChange={(e) =>
+                  setRideData((prev) => (prev ? { ...prev, note: e.target.value } : null))
+                }
                 placeholder="Add a note for the driver"
                 rows={4}
               />
             </div>
           </div>
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-fit bg-background px-4 py-4">
@@ -293,13 +313,13 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
                     key={step.title}
                     className={cn(
                       "flex flex-col items-center space-y-2",
-                      index <= currentStep ? "text-primary" : "text-muted-foreground",
+                      index <= currentStep ? "text-primary" : "text-muted-foreground"
                     )}
                   >
                     <div
                       className={cn(
                         "w-10 h-10 rounded-full flex items-center justify-center",
-                        index <= currentStep ? "bg-primary text-primary-foreground" : "bg-muted",
+                        index <= currentStep ? "bg-primary text-primary-foreground" : "bg-muted"
                       )}
                     >
                       <step.icon className="w-5 h-5" />
@@ -331,7 +351,12 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
           </form>
         </CardContent>
         <CardFooter className="flex justify-between px-6 py-4">
-          <Button type="button" onClick={prevStep} disabled={currentStep === 0 || isLoading} variant="outline">
+          <Button
+            type="button"
+            onClick={prevStep}
+            disabled={currentStep === 0 || isLoading}
+            variant="outline"
+          >
             Previous
           </Button>
           {currentStep < steps.length - 1 ? (
@@ -369,6 +394,5 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
         initialLocation={{ lat: rideData?.to_lat ?? 0, lon: rideData?.to_lon ?? 0 }}
       />
     </div>
-  )
+  );
 }
-

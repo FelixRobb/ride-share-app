@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 import type { RideData } from "@/types";
 
@@ -9,7 +10,11 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
   try {
     // Fetch the current ride data
-    const { data: currentRide, error: fetchError } = await supabase.from("rides").select("*").eq("id", rideId).single();
+    const { data: currentRide, error: fetchError } = await supabase
+      .from("rides")
+      .select("*")
+      .eq("id", rideId)
+      .single();
 
     if (fetchError) throw fetchError;
 

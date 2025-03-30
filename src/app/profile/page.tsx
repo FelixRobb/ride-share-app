@@ -1,43 +1,42 @@
-"use client"
-import dynamic from "next/dynamic"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
-import { useSession } from "next-auth/react"
-import AuthLoader from "@/components/AuthLoader"
-import Layout from "@/components/Layout"
-import type { User } from "@/types"
+"use client";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 
-const ProfilePage = dynamic(() => import("@/components/ProfilePage"), { ssr: false })
+import AuthLoader from "@/components/AuthLoader";
+import Layout from "@/components/Layout";
+import type { User } from "@/types";
+
+const ProfilePage = dynamic(() => import("@/components/ProfilePage"), { ssr: false });
 
 export default function Profile() {
-  const router = useRouter()
-  const { data: session, status } = useSession()
-  const currentUser = session?.user as User | undefined
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const currentUser = session?.user as User | undefined;
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login")
+      router.push("/login");
     }
-  }, [status, router])
-
+  }, [status, router]);
 
   if (status === "loading") {
-    return <AuthLoader />
+    return <AuthLoader />;
   }
 
   if (status === "unauthenticated") {
-    router.push("/login")
-    return null
+    router.push("/login");
+    return null;
   }
 
   if (!currentUser) {
-    return <div>Error: User not found</div>
+    return <div>Error: User not found</div>;
   }
 
   return (
     <Layout>
       <ProfilePage currentUser={currentUser} />
     </Layout>
-  )
+  );
 }
-

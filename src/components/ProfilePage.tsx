@@ -1,5 +1,6 @@
-"use client"
+"use client";
 
+import { parsePhoneNumber } from "libphonenumber-js";
 import {
   LucideUser,
   Mail,
@@ -17,14 +18,25 @@ import {
   UserX,
   Smartphone,
   Trash2,
-} from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useTheme } from "next-themes"
-import { useState, useEffect, useCallback } from "react"
-import { toast } from "sonner"
-import { parsePhoneNumber } from "libphonenumber-js"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
+import { useTheme } from "next-themes";
+import { useState, useEffect, useCallback } from "react";
+import PhoneInput from "react-phone-number-input";
+import { toast } from "sonner";
+
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -32,19 +44,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { PasswordInput } from "@/components/ui/password-input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Skeleton } from "@/components/ui/skeleton"
-import PhoneInput from "react-phone-number-input"
-import "react-phone-number-input/style.css"
-import { signOut } from "next-auth/react"
+} from "@/components/ui/dialog";
 import {
   Drawer,
   DrawerClose,
@@ -53,9 +53,25 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-} from "@/components/ui/drawer"
-import { useMediaQuery } from "@/hooks/use-media-query"
-import type { User, Contact, AssociatedPerson, PushSubscription as AppPushSubscription } from "../types"
+} from "@/components/ui/drawer";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { unregisterServiceWorker } from "@/utils/cleanupService";
+import { getDeviceId, formatLastUsed } from "@/utils/deviceUtils";
+import { useOnlineStatus } from "@/utils/useOnlineStatus";
+import "react-phone-number-input/style.css";
+
+import type {
+  User,
+  Contact,
+  AssociatedPerson,
+  PushSubscription as AppPushSubscription,
+} from "../types";
 import {
   updateProfile,
   changePassword,
@@ -64,158 +80,160 @@ import {
   deleteUser,
   fetchUserStats,
   fetchProfileData,
-} from "../utils/api"
-import { getDeviceId, formatLastUsed } from "@/utils/deviceUtils"
-import { unregisterServiceWorker } from "@/utils/cleanupService"
-import { ContactManager } from "./ContactDialog"
+} from "../utils/api";
+
+import { ContactManager } from "./ContactDialog";
 
 interface ProfilePageProps {
-  currentUser: User
+  currentUser: User;
 }
 
 export default function ProfilePage({ currentUser }: ProfilePageProps) {
-  const [user, setUser] = useState<User>(currentUser)
-  const [contacts, setContacts] = useState<Contact[]>([])
-  const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [user, setUser] = useState<User>(currentUser);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" })
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
-  const [editedUser, setEditedUser] = useState<User | null>(currentUser)
-  const [currentPassword, setCurrentPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmNewPassword, setConfirmNewPassword] = useState("")
-  const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false)
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
-  const [isChangingPassword, setIsChangingPassword] = useState(false)
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
-  const [userStats, setUserStats] = useState<{ ridesOffered: number; ridesRequested: number } | null>(null)
-  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState("profile")
-  const router = useRouter()
-  const isOnline = useOnlineStatus()
-  const [deleteConfirmation, setDeleteConfirmation] = useState("")
-  const [pushDevices, setPushDevices] = useState<AppPushSubscription[]>([])
-  const [isPushLoading, setIsPushLoading] = useState(true)
-  const [currentDeviceId] = useState(() => getDeviceId())
-  const [editedUserData, setEditedUserData] = useState<User | null>(null)
+  const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" });
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [editedUser, setEditedUser] = useState<User | null>(currentUser);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [userStats, setUserStats] = useState<{
+    ridesOffered: number;
+    ridesRequested: number;
+  } | null>(null);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
+  const router = useRouter();
+  const isOnline = useOnlineStatus();
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [pushDevices, setPushDevices] = useState<AppPushSubscription[]>([]);
+  const [isPushLoading, setIsPushLoading] = useState(true);
+  const [currentDeviceId] = useState(() => getDeviceId());
+  const [editedUserData, setEditedUserData] = useState<User | null>(null);
 
   // Add this line in the component, near the other state declarations
-  const isMobile = useMediaQuery("(max-width: 768px)")
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
-  const { setTheme } = useTheme()
+  const { setTheme } = useTheme();
   const [currentMode, setCurrentMode] = useState<"system" | "light" | "dark">(() => {
     if (typeof window !== "undefined") {
-      return (localStorage.getItem("theme") as "system" | "light" | "dark") || "system"
+      return (localStorage.getItem("theme") as "system" | "light" | "dark") || "system";
     }
-    return "system"
-  })
+    return "system";
+  });
 
-  const [newPasswordStrength, setNewPasswordStrength] = useState<string>("")
+  const [newPasswordStrength, setNewPasswordStrength] = useState<string>("");
 
   // Function to evaluate password strength
   const evaluatePasswordStrength = (password: string) => {
-    const lengthCriteria = password.length >= 8
-    const hasUppercase = /[A-Z]/.test(password)
-    const hasNumber = /[0-9]/.test(password)
+    const lengthCriteria = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
 
-    if (password.length < 6) return "Too short"
-    if (lengthCriteria && hasUppercase && hasNumber) return "Strong"
-    if (lengthCriteria) return "Medium"
-    return "Weak"
-  }
+    if (password.length < 6) return "Too short";
+    if (lengthCriteria && hasUppercase && hasNumber) return "Strong";
+    if (lengthCriteria) return "Medium";
+    return "Weak";
+  };
 
   // Fetch profile data
   const fetchData = useCallback(
     async (silent = false) => {
-      if (!isOnline) return
+      if (!isOnline) return;
 
       if (!silent) {
-        setIsLoading(true)
+        setIsLoading(true);
       } else {
-        setIsRefreshing(true)
+        setIsRefreshing(true);
       }
 
       try {
-        const data = await fetchProfileData()
-        setUser(data.user)
-        setContacts(data.contacts)
-        setAssociatedPeople(data.associatedPeople)
-        setEditedUser(data.user)
+        const data = await fetchProfileData();
+        setUser(data.user);
+        setContacts(data.contacts);
+        setAssociatedPeople(data.associatedPeople);
+        setEditedUser(data.user);
       } catch {
         if (!silent) {
-          toast.error("Failed to fetch profile data. Please try again.")
+          toast.error("Failed to fetch profile data. Please try again.");
         }
       } finally {
-        setIsLoading(false)
-        setIsRefreshing(false)
+        setIsLoading(false);
+        setIsRefreshing(false);
       }
     },
-    [isOnline],
-  )
+    [isOnline]
+  );
 
   // Initial data fetch
   useEffect(() => {
-    fetchData()
-    const intervalId = setInterval(() => fetchData(true), 20000) // Refresh every 20 seconds silently
-    return () => clearInterval(intervalId)
-  }, [fetchData])
+    fetchData();
+    const intervalId = setInterval(() => fetchData(true), 20000); // Refresh every 20 seconds silently
+    return () => clearInterval(intervalId);
+  }, [fetchData]);
 
   useEffect(() => {
-    localStorage.setItem("theme", currentMode)
-    setTheme(currentMode)
-  }, [currentMode, setTheme])
+    localStorage.setItem("theme", currentMode);
+    setTheme(currentMode);
+  }, [currentMode, setTheme]);
 
   const toggleTheme = (newMode: "system" | "light" | "dark") => {
-    setCurrentMode(newMode)
-    localStorage.setItem("theme", newMode)
-  }
+    setCurrentMode(newMode);
+    localStorage.setItem("theme", newMode);
+  };
 
   const logout = async () => {
-    router.push("/logout")
-  }
+    router.push("/logout");
+  };
 
   const handleLogout = () => {
-    setIsLogoutDialogOpen(true)
-  }
+    setIsLogoutDialogOpen(true);
+  };
 
   const confirmLogout = () => {
-    setIsLogoutDialogOpen(false)
-    logout()
-  }
+    setIsLogoutDialogOpen(false);
+    logout();
+  };
 
   const handleEditProfileOpen = () => {
-    setEditedUserData({ ...user })
-    setIsEditProfileOpen(true)
-  }
+    setEditedUserData({ ...user });
+    setIsEditProfileOpen(true);
+  };
 
   useEffect(() => {
     const fetchPushDevices = async () => {
-      if (!isOnline || !user) return
+      if (!isOnline || !user) return;
 
-      setIsPushLoading(true)
+      setIsPushLoading(true);
       try {
-        const response = await fetch(`/api/users/${user.id}/push-devices`)
+        const response = await fetch(`/api/users/${user.id}/push-devices`);
         if (response.ok) {
-          const data = await response.json()
-          setPushDevices(data.devices || [])
+          const data = await response.json();
+          setPushDevices(data.devices || []);
         } else {
           // Handle error case
-          setPushDevices([])
-          toast.error("Failed to load device notifications")
+          setPushDevices([]);
+          toast.error("Failed to load device notifications");
         }
       } catch {
-        setPushDevices([])
-        toast.error("Network error while loading devices")
+        setPushDevices([]);
+        toast.error("Network error while loading devices");
       } finally {
-        setIsPushLoading(false)
+        setIsPushLoading(false);
       }
-    }
+    };
 
-    void fetchPushDevices()
-  }, [user, user?.id, isOnline])
+    void fetchPushDevices();
+  }, [user, user?.id, isOnline]);
 
   const handleToggleDevice = async (deviceId: string, enabled: boolean) => {
     try {
@@ -223,26 +241,30 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled, deviceId }),
-      })
+      });
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to update device preference")
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update device preference");
       }
 
-      const data = await response.json()
+      const data = await response.json();
       if (data.success) {
         setPushDevices((prev) =>
-          prev.map((device) => (device.device_id === deviceId ? { ...device, enabled } : device)),
-        )
-        toast.success(enabled ? "Notifications enabled for this device" : "Notifications disabled for this device")
+          prev.map((device) => (device.device_id === deviceId ? { ...device, enabled } : device))
+        );
+        toast.success(
+          enabled
+            ? "Notifications enabled for this device"
+            : "Notifications disabled for this device"
+        );
       } else {
-        throw new Error("Failed to update device preference")
+        throw new Error("Failed to update device preference");
       }
     } catch {
-      toast.error("Failed to update notification preference. Please try again.")
+      toast.error("Failed to update notification preference. Please try again.");
     }
-  }
+  };
 
   const handleRemoveDevice = async (deviceId: string) => {
     try {
@@ -250,40 +272,40 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, deviceId }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to remove device")
+        throw new Error("Failed to remove device");
       }
 
-      setPushDevices((prev) => prev.filter((device) => device.device_id !== deviceId))
-      toast.success("Device removed successfully")
+      setPushDevices((prev) => prev.filter((device) => device.device_id !== deviceId));
+      toast.success("Device removed successfully");
     } catch {
-      toast.error("Failed to remove device")
+      toast.error("Failed to remove device");
     }
-  }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (editedUserData) {
       try {
-        setIsUpdatingProfile(true)
+        setIsUpdatingProfile(true);
 
         // Validate phone number
-        const phoneNumber = parsePhoneNumber(editedUserData.phone)
+        const phoneNumber = parsePhoneNumber(editedUserData.phone);
         if (!phoneNumber || !phoneNumber.isValid()) {
-          throw new Error("Invalid phone number")
+          throw new Error("Invalid phone number");
         }
-        const e164PhoneNumber = phoneNumber.format("E.164")
+        const e164PhoneNumber = phoneNumber.format("E.164");
 
         // Check if email is being changed
-        const isEmailChanged = user.email.toLowerCase() !== editedUserData.email.toLowerCase()
+        const isEmailChanged = user.email.toLowerCase() !== editedUserData.email.toLowerCase();
 
         if (isEmailChanged) {
           // Validate email format
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(editedUserData.email)) {
-            throw new Error("Invalid email format")
+            throw new Error("Invalid email format");
           }
         }
 
@@ -292,15 +314,15 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
           ...editedUserData,
           phone: e164PhoneNumber,
           email: editedUserData.email.toLowerCase(),
-        })
+        });
 
         if (!updatedUser) {
-          throw new Error("Failed to update profile")
+          throw new Error("Failed to update profile");
         }
 
         // Show success message only if email hasn't changed
         if (!isEmailChanged) {
-          toast.success("Profile updated successfully!")
+          toast.success("Profile updated successfully!");
         } else {
           // Show email change notification
           toast.info("A notification has been sent to your previous email address.", {
@@ -310,138 +332,138 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
               label: "Undo",
               onClick: async () => {
                 try {
-                  setIsUpdatingProfile(true)
+                  setIsUpdatingProfile(true);
                   await updateProfile(user.id, {
                     ...editedUser,
                     email: user.email,
-                  })
-                  toast.success("Email change reverted successfully")
-                  await fetchData(true)
+                  });
+                  toast.success("Email change reverted successfully");
+                  await fetchData(true);
                 } catch {
-                  toast.error("Failed to revert email change")
+                  toast.error("Failed to revert email change");
                 } finally {
-                  setIsUpdatingProfile(false)
+                  setIsUpdatingProfile(false);
                 }
               },
             },
-          })
+          });
         }
 
-        setIsEditProfileOpen(false)
-        await fetchData(true)
+        setIsEditProfileOpen(false);
+        await fetchData(true);
       } catch (error) {
         if (error instanceof Error) {
           if (error.message.includes("already in use")) {
-            toast.error("This email address is already registered")
+            toast.error("This email address is already registered");
           } else if (error.message.includes("Invalid email")) {
-            toast.error("Please enter a valid email address")
+            toast.error("Please enter a valid email address");
           } else if (error.message.includes("Invalid phone")) {
-            toast.error("Please enter a valid phone number")
+            toast.error("Please enter a valid phone number");
           } else {
-            toast.error(error.message)
+            toast.error(error.message);
           }
         } else {
-          toast.error("An unexpected error occurred")
+          toast.error("An unexpected error occurred");
         }
-        setIsEditProfileOpen(false)
-        await fetchData(true)
+        setIsEditProfileOpen(false);
+        await fetchData(true);
       } finally {
-        setIsUpdatingProfile(false)
+        setIsUpdatingProfile(false);
       }
     }
-  }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (newPassword !== confirmNewPassword) {
-      toast.error("New passwords do not match")
-      return
+      toast.error("New passwords do not match");
+      return;
     }
     if (newPasswordStrength === "Too short" || newPasswordStrength === "Weak") {
-      toast.error("Please choose a stronger password")
-      return
+      toast.error("Please choose a stronger password");
+      return;
     }
     try {
-      setIsChangingPassword(true)
-      await changePassword(user.id, currentPassword, newPassword)
-      toast.success("Password changed successfully!")
-      setIsChangePasswordOpen(false)
+      setIsChangingPassword(true);
+      await changePassword(user.id, currentPassword, newPassword);
+      toast.success("Password changed successfully!");
+      setIsChangePasswordOpen(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
-      setIsChangingPassword(false)
+      setIsChangingPassword(false);
     }
-  }
+  };
 
   const handleAddAssociatedPerson = async () => {
     if (newAssociatedPerson.name && newAssociatedPerson.relationship) {
-      const associatename = newAssociatedPerson.name.trim()
-      const associaterela = newAssociatedPerson.relationship.trim()
+      const associatename = newAssociatedPerson.name.trim();
+      const associaterela = newAssociatedPerson.relationship.trim();
       try {
-        await addAssociatedPerson(user.id, associatename, associaterela)
-        setNewAssociatedPerson({ name: "", relationship: "" })
-        await fetchData(true)
-        toast.success(`${associatename} added successfully!`)
+        await addAssociatedPerson(user.id, associatename, associaterela);
+        setNewAssociatedPerson({ name: "", relationship: "" });
+        await fetchData(true);
+        toast.success(`${associatename} added successfully!`);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+        toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
       }
     }
-  }
+  };
 
   const handleDeleteAssociatedPerson = async (personId: string, personName: string) => {
     try {
-      await deleteAssociatedPerson(personId, user.id)
-      await fetchData(true)
-      toast.success(`${personName} removed successfully.`)
+      await deleteAssociatedPerson(personId, user.id);
+      await fetchData(true);
+      toast.success(`${personName} removed successfully.`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     }
-  }
+  };
 
   const handleDeleteUser = async () => {
-    setIsDeleteAccountDialogOpen(true)
-  }
+    setIsDeleteAccountDialogOpen(true);
+  };
 
   const confirmDeleteUser = async () => {
     if (deleteConfirmation !== "delete") {
-      toast.error("Please type 'delete' to confirm account deletion.")
-      return
+      toast.error("Please type 'delete' to confirm account deletion.");
+      return;
     }
 
     try {
-      setIsDeletingAccount(true)
+      setIsDeletingAccount(true);
 
       // Store user ID for later use
-      const userId = user.id
+      const userId = user.id;
 
       // 1. First, delete the user account
       try {
-        await deleteUser(userId)
+        await deleteUser(userId);
       } catch {
-        toast.error("Failed to delete your account. Please try again.")
-        setIsDeletingAccount(false)
-        return
+        toast.error("Failed to delete your account. Please try again.");
+        setIsDeletingAccount(false);
+        return;
       }
 
       // 2. Handle push notification unsubscription
-      let currentSubscription = null
+      let currentSubscription = null;
       if ("serviceWorker" in navigator && "PushManager" in window) {
-        const registration = await navigator.serviceWorker.ready
-        const browserSubscription = await registration.pushManager.getSubscription()
+        const registration = await navigator.serviceWorker.ready;
+        const browserSubscription = await registration.pushManager.getSubscription();
 
         // If we have a subscription, prepare it for the API
         if (browserSubscription) {
           currentSubscription = (browserSubscription as PushSubscription).toJSON
             ? (browserSubscription as PushSubscription).toJSON()
-            : browserSubscription
+            : browserSubscription;
 
           // Unsubscribe from push notifications
-          await (browserSubscription as PushSubscription).unsubscribe()
+          await (browserSubscription as PushSubscription).unsubscribe();
         }
       }
 
       // 3. Get the device ID
-      const deviceId = getDeviceId()
+      const deviceId = getDeviceId();
 
       // 4. Call the logout API with the current subscription and device ID
       await fetch("/api/auth/logout", {
@@ -454,45 +476,45 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
           deviceId,
         }),
         credentials: "include",
-      })
+      });
 
       // 5. Unregister service worker
-      await unregisterServiceWorker()
+      await unregisterServiceWorker();
 
       // 6. Clear specific data from localStorage
-      localStorage.removeItem("tutorialstep")
-      localStorage.removeItem("rideData")
-      localStorage.removeItem("theme")
-      localStorage.removeItem("pushNotificationDeclined")
-      localStorage.removeItem("rideshare_device_id")
+      localStorage.removeItem("tutorialstep");
+      localStorage.removeItem("rideData");
+      localStorage.removeItem("theme");
+      localStorage.removeItem("pushNotificationDeclined");
+      localStorage.removeItem("rideshare_device_id");
 
       // 7. Sign out using NextAuth
-      await signOut({ redirect: false })
+      await signOut({ redirect: false });
 
-      toast.success("Your account has been successfully deleted.")
-      setIsDeleteAccountDialogOpen(false)
+      toast.success("Your account has been successfully deleted.");
+      setIsDeleteAccountDialogOpen(false);
 
       // 8. Finally, redirect to login page using window.location instead of router.push
-      window.location.href = "/login"
+      window.location.href = "/login";
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
-      setIsDeletingAccount(false)
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+      setIsDeletingAccount(false);
     }
-  }
+  };
 
   // Modify user stats fetching to have separate loading state
   useEffect(() => {
     const fetchStats = async () => {
       if (user && isOnline) {
-        const stats = await fetchUserStats(user.id)
-        setUserStats(stats)
+        const stats = await fetchUserStats(user.id);
+        setUserStats(stats);
       }
-    }
+    };
 
-    fetchStats()
-    const intervalId = setInterval(fetchStats, 60000) // Refresh every minute
-    return () => clearInterval(intervalId)
-  }, [user, isOnline])
+    fetchStats();
+    const intervalId = setInterval(fetchStats, 60000); // Refresh every minute
+    return () => clearInterval(intervalId);
+  }, [user, isOnline]);
 
   // Get initials for avatar
   const getInitials = (name: string) => {
@@ -501,14 +523,17 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
       .map((word) => word[0])
       .join("")
       .toUpperCase()
-      .substring(0, 2)
-  }
+      .substring(0, 2);
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto pb-8">
       <>
         {/* Profile header with avatar */}
-        <div className="mb-6 flex flex-col items-center sm:flex-row sm:justify-between" data-tutorial="profile-header">
+        <div
+          className="mb-6 flex flex-col items-center sm:flex-row sm:justify-between"
+          data-tutorial="profile-header"
+        >
           {isLoading ? (
             <div className="w-full flex items-center justify-between flex-col sm:flex-row">
               <div className="flex items-center gap-4 w-full mb-4 sm:mb-0">
@@ -539,7 +564,12 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleEditProfileOpen} disabled={!isOnline} size="sm" variant="outline">
+                <Button
+                  onClick={handleEditProfileOpen}
+                  disabled={!isOnline}
+                  size="sm"
+                  variant="outline"
+                >
                   <Settings className="h-4 w-4 mr-2" /> Edit Profile
                 </Button>
                 <Button
@@ -557,7 +587,12 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
         </div>
 
         {/* Main content tabs */}
-        <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs
+          defaultValue="profile"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
           {isLoading ? (
             <div className="flex flex-nowrap justify-center space-x-2 mb-6 w-full">
               {[...Array(4)].map((_, i) => (
@@ -649,7 +684,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-secondary/50 rounded-lg p-4 flex flex-col items-center justify-center">
                         {userStats ? (
-                          <span className="text-3xl font-bold text-primary mb-1">{userStats.ridesOffered}</span>
+                          <span className="text-3xl font-bold text-primary mb-1">
+                            {userStats.ridesOffered}
+                          </span>
                         ) : (
                           <Skeleton className="h-8 w-8 rounded-md mb-1" />
                         )}
@@ -657,7 +694,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                       </div>
                       <div className="bg-secondary/50 rounded-lg p-4 flex flex-col items-center justify-center">
                         {userStats ? (
-                          <span className="text-3xl font-bold text-primary mb-1">{userStats.ridesRequested}</span>
+                          <span className="text-3xl font-bold text-primary mb-1">
+                            {userStats.ridesRequested}
+                          </span>
                         ) : (
                           <Skeleton className="h-8 w-8 rounded-md mb-1" />
                         )}
@@ -695,7 +734,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                               </Avatar>
                               <div>
                                 <p className="font-medium">{person.name}</p>
-                                <p className="text-xs text-muted-foreground">{person.relationship}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {person.relationship}
+                                </p>
                               </div>
                             </div>
                             <Button
@@ -723,19 +764,28 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                         id="name-ass"
                         placeholder="Name"
                         value={newAssociatedPerson.name}
-                        onChange={(e) => setNewAssociatedPerson((prev) => ({ ...prev, name: e.target.value }))}
+                        onChange={(e) =>
+                          setNewAssociatedPerson((prev) => ({ ...prev, name: e.target.value }))
+                        }
                       />
                       <Input
                         id="rela-ass"
                         placeholder="Relationship"
                         value={newAssociatedPerson.relationship}
-                        onChange={(e) => setNewAssociatedPerson((prev) => ({ ...prev, relationship: e.target.value }))}
+                        onChange={(e) =>
+                          setNewAssociatedPerson((prev) => ({
+                            ...prev,
+                            relationship: e.target.value,
+                          }))
+                        }
                       />
                     </div>
                     <Button
                       onClick={handleAddAssociatedPerson}
                       className="w-full"
-                      disabled={!isOnline || !newAssociatedPerson.name || !newAssociatedPerson.relationship}
+                      disabled={
+                        !isOnline || !newAssociatedPerson.name || !newAssociatedPerson.relationship
+                      }
                     >
                       <UserPlus className="h-4 w-4 mr-2" /> Add Person
                     </Button>
@@ -771,13 +821,16 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                     <CardTitle className="text-xl flex items-center">
                       <Shield className="h-5 w-5 mr-2 text-primary" /> Password Management
                     </CardTitle>
-                    <CardDescription>Update your password to keep your account secure</CardDescription>
+                    <CardDescription>
+                      Update your password to keep your account secure
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="bg-secondary/30 p-4 rounded-lg mb-4">
                       <p className="text-sm">
-                        For security reasons, you should change your password regularly. Use a strong password that
-                        includes uppercase and lowercase letters, numbers, and special characters.
+                        For security reasons, you should change your password regularly. Use a
+                        strong password that includes uppercase and lowercase letters, numbers, and
+                        special characters.
                       </p>
                     </div>
                     <Button
@@ -813,7 +866,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                         ) : pushDevices.length === 0 ? (
                           <div className="text-center py-4 bg-secondary/30 rounded-lg">
                             <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                            <p className="text-sm text-muted-foreground">No devices registered for notifications</p>
+                            <p className="text-sm text-muted-foreground">
+                              No devices registered for notifications
+                            </p>
                             <p className="text-xs text-muted-foreground mt-1">
                               Notifications will appear here once you allow them in your browser
                             </p>
@@ -823,7 +878,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                             {pushDevices.map((device) => (
                               <Card
                                 key={device.device_id}
-                                className={device.device_id === currentDeviceId ? "border-primary" : ""}
+                                className={
+                                  device.device_id === currentDeviceId ? "border-primary" : ""
+                                }
                               >
                                 <CardHeader className="pb-2">
                                   <div className="flex items-center justify-between">
@@ -847,10 +904,14 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                                   <div className="flex items-center space-x-2">
                                     <Switch
                                       checked={device.enabled}
-                                      onCheckedChange={(checked) => handleToggleDevice(device.device_id, checked)}
+                                      onCheckedChange={(checked) =>
+                                        handleToggleDevice(device.device_id, checked)
+                                      }
                                       disabled={!isOnline}
                                     />
-                                    <span className="text-sm">{device.enabled ? "Enabled" : "Disabled"}</span>
+                                    <span className="text-sm">
+                                      {device.enabled ? "Enabled" : "Disabled"}
+                                    </span>
                                   </div>
                                   {!(device.device_id === currentDeviceId) && (
                                     <Button
@@ -883,7 +944,8 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                     <div className="bg-destructive/10 p-4 rounded-lg mb-4 border border-destructive/20">
                       <h3 className="font-medium mb-1 text-destructive">Delete Account</h3>
                       <p className="text-sm mb-3">
-                        Once you delete your account, there is no going back. All your data will be permanently removed.
+                        Once you delete your account, there is no going back. All your data will be
+                        permanently removed.
                       </p>
                       <Button
                         variant="destructive"
@@ -891,7 +953,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                         disabled={isDeletingAccount || !isOnline}
                         size="sm"
                       >
-                        {isDeletingAccount ? <Loader className="animate-spin h-4 w-4 mr-2" /> : null}
+                        {isDeletingAccount ? (
+                          <Loader className="animate-spin h-4 w-4 mr-2" />
+                        ) : null}
                         {isDeletingAccount ? "Deleting..." : "Delete Account"}
                       </Button>
                     </div>
@@ -935,7 +999,11 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                       <Skeleton className="h-32 w-full" />
                     </div>
                   ) : (
-                    <ContactManager currentUser={user} contacts={contacts} fetchProfileData={() => fetchData(true)} />
+                    <ContactManager
+                      currentUser={user}
+                      contacts={contacts}
+                      fetchProfileData={() => fetchData(true)}
+                    />
                   )}
                 </CardContent>
               </Card>
@@ -974,7 +1042,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                     <div className="bg-secondary/30 p-4 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
                       <div>
                         <h3 className="font-medium mb-1">Theme Preference</h3>
-                        <p className="text-sm text-muted-foreground">Select how you want the application to appear</p>
+                        <p className="text-sm text-muted-foreground">
+                          Select how you want the application to appear
+                        </p>
                       </div>
                       <div className="inline-flex w-fit gap-1 md:self-end self-center items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
                         <button
@@ -1021,7 +1091,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                       <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
                         <div className="space-y-0.5">
                           <h3 className="font-medium">Online Status</h3>
-                          <p className="text-sm text-muted-foreground">Your current connection status</p>
+                          <p className="text-sm text-muted-foreground">
+                            Your current connection status
+                          </p>
                         </div>
                         <Badge variant={isOnline ? "default" : "destructive"} className="ml-auto">
                           {isOnline ? "Online" : "Offline"}
@@ -1041,9 +1113,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
             open={isEditProfileOpen}
             onOpenChange={(open) => {
               if (!open) {
-                setEditedUserData(null)
+                setEditedUserData(null);
               }
-              setIsEditProfileOpen(open)
+              setIsEditProfileOpen(open);
             }}
           >
             <DrawerContent className="px-4 pb-6">
@@ -1058,7 +1130,11 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                     <Input
                       id="edit-name"
                       value={editedUserData?.name || ""}
-                      onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, name: e.target.value } : null))}
+                      onChange={(e) =>
+                        setEditedUserData((prev) =>
+                          prev ? { ...prev, name: e.target.value } : null
+                        )
+                      }
                       required
                     />
                   </div>
@@ -1067,7 +1143,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                     <PhoneInput
                       id="edit-phone"
                       value={editedUserData?.phone || ""}
-                      onChange={(value) => setEditedUserData((prev) => (prev ? { ...prev, phone: value || "" } : null))}
+                      onChange={(value) =>
+                        setEditedUserData((prev) => (prev ? { ...prev, phone: value || "" } : null))
+                      }
                       defaultCountry="PT"
                       international
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1078,7 +1156,11 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                     <Input
                       id="edit-email"
                       value={editedUserData?.email || ""}
-                      onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, email: e.target.value } : null))}
+                      onChange={(e) =>
+                        setEditedUserData((prev) =>
+                          prev ? { ...prev, email: e.target.value } : null
+                        )
+                      }
                       required
                     />
                   </div>
@@ -1102,9 +1184,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
             open={isEditProfileOpen}
             onOpenChange={(open) => {
               if (!open) {
-                setEditedUserData(null)
+                setEditedUserData(null);
               }
-              setIsEditProfileOpen(open)
+              setIsEditProfileOpen(open);
             }}
           >
             <DialogContent className="rounded-lg w-11/12 max-w-md">
@@ -1119,7 +1201,11 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                     <Input
                       id="edit-name"
                       value={editedUserData?.name || ""}
-                      onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, name: e.target.value } : null))}
+                      onChange={(e) =>
+                        setEditedUserData((prev) =>
+                          prev ? { ...prev, name: e.target.value } : null
+                        )
+                      }
                       required
                     />
                   </div>
@@ -1128,7 +1214,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                     <PhoneInput
                       id="edit-phone"
                       value={editedUserData?.phone || ""}
-                      onChange={(value) => setEditedUserData((prev) => (prev ? { ...prev, phone: value || "" } : null))}
+                      onChange={(value) =>
+                        setEditedUserData((prev) => (prev ? { ...prev, phone: value || "" } : null))
+                      }
                       defaultCountry="PT"
                       international
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1139,13 +1227,22 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                     <Input
                       id="edit-email"
                       value={editedUserData?.email || ""}
-                      onChange={(e) => setEditedUserData((prev) => (prev ? { ...prev, email: e.target.value } : null))}
+                      onChange={(e) =>
+                        setEditedUserData((prev) =>
+                          prev ? { ...prev, email: e.target.value } : null
+                        )
+                      }
                       required
                     />
                   </div>
                 </div>
                 <DialogFooter className="mt-4">
-                  <Button className="mb-2" variant="outline" type="button" onClick={() => setIsEditProfileOpen(false)}>
+                  <Button
+                    className="mb-2"
+                    variant="outline"
+                    type="button"
+                    onClick={() => setIsEditProfileOpen(false)}
+                  >
                     Cancel
                   </Button>
                   <Button className="mb-2" type="submit" disabled={isUpdatingProfile || !isOnline}>
@@ -1163,7 +1260,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
             <DrawerContent className="px-4 pb-6">
               <DrawerHeader className="text-left">
                 <DrawerTitle>Change Password</DrawerTitle>
-                <DrawerDescription>Enter your current password and a new password</DrawerDescription>
+                <DrawerDescription>
+                  Enter your current password and a new password
+                </DrawerDescription>
               </DrawerHeader>
               <form onSubmit={handleChangePassword} className="px-4">
                 <div className="grid w-full items-center gap-4 py-2">
@@ -1182,8 +1281,8 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                       id="new-password"
                       value={newPassword}
                       onChange={(e) => {
-                        setNewPassword(e.target.value)
-                        setNewPasswordStrength(evaluatePasswordStrength(e.target.value))
+                        setNewPassword(e.target.value);
+                        setNewPasswordStrength(evaluatePasswordStrength(e.target.value));
                       }}
                       required
                     />
@@ -1241,7 +1340,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
             <DialogContent className="rounded-lg w-11/12 max-w-md">
               <DialogHeader>
                 <DialogTitle>Change Password</DialogTitle>
-                <DialogDescription>Enter your current password and a new password</DialogDescription>
+                <DialogDescription>
+                  Enter your current password and a new password
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleChangePassword}>
                 <div className="grid w-full items-center gap-4 py-2">
@@ -1260,8 +1361,8 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                       id="new-password"
                       value={newPassword}
                       onChange={(e) => {
-                        setNewPassword(e.target.value)
-                        setNewPasswordStrength(evaluatePasswordStrength(e.target.value))
+                        setNewPassword(e.target.value);
+                        setNewPasswordStrength(evaluatePasswordStrength(e.target.value));
                       }}
                       required
                     />
@@ -1437,7 +1538,11 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                 <DialogDescription>Are you sure you want to log out?</DialogDescription>
               </DialogHeader>
               <DialogFooter>
-                <Button className="mb-2" variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
+                <Button
+                  className="mb-2"
+                  variant="outline"
+                  onClick={() => setIsLogoutDialogOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button className="mb-2" variant="destructive" onClick={confirmLogout}>
@@ -1449,5 +1554,5 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
         )}
       </>
     </div>
-  )
+  );
 }

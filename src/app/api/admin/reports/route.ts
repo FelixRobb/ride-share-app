@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 
 export async function GET(request: Request) {
   try {
-
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const page = Number.parseInt(searchParams.get("page") || "1");
@@ -29,7 +29,9 @@ export async function GET(request: Request) {
     }
 
     // Get total count for pagination
-    const { count: totalCount, error: countError } = await supabase.from("reports").select("*", { count: "exact" });
+    const { count: totalCount, error: countError } = await supabase
+      .from("reports")
+      .select("*", { count: "exact" });
 
     if (countError) {
       return NextResponse.json({ error: "Failed to count reports" }, { status: 500 });

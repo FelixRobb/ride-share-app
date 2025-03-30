@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
@@ -9,22 +10,38 @@ export async function POST(request: NextRequest) {
   const { userId } = await request.json();
 
   try {
-    const { data: contact, error: contactError } = await supabase.from("contacts").select("*").eq("id", contactId).eq("contact_id", userId).single();
+    const { data: contact, error: contactError } = await supabase
+      .from("contacts")
+      .select("*")
+      .eq("id", contactId)
+      .eq("contact_id", userId)
+      .single();
 
     if (contactError || !contact) {
       return NextResponse.json({ error: "Contact request not found" }, { status: 404 });
     }
 
-    const { error: updateError } = await supabase.from("contacts").update({ status: "accepted" }).eq("id", contactId);
+    const { error: updateError } = await supabase
+      .from("contacts")
+      .update({ status: "accepted" })
+      .eq("id", contactId);
 
     if (updateError) throw updateError;
 
     // Fetch the current user's name
-    const { data: currentUser, error: userError } = await supabase.from("users").select("name").eq("id", userId).single();
+    const { data: currentUser, error: userError } = await supabase
+      .from("users")
+      .select("name")
+      .eq("id", userId)
+      .single();
 
     if (userError) throw userError;
 
-    await sendImmediateNotification(contact.user_id, "Contact Request Accepted", `Your contact request has been accepted by ${currentUser.name}`);
+    await sendImmediateNotification(
+      contact.user_id,
+      "Contact Request Accepted",
+      `Your contact request has been accepted by ${currentUser.name}`
+    );
 
     const { error: notificationError } = await supabase.from("notifications").insert({
       user_id: contact.user_id,

@@ -207,7 +207,11 @@ export const updateProfile = async (userId: string, updatedUser: Partial<User>) 
   return await response.json();
 };
 
-export const changePassword = async (userId: string, currentPassword: string, newPassword: string) => {
+export const changePassword = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+) => {
   const response = await fetch(`/api/users/${userId}/change-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -219,7 +223,11 @@ export const changePassword = async (userId: string, currentPassword: string, ne
   }
 };
 
-export const addAssociatedPerson = async (userId: string, name: string, relationship: string): Promise<AssociatedPerson> => {
+export const addAssociatedPerson = async (
+  userId: string,
+  name: string,
+  relationship: string
+): Promise<AssociatedPerson> => {
   const response = await fetch("/api/associated-people", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -282,7 +290,9 @@ export const finishRide = async (rideId: string, userId: string) => {
   }
 };
 
-export const fetchUserStats = async (userId: string): Promise<{ ridesOffered: number; ridesRequested: number }> => {
+export const fetchUserStats = async (
+  userId: string
+): Promise<{ ridesOffered: number; ridesRequested: number }> => {
   const response = await fetch(`/api/users/${userId}/stats`);
   if (!response.ok) {
     throw new Error("Failed to fetch user stats");
@@ -315,7 +325,9 @@ export async function fetchRideDetailsData(rideId: string) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      const error: Error & { status?: number; code?: string; message?: string } = new Error(errorData.message || "Failed to fetch ride details");
+      const error: Error & { status?: number; code?: string; message?: string } = new Error(
+        errorData.message || "Failed to fetch ride details"
+      );
       error.status = response.status;
       error.code = errorData.error || "unknown_error";
       error.message = errorData.message || "An unexpected error occurred";
@@ -335,7 +347,9 @@ export async function fetchRideDetailsData(rideId: string) {
     }
 
     // Fallback for unexpected errors
-    const genericError: Error & { status?: number; code?: string } = new Error("An unexpected error occurred");
+    const genericError: Error & { status?: number; code?: string } = new Error(
+      "An unexpected error occurred"
+    );
     genericError.status = 500;
     genericError.code = "unknown_error";
     throw genericError;
@@ -361,7 +375,13 @@ export const fetchCreateRideData = async () => {
 };
 
 // Submit a report
-export async function submitReport(reportData: { reason: string; details: string; report_type: "user" | "ride"; reported_id: string; ride_id?: string | null }) {
+export async function submitReport(reportData: {
+  reason: string;
+  details: string;
+  report_type: "user" | "ride";
+  reported_id: string;
+  ride_id?: string | null;
+}) {
   const response = await fetch("/api/reports", {
     method: "POST",
     headers: {
@@ -458,7 +478,11 @@ export async function getBugReportStats() {
 }
 
 // Update bug report status
-export async function updateBugReportStatus(bugReportId: string, status: string, adminNotes: string) {
+export async function updateBugReportStatus(
+  bugReportId: string,
+  status: string,
+  adminNotes: string
+) {
   const response = await fetch(`/api/admin/bug-reports/${bugReportId}`, {
     method: "PUT",
     headers: {

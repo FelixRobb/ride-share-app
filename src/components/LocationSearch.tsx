@@ -1,7 +1,7 @@
-import { MapPin } from 'lucide-react'
+import { MapPin } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Location {
   lat: number;
@@ -15,13 +15,17 @@ interface LocationSearchProps {
   onOpenMap: () => void;
 }
 
-export default function LocationSearch({ selectedLocation, label, onOpenMap }: LocationSearchProps) {
+export default function LocationSearch({
+  selectedLocation,
+  label,
+  onOpenMap,
+}: LocationSearchProps) {
   return (
     <div className="space-y-4">
       <div className="flex space-x-2">
         <Button type="button" onClick={onOpenMap} variant="outline" className="w-full">
           <MapPin className="mr-2 h-4 w-4" />
-          {selectedLocation ? 'Change Location' : `Select ${label}`}
+          {selectedLocation ? "Change Location" : `Select ${label}`}
         </Button>
       </div>
       {selectedLocation && (
@@ -40,4 +44,3 @@ export default function LocationSearch({ selectedLocation, label, onOpenMap }: L
     </div>
   );
 }
-

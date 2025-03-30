@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
 import { getServerSession } from "next-auth";
+
 import { authOptions } from "@/lib/auth";
+import { supabase } from "@/lib/db";
 
 export async function DELETE(request: Request) {
   const url = new URL(request.url);
@@ -21,7 +22,11 @@ export async function DELETE(request: Request) {
 
   try {
     // First, get the contact record to identify both users
-    const { data: contactData, error: contactError } = await supabase.from("contacts").select("user_id, contact_id, status").eq("id", contactId).single();
+    const { data: contactData, error: contactError } = await supabase
+      .from("contacts")
+      .select("user_id, contact_id, status")
+      .eq("id", contactId)
+      .single();
 
     if (contactError || !contactData) {
       return NextResponse.json({ error: "Contact not found" }, { status: 404 });
@@ -50,10 +55,16 @@ export async function DELETE(request: Request) {
       const { data: sharedRides, error: ridesError } = await supabase
         .from("rides")
         .select("id")
-        .or(`and(requester_id.eq.${userId},accepter_id.eq.${otherUserId}),` + `and(requester_id.eq.${otherUserId},accepter_id.eq.${userId})`);
+        .or(
+          `and(requester_id.eq.${userId},accepter_id.eq.${otherUserId}),` +
+            `and(requester_id.eq.${otherUserId},accepter_id.eq.${userId})`
+        );
 
       if (ridesError) {
-        return NextResponse.json({ error: `Failed to fetch shared rides: ${ridesError.message}` }, { status: 500 });
+        return NextResponse.json(
+          { error: `Failed to fetch shared rides: ${ridesError.message}` },
+          { status: 500 }
+        );
       }
 
       // If there are shared rides, delete associated data
@@ -62,10 +73,17 @@ export async function DELETE(request: Request) {
         deletedData.rides = rideIds.length;
 
         // 2a. Delete ride notes for these rides
-        const { data: deletedNotes, error: notesError } = await supabase.from("ride_notes").delete().in("ride_id", rideIds).select("id");
+        const { data: deletedNotes, error: notesError } = await supabase
+          .from("ride_notes")
+          .delete()
+          .in("ride_id", rideIds)
+          .select("id");
 
         if (notesError) {
-          return NextResponse.json({ error: `Failed to delete ride notes: ${notesError.message}` }, { status: 500 });
+          return NextResponse.json(
+            { error: `Failed to delete ride notes: ${notesError.message}` },
+            { status: 500 }
+          );
         }
 
         deletedData.notes = deletedNotes?.length || 0;
@@ -74,16 +92,25 @@ export async function DELETE(request: Request) {
         const { error: deleteRidesError } = await supabase.from("rides").delete().in("id", rideIds);
 
         if (deleteRidesError) {
-          return NextResponse.json({ error: `Failed to delete rides: ${deleteRidesError.message}` }, { status: 500 });
+          return NextResponse.json(
+            { error: `Failed to delete rides: ${deleteRidesError.message}` },
+            { status: 500 }
+          );
         }
       }
     }
 
     // 4. Delete the contact record
-    const { error: deleteContactError } = await supabase.from("contacts").delete().eq("id", contactId);
+    const { error: deleteContactError } = await supabase
+      .from("contacts")
+      .delete()
+      .eq("id", contactId);
 
     if (deleteContactError) {
-      return NextResponse.json({ error: `Failed to delete contact: ${deleteContactError.message}` }, { status: 500 });
+      return NextResponse.json(
+        { error: `Failed to delete contact: ${deleteContactError.message}` },
+        { status: 500 }
+      );
     }
 
     deletedData.contact = true;

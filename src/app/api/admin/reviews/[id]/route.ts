@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+import { authOptions } from "@/lib/auth";
+import { supabase } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -44,7 +45,12 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
   }
 
   try {
-    const { data, error } = await supabase.from("push_subscriptions").select("enabled").eq("user_id", id).eq("device_id", deviceId).single();
+    const { data, error } = await supabase
+      .from("push_subscriptions")
+      .select("enabled")
+      .eq("user_id", id)
+      .eq("device_id", deviceId)
+      .single();
 
     if (error) throw error;
 
@@ -96,7 +102,12 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
   }
 
   try {
-    const { data, error } = await supabase.from("push_subscriptions").update({ enabled }).eq("user_id", id).eq("device_id", deviceId).select();
+    const { data, error } = await supabase
+      .from("push_subscriptions")
+      .update({ enabled })
+      .eq("user_id", id)
+      .eq("device_id", deviceId)
+      .select();
 
     if (error) throw error;
 

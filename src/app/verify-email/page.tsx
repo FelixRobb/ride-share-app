@@ -1,62 +1,71 @@
-"use client"
+"use client";
 
-import { useEffect, useState, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { toast } from "sonner"
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { Loader2, CheckCircle, XCircle, ArrowRight } from "lucide-react"
+import { motion } from "framer-motion";
+import { Loader2, CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 // Separate component to handle verification logic
 function VerificationHandler() {
-  const [verificationStatus, setVerificationStatus] = useState<"verifying" | "success" | "error">("verifying")
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = searchParams.get("token")
+  const [verificationStatus, setVerificationStatus] = useState<"verifying" | "success" | "error">(
+    "verifying"
+  );
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
   useEffect(() => {
     const verifyEmail = async () => {
       if (!token) {
-        setVerificationStatus("error")
-        toast.error("Invalid verification link")
-        return
+        setVerificationStatus("error");
+        toast.error("Invalid verification link");
+        return;
       }
 
       try {
-        const response = await fetch(`/api/auth/verify-email?token=${token}`)
-        const data = await response.json()
+        const response = await fetch(`/api/auth/verify-email?token=${token}`);
+        const data = await response.json();
 
         if (response.ok) {
-          setVerificationStatus("success")
-          toast.success("Email verified successfully. Please login.")
-          router.push("/login")
+          setVerificationStatus("success");
+          toast.success("Email verified successfully. Please login.");
+          router.push("/login");
         } else {
-          setVerificationStatus("error")
-          toast.error(data.error || "Email verification failed")
+          setVerificationStatus("error");
+          toast.error(data.error || "Email verification failed");
         }
       } catch {
-        setVerificationStatus("error")
-        toast.error("An error occurred during verification")
+        setVerificationStatus("error");
+        toast.error("An error occurred during verification");
       }
-    }
+    };
 
-    verifyEmail()
-  }, [token, router])
+    verifyEmail();
+  }, [token, router]);
 
   const statusIcon = {
     verifying: <Loader2 className="h-12 w-12 animate-spin text-primary" />,
     success: <CheckCircle className="h-12 w-12 text-green-500" />,
     error: <XCircle className="h-12 w-12 text-red-500" />,
-  }
+  };
 
   const statusMessage = {
     verifying: "Verifying your email...",
     success: "Your email has been verified successfully!",
     error: "There was an error verifying your email. Please try again or contact support.",
-  }
+  };
 
   return (
     <Card className="w-[350px]">
@@ -81,7 +90,7 @@ function VerificationHandler() {
         )}
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 // Loading fallback component
@@ -97,7 +106,7 @@ function VerificationLoading() {
         <p className="text-center">Please wait...</p>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 // Main component
@@ -126,5 +135,5 @@ export default function VerifyEmail() {
         </div>
       </footer>
     </div>
-  )
+  );
 }

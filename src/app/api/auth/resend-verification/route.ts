@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
 import crypto from "crypto";
+
+import { NextResponse } from "next/server";
+
+import { supabase } from "@/lib/db";
 import { sendEmail, getVerificationEmailContent } from "@/lib/emailService";
 
 export async function POST(request: Request) {
@@ -14,7 +16,10 @@ export async function POST(request: Request) {
   const { identifier, loginMethod } = body;
 
   if (!identifier || !loginMethod) {
-    return NextResponse.json({ error: "Identifier and login method are required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Identifier and login method are required" },
+      { status: 400 }
+    );
   }
 
   try {
@@ -42,7 +47,9 @@ export async function POST(request: Request) {
     await supabase.from("email_verification_tokens").delete().eq("user_id", user.id);
 
     // Store new verification token
-    const { error: tokenError } = await supabase.from("email_verification_tokens").insert({ user_id: user.id, token, expires_at: expiresAt.toISOString() });
+    const { error: tokenError } = await supabase
+      .from("email_verification_tokens")
+      .insert({ user_id: user.id, token, expires_at: expiresAt.toISOString() });
 
     if (tokenError) {
       throw tokenError;

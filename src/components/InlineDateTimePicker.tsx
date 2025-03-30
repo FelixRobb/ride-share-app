@@ -1,50 +1,56 @@
-import { format } from "date-fns"
-import { CalendarClock } from "lucide-react"
-import * as React from "react"
+import { format } from "date-fns";
+import { CalendarClock } from "lucide-react";
+import * as React from "react";
 
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface InlineDateTimePickerProps {
-  value: Date
-  onChange: (date: Date) => void
+  value: Date;
+  onChange: (date: Date) => void;
 }
 
 export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerProps) {
-  const [date, setDate] = React.useState<Date | undefined>(value)
+  const [date, setDate] = React.useState<Date | undefined>(value);
 
   React.useEffect(() => {
-    setDate(value)
-  }, [value])
+    setDate(value);
+  }, [value]);
 
   const handleDateChange = (newDate: Date | undefined) => {
     if (newDate) {
-      const updatedDate = new Date(date || value)
-      updatedDate.setFullYear(newDate.getFullYear(), newDate.getMonth(), newDate.getDate())
-      setDate(updatedDate)
-      onChange(updatedDate)
+      const updatedDate = new Date(date || value);
+      updatedDate.setFullYear(newDate.getFullYear(), newDate.getMonth(), newDate.getDate());
+      setDate(updatedDate);
+      onChange(updatedDate);
     }
-  }
+  };
 
   const handleTimeChange = (hours: number, minutes: number) => {
-    const updatedDate = new Date(date || value)
-    updatedDate.setHours(hours)
-    updatedDate.setMinutes(minutes)
-    setDate(updatedDate)
-    onChange(updatedDate)
-  }
+    const updatedDate = new Date(date || value);
+    updatedDate.setHours(hours);
+    updatedDate.setMinutes(minutes);
+    setDate(updatedDate);
+    onChange(updatedDate);
+  };
 
   const quickSelectTimes = [
     { label: "Morning (9:00 AM)", hours: 9, minutes: 0 },
     { label: "Noon (12:00 PM)", hours: 12, minutes: 0 },
     { label: "Afternoon (3:00 PM)", hours: 15, minutes: 0 },
     { label: "Evening (6:00 PM)", hours: 18, minutes: 0 },
-  ]
+  ];
 
   return (
     <Card className="w-full mx-auto">
@@ -65,7 +71,10 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
                 <Button
                   type="button"
                   variant={"outline"}
-                  className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
                 >
                   {date ? format(date, "PPP") : <span>Pick a date</span>}
                 </Button>
@@ -81,7 +90,9 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
             </Label>
             <div className="grid grid-cols-2 gap-2">
               <Select
-                onValueChange={(value) => handleTimeChange(Number.parseInt(value), date?.getMinutes() || 0)}
+                onValueChange={(value) =>
+                  handleTimeChange(Number.parseInt(value), date?.getMinutes() || 0)
+                }
                 value={date ? date.getHours().toString() : undefined}
               >
                 <SelectTrigger>
@@ -96,7 +107,9 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
                 </SelectContent>
               </Select>
               <Select
-                onValueChange={(value) => handleTimeChange(date?.getHours() || 0, Number.parseInt(value))}
+                onValueChange={(value) =>
+                  handleTimeChange(date?.getHours() || 0, Number.parseInt(value))
+                }
                 value={date ? date.getMinutes().toString() : undefined}
               >
                 <SelectTrigger>
@@ -134,9 +147,9 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
             type="button"
             variant="outline"
             onClick={() => {
-              const now = new Date()
-              setDate(now)
-              onChange(now)
+              const now = new Date();
+              setDate(now);
+              onChange(now);
             }}
           >
             Today
@@ -147,6 +160,5 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

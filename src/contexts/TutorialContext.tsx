@@ -1,33 +1,33 @@
-"use client"
-import { motion, AnimatePresence } from "framer-motion"
-import { useRouter, usePathname } from "next/navigation"
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react"
+"use client";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRouter, usePathname } from "next/navigation";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 
-import { TutorialOverlay } from "@/components/TutorialOverlay"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { TutorialOverlay } from "@/components/TutorialOverlay";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 type TutorialStep = {
-  key: string
-  page: string
-  step: number
-  title: string
-  content: string
-  target?: string | null
-}
+  key: string;
+  page: string;
+  step: number;
+  title: string;
+  content: string;
+  target?: string | null;
+};
 
 type TutorialContextType = {
-  currentStep: TutorialStep | null
-  nextStep: () => void
-  prevStep: () => void
-  skipTutorial: () => void
-  restartTutorial: () => void
-  showPopup: boolean
-  handlePopupChoice: (choice: boolean) => void
-  isTargetReady: boolean
-}
+  currentStep: TutorialStep | null;
+  nextStep: () => void;
+  prevStep: () => void;
+  skipTutorial: () => void;
+  restartTutorial: () => void;
+  showPopup: boolean;
+  handlePopupChoice: (choice: boolean) => void;
+  isTargetReady: boolean;
+};
 
-const TutorialContext = createContext<TutorialContextType | undefined>(undefined)
+const TutorialContext = createContext<TutorialContextType | undefined>(undefined);
 
 const tutorialSteps: TutorialStep[] = [
   {
@@ -88,56 +88,63 @@ const tutorialSteps: TutorialStep[] = [
     page: "/profile",
     step: 7,
     title: "Profile Overview",
-    content: "Welcome to your profile page! Here you can manage all your personal information, security settings, contacts, and app preferences.",
-    target: "[data-tutorial='profile-header']"
+    content:
+      "Welcome to your profile page! Here you can manage all your personal information, security settings, contacts, and app preferences.",
+    target: "[data-tutorial='profile-header']",
   },
   {
     key: "personal-info",
     page: "/profile",
     step: 8,
     title: "Personal Information",
-    content: "View and edit your personal details including name, email, and phone number. Click 'Edit Profile' to make changes.",
-    target: "[data-tutorial='personal-info']"
+    content:
+      "View and edit your personal details including name, email, and phone number. Click 'Edit Profile' to make changes.",
+    target: "[data-tutorial='personal-info']",
   },
   {
     key: "activity-stats",
     page: "/profile",
     step: 9,
     title: "Activity Statistics",
-    content: "Track your platform activity here. See how many rides you've offered and requested over time.",
-    target: "[data-tutorial='activity-stats']"
+    content:
+      "Track your platform activity here. See how many rides you've offered and requested over time.",
+    target: "[data-tutorial='activity-stats']",
   },
   {
     key: "associated-people",
     page: "/profile",
     step: 10,
     title: "Associated People",
-    content: "Manage people associated with your account. Add family members or friends you frequently arrange rides for.",
-    target: "[data-tutorial='associated-people']"
+    content:
+      "Manage people associated with your account. Add family members or friends you frequently arrange rides for.",
+    target: "[data-tutorial='associated-people']",
   },
   {
     key: "contact-management",
     page: "/profile",
     step: 11,
     title: "Contact Management",
-    content: "View and manage your contacts in the Contacts tab. Add new contacts and manage existing ones to build your trusted network.",
-    target: "[data-tutorial='contacts-tab']"
+    content:
+      "View and manage your contacts in the Contacts tab. Add new contacts and manage existing ones to build your trusted network.",
+    target: "[data-tutorial='contacts-tab']",
   },
   {
     key: "security-settings",
     page: "/profile",
     step: 12,
     title: "Security Settings",
-    content: "Access the Security tab to change your password and manage notification preferences to keep your account secure.",
-    target: "[data-tutorial='security-tab']"
+    content:
+      "Access the Security tab to change your password and manage notification preferences to keep your account secure.",
+    target: "[data-tutorial='security-tab']",
   },
   {
     key: "app-settings",
     page: "/profile",
     step: 13,
     title: "App Settings",
-    content: "Customize your app experience in the Settings tab. Choose your preferred theme and check your connection status.",
-    target: "[data-tutorial='settings-tab']"
+    content:
+      "Customize your app experience in the Settings tab. Choose your preferred theme and check your connection status.",
+    target: "[data-tutorial='settings-tab']",
   },
   {
     key: "create-ride-page",
@@ -156,230 +163,230 @@ const tutorialSteps: TutorialStep[] = [
     content:
       "You've completed the RideShare tutorial! You're now ready to start sharing rides. Remember, you can always access help and FAQs from the menu if you need more information. Enjoy using RideShare!",
   },
-]
+];
 
-export { tutorialSteps }
+export { tutorialSteps };
 
 export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const router = useRouter()
-  const pathname = usePathname()
-  const [currentStep, setCurrentStep] = useState<TutorialStep | null>(null)
-  const [pendingStep, setPendingStep] = useState<TutorialStep | null>(null)
-  const [showPopup, setShowPopup] = useState(false)
-  const [showStepPopup, setShowStepPopup] = useState(false)
-  const [isInitialized, setIsInitialized] = useState(false)
-  const [isTransitioning, setIsTransitioning] = useState(false)
-  const [isTargetReady, setIsTargetReady] = useState(false)
-  const observerRef = useRef<MutationObserver | null>(null)
+  const router = useRouter();
+  const pathname = usePathname();
+  const [currentStep, setCurrentStep] = useState<TutorialStep | null>(null);
+  const [pendingStep, setPendingStep] = useState<TutorialStep | null>(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [showStepPopup, setShowStepPopup] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isTargetReady, setIsTargetReady] = useState(false);
+  const observerRef = useRef<MutationObserver | null>(null);
 
   const scrollToTarget = useCallback((target: string) => {
-    const element = document.querySelector(target)
+    const element = document.querySelector(target);
     if (element) {
       element.scrollIntoView({
         behavior: "smooth",
         block: "center",
         inline: "center",
-      })
+      });
     }
-  }, [])
+  }, []);
 
   const waitForTarget = useCallback((target: string, maxWaitTime = 5000) => {
-    setIsTargetReady(false)
+    setIsTargetReady(false);
     return new Promise<void>((resolve) => {
       const checkElement = () => {
-        const element = document.querySelector(target)
+        const element = document.querySelector(target);
         if (element) {
-          setIsTargetReady(true)
-          resolve()
+          setIsTargetReady(true);
+          resolve();
         }
-      }
+      };
 
       // Check immediately
-      checkElement()
+      checkElement();
 
       // Set up MutationObserver
-      const observer = new MutationObserver(checkElement)
-      observerRef.current = observer
-      observer.observe(document.body, { childList: true, subtree: true })
+      const observer = new MutationObserver(checkElement);
+      observerRef.current = observer;
+      observer.observe(document.body, { childList: true, subtree: true });
 
       // Set a timeout to resolve anyway after maxWaitTime
       const timeoutId = setTimeout(() => {
-        observer.disconnect()
-        setIsTargetReady(true)
-        resolve()
-      }, maxWaitTime)
+        observer.disconnect();
+        setIsTargetReady(true);
+        resolve();
+      }, maxWaitTime);
 
       // Clean up function
       const cleanup = () => {
-        observer.disconnect()
-        clearTimeout(timeoutId)
-      }
+        observer.disconnect();
+        clearTimeout(timeoutId);
+      };
 
       // Return cleanup function
-      return cleanup
-    })
-  }, [])
+      return cleanup;
+    });
+  }, []);
 
   const handleStep = useCallback(
     async (step: TutorialStep) => {
       if (step.target) {
-        await waitForTarget(step.target)
-        scrollToTarget(step.target)
+        await waitForTarget(step.target);
+        scrollToTarget(step.target);
       }
-      setCurrentStep(step)
-      setShowStepPopup(true)
+      setCurrentStep(step);
+      setShowStepPopup(true);
     },
-    [scrollToTarget, waitForTarget],
-  )
+    [scrollToTarget, waitForTarget]
+  );
 
   // Initialize tutorial on mount
   useEffect(() => {
     const initializeTutorial = async () => {
-      const tutorialCompleted = localStorage.getItem("tutorialCompleted") === "true"
-      const savedStepNumber = Number.parseInt(localStorage.getItem("tutorialStep") || "1", 10)
-      const step = tutorialSteps.find((s) => s.step === savedStepNumber) || tutorialSteps[0]
+      const tutorialCompleted = localStorage.getItem("tutorialCompleted") === "true";
+      const savedStepNumber = Number.parseInt(localStorage.getItem("tutorialStep") || "1", 10);
+      const step = tutorialSteps.find((s) => s.step === savedStepNumber) || tutorialSteps[0];
 
       if (tutorialCompleted) {
-        setCurrentStep(null)
-        setPendingStep(null)
+        setCurrentStep(null);
+        setPendingStep(null);
       } else if (step.page === pathname) {
-        await handleStep(step)
-        setPendingStep(null)
+        await handleStep(step);
+        setPendingStep(null);
       } else {
-        setPendingStep(step)
-        setShowPopup(true)
+        setPendingStep(step);
+        setShowPopup(true);
       }
 
-      setIsInitialized(true)
-    }
+      setIsInitialized(true);
+    };
 
-    initializeTutorial()
-  }, [pathname, handleStep])
+    initializeTutorial();
+  }, [pathname, handleStep]);
 
   useEffect(() => {
     if (isInitialized && pendingStep) {
       if (pathname === pendingStep.page) {
         // Longer delay and more controlled state transition
         const timeoutId = setTimeout(async () => {
-          await handleStep(pendingStep)
-          setPendingStep(null)
-          setShowPopup(false)
-          setIsTransitioning(false)
-        }, 300) // Increased delay for smoother transition
+          await handleStep(pendingStep);
+          setPendingStep(null);
+          setShowPopup(false);
+          setIsTransitioning(false);
+        }, 300); // Increased delay for smoother transition
 
-        return () => clearTimeout(timeoutId)
+        return () => clearTimeout(timeoutId);
       } else if (!isTransitioning) {
-        setShowPopup(true)
-        setShowStepPopup(false)
+        setShowPopup(true);
+        setShowStepPopup(false);
       }
     }
-  }, [pathname, pendingStep, isInitialized, isTransitioning, handleStep])
+  }, [pathname, pendingStep, isInitialized, isTransitioning, handleStep]);
 
   const changeStep = useCallback(
     async (step: TutorialStep | null) => {
       if (!step) {
         // Completely reset tutorial state
-        localStorage.removeItem("tutorialStep")
-        localStorage.setItem("tutorialCompleted", "true")
-        setCurrentStep(null)
-        setPendingStep(null)
-        setShowStepPopup(false)
-        setShowPopup(false)
-        return
+        localStorage.removeItem("tutorialStep");
+        localStorage.setItem("tutorialCompleted", "true");
+        setCurrentStep(null);
+        setPendingStep(null);
+        setShowStepPopup(false);
+        setShowPopup(false);
+        return;
       }
 
       // Clear any lingering state from previous step
-      setCurrentStep(null)
-      setPendingStep(null)
-      setShowStepPopup(false)
+      setCurrentStep(null);
+      setPendingStep(null);
+      setShowStepPopup(false);
 
       // Short delay to ensure clean state before new step
-      await new Promise((resolve) => setTimeout(resolve, 50))
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
-      localStorage.setItem("tutorialStep", step.step.toString())
+      localStorage.setItem("tutorialStep", step.step.toString());
 
       if (step.page !== pathname) {
-        setIsTransitioning(true)
-        setPendingStep(step)
-        router.push(step.page)
+        setIsTransitioning(true);
+        setPendingStep(step);
+        router.push(step.page);
       } else {
-        await handleStep(step)
+        await handleStep(step);
       }
     },
-    [pathname, router, handleStep],
-  )
+    [pathname, router, handleStep]
+  );
 
   const nextStep = useCallback(() => {
-    if (!currentStep) return
+    if (!currentStep) return;
 
-    const currentIndex = tutorialSteps.findIndex((step) => step.step === currentStep.step)
+    const currentIndex = tutorialSteps.findIndex((step) => step.step === currentStep.step);
 
     if (currentIndex === tutorialSteps.length - 1) {
-      localStorage.removeItem("tutorialStep")
-      localStorage.setItem("tutorialCompleted", "true")
-      setCurrentStep(null)
-      setPendingStep(null)
-      setShowStepPopup(false)
-      return
+      localStorage.removeItem("tutorialStep");
+      localStorage.setItem("tutorialCompleted", "true");
+      setCurrentStep(null);
+      setPendingStep(null);
+      setShowStepPopup(false);
+      return;
     }
 
-    const nextStep = tutorialSteps[currentIndex + 1]
-    changeStep(nextStep)
-  }, [currentStep, changeStep])
+    const nextStep = tutorialSteps[currentIndex + 1];
+    changeStep(nextStep);
+  }, [currentStep, changeStep]);
 
   const prevStep = useCallback(() => {
-    if (!currentStep) return
+    if (!currentStep) return;
 
-    const currentIndex = tutorialSteps.findIndex((step) => step.step === currentStep.step)
+    const currentIndex = tutorialSteps.findIndex((step) => step.step === currentStep.step);
     if (currentIndex > 0) {
-      const prevStep = tutorialSteps[currentIndex - 1]
-      changeStep(prevStep)
+      const prevStep = tutorialSteps[currentIndex - 1];
+      changeStep(prevStep);
     }
-  }, [currentStep, changeStep])
+  }, [currentStep, changeStep]);
 
   const skipTutorial = useCallback(() => {
-    localStorage.removeItem("tutorialStep")
-    localStorage.setItem("tutorialCompleted", "true")
-    setCurrentStep(null)
-    setPendingStep(null)
-    setShowStepPopup(false)
-    setShowPopup(false)
-  }, [])
+    localStorage.removeItem("tutorialStep");
+    localStorage.setItem("tutorialCompleted", "true");
+    setCurrentStep(null);
+    setPendingStep(null);
+    setShowStepPopup(false);
+    setShowPopup(false);
+  }, []);
 
   const restartTutorial = useCallback(() => {
-    localStorage.removeItem("tutorialCompleted")
-    localStorage.setItem("tutorialStep", "1")
-    const firstStep = tutorialSteps[0]
-    setCurrentStep(null)
-    setPendingStep(null)
-    setShowStepPopup(false)
-    setShowPopup(false)
-    router.push(firstStep.page)
-    handleStep(firstStep)
-  }, [router, handleStep])
+    localStorage.removeItem("tutorialCompleted");
+    localStorage.setItem("tutorialStep", "1");
+    const firstStep = tutorialSteps[0];
+    setCurrentStep(null);
+    setPendingStep(null);
+    setShowStepPopup(false);
+    setShowPopup(false);
+    router.push(firstStep.page);
+    handleStep(firstStep);
+  }, [router, handleStep]);
 
   const handlePopupChoice = useCallback(
     (choice: boolean) => {
       if (choice) {
         if (pendingStep) {
-          router.push(pendingStep.page)
+          router.push(pendingStep.page);
         }
       } else {
-        skipTutorial()
+        skipTutorial();
       }
-      setShowPopup(false)
+      setShowPopup(false);
     },
-    [pendingStep, router, skipTutorial],
-  )
+    [pendingStep, router, skipTutorial]
+  );
 
   // Cleanup effect
   useEffect(() => {
     return () => {
       if (observerRef.current) {
-        observerRef.current.disconnect()
+        observerRef.current.disconnect();
       }
-    }
-  }, [])
+    };
+  }, []);
 
   return (
     <TutorialContext.Provider
@@ -404,23 +411,23 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         </>
       )}
     </TutorialContext.Provider>
-  )
-}
+  );
+};
 
 export const useTutorial = () => {
-  const context = useContext(TutorialContext)
+  const context = useContext(TutorialContext);
   if (context === undefined) {
-    throw new Error("useTutorial must be used within a TutorialProvider")
+    throw new Error("useTutorial must be used within a TutorialProvider");
   }
-  return context
-}
+  return context;
+};
 
 const PopupDialog: React.FC<{
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onChoice: (choice: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onChoice: (choice: boolean) => void;
 }> = ({ open, onChoice }) => {
-  if (!open) return null
+  if (!open) return null;
 
   return (
     <motion.div
@@ -449,6 +456,5 @@ const PopupDialog: React.FC<{
         </CardFooter>
       </Card>
     </motion.div>
-  )
-}
-
+  );
+};

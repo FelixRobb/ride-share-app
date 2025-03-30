@@ -1,14 +1,14 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
 
-import { Button } from "@/components/ui/button"
-import { ReviewForm } from "@/components/ReviewForm"
+import { ReviewForm } from "@/components/ReviewForm";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Leave a Review - RideShare",
   description: "Share your experience with RideShare by leaving a review.",
-}
+};
 
 export default function ReviewPage() {
   return (
@@ -21,11 +21,10 @@ export default function ReviewPage() {
       </Button>
       <h1 className="text-4xl font-bold mb-6">Leave a Review</h1>
       <p className="mb-6">
-        We value your feedback! Please share your experience with RideShare to help us improve and to let others know
-        about our service.
+        We value your feedback! Please share your experience with RideShare to help us improve and
+        to let others know about our service.
       </p>
       <ReviewForm />
     </div>
-  )
+  );
 }
-

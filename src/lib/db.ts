@@ -12,7 +12,7 @@ let supabaseInstance: SupabaseClient | null = null;
 export function getSupabaseClient(): SupabaseClient {
   if (supabaseInstance === null) {
     try {
-      supabaseInstance = createClient(supabaseUrl!, supabaseKey!, {
+      supabaseInstance = createClient(supabaseUrl as string, supabaseKey as string, {
         auth: {
           autoRefreshToken: true,
           persistSession: true,

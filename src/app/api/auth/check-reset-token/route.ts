@@ -1,5 +1,6 @@
-import { supabase } from "@/lib/db";
 import { NextResponse } from "next/server";
+
+import { supabase } from "@/lib/db";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -10,7 +11,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { data, error } = await supabase.from("password_reset_tokens").select("expires_at").eq("token", token).single();
+    const { data, error } = await supabase
+      .from("password_reset_tokens")
+      .select("expires_at")
+      .eq("token", token)
+      .single();
 
     if (error) throw error;
 
@@ -27,6 +32,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ valid: true });
   } catch {
-    return NextResponse.json({ error: "An error occurred while checking the token" }, { status: 500 });
+    return NextResponse.json(
+      { error: "An error occurred while checking the token" },
+      { status: 500 }
+    );
   }
 }

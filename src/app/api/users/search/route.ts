@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
+
 import { authOptions } from "@/lib/auth";
+import { supabase } from "@/lib/db";
 import type { User, Contact } from "@/types";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -57,7 +58,10 @@ export async function GET(request: Request) {
     }
 
     // Fetch all contacts for the current user (both ways)
-    const { data: contacts, error: contactsError } = await supabase.from("contacts").select("*").or(`user_id.eq.${userId},contact_id.eq.${userId}`);
+    const { data: contacts, error: contactsError } = await supabase
+      .from("contacts")
+      .select("*")
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
 
     if (contactsError) {
       throw contactsError;
@@ -67,7 +71,11 @@ export async function GET(request: Request) {
       contactStatus: string | null;
       contactId: string | null;
     })[] = users.map((user: User) => {
-      const contact: Contact | undefined = contacts.find((c: Contact) => (c.user_id === userId && c.contact_id === user.id) || (c.contact_id === userId && c.user_id === user.id));
+      const contact: Contact | undefined = contacts.find(
+        (c: Contact) =>
+          (c.user_id === userId && c.contact_id === user.id) ||
+          (c.contact_id === userId && c.user_id === user.id)
+      );
 
       return {
         ...user,

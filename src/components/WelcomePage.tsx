@@ -1,21 +1,12 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
-import {
-  Car,
-  Users,
-  Shield,
-  Zap,
-  ChevronDown,
-  ArrowRight,
-  Star,
-  ChevronRight,
-} from "lucide-react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { Car, Users, Shield, Zap, ChevronDown, ArrowRight, Star, ChevronRight } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,17 +16,10 @@ export const metadata: Metadata = {
   title: "RideShare - Connect and Share Rides with Friends",
   description:
     "Join RideShare to connect with friends, share rides, and travel together safely. Create or join rides with just a few taps in our trusted community.",
-  keywords: [
-    "rideshare",
-    "carpooling",
-    "ride sharing",
-    "transportation",
-    "community rides",
-  ],
+  keywords: ["rideshare", "carpooling", "ride sharing", "transportation", "community rides"],
   openGraph: {
     title: "RideShare - Connect and Share Rides with Friends",
-    description:
-      "Join RideShare to connect with friends, share rides, and travel together safely.",
+    description: "Join RideShare to connect with friends, share rides, and travel together safely.",
     type: "website",
     locale: "en_US",
     images: [
@@ -50,8 +34,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "RideShare - Connect and Share Rides with Friends",
-    description:
-      "Join RideShare to connect with friends, share rides, and travel together safely.",
+    description: "Join RideShare to connect with friends, share rides, and travel together safely.",
     images: ["/twitter-image.png"], // Make sure to add this image to your public folder
   },
 };
@@ -79,9 +62,9 @@ export default function WelcomePage() {
 
     // Optional: Update on resize
     const handleResize = () => setWindowHeight(window.innerHeight);
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
-    return () => window.removeEventListener('resize', handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const carX = useTransform(
@@ -213,11 +196,7 @@ export default function WelcomePage() {
               </Button>
             ) : (
               <>
-                <Button
-                  asChild
-                  variant="ghost"
-                  className="text-primary hover:text-primary mr-1"
-                >
+                <Button asChild variant="ghost" className="text-primary hover:text-primary mr-1">
                   <Link href="/login">Login</Link>
                 </Button>
                 <Button
@@ -244,14 +223,15 @@ export default function WelcomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-    <h1 className="text-6xl md:text-8xl font-bold mb-6 
+            <h1
+              className="text-6xl md:text-8xl font-bold mb-6 
       text-primary 
-      bg-clip-text text-transparent bg-primary bg-gradient-to-r from-primary to-secondary-foreground 
+      bg-clip-text supports-[text-transparent] bg-primary bg-gradient-to-r from-primary to-secondary-foreground 
       supports-[background-clip]:bg-clip-text supports-[background-clip]:text-transparent
       supports-not-[background-clip]:text-primary"
-    >
-      RideShare
-    </h1>
+            >
+              RideShare
+            </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-xl mx-auto">
               Connect with friends, share rides, and travel together safely.
             </p>
@@ -268,9 +248,7 @@ export default function WelcomePage() {
           >
             {status === "authenticated" ? (
               <Link href="/dashboard">
-                <button
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-10 bg-primary hover:bg-primary/90 text-black px-8 py-6 text-lg rounded-full group relative overflow-hidden"
-                >
+                <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-10 bg-primary hover:bg-primary/90 text-black px-8 py-6 text-lg rounded-full group relative overflow-hidden">
                   <span className="relative z-10">Go to Dashboard</span>
                   <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 inline-block group-hover:translate-x-1 transition-transform" />
                 </button>
@@ -347,8 +325,6 @@ export default function WelcomePage() {
             </div>
           </motion.div>
         </div>
-
-
       </section>
 
       {/* Features Section with Inline Animations */}
@@ -386,9 +362,7 @@ export default function WelcomePage() {
                 >
                   <feature.icon className="w-12 h-12 text-primary mb-4" />
                 </motion.div>
-                <h3 className="text-xl font-semibold mb-2 text-primary">
-                  {feature.title}
-                </h3>
+                <h3 className="text-xl font-semibold mb-2 text-primary">{feature.title}</h3>
                 <p className="text-zinc-400">{feature.description}</p>
               </motion.div>
             ))}
@@ -449,10 +423,7 @@ export default function WelcomePage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {approvedReviews.map((review) => (
-              <Card
-                key={review.id}
-                className="bg-background/50 backdrop-blur-sm"
-              >
+              <Card key={review.id} className="bg-background/50 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex justify-between items-center">
                     <span className="text-xl whitespace-nowrap overflow-hidden text-ellipsis">
@@ -460,10 +431,7 @@ export default function WelcomePage() {
                     </span>
                     <div className="flex">
                       {[...Array(review.rating)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className="w-5 h-5 text-yellow-400 fill-current"
-                        />
+                        <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
                       ))}
                     </div>
                   </CardTitle>
@@ -488,8 +456,8 @@ export default function WelcomePage() {
             Start Sharing Rides Today
           </h2>
           <p className="text-lg text-zinc-300 max-w-2xl mx-auto mb-12">
-            Join our community of ride-sharers and experience a new way of
-            traveling. Best of all, RideShare is completely free to use!
+            Join our community of ride-sharers and experience a new way of traveling. Best of all,
+            RideShare is completely free to use!
           </p>
           <div className="space-x-4">
             {status === "authenticated" ? (
@@ -544,8 +512,8 @@ export default function WelcomePage() {
         <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid" />
         <div className="relative z-10">
           <p>
-            <Link href="/admin">&copy;</Link> {new Date().getFullYear()}{" "}
-            RideShare by Félix Robb. All rights reserved.
+            <Link href="/admin">&copy;</Link> {new Date().getFullYear()} RideShare by Félix Robb.
+            All rights reserved.
           </p>
           <div className="mt-2 space-x-4">
             <Link
@@ -566,16 +534,10 @@ export default function WelcomePage() {
             >
               Source code on github
             </Link>
-            <Link
-              href="/faq"
-              className="hover:text-primary transition-colors duration-300"
-            >
+            <Link href="/faq" className="hover:text-primary transition-colors duration-300">
               Frequently Asked Questions
             </Link>
-            <Link
-              href="/about"
-              className="hover:text-primary transition-colors duration-300"
-            >
+            <Link href="/about" className="hover:text-primary transition-colors duration-300">
               About RideShare
             </Link>
           </div>
@@ -585,8 +547,8 @@ export default function WelcomePage() {
       {showCookieNotice && (
         <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 bg-card border border-zinc-700 rounded-lg p-4 shadow-lg max-w-xs mx-auto md:mx-0 z-40">
           <p className="text-sm text-zinc-300 mb-3">
-            This website uses cookies to enhance your experience. By continuing
-            to browse, you agree to our use of cookies.
+            This website uses cookies to enhance your experience. By continuing to browse, you agree
+            to our use of cookies.
           </p>
           <Button
             onClick={handleAcceptCookies}

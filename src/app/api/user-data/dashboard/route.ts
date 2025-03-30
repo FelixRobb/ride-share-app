@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server"
-import { supabase } from "@/lib/db"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+import { authOptions } from "@/lib/auth";
+import { supabase } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user || !session.user.id) {
       return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -19,10 +20,10 @@ export async function GET() {
           Expires: "0",
           "Surrogate-Control": "no-store",
         },
-      })
+      });
     }
 
-    const userId = session.user.id
+    const userId = session.user.id;
 
     const { data: contacts, error: contactsError } = await supabase
       .from("contacts")
@@ -31,16 +32,16 @@ export async function GET() {
       *,
       user:users!contacts_user_id_fkey (id, name, phone),
       contact:users!contacts_contact_id_fkey (id, name, phone)
-    `,
+    `
       )
-      .or(`user_id.eq.${userId},contact_id.eq.${userId}`)
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
 
-    if (contactsError) throw contactsError
+    if (contactsError) throw contactsError;
 
     // Extract connected user IDs (only for accepted contacts)
     const connectedUserIds = contacts
       .filter((contact) => contact.status === "accepted")
-      .map((contact) => (contact.user_id === userId ? contact.contact_id : contact.user_id))
+      .map((contact) => (contact.user_id === userId ? contact.contact_id : contact.user_id));
 
     // Fetch active rides and limited history
     const { data: rides, error: ridesError } = await supabase
@@ -50,14 +51,16 @@ export async function GET() {
         *,
         requester:users!rides_requester_id_fkey (id, name, phone),
         accepter:users!rides_accepter_id_fkey (id, name, phone)
-      `,
+      `
       )
-      .or(`requester_id.eq.${userId},accepter_id.eq.${userId},requester_id.in.(${connectedUserIds.join(",")})`)
+      .or(
+        `requester_id.eq.${userId},accepter_id.eq.${userId},requester_id.in.(${connectedUserIds.join(",")})`
+      )
       .or("status.eq.pending,status.eq.accepted,status.in.(completed,cancelled)")
       .order("created_at", { ascending: false })
-      .limit(50)
+      .limit(50);
 
-    if (ridesError) throw ridesError
+    if (ridesError) throw ridesError;
 
     return new NextResponse(JSON.stringify({ rides, contacts }), {
       status: 200,
@@ -68,7 +71,7 @@ export async function GET() {
         Expires: "0",
         "Surrogate-Control": "no-store",
       },
-    })
+    });
   } catch {
     return new NextResponse(JSON.stringify({ error: "Internal Server Error" }), {
       status: 500,
@@ -79,7 +82,6 @@ export async function GET() {
         Expires: "0",
         "Surrogate-Control": "no-store",
       },
-    })
+    });
   }
 }
-

@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   try {
     // Get total bug reports count
-    const { count: totalBugs, error: totalError } = await supabase.from("bug_reports").select("*", { count: "exact" });
+    const { count: totalBugs, error: totalError } = await supabase
+      .from("bug_reports")
+      .select("*", { count: "exact" });
 
     if (totalError) {
       return NextResponse.json(
@@ -26,7 +29,10 @@ export async function GET() {
     }
 
     // Get open bugs count (new + in_progress)
-    const { count: openBugs, error: openError } = await supabase.from("bug_reports").select("*", { count: "exact" }).in("status", ["new", "in_progress"]);
+    const { count: openBugs, error: openError } = await supabase
+      .from("bug_reports")
+      .select("*", { count: "exact" })
+      .in("status", ["new", "in_progress"]);
 
     if (openError) {
       return NextResponse.json(
@@ -45,11 +51,15 @@ export async function GET() {
     }
 
     // Get bugs by severity
-    const { data: severityData, error: severityError } = await supabase.rpc("count_bug_reports_by_severity");
+    const { data: severityData, error: severityError } = await supabase.rpc(
+      "count_bug_reports_by_severity"
+    );
 
     if (severityError) {
       // Fallback if RPC function doesn't exist
-      const { data: fallbackSeverityData, error: fallbackError } = await supabase.from("bug_reports").select("severity");
+      const { data: fallbackSeverityData, error: fallbackError } = await supabase
+        .from("bug_reports")
+        .select("severity");
 
       if (fallbackError) {
         return NextResponse.json(
@@ -83,7 +93,9 @@ export async function GET() {
       }));
 
       // Get bugs by status
-      const { data: statusData, error: statusError } = await supabase.from("bug_reports").select("status");
+      const { data: statusData, error: statusError } = await supabase
+        .from("bug_reports")
+        .select("status");
 
       if (statusError) {
         return NextResponse.json(
@@ -136,7 +148,9 @@ export async function GET() {
     }
 
     // Get bugs by status
-    const { data: statusData, error: statusError } = await supabase.rpc("count_bug_reports_by_status");
+    const { data: statusData, error: statusError } = await supabase.rpc(
+      "count_bug_reports_by_status"
+    );
 
     if (statusError) {
       return NextResponse.json({ error: "Failed to get status stats" }, { status: 500 });

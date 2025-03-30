@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
 import { createHash } from "crypto";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+
+import { authOptions } from "@/lib/auth";
+import { supabase } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request: Request) {
   const ifNoneMatch = request.headers.get("If-None-Match");
@@ -26,7 +28,12 @@ export async function GET(request: Request) {
   const userId = session.user.id;
 
   try {
-    const { data: notifications, error } = await supabase.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(100);
+    const { data: notifications, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(100);
 
     if (error) throw error;
 
@@ -52,13 +59,19 @@ export async function GET(request: Request) {
       }
     );
   } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500,  headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-      Pragma: "no-cache",
-      Expires: "0",
-      "Surrogate-Control": "no-store",
-    }, });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+          "Surrogate-Control": "no-store",
+        },
+      }
+    );
   }
 }
 
@@ -66,11 +79,15 @@ export async function POST(request: Request) {
   const { userId, notificationIds } = await request.json();
 
   if (!userId || !notificationIds || !Array.isArray(notificationIds)) {
-    return NextResponse.json({ error: "Invalid request data" }, { status: 400,  });
+    return NextResponse.json({ error: "Invalid request data" }, { status: 400 });
   }
 
   try {
-    const { error } = await supabase.from("notifications").update({ is_read: true }).eq("user_id", userId).in("id", notificationIds);
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("user_id", userId)
+      .in("id", notificationIds);
 
     if (error) throw error;
 

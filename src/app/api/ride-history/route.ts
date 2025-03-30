@@ -1,11 +1,21 @@
+import {
+  startOfDay,
+  endOfDay,
+  startOfYesterday,
+  endOfYesterday,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+} from "date-fns";
 import { type NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { startOfDay, endOfDay, startOfYesterday, endOfYesterday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+import { authOptions } from "@/lib/auth";
+import { supabase } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const ITEMS_PER_PAGE = 10;
 
@@ -36,11 +46,17 @@ export async function GET(req: NextRequest) {
     const date = url.searchParams.get("date") || "";
     const timePeriod = url.searchParams.get("timePeriod") || "";
 
-    let query = supabase.from("rides").select("*", { count: "exact" }).or(`requester_id.eq.${session.user.id},accepter_id.eq.${session.user.id}`).order("time", { ascending: false });
+    let query = supabase
+      .from("rides")
+      .select("*", { count: "exact" })
+      .or(`requester_id.eq.${session.user.id},accepter_id.eq.${session.user.id}`)
+      .order("time", { ascending: false });
 
     // Apply search filter
     if (search) {
-      query = query.or(`from_location.ilike.%${search}%,to_location.ilike.%${search}%,rider_name.ilike.%${search}%`);
+      query = query.or(
+        `from_location.ilike.%${search}%,to_location.ilike.%${search}%,rider_name.ilike.%${search}%`
+      );
     }
 
     // Apply status filter
@@ -61,16 +77,24 @@ export async function GET(req: NextRequest) {
 
       switch (timePeriod) {
         case "today":
-          query = query.gte("time", startOfDay(now).toISOString()).lt("time", endOfDay(now).toISOString());
+          query = query
+            .gte("time", startOfDay(now).toISOString())
+            .lt("time", endOfDay(now).toISOString());
           break;
         case "yesterday":
-          query = query.gte("time", startOfYesterday().toISOString()).lt("time", endOfYesterday().toISOString());
+          query = query
+            .gte("time", startOfYesterday().toISOString())
+            .lt("time", endOfYesterday().toISOString());
           break;
         case "this-week":
-          query = query.gte("time", startOfWeek(now, { weekStartsOn: 1 }).toISOString()).lt("time", endOfWeek(now, { weekStartsOn: 1 }).toISOString());
+          query = query
+            .gte("time", startOfWeek(now, { weekStartsOn: 1 }).toISOString())
+            .lt("time", endOfWeek(now, { weekStartsOn: 1 }).toISOString());
           break;
         case "this-month":
-          query = query.gte("time", startOfMonth(now).toISOString()).lt("time", endOfMonth(now).toISOString());
+          query = query
+            .gte("time", startOfMonth(now).toISOString())
+            .lt("time", endOfMonth(now).toISOString());
           break;
       }
     }

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+import { authOptions } from "@/lib/auth";
+import { supabase } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -40,7 +41,10 @@ export async function GET() {
   }
 
   try {
-    const { data, error } = await supabase.from("associated_people").select("*").eq("user_id", userId);
+    const { data, error } = await supabase
+      .from("associated_people")
+      .select("*")
+      .eq("user_id", userId);
 
     if (error) throw error;
 
@@ -66,7 +70,11 @@ export async function POST(request: Request) {
   const { userId, name, relationship } = await request.json();
 
   try {
-    const { data, error } = await supabase.from("associated_people").insert({ user_id: userId, name, relationship }).select().single();
+    const { data, error } = await supabase
+      .from("associated_people")
+      .insert({ user_id: userId, name, relationship })
+      .select()
+      .single();
 
     if (error) throw error;
 
@@ -110,7 +118,11 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const { error } = await supabase.from("associated_people").delete().eq("id", id).eq("user_id", userId);
+    const { error } = await supabase
+      .from("associated_people")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId);
 
     if (error) throw error;
 

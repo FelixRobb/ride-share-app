@@ -1,17 +1,25 @@
-"use client"
+"use client";
 
-import PhoneInput from "react-phone-number-input"
-import "react-phone-number-input/style.css"
-import { motion } from "framer-motion"
-import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight } from "lucide-react"
-import dynamic from "next/dynamic"
-import { useState, useEffect } from "react"
-import { toast } from "sonner"
-import { useRouter } from "next/navigation"
+import "react-phone-number-input/style.css";
+import { motion } from "framer-motion";
+import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight } from "lucide-react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import type React from "react";
+import { useState, useEffect } from "react";
+import PhoneInput from "react-phone-number-input";
+import { toast } from "sonner";
 
-import { InlineDateTimePicker } from "@/components/InlineDateTimePicker"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { InlineDateTimePicker } from "@/components/InlineDateTimePicker";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,25 +27,31 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
-import type { RideData, AssociatedPerson, User } from "../types"
-import { createRide, fetchCreateRideData } from "../utils/api"
+import type { RideData, AssociatedPerson, User } from "../types";
+import { createRide, fetchCreateRideData } from "../utils/api";
 
 const LocationSearch = dynamic(() => import("./LocationSearch"), {
   ssr: false,
-})
-const MapDialog = dynamic(() => import("./MapDialog"), { ssr: false })
+});
+const MapDialog = dynamic(() => import("./MapDialog"), { ssr: false });
 
 interface CreateRidePageProps {
-  currentUser: User
+  currentUser: User;
 }
 
 const initialRideData: RideData = {
@@ -51,64 +65,63 @@ const initialRideData: RideData = {
   rider_name: "",
   rider_phone: "",
   note: "",
-}
-
+};
 
 export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
   const [rideData, setRideData] = useState<RideData>({
     ...initialRideData,
     rider_name: currentUser?.name || "",
     rider_phone: currentUser?.phone || null,
-  })
-  const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  });
+  const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [riderType, setRiderType] = useState("self")
-  const [isFromMapOpen, setIsFromMapOpen] = useState(false)
-  const [isToMapOpen, setIsToMapOpen] = useState(false)
-  const [isMounted, setIsMounted] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showRestoreDialog, setShowRestoreDialog] = useState(false)
-  const [currentStep, setCurrentStep] = useState(0)
-  const isOnline = useOnlineStatus()
-  const router = useRouter()
+  const [riderType, setRiderType] = useState("self");
+  const [isFromMapOpen, setIsFromMapOpen] = useState(false);
+  const [isToMapOpen, setIsToMapOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const isOnline = useOnlineStatus();
+  const router = useRouter();
 
   // Fetch associated people data
   useEffect(() => {
     const fetchData = async () => {
       if (isOnline && currentUser) {
         try {
-          setIsLoading(true)
-          const data = await fetchCreateRideData()
-          setAssociatedPeople(data.associatedPeople)
+          setIsLoading(true);
+          const data = await fetchCreateRideData();
+          setAssociatedPeople(data.associatedPeople);
         } catch {
-          toast.error("Failed to fetch user data. Please try again.")
+          toast.error("Failed to fetch user data. Please try again.");
         } finally {
-          setIsLoading(false)
+          setIsLoading(false);
         }
       } else {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchData()
-  }, [isOnline, currentUser])
-
-  useEffect(() => {
-    setIsMounted(true)
-    return () => setIsMounted(false)
-  }, [])
+    fetchData();
+  }, [isOnline, currentUser]);
 
   useEffect(() => {
-    const storedRideData = localStorage.getItem("rideData")
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
+
+  useEffect(() => {
+    const storedRideData = localStorage.getItem("rideData");
     if (storedRideData) {
-      const parsedData: RideData = JSON.parse(storedRideData)
+      const parsedData: RideData = JSON.parse(storedRideData);
 
       // Check if there's significant data to restore by excluding specified fields
       const hasSignificantData = Object.entries(parsedData).some(([key, value]) => {
         // Skip checking these fields
         if (key === "time" || key === "rider_name" || key === "rider_phone") {
-          return false
+          return false;
         }
         // Check if the value is non-empty and not the default value
         return (
@@ -116,83 +129,90 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
           value !== null &&
           value !== 0 &&
           JSON.stringify(value) !== JSON.stringify(initialRideData[key as keyof RideData])
-        )
-      })
+        );
+      });
 
       if (hasSignificantData) {
-        setShowRestoreDialog(true)
-        setRideData(parsedData)
+        setShowRestoreDialog(true);
+        setRideData(parsedData);
       }
     }
-  }, [])
+  }, []);
 
   const handleRestoreData = () => {
-    setShowRestoreDialog(false)
-    const storedRideData = localStorage.getItem("rideData")
+    setShowRestoreDialog(false);
+    const storedRideData = localStorage.getItem("rideData");
     if (storedRideData) {
-      const parsedRideData: RideData = JSON.parse(storedRideData)
-      setRideData(parsedRideData)
+      const parsedRideData: RideData = JSON.parse(storedRideData);
+      setRideData(parsedRideData);
     }
-    localStorage.removeItem("rideData")
-  }
+    localStorage.removeItem("rideData");
+  };
 
   const handleDiscardData = () => {
-    setShowRestoreDialog(false)
-    localStorage.removeItem("rideData")
-    setRideData(initialRideData)
-    setRiderType("self")
-  }
+    setShowRestoreDialog(false);
+    localStorage.removeItem("rideData");
+    setRideData(initialRideData);
+    setRiderType("self");
+  };
 
   useEffect(() => {
     if (isMounted) {
-      localStorage.setItem("rideData", JSON.stringify(rideData))
+      localStorage.setItem("rideData", JSON.stringify(rideData));
     }
-  }, [rideData, isMounted])
+  }, [rideData, isMounted]);
 
   const validateForm = () => {
     if (!rideData.from_location) {
-      toast.error("Please select a from location.")
-      return false
+      toast.error("Please select a from location.");
+      return false;
     }
     if (!rideData.to_location) {
-      toast.error("Please select a to location.")
-      return false
+      toast.error("Please select a to location.");
+      return false;
     }
     if (!rideData.time) {
-      toast.error("Please select a time.")
-      return false
+      toast.error("Please select a time.");
+      return false;
     }
-    return true
-  }
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!isMounted) return
-    if (rideData.from_lat === 0 || rideData.from_lon === 0 || rideData.to_lat === 0 || rideData.to_lon === 0) {
-      if (!isMounted) return
-      toast.error("Please select both 'From' and 'To' locations.")
-      return
+    e.preventDefault();
+    if (!isMounted) return;
+    if (
+      rideData.from_lat === 0 ||
+      rideData.from_lon === 0 ||
+      rideData.to_lat === 0 ||
+      rideData.to_lon === 0
+    ) {
+      if (!isMounted) return;
+      toast.error("Please select both 'From' and 'To' locations.");
+      return;
     }
     if (!validateForm()) {
-      return
+      return;
     }
     try {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
       if (rideData.rider_phone && !rideData.rider_phone.startsWith("+")) {
-        throw new Error("Invalid phone number format. Please use the international format.")
+        throw new Error("Invalid phone number format. Please use the international format.");
       }
-      await createRide(rideData, currentUser.id)
-      if (!isMounted) return
-      toast.success("Your ride request has been created successfully.")
-      localStorage.removeItem("rideData")
-      router.push("/dashboard")
+      await createRide(rideData, currentUser.id);
+      if (!isMounted) return;
+      toast.success("Your ride request has been created successfully.");
+      localStorage.removeItem("rideData");
+      router.push("/dashboard");
     } catch (error) {
-      if (!isMounted) return
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.")
+      if (!isMounted) return;
+      toast.error(
+        error instanceof Error ? error.message : "An unexpected error occurred. Please try again."
+      );
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleLocationSelect =
     (type: "from" | "to") => (location: { lat: number; lon: number; display_name: string }) => {
@@ -201,29 +221,29 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
         [`${type}_location`]: location.display_name,
         [`${type}_lat`]: location.lat,
         [`${type}_lon`]: location.lon,
-      }))
-    }
+      }));
+    };
 
-  const isClient = typeof window !== "undefined"
+  const isClient = typeof window !== "undefined";
 
   const steps = [
     { title: "Location", icon: MapPin },
     { title: "Time", icon: Clock },
     { title: "Rider", icon: UserIcon },
     { title: "Details", icon: FileText },
-  ]
+  ];
 
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(currentStep + 1);
     }
-  }
+  };
 
   const prevStep = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(currentStep - 1);
     }
-  }
+  };
 
   const renderStepContent = () => {
     if (isLoading && currentStep === 2) {
@@ -238,7 +258,7 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
             <Skeleton className="h-10 w-full" />
           </div>
         </div>
-      )
+      );
     }
 
     switch (currentStep) {
@@ -251,10 +271,10 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
                 selectedLocation={
                   rideData.from_location
                     ? {
-                      lat: rideData.from_lat,
-                      lon: rideData.from_lon,
-                      display_name: rideData.from_location,
-                    }
+                        lat: rideData.from_lat,
+                        lon: rideData.from_lon,
+                        display_name: rideData.from_location,
+                      }
                     : null
                 }
                 label="From Location"
@@ -267,10 +287,10 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
                 selectedLocation={
                   rideData.to_location
                     ? {
-                      lat: rideData.to_lat,
-                      lon: rideData.to_lon,
-                      display_name: rideData.to_location,
-                    }
+                        lat: rideData.to_lat,
+                        lon: rideData.to_lon,
+                        display_name: rideData.to_location,
+                      }
                     : null
                 }
                 label="To Location"
@@ -278,7 +298,7 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
               />
             </div>
           </div>
-        )
+        );
       case 1:
         return (
           <div className="space-y-4">
@@ -294,7 +314,7 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
               />
             </div>
           </div>
-        )
+        );
       case 2:
         return (
           <div className="space-y-4">
@@ -350,7 +370,7 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
               />
             </div>
           </div>
-        )
+        );
       case 3:
         return (
           <div className="space-y-4">
@@ -365,11 +385,11 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
               />
             </div>
           </div>
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-fit bg-background px-4 py-4">
@@ -393,13 +413,13 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
                       key={step.title}
                       className={cn(
                         "flex flex-col items-center space-y-2",
-                        index <= currentStep ? "text-primary" : "text-muted-foreground",
+                        index <= currentStep ? "text-primary" : "text-muted-foreground"
                       )}
                     >
                       <div
                         className={cn(
                           "w-10 h-10 rounded-full flex items-center justify-center",
-                          index <= currentStep ? "bg-primary text-primary-foreground" : "bg-muted",
+                          index <= currentStep ? "bg-primary text-primary-foreground" : "bg-muted"
                         )}
                       >
                         <step.icon className="w-5 h-5" />
@@ -466,7 +486,9 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
             onClose={() => setIsFromMapOpen(false)}
             onSelectLocation={handleLocationSelect("from")}
             initialLocation={
-              rideData.from_lat && rideData.from_lon ? { lat: rideData.from_lat, lon: rideData.from_lon } : undefined
+              rideData.from_lat && rideData.from_lon
+                ? { lat: rideData.from_lat, lon: rideData.from_lon }
+                : undefined
             }
           />
           <MapDialog
@@ -474,7 +496,9 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
             onClose={() => setIsToMapOpen(false)}
             onSelectLocation={handleLocationSelect("to")}
             initialLocation={
-              rideData.to_lat && rideData.to_lon ? { lat: rideData.to_lat, lon: rideData.to_lon } : undefined
+              rideData.to_lat && rideData.to_lon
+                ? { lat: rideData.to_lat, lon: rideData.to_lon }
+                : undefined
             }
           />
         </>
@@ -484,7 +508,9 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
         <DialogContent className="w-11/12 rounded-lg">
           <DialogHeader>
             <DialogTitle>Restore Previous Ride Data</DialogTitle>
-            <DialogDescription>It seems you have unsaved ride data. Would you like to restore it?</DialogDescription>
+            <DialogDescription>
+              It seems you have unsaved ride data. Would you like to restore it?
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             {rideData.from_location && (
@@ -514,6 +540,5 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
-

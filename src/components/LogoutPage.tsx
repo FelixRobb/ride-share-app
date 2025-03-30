@@ -1,34 +1,34 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Loader2 } from "lucide-react"
-import { signOut } from "next-auth/react"
-import { toast } from "sonner"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { unregisterServiceWorker } from "@/utils/cleanupService"
-import { getDeviceId } from "@/utils/deviceUtils"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { unregisterServiceWorker } from "@/utils/cleanupService";
+import { getDeviceId } from "@/utils/deviceUtils";
 
 export default function LogoutPage() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const handleLogout = async () => {
       try {
         // Get the current push subscription
-        let currentSubscription: PushSubscription | null = null
+        let currentSubscription: PushSubscription | null = null;
         if ("serviceWorker" in navigator && "PushManager" in window) {
-          const registration = await navigator.serviceWorker.ready
-          currentSubscription = await registration.pushManager.getSubscription()
+          const registration = await navigator.serviceWorker.ready;
+          currentSubscription = await registration.pushManager.getSubscription();
         }
 
         // Get the device ID
-        const deviceId = getDeviceId()
+        const deviceId = getDeviceId();
 
         // Call the logout API with the current subscription and device ID
         const response = await fetch("/api/auth/logout", {
@@ -41,40 +41,40 @@ export default function LogoutPage() {
             deviceId,
           }),
           credentials: "include",
-        })
+        });
 
         if (!response.ok) {
-          throw new Error("Logout failed")
+          throw new Error("Logout failed");
         }
 
         // Unregister service worker and unsubscribe from push notifications
         if (currentSubscription) {
-          await currentSubscription.unsubscribe()
+          await currentSubscription.unsubscribe();
         }
-        await unregisterServiceWorker()
+        await unregisterServiceWorker();
 
         // Clear specific data from localStorage
-        localStorage.removeItem("tutorialstep")
-        localStorage.removeItem("rideData")
-        localStorage.removeItem("theme")
-        localStorage.removeItem("pushNotificationDeclined")
-        localStorage.removeItem("rideshare_device_id")
+        localStorage.removeItem("tutorialstep");
+        localStorage.removeItem("rideData");
+        localStorage.removeItem("theme");
+        localStorage.removeItem("pushNotificationDeclined");
+        localStorage.removeItem("rideshare_device_id");
 
         // Sign out using NextAuth
-        await signOut({ redirect: false })
+        await signOut({ redirect: false });
 
-        toast.success("Logged out successfully")
-        router.push("/login")
+        toast.success("Logged out successfully");
+        router.push("/login");
       } catch {
-        setError(true)
-        toast.error("Failed to logout. Please try again.")
+        setError(true);
+        toast.error("Failed to logout. Please try again.");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    handleLogout()
-  }, [router]) // Remove loading from dependencies to avoid infinite loop
+    handleLogout();
+  }, [router]); // Remove loading from dependencies to avoid infinite loop
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -97,9 +97,11 @@ export default function LogoutPage() {
             <CardHeader>
               <CardTitle className="text-center">Logging Out</CardTitle>
               <CardDescription className="text-center">
-                {loading ? "Please wait while we log you out..." :
-                  error ? "An error occurred. Please try again." :
-                    "Logging you out..."}
+                {loading
+                  ? "Please wait while we log you out..."
+                  : error
+                    ? "An error occurred. Please try again."
+                    : "Logging you out..."}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
@@ -118,6 +120,5 @@ export default function LogoutPage() {
         </div>
       </footer>
     </div>
-  )
+  );
 }
-

@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   try {
     // Get total reports count
-    const { count: totalReports, error: totalError } = await supabase.from("reports").select("*", { count: "exact", head: true });
+    const { count: totalReports, error: totalError } = await supabase
+      .from("reports")
+      .select("*", { count: "exact", head: true });
 
     if (totalError) {
       return NextResponse.json(
@@ -26,7 +29,10 @@ export async function GET() {
     }
 
     // Get pending reports count
-    const { count: pendingReports, error: pendingError } = await supabase.from("reports").select("*", { count: "exact", head: true }).eq("status", "pending");
+    const { count: pendingReports, error: pendingError } = await supabase
+      .from("reports")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending");
 
     if (pendingError) {
       return NextResponse.json(
@@ -49,7 +55,11 @@ export async function GET() {
 
     if (typeError) {
       // Fallback if RPC function doesn't exist
-      const { data: manualTypeCount, error: manualTypeError } = await supabase.from("reports").select("report_type, count").select("report_type").order("report_type");
+      const { data: manualTypeCount, error: manualTypeError } = await supabase
+        .from("reports")
+        .select("report_type, count")
+        .select("report_type")
+        .order("report_type");
 
       if (manualTypeError) {
         return NextResponse.json(
@@ -84,7 +94,9 @@ export async function GET() {
       }));
 
       // Get reports by status
-      const { data: statusData, error: statusError } = await supabase.from("reports").select("status");
+      const { data: statusData, error: statusError } = await supabase
+        .from("reports")
+        .select("status");
 
       if (statusError) {
         return NextResponse.json(
@@ -119,7 +131,9 @@ export async function GET() {
       }));
 
       // Get reports by reason
-      const { data: reasonData, error: reasonError } = await supabase.from("reports").select("reason");
+      const { data: reasonData, error: reasonError } = await supabase
+        .from("reports")
+        .select("reason");
 
       if (reasonError) {
         return NextResponse.json(

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 import { sendPushNotification } from "@/lib/pushNotificationService";
 
@@ -14,7 +15,9 @@ export async function POST(request: Request) {
     }
 
     // Fetch all push subscriptions
-    const { data: subscriptions, error: subscriptionsError } = await supabase.from("push_subscriptions").select("id, user_id, subscription");
+    const { data: subscriptions, error: subscriptionsError } = await supabase
+      .from("push_subscriptions")
+      .select("id, user_id, subscription");
 
     if (subscriptionsError) {
       throw subscriptionsError;
@@ -44,7 +47,9 @@ export async function POST(request: Request) {
       type: "Admin Notifications",
     }));
 
-    const { error: notificationsError } = await supabase.from("notifications").insert(notifications);
+    const { error: notificationsError } = await supabase
+      .from("notifications")
+      .insert(notifications);
 
     if (notificationsError) {
       throw notificationsError;

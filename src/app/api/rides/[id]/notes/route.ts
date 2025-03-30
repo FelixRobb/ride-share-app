@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -77,11 +78,19 @@ export async function POST(request: Request) {
       const otherUserId = userId === ride.requester_id ? ride.accepter_id : ride.requester_id;
       if (otherUserId) {
         // Fetch the name of the user who added the note
-        const { data: noteAuthor, error: authorError } = await supabase.from("users").select("name").eq("id", userId).single();
+        const { data: noteAuthor, error: authorError } = await supabase
+          .from("users")
+          .select("name")
+          .eq("id", userId)
+          .single();
 
         if (authorError) throw authorError;
 
-        await sendImmediateNotification(otherUserId, "New Ride Message", `${noteAuthor.name} has added a new message to your ride from ${ride.from_location} to ${ride.to_location}: "${note}"`);
+        await sendImmediateNotification(
+          otherUserId,
+          "New Ride Message",
+          `${noteAuthor.name} has added a new message to your ride from ${ride.from_location} to ${ride.to_location}: "${note}"`
+        );
         await supabase.from("notifications").insert({
           user_id: otherUserId,
           message: `${noteAuthor.name} has added a new message to your ride from ${ride.from_location} to ${ride.to_location}: "${note}"`,
@@ -101,7 +110,13 @@ export async function PUT(request: Request) {
   const { noteId, userId, note } = await request.json();
 
   try {
-    const { data: updatedNote, error: updateError } = await supabase.from("ride_notes").update({ note, is_edited: true }).eq("id", noteId).eq("user_id", userId).select().single();
+    const { data: updatedNote, error: updateError } = await supabase
+      .from("ride_notes")
+      .update({ note, is_edited: true })
+      .eq("id", noteId)
+      .eq("user_id", userId)
+      .select()
+      .single();
 
     if (updateError) throw updateError;
 
@@ -115,7 +130,13 @@ export async function DELETE(request: Request) {
   const { noteId, userId } = await request.json();
 
   try {
-    const { error: deleteError } = await supabase.from("ride_notes").update({ is_deleted: true }).eq("id", noteId).eq("user_id", userId).select().single();
+    const { error: deleteError } = await supabase
+      .from("ride_notes")
+      .update({ is_deleted: true })
+      .eq("id", noteId)
+      .eq("user_id", userId)
+      .select()
+      .single();
 
     if (deleteError) throw deleteError;
 
@@ -129,7 +150,11 @@ export async function PATCH(request: Request) {
   const { noteId, userId } = await request.json();
 
   try {
-    const { data: note, error: fetchError } = await supabase.from("ride_notes").select("seen_by").eq("id", noteId).single();
+    const { data: note, error: fetchError } = await supabase
+      .from("ride_notes")
+      .select("seen_by")
+      .eq("id", noteId)
+      .single();
 
     if (fetchError) throw fetchError;
 
@@ -138,7 +163,12 @@ export async function PATCH(request: Request) {
       seenBy.push(userId);
     }
 
-    const { data: updatedNote, error: updateError } = await supabase.from("ride_notes").update({ seen_by: seenBy }).eq("id", noteId).select().single();
+    const { data: updatedNote, error: updateError } = await supabase
+      .from("ride_notes")
+      .update({ seen_by: seenBy })
+      .eq("id", noteId)
+      .select()
+      .single();
 
     if (updateError) throw updateError;
 

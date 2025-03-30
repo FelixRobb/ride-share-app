@@ -1,75 +1,85 @@
-"use client"
+"use client";
 
-import { Home, Car, Users, HelpCircle, Shield, FileText, Info, Star, Code, Mail } from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useState, useEffect } from "react"
-import { toast } from "sonner"
-import { useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "./ui/drawer"
-import type React from "react"
+import {
+  Home,
+  Car,
+  Users,
+  HelpCircle,
+  Shield,
+  FileText,
+  Info,
+  Star,
+  Code,
+  Mail,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import type React from "react";
+import { toast } from "sonner";
 
-import { NotificationPanel } from "@/components/NotificationPanel"
-import { Button } from "@/components/ui/button"
-import { useTutorial, TutorialProvider } from "@/contexts/TutorialContext"
-import { cn } from "@/lib/utils"
-import { useOnlineStatus } from "@/utils/useOnlineStatus"
-import { useMediaQuery } from "@/hooks/use-media-query"
+import { NotificationPanel } from "@/components/NotificationPanel";
+import { Button } from "@/components/ui/button";
+import { useTutorial, TutorialProvider } from "@/contexts/TutorialContext";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn } from "@/lib/utils";
+import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
-import type { User } from "../types"
+import type { User } from "../types";
 
-import PushNotificationHandler from "./PushNotificationHandler"
+import PushNotificationHandler from "./PushNotificationHandler";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "./ui/drawer";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 interface LayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { data: session, status } = useSession()
-  const currentUser = session?.user as User | null
-  const isOnline = useOnlineStatus()
-  const [wasPreviouslyOffline, setWasPreviouslyOffline] = useState(false)
-  const isMediumScreen = useMediaQuery("(min-width: 768px)")
-  const isLargeScreen = useMediaQuery("(min-width: 1024px)")
-  const [open, setOpen] = useState(false)
+  const pathname = usePathname();
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const currentUser = session?.user as User | null;
+  const isOnline = useOnlineStatus();
+  const [wasPreviouslyOffline, setWasPreviouslyOffline] = useState(false);
+  const isMediumScreen = useMediaQuery("(min-width: 768px)");
+  const isLargeScreen = useMediaQuery("(min-width: 1024px)");
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (!isOnline) {
-      setWasPreviouslyOffline(true)
-      toast.error("You're offline. Please check your internet connection.")
+      setWasPreviouslyOffline(true);
+      toast.error("You're offline. Please check your internet connection.");
     } else if (isOnline && wasPreviouslyOffline) {
-      setWasPreviouslyOffline(false)
-      toast.success("You're back online. Your connection has been restored.")
+      setWasPreviouslyOffline(false);
+      toast.success("You're back online. Your connection has been restored.");
     }
-  }, [isOnline, wasPreviouslyOffline])
+  }, [isOnline, wasPreviouslyOffline]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login")
+      router.push("/login");
     }
-  }, [status, router])
+  }, [status, router]);
 
   const TutorialButton = () => {
-    const { restartTutorial } = useTutorial()
+    const { restartTutorial } = useTutorial();
     return (
       <Button
         variant="default"
         size={isLargeScreen ? "default" : "sm"}
         className="rounded-full w-full"
         onClick={() => {
-          restartTutorial()
-          setOpen(false)
+          restartTutorial();
+          setOpen(false);
         }}
       >
         <HelpCircle className="mr-2 h-4 w-4" />
         Restart Tutorial
       </Button>
-    )
-  }
+    );
+  };
 
   return (
     <>
@@ -99,7 +109,10 @@ export default function Layout({ children }: LayoutProps) {
                         asChild
                         className={`rounded-full px-4 py-2 transition-colors duration-200 ${pathname === item.href ? "bg-accent" : ""}`}
                       >
-                        <Link href={item.href} className={pathname === item.href ? "text-primary" : ""}>
+                        <Link
+                          href={item.href}
+                          className={pathname === item.href ? "text-primary" : ""}
+                        >
                           <item.icon className="mr-2 h-4 w-4" /> {item.label}
                         </Link>
                       </Button>
@@ -131,7 +144,9 @@ export default function Layout({ children }: LayoutProps) {
                       href={item.href}
                       className={cn(
                         "flex flex-col items-center p-2",
-                        pathname === item.href ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                        pathname === item.href
+                          ? "text-primary"
+                          : "text-muted-foreground hover:text-foreground"
                       )}
                     >
                       <item.icon className="h-6 w-6" />
@@ -151,7 +166,9 @@ export default function Layout({ children }: LayoutProps) {
             >
               <div className="container mx-auto">
                 <div className="flex flex-col md:flex-row justify-between items-center">
-                  <p className={`text-${isMediumScreen ? "sm" : "xs"} font-medium text-foreground/80`}>
+                  <p
+                    className={`text-${isMediumScreen ? "sm" : "xs"} font-medium text-foreground/80`}
+                  >
                     &copy; {new Date().getFullYear()} RideShare by Félix Robb.
                     <span className="text-muted-foreground ml-1">All rights reserved.</span>
                   </p>
@@ -173,13 +190,25 @@ export default function Layout({ children }: LayoutProps) {
                           <div className="grid grid-cols-2 gap-3 p-2">
                             {[
                               { href: "/privacy-policy", label: "Privacy Policy", icon: Shield },
-                              { href: "/terms-of-service", label: "Terms of Service", icon: FileText },
+                              {
+                                href: "/terms-of-service",
+                                label: "Terms of Service",
+                                icon: FileText,
+                              },
                               { href: "/about", label: "Learn more", icon: Info },
                               { href: "/faq", label: "FAQ", icon: HelpCircle },
                               { href: "/reviews", label: "Leave a review", icon: Star },
-                              { href: "https://github.com/FelixRobb/ride-share-app", label: "GitHub", icon: Code },
+                              {
+                                href: "https://github.com/FelixRobb/ride-share-app",
+                                label: "GitHub",
+                                icon: Code,
+                              },
                               { href: "/bug-report", label: "Bug Reports", icon: HelpCircle },
-                              { href: "mailto:rideshareapp.mail@gmail.com", label: "Contact Us", icon: Mail },
+                              {
+                                href: "mailto:rideshareapp.mail@gmail.com",
+                                label: "Contact Us",
+                                icon: Mail,
+                              },
                             ].map(({ href, label, icon: Icon }) => (
                               <Link
                                 key={href}
@@ -201,7 +230,9 @@ export default function Layout({ children }: LayoutProps) {
                       <Popover open={open} onOpenChange={setOpen}>
                         <PopoverTrigger className="h-9 px-4 py-2 items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 flex rounded-full border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground">
                           <span>More Links</span>
-                          <HelpCircle className={`h-${isLargeScreen ? "5" : "4"} w-${isLargeScreen ? "5" : "4"}`} />
+                          <HelpCircle
+                            className={`h-${isLargeScreen ? "5" : "4"} w-${isLargeScreen ? "5" : "4"}`}
+                          />
                         </PopoverTrigger>
                         <PopoverContent
                           className={`w-${isLargeScreen ? "96" : "80"} p-0 bg-card/95 backdrop-blur-md border border-border/50 shadow-lg rounded-xl`}
@@ -212,16 +243,30 @@ export default function Layout({ children }: LayoutProps) {
                                 Explore RideShare
                               </h3>
                             </div>
-                            <div className={`grid ${isLargeScreen ? "grid-cols-3" : "grid-cols-2"} gap-2 p-3`}>
+                            <div
+                              className={`grid ${isLargeScreen ? "grid-cols-3" : "grid-cols-2"} gap-2 p-3`}
+                            >
                               {[
                                 { href: "/privacy-policy", label: "Privacy Policy", icon: Shield },
-                                { href: "/terms-of-service", label: "Terms of Service", icon: FileText },
+                                {
+                                  href: "/terms-of-service",
+                                  label: "Terms of Service",
+                                  icon: FileText,
+                                },
                                 { href: "/about", label: "Learn more", icon: Info },
                                 { href: "/faq", label: "FAQ", icon: HelpCircle },
                                 { href: "/reviews", label: "Leave a review", icon: Star },
-                                { href: "https://github.com/FelixRobb/ride-share-app", label: "GitHub", icon: Code },
+                                {
+                                  href: "https://github.com/FelixRobb/ride-share-app",
+                                  label: "GitHub",
+                                  icon: Code,
+                                },
                                 { href: "/bug-report", label: "Bug Reports", icon: HelpCircle },
-                                { href: "mailto:rideshareapp.mail@gmail.com", label: "Contact Us", icon: Mail },
+                                {
+                                  href: "mailto:rideshareapp.mail@gmail.com",
+                                  label: "Contact Us",
+                                  icon: Mail,
+                                },
                               ].map(({ href, label, icon: Icon }) => (
                                 <Link
                                   key={href}
@@ -248,6 +293,5 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       )}
     </>
-  )
+  );
 }
-

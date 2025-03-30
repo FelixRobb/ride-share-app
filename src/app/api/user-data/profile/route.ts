@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server"
-import { supabase } from "@/lib/db"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+import { authOptions } from "@/lib/auth";
+import { supabase } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user || !session.user.id) {
       return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -19,14 +20,18 @@ export async function GET() {
           Expires: "0",
           "Surrogate-Control": "no-store",
         },
-      })
+      });
     }
 
-    const userId = session.user.id
+    const userId = session.user.id;
 
-    const { data: userData, error: userError } = await supabase.from("users").select("*").eq("id", userId).single()
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .single();
 
-    if (userError) throw userError
+    if (userError) throw userError;
 
     const { data: contacts, error: contactsError } = await supabase
       .from("contacts")
@@ -35,18 +40,18 @@ export async function GET() {
       *,
       user:users!contacts_user_id_fkey (id, name, phone),
       contact:users!contacts_contact_id_fkey (id, name, phone)
-    `,
+    `
       )
-      .or(`user_id.eq.${userId},contact_id.eq.${userId}`)
+      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
 
-    if (contactsError) throw contactsError
+    if (contactsError) throw contactsError;
 
     const { data: associatedPeople, error: associatedPeopleError } = await supabase
       .from("associated_people")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", userId);
 
-    if (associatedPeopleError) throw associatedPeopleError
+    if (associatedPeopleError) throw associatedPeopleError;
 
     return new NextResponse(JSON.stringify({ user: userData, contacts, associatedPeople }), {
       status: 200,
@@ -57,7 +62,7 @@ export async function GET() {
         Expires: "0",
         "Surrogate-Control": "no-store",
       },
-    })
+    });
   } catch {
     return new NextResponse(JSON.stringify({ error: "Internal Server Error" }), {
       status: 500,
@@ -68,7 +73,6 @@ export async function GET() {
         Expires: "0",
         "Surrogate-Control": "no-store",
       },
-    })
+    });
   }
 }
-

@@ -1,8 +1,9 @@
+import { compare, hash } from "bcrypt";
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/db";
-import bcrypt from "bcrypt";
 import { getServerSession } from "next-auth/next";
+
 import { authOptions } from "@/lib/auth";
+import { supabase } from "@/lib/db";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -18,10 +19,7 @@ export async function POST(request: Request) {
   const { currentPassword, newPassword } = await request.json();
 
   if (!userId || !currentPassword || !newPassword) {
-    return NextResponse.json(
-      { error: "Missing required fields" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   try {
@@ -37,20 +35,14 @@ export async function POST(request: Request) {
     }
 
     // Verify current password
-    const isPasswordValid = await bcrypt.compare(
-      currentPassword,
-      user.password
-    );
+    const isPasswordValid = await compare(currentPassword, user.password);
 
     if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: "Current password is incorrect" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Current password is incorrect" }, { status: 400 });
     }
 
     // Hash new password
-    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    const hashedNewPassword = await hash(newPassword, 10);
 
     // Update password
     const { error: updateError } = await supabase
@@ -62,9 +54,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

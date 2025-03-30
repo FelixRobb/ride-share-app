@@ -1,11 +1,12 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import { toast } from "sonner"
-import { Bug, CheckCircle, Clock, Eye, Filter, Loader, RefreshCw, XCircle } from "lucide-react"
+import { Bug, CheckCircle, Clock, Eye, Filter, Loader, RefreshCw, XCircle } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -13,122 +14,134 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import type { BugReport, BugReportStats } from "@/types"
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import type { BugReport, BugReportStats } from "@/types";
 
 export default function BugReportManagement() {
   // State
-  const [bugReports, setBugReports] = useState<BugReport[]>([])
-  const [stats, setStats] = useState<BugReportStats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<string>("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [bugReports, setBugReports] = useState<BugReport[]>([]);
+  const [stats, setStats] = useState<BugReportStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Dialog states
-  const [selectedBugReport, setSelectedBugReport] = useState<BugReport | null>(null)
-  const [viewDialogOpen, setViewDialogOpen] = useState(false)
-  const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
-  const [newStatus, setNewStatus] = useState<string>("")
-  const [adminNotes, setAdminNotes] = useState<string>("")
-  const [isUpdating, setIsUpdating] = useState(false)
+  const [selectedBugReport, setSelectedBugReport] = useState<BugReport | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [newStatus, setNewStatus] = useState<string>("");
+  const [adminNotes, setAdminNotes] = useState<string>("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Fetch bug reports - memoized to avoid recreation on each render
   const fetchBugReports = useCallback(async (page = 1, status = "") => {
     try {
-      setIsRefreshing(true)
-      const response = await fetch(`/api/admin/bug-reports?page=${page}&status=${status}`)
+      setIsRefreshing(true);
+      const response = await fetch(`/api/admin/bug-reports?page=${page}&status=${status}`);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch bug reports")
+        throw new Error("Failed to fetch bug reports");
       }
 
-      const data = await response.json()
-      setBugReports(data.bugReports)
-      setTotalPages(data.pagination.totalPages)
-      setCurrentPage(data.pagination.page)
+      const data = await response.json();
+      setBugReports(data.bugReports);
+      setTotalPages(data.pagination.totalPages);
+      setCurrentPage(data.pagination.page);
     } catch {
-      toast.error("Failed to load bug reports")
+      toast.error("Failed to load bug reports");
     } finally {
-      setIsLoading(false)
-      setIsRefreshing(false)
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
-  }, [])
+  }, []);
 
   // Fetch bug report statistics - memoized
   const fetchStats = useCallback(async () => {
     try {
-      const response = await fetch("/api/admin/bug-reports/stats")
+      const response = await fetch("/api/admin/bug-reports/stats");
 
       if (!response.ok) {
-        throw new Error("Failed to fetch bug report statistics")
+        throw new Error("Failed to fetch bug report statistics");
       }
 
-      const data = await response.json()
-      setStats(data)
+      const data = await response.json();
+      setStats(data);
     } catch {
-      toast.error("Failed to load bug report statistics")
+      toast.error("Failed to load bug report statistics");
     }
-  }, [])
+  }, []);
 
   // Initial data fetch
   useEffect(() => {
-    fetchBugReports(currentPage, statusFilter)
-    fetchStats()
-  }, [currentPage, statusFilter, fetchBugReports, fetchStats])
+    fetchBugReports(currentPage, statusFilter);
+    fetchStats();
+  }, [currentPage, statusFilter, fetchBugReports, fetchStats]);
 
   // Handle refresh
   const handleRefresh = () => {
-    fetchBugReports(currentPage, statusFilter)
-    fetchStats()
-  }
+    fetchBugReports(currentPage, statusFilter);
+    fetchStats();
+  };
 
   // Handle status filter change
   const handleStatusFilterChange = (value: string) => {
-    setStatusFilter(value)
-    setCurrentPage(1)
-  }
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
 
   // Handle pagination
   const handlePreviousPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
+      setCurrentPage(currentPage - 1);
     }
-  }
+  };
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
+      setCurrentPage(currentPage + 1);
     }
-  }
+  };
 
   // View bug report details
   const handleViewBugReport = (bugReport: BugReport) => {
-    setSelectedBugReport(bugReport)
-    setViewDialogOpen(true)
-  }
+    setSelectedBugReport(bugReport);
+    setViewDialogOpen(true);
+  };
 
   // Open update dialog
   const handleOpenUpdateDialog = (bugReport: BugReport) => {
-    setSelectedBugReport(bugReport)
-    setNewStatus(bugReport.status)
-    setAdminNotes(bugReport.admin_notes || "")
-    setUpdateDialogOpen(true)
-  }
+    setSelectedBugReport(bugReport);
+    setNewStatus(bugReport.status);
+    setAdminNotes(bugReport.admin_notes || "");
+    setUpdateDialogOpen(true);
+  };
 
   // Update bug report status
   const handleUpdateBugReport = async () => {
-    if (!selectedBugReport) return
+    if (!selectedBugReport) return;
 
-    setIsUpdating(true)
+    setIsUpdating(true);
     try {
       const response = await fetch(`/api/admin/bug-reports/${selectedBugReport.id}`, {
         method: "PUT",
@@ -139,23 +152,23 @@ export default function BugReportManagement() {
           status: newStatus,
           adminNotes,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to update bug report")
+        throw new Error("Failed to update bug report");
       }
 
-      toast.success("Bug report updated successfully")
-      setUpdateDialogOpen(false)
+      toast.success("Bug report updated successfully");
+      setUpdateDialogOpen(false);
 
       // Refresh bug reports
-      fetchBugReports(currentPage, statusFilter)
+      fetchBugReports(currentPage, statusFilter);
     } catch {
-      toast.error("Failed to update bug report")
+      toast.error("Failed to update bug report");
     } finally {
-      setIsUpdating(false)
+      setIsUpdating(false);
     }
-  }
+  };
 
   // Reset dialog states when closed
   const handleViewToUpdateTransition = (bugReport: BugReport) => {
@@ -166,93 +179,121 @@ export default function BugReportManagement() {
       setAdminNotes(bugReport.admin_notes || "");
       setUpdateDialogOpen(true);
     }, 100);
-  }
+  };
 
   const handleViewDialogClose = () => {
     setViewDialogOpen(false);
     // Small delay to prevent UI flicker
     setTimeout(() => setSelectedBugReport(null), 200);
-  }
+  };
 
   const handleUpdateDialogClose = () => {
-    setUpdateDialogOpen(false)
+    setUpdateDialogOpen(false);
     // Don't reset selectedBugReport here as it might be needed for view dialog
-  }
+  };
 
   // Get status badge
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "new":
         return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+          <Badge
+            variant="outline"
+            className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+          >
             <Clock className="h-3 w-3 mr-1" />
             New
           </Badge>
-        )
+        );
       case "in_progress":
         return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+          <Badge
+            variant="outline"
+            className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+          >
             <Eye className="h-3 w-3 mr-1" />
             In Progress
           </Badge>
-        )
+        );
       case "resolved":
         return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+          <Badge
+            variant="outline"
+            className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+          >
             <CheckCircle className="h-3 w-3 mr-1" />
             Resolved
           </Badge>
-        )
+        );
       case "closed":
         return (
-          <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+          <Badge
+            variant="outline"
+            className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+          >
             <XCircle className="h-3 w-3 mr-1" />
             Closed
           </Badge>
-        )
+        );
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <Badge variant="outline">{status}</Badge>;
     }
-  }
+  };
 
   // Get severity badge
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case "low":
         return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+          <Badge
+            variant="outline"
+            className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+          >
             Low
           </Badge>
-        )
+        );
       case "medium":
         return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+          <Badge
+            variant="outline"
+            className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+          >
             Medium
           </Badge>
-        )
+        );
       case "high":
         return (
-          <Badge variant="outline" className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300">
+          <Badge
+            variant="outline"
+            className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300"
+          >
             High
           </Badge>
-        )
+        );
       case "critical":
         return (
-          <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+          <Badge
+            variant="outline"
+            className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+          >
             Critical
           </Badge>
-        )
+        );
       default:
-        return <Badge variant="outline">{severity}</Badge>
+        return <Badge variant="outline">{severity}</Badge>;
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">Bug Report Management</h2>
         <Button onClick={handleRefresh} variant="outline" disabled={isRefreshing}>
-          {isRefreshing ? <Loader className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+          {isRefreshing ? (
+            <Loader className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4 mr-2" />
+          )}
           Refresh
         </Button>
       </div>
@@ -329,11 +370,19 @@ export default function BugReportManagement() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end space-x-2">
-                                <Button variant="outline" size="sm" onClick={() => handleViewBugReport(bugReport)}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleViewBugReport(bugReport)}
+                                >
                                   <Eye className="h-4 w-4 mr-2" />
                                   View
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => handleOpenUpdateDialog(bugReport)}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleOpenUpdateDialog(bugReport)}
+                                >
                                   <CheckCircle className="h-4 w-4 mr-2" />
                                   Update
                                 </Button>
@@ -350,7 +399,12 @@ export default function BugReportManagement() {
                       Page {currentPage} of {totalPages}
                     </p>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={handlePreviousPage} disabled={currentPage === 1}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePreviousPage}
+                        disabled={currentPage === 1}
+                      >
                         Previous
                       </Button>
                       <Button
@@ -475,7 +529,9 @@ export default function BugReportManagement() {
                     <div className="mb-4">{getSeverityBadge(selectedBugReport.severity)}</div>
 
                     <h3 className="text-sm font-medium text-muted-foreground mb-1">Reported On</h3>
-                    <p className="mb-4">{new Date(selectedBugReport.created_at).toLocaleString()}</p>
+                    <p className="mb-4">
+                      {new Date(selectedBugReport.created_at).toLocaleString()}
+                    </p>
                   </div>
 
                   <div>
@@ -483,10 +539,14 @@ export default function BugReportManagement() {
                     <p className="mb-4">{selectedBugReport.user_name}</p>
 
                     <h3 className="text-sm font-medium text-muted-foreground mb-1">Device Info</h3>
-                    <p className="mb-4 text-sm break-words">{selectedBugReport.device_info || "Not provided"}</p>
+                    <p className="mb-4 text-sm break-words">
+                      {selectedBugReport.device_info || "Not provided"}
+                    </p>
 
                     <h3 className="text-sm font-medium text-muted-foreground mb-1">Browser Info</h3>
-                    <p className="mb-4 text-sm break-words">{selectedBugReport.browser_info || "Not provided"}</p>
+                    <p className="mb-4 text-sm break-words">
+                      {selectedBugReport.browser_info || "Not provided"}
+                    </p>
                   </div>
                 </div>
 
@@ -494,23 +554,28 @@ export default function BugReportManagement() {
 
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">Description</h3>
-                  <div className="bg-muted p-4 rounded-md whitespace-pre-wrap">{selectedBugReport.description}</div>
+                  <div className="bg-muted p-4 rounded-md whitespace-pre-wrap">
+                    {selectedBugReport.description}
+                  </div>
                 </div>
 
                 {selectedBugReport.steps_to_reproduce && (
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Steps to Reproduce</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                      Steps to Reproduce
+                    </h3>
                     <div className="bg-muted p-4 rounded-md whitespace-pre-wrap">
                       {selectedBugReport.steps_to_reproduce}
                     </div>
                   </div>
                 )}
 
-
                 {selectedBugReport.admin_notes && (
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground mb-2">Admin Notes</h3>
-                    <div className="bg-muted p-4 rounded-md whitespace-pre-wrap">{selectedBugReport.admin_notes}</div>
+                    <div className="bg-muted p-4 rounded-md whitespace-pre-wrap">
+                      {selectedBugReport.admin_notes}
+                    </div>
                   </div>
                 )}
               </div>
@@ -521,7 +586,7 @@ export default function BugReportManagement() {
             <Button variant="outline" onClick={handleViewDialogClose}>
               Close
             </Button>
-            <Button onClick={() => handleViewToUpdateTransition(selectedBugReport!)}>
+            <Button onClick={() => handleViewToUpdateTransition(selectedBugReport as BugReport)}>
               Update Status
             </Button>
           </DialogFooter>
@@ -533,7 +598,9 @@ export default function BugReportManagement() {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] rounded-lg overflow-auto w-11/12">
           <DialogHeader>
             <DialogTitle>Update Bug Report Status</DialogTitle>
-            <DialogDescription>Change the status of this bug report and add admin notes</DialogDescription>
+            <DialogDescription>
+              Change the status of this bug report and add admin notes
+            </DialogDescription>
           </DialogHeader>
 
           {selectedBugReport && (
@@ -586,7 +653,9 @@ export default function BugReportManagement() {
                   onChange={(e) => setAdminNotes(e.target.value)}
                   rows={4}
                 />
-                <p className="text-xs text-muted-foreground">These notes are only visible to administrators.</p>
+                <p className="text-xs text-muted-foreground">
+                  These notes are only visible to administrators.
+                </p>
               </div>
             </div>
           )}
@@ -603,6 +672,5 @@ export default function BugReportManagement() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
-

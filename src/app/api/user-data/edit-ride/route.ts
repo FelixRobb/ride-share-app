@@ -1,14 +1,15 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/db"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
+import { type NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+import { authOptions } from "@/lib/auth";
+import { supabase } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user || !session.user.id) {
       return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -19,12 +20,12 @@ export async function GET(req: NextRequest) {
           Expires: "0",
           "Surrogate-Control": "no-store",
         },
-      })
+      });
     }
 
-    const userId = session.user.id
+    const userId = session.user.id;
 
-    const rideId = req.nextUrl.searchParams.get("rideId")
+    const rideId = req.nextUrl.searchParams.get("rideId");
 
     if (!rideId) {
       return new NextResponse(JSON.stringify({ error: "Ride ID is required" }), {
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
           Expires: "0",
           "Surrogate-Control": "no-store",
         },
-      })
+      });
     }
 
     const { data: ride, error } = await supabase
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
       .select("*")
       .eq("id", rideId)
       .eq("requester_id", userId)
-      .single()
+      .single();
 
     if (error) {
       if (error.code === "PGRST116") {
@@ -61,10 +62,10 @@ export async function GET(req: NextRequest) {
               Expires: "0",
               "Surrogate-Control": "no-store",
             },
-          },
-        )
+          }
+        );
       }
-      throw error
+      throw error;
     }
 
     return new NextResponse(JSON.stringify({ ride }), {
@@ -76,7 +77,7 @@ export async function GET(req: NextRequest) {
         Expires: "0",
         "Surrogate-Control": "no-store",
       },
-    })
+    });
   } catch {
     return new NextResponse(JSON.stringify({ error: "Internal Server Error" }), {
       status: 500,
@@ -87,7 +88,6 @@ export async function GET(req: NextRequest) {
         Expires: "0",
         "Surrogate-Control": "no-store",
       },
-    })
+    });
   }
 }
-

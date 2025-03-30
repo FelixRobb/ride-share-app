@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server"
-import { supabase } from "@/lib/db"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+import { authOptions } from "@/lib/auth";
+import { supabase } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user || !session.user.id) {
       return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -19,18 +20,18 @@ export async function GET() {
           Expires: "0",
           "Surrogate-Control": "no-store",
         },
-      })
+      });
     }
 
-    const userId = session.user.id
+    const userId = session.user.id;
 
     // Fetch associated people
     const { data: associatedPeople, error: associatedPeopleError } = await supabase
       .from("associated_people")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", userId);
 
-    if (associatedPeopleError) throw associatedPeopleError
+    if (associatedPeopleError) throw associatedPeopleError;
 
     return new NextResponse(JSON.stringify({ associatedPeople }), {
       status: 200,
@@ -41,7 +42,7 @@ export async function GET() {
         Expires: "0",
         "Surrogate-Control": "no-store",
       },
-    })
+    });
   } catch {
     return new NextResponse(JSON.stringify({ error: "Internal Server Error" }), {
       status: 500,
@@ -52,7 +53,6 @@ export async function GET() {
         Expires: "0",
         "Surrogate-Control": "no-store",
       },
-    })
+    });
   }
 }
-

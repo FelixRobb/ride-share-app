@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   try {
-    const { data: users, error: usersError } = await supabase.from("users").select("count", { count: "exact" });
+    const { data: users, error: usersError } = await supabase
+      .from("users")
+      .select("count", { count: "exact" });
 
-    const { data: rides, error: ridesError } = await supabase.from("rides").select("count", { count: "exact" });
+    const { data: rides, error: ridesError } = await supabase
+      .from("rides")
+      .select("count", { count: "exact" });
 
-    const { data: contacts, error: contactsError } = await supabase.from("contacts").select("count", { count: "exact" });
+    const { data: contacts, error: contactsError } = await supabase
+      .from("contacts")
+      .select("count", { count: "exact" });
 
     if (usersError || ridesError || contactsError) {
       throw new Error("Error fetching statistics");

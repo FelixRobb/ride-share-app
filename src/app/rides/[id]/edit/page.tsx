@@ -1,42 +1,39 @@
-"use client"
+"use client";
 
-import dynamic from "next/dynamic"
-import { useRouter } from "next/navigation"
-import { useParams } from "next/navigation"
-import { useEffect, Suspense } from "react"
-import { useSession } from "next-auth/react"
+import dynamic from "next/dynamic";
+import { useRouter, useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useEffect, Suspense } from "react";
 
-import Layout from "@/components/Layout"
-import type { User } from "@/types"
-import AuthLoader from "@/components/AuthLoader"
+import AuthLoader from "@/components/AuthLoader";
+import Layout from "@/components/Layout";
+import type { User } from "@/types";
 
-
-const EditRidePage = dynamic(() => import("@/components/EditRidePage"), { ssr: false })
+const EditRidePage = dynamic(() => import("@/components/EditRidePage"), { ssr: false });
 
 export default function EditRide() {
-
-  const router = useRouter()
-  const { id } = useParams()
-  const { data: session, status } = useSession()
-  const currentUser = session?.user as User | undefined
+  const router = useRouter();
+  const { id } = useParams();
+  const { data: session, status } = useSession();
+  const currentUser = session?.user as User | undefined;
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login")
+      router.push("/login");
     }
-  }, [status, router])
+  }, [status, router]);
 
   if (status === "loading") {
-    return <AuthLoader />
+    return <AuthLoader />;
   }
 
   if (status === "unauthenticated") {
-    router.push("/login")
-    return null
+    router.push("/login");
+    return null;
   }
 
   if (!currentUser) {
-    return <div>Error: User not found</div>
+    return <div>Error: User not found</div>;
   }
 
   return (
@@ -45,6 +42,5 @@ export default function EditRide() {
         <EditRidePage currentUser={currentUser} rideId={id as string} />
       </Suspense>
     </Layout>
-  )
+  );
 }
-

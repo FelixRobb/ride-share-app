@@ -1,27 +1,26 @@
-'use client'
+"use client";
 
-import { Loader } from 'lucide-react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { Suspense } from 'react'
-import { toast } from "sonner"
+import { Loader } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { PasswordInput } from "@/components/ui/password-input"
-import { Label } from "@/components/ui/label"
-import Link from 'next/link'
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 function ResetPasswordForm() {
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [newPasswordStrength, setNewPasswordStrength] = useState<string>("")
-  const [isLoading, setIsLoading] = useState(true)
-  const [isTokenValid, setIsTokenValid] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = searchParams.get('token')
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPasswordStrength, setNewPasswordStrength] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTokenValid, setIsTokenValid] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
   const evaluatePasswordStrength = (password: string) => {
     const lengthCriteria = password.length >= 8;
@@ -32,60 +31,60 @@ function ResetPasswordForm() {
     if (lengthCriteria && hasUppercase && hasNumber) return "Strong";
     if (lengthCriteria) return "Medium";
     return "Weak";
-  }
+  };
 
   useEffect(() => {
     const checkToken = async () => {
       if (!token) {
-        setIsLoading(false)
-        setErrorMessage('No reset token provided')
-        return
+        setIsLoading(false);
+        setErrorMessage("No reset token provided");
+        return;
       }
 
       try {
-        const response = await fetch(`/api/auth/check-reset-token?token=${token}`)
-        const data = await response.json()
+        const response = await fetch(`/api/auth/check-reset-token?token=${token}`);
+        const data = await response.json();
 
         if (data.valid) {
-          setIsTokenValid(true)
+          setIsTokenValid(true);
         } else {
-          setErrorMessage(data.message || 'Invalid or expired token')
+          setErrorMessage(data.message || "Invalid or expired token");
         }
       } catch {
-        setErrorMessage('An error occurred while checking the token')
+        setErrorMessage("An error occurred while checking the token");
       }
 
-      setIsLoading(false)
-    }
+      setIsLoading(false);
+    };
 
-    checkToken()
-  }, [token])
+    checkToken();
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match")
-      return
+      toast.error("Passwords do not match");
+      return;
     }
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/reset-password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, newPassword }),
-      })
+      });
 
       if (response.ok) {
-        toast.success("Your password has been reset successfully")
-        router.push('/')
+        toast.success("Your password has been reset successfully");
+        router.push("/");
       } else {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to reset password')
+        const data = await response.json();
+        throw new Error(data.error || "Failed to reset password");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -99,7 +98,7 @@ function ResetPasswordForm() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (!isTokenValid) {
@@ -115,7 +114,7 @@ function ResetPasswordForm() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -144,8 +143,8 @@ function ResetPasswordForm() {
                     id="new-password"
                     value={newPassword}
                     onChange={(e) => {
-                      setNewPassword(e.target.value)
-                      setNewPasswordStrength(evaluatePasswordStrength(e.target.value))
+                      setNewPassword(e.target.value);
+                      setNewPasswordStrength(evaluatePasswordStrength(e.target.value));
                     }}
                     required
                   />
@@ -155,11 +154,20 @@ function ResetPasswordForm() {
                         <div
                           className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-green-500" : newPasswordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
                           style={{
-                            width: newPasswordStrength === "Strong" ? "100%" : newPasswordStrength === "Medium" ? "66%" : newPasswordStrength === "Weak" ? "33%" : "0%",
+                            width:
+                              newPasswordStrength === "Strong"
+                                ? "100%"
+                                : newPasswordStrength === "Medium"
+                                  ? "66%"
+                                  : newPasswordStrength === "Weak"
+                                    ? "33%"
+                                    : "0%",
                           }}
                         />
                       </div>
-                      <p className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-green-500" : newPasswordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}>
+                      <p
+                        className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-green-500" : newPasswordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}
+                      >
                         {newPasswordStrength}
                       </p>
                     </div>
@@ -188,22 +196,26 @@ function ResetPasswordForm() {
         </div>
       </footer>
     </div>
-  )
+  );
 }
 
 export default function ResetPassword() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black">
-      <Card className="w-full max-w-[350px]">
-        <CardContent className="flex items-center justify-center h-[200px]">
-          <p>Checking reset token...</p>
-          <div>
-            <Loader className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </CardContent>
-      </Card>
-    </div>}>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-black">
+          <Card className="w-full max-w-[350px]">
+            <CardContent className="flex items-center justify-center h-[200px]">
+              <p>Checking reset token...</p>
+              <div>
+                <Loader className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
       <ResetPasswordForm />
     </Suspense>
-  )
+  );
 }

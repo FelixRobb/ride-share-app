@@ -1,17 +1,24 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
-import Link from "next/link"
-import { toast } from "sonner"
-import { Loader2, ArrowRight, Mail, Phone } from "lucide-react"
-import { signIn, useSession } from "next-auth/react"
-import PhoneInput from "react-phone-number-input"
-import oldCarImage from '@/components/images/oldcar.png';
+import { Loader2, ArrowRight, Mail, Phone } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import PhoneInput from "react-phone-number-input";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import oldCarImage from "@/components/images/oldcar.png";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,89 +26,89 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { PasswordInput } from "@/components/ui/password-input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
-import "react-phone-number-input/style.css"
+import "react-phone-number-input/style.css";
 
 interface LoginPageProps {
   quote: {
-    quote: string
-    author: string
-    source?: string
-  }
+    quote: string;
+    author: string;
+    source?: string;
+  };
 }
 
 export default function LoginPage({ quote }: LoginPageProps) {
-  const [error, setError] = useState<string | null>(null)
-  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
-  const [resetEmail, setResetEmail] = useState("")
-  const [isResetLoading, setIsResetLoading] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
-  const [phone, setPhone] = useState("")
-  const router = useRouter()
-  const { data: session } = useSession()
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [error, setError] = useState<string | null>(null);
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isResetLoading, setIsResetLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
+  const [phone, setPhone] = useState("");
+  const router = useRouter();
+  const { data: session } = useSession();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     if (session && !isLoggedIn) {
-      toast.success("You're still logged in. Redirecting to dashboard")
-      router.push("/dashboard")
+      toast.success("You're still logged in. Redirecting to dashboard");
+      router.push("/dashboard");
     }
-  }, [session, router, isLoggedIn])
+  }, [session, router, isLoggedIn]);
 
   const handleResetPassword = async () => {
     try {
-      setIsResetLoading(true)
+      setIsResetLoading(true);
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: resetEmail }),
-      })
+      });
       if (response.ok) {
-        toast.success("Password reset email sent. Please check your inbox.")
-        setIsResetPasswordOpen(false)
+        toast.success("Password reset email sent. Please check your inbox.");
+        setIsResetPasswordOpen(false);
       } else {
-        const data = await response.json()
-        throw new Error(data.error || "Failed to send reset email")
+        const data = await response.json();
+        throw new Error(data.error || "Failed to send reset email");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
-      setIsResetLoading(false)
+      setIsResetLoading(false);
     }
-  }
+  };
 
   const handleResendVerification = async () => {
     try {
-      const identifier = loginMethod === "email" ? email : phone
+      const identifier = loginMethod === "email" ? email : phone;
       const response = await fetch("/api/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier, loginMethod }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok) {
-        toast.success("Verification email resent. Please check your inbox.")
+        toast.success("Verification email resent. Please check your inbox.");
       } else {
-        toast.error(data.error || "Failed to resend verification email. Please try again.")
+        toast.error(data.error || "Failed to resend verification email. Please try again.");
       }
     } catch {
-      toast.error("An error occurred. Please try again later.")
+      toast.error("An error occurred. Please try again later.");
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setError(null)
-    setIsLoading(true)
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
 
     try {
       const response = await fetch("/api/login", {
@@ -112,12 +119,12 @@ export default function LoginPage({ quote }: LoginPageProps) {
           password,
           loginMethod,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.code || "LOGIN_FAILED")
+        throw new Error(data.code || "LOGIN_FAILED");
       }
 
       if (data.user) {
@@ -126,65 +133,65 @@ export default function LoginPage({ quote }: LoginPageProps) {
           redirect: false,
           identifier: loginMethod === "email" ? email : phone,
           password,
-        })
+        });
 
         if (result?.error) {
-          throw new Error(result.error)
+          throw new Error(result.error);
         }
 
-        setIsLoggedIn(true)
-        toast.success("Login successful!")
-        router.push("/dashboard")
+        setIsLoggedIn(true);
+        toast.success("Login successful!");
+        router.push("/dashboard");
       }
     } catch (error) {
       if (error instanceof Error) {
         switch (error.message) {
           case "INVALID_CREDENTIALS":
-            toast.error("Invalid credentials. Please check your input and try again.")
-            break
+            toast.error("Invalid credentials. Please check your input and try again.");
+            break;
           case "INVALID_PHONE":
-            toast.error("Invalid phone number. Please enter a valid phone number.")
-            break
+            toast.error("Invalid phone number. Please enter a valid phone number.");
+            break;
           case "INVALID_LOGIN_METHOD":
-            toast.error("Invalid login method. Please try again.")
-            break
+            toast.error("Invalid login method. Please try again.");
+            break;
           case "USER_NOT_FOUND":
-            toast.error("User not found. Please check your credentials or register a new account.")
-            break
+            toast.error("User not found. Please check your credentials or register a new account.");
+            break;
           case "INVALID_PASSWORD":
-            toast.error("Invalid password. Please try again.")
-            break
+            toast.error("Invalid password. Please try again.");
+            break;
           case "EMAIL_NOT_VERIFIED":
             toast.error("Email not verified. Please check your inbox for the verification email.", {
               action: {
                 label: "Resend Verification",
                 onClick: () => handleResendVerification(),
               },
-            })
-            break
+            });
+            break;
           case "INTERNAL_SERVER_ERROR":
-            toast.error("An unexpected error occurred. Please try again later.")
-            break
+            toast.error("An unexpected error occurred. Please try again later.");
+            break;
           default:
-            toast.error("Login failed. Please check your credentials and try again.")
+            toast.error("Login failed. Please check your credentials and try again.");
         }
       } else {
-        toast.error("An unexpected error occurred. Please try again.")
+        toast.error("An unexpected error occurred. Please try again.");
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <>
       <div className="min-h-screen flex flex-col bg-background">
         <header className="bg-background/80 backdrop-blur-sm p-4 shadow-sm border-b">
           <div className="container mx-auto flex justify-between items-center">
-           <Link href="/welcome" className="text-2xl font-bold text-primary">
-                    RideShare
-                  </Link>
-                  <div>
+            <Link href="/welcome" className="text-2xl font-bold text-primary">
+              RideShare
+            </Link>
+            <div>
               <Button variant="ghost" asChild className="mr-2">
                 <Link href="/login">Login</Link>
               </Button>
@@ -199,7 +206,9 @@ export default function LoginPage({ quote }: LoginPageProps) {
             <Card className="w-full max-w-md">
               <CardHeader className="space-y-1">
                 <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
-                <CardDescription className="text-center">Enter your credentials to access your account</CardDescription>
+                <CardDescription className="text-center">
+                  Enter your credentials to access your account
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -274,7 +283,11 @@ export default function LoginPage({ quote }: LoginPageProps) {
                 <Button variant="link" asChild className="w-full">
                   <Link href="/register">Don&#39;t have an account? Register</Link>
                 </Button>
-                <Button variant="link" onClick={() => setIsResetPasswordOpen(true)} className="w-full">
+                <Button
+                  variant="link"
+                  onClick={() => setIsResetPasswordOpen(true)}
+                  className="w-full"
+                >
                   Forgot your password?
                 </Button>
               </CardFooter>
@@ -312,7 +325,9 @@ export default function LoginPage({ quote }: LoginPageProps) {
         <DialogContent className="sm:max-w-[425px] rounded-lg">
           <DialogHeader>
             <DialogTitle>Reset Password</DialogTitle>
-            <DialogDescription>Enter your email to receive a password reset link.</DialogDescription>
+            <DialogDescription>
+              Enter your email to receive a password reset link.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -336,6 +351,5 @@ export default function LoginPage({ quote }: LoginPageProps) {
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
-

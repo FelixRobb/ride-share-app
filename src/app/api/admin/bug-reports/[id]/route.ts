@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { supabase } from "@/lib/db";
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
@@ -15,7 +16,11 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     }
 
     // Check if bug report exists
-    const { data: existingReport, error: reportError } = await supabase.from("bug_reports").select("*").eq("id", bugReportId).single();
+    const { data: existingReport, error: reportError } = await supabase
+      .from("bug_reports")
+      .select("*")
+      .eq("id", bugReportId)
+      .single();
 
     if (reportError || !existingReport) {
       return NextResponse.json({ error: "Bug report not found" }, { status: 404 });
@@ -54,7 +59,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
-    const params = (await props.params);
+    const params = await props.params;
     const bugReportId = params.id;
 
     // Get bug report details

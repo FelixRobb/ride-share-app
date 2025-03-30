@@ -1,13 +1,17 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import Link from "next/link"
-import { ArrowLeft, Search } from "lucide-react"
+import { ArrowLeft, Search } from "lucide-react";
+import Link from "next/link";
+import { useState, useMemo } from "react";
 
-import { Button } from "@/components/ui/button"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Input } from "@/components/ui/input"
-
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const faqs = [
   {
@@ -47,7 +51,8 @@ const faqs = [
   },
   {
     question: "Is RideShare free to use?",
-    answer: "Yes, RideShare is currently free to use. We do not charge any fees for creating or joining rides.",
+    answer:
+      "Yes, RideShare is currently free to use. We do not charge any fees for creating or joining rides.",
   },
   {
     question: "What should I do if I have a problem with a ride or another user?",
@@ -109,28 +114,28 @@ const faqs = [
     answer:
       "Currently, RideShare doesn't support setting up recurring rides automatically. However, you can easily duplicate a previous ride when creating a new one to save time for regular trips.",
   },
-]
+];
 
 export default function FAQPage() {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState("");
 
   const filteredFaqs = useMemo(() => {
-    if (!searchTerm) return faqs
-    const lowerCaseSearchTerm = searchTerm.toLowerCase()
+    if (!searchTerm) return faqs;
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
     return faqs
       .filter(
         (faq) =>
           faq.question.toLowerCase().includes(lowerCaseSearchTerm) ||
-          faq.answer.toLowerCase().includes(lowerCaseSearchTerm),
+          faq.answer.toLowerCase().includes(lowerCaseSearchTerm)
       )
       .sort((a, b) => {
-        const aTitle = a.question.toLowerCase().includes(lowerCaseSearchTerm)
-        const bTitle = b.question.toLowerCase().includes(lowerCaseSearchTerm)
-        if (aTitle && !bTitle) return -1
-        if (!aTitle && bTitle) return 1
-        return 0
-      })
-  }, [searchTerm])
+        const aTitle = a.question.toLowerCase().includes(lowerCaseSearchTerm);
+        const bTitle = b.question.toLowerCase().includes(lowerCaseSearchTerm);
+        if (aTitle && !bTitle) return -1;
+        if (!aTitle && bTitle) return 1;
+        return 0;
+      });
+  }, [searchTerm]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -160,9 +165,10 @@ export default function FAQPage() {
         ))}
       </Accordion>
       {filteredFaqs.length === 0 && (
-        <p className="text-center text-muted-foreground mt-4">No results found. Please try a different search term.</p>
+        <p className="text-center text-muted-foreground mt-4">
+          No results found. Please try a different search term.
+        </p>
       )}
     </div>
-  )
+  );
 }
-
