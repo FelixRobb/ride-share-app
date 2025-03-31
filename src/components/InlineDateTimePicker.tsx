@@ -397,7 +397,7 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
         {quickSelectDates.map((preset) => (
           <Badge
             key={preset.label}
-            className="cursor-pointer bg-primary/10 hover:bg-primary/20 text-primary-foreground border-0 text-[10px] sm:text-xs py-1.5 px-2.5 rounded-md font-medium shadow-sm"
+            className="cursor-pointer bg-primary hover:bg-primary/80 text-primary-foreground border-0 text-[10px] sm:text-xs py-1.5 px-2.5 rounded-md font-medium shadow-sm"
             onClick={() => {
               handleQuickDateSelect(preset.value);
               if (!isDesktop) setOpen(false);
