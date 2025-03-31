@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-
   reactStrictMode: true,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   webpack: (config: any, { isServer }: { isServer: boolean }) => {
@@ -16,12 +15,12 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'api.tomtom.com',
-        port: '',
+        protocol: "https",
+        hostname: "api.tomtom.com",
+        port: "",
       },
     ],
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
