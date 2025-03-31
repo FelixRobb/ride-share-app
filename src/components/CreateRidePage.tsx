@@ -329,7 +329,7 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
                       time: fallbackDate.toISOString(),
                     };
                   }
-                  
+
                   return {
                     ...prev,
                     time: date.toISOString(),
