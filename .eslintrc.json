@@ -86,16 +86,5 @@
         "extensions": [".js", ".jsx", ".ts", ".tsx"]
       }
     }
-  },
-  "overrides": [
-    {
-      "files": ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**"],
-      "env": {
-        "jest": true
-      },
-      "rules": {
-        "@typescript-eslint/no-explicit-any": "off"
-      }
-    }
-  ]
+  }
 }

@@ -1,23 +1,12 @@
 import { format, addDays, addMonths, isBefore, isAfter } from "date-fns";
-import { CalendarClock, Clock, Sunrise, Sun, Sunset, Moon, RotateCcw, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarClock, Clock, Sunrise, Sun, Sunset, Moon, RotateCcw } from "lucide-react";
 import * as React from "react";
-import { useImperativeHandle, useRef } from "react";
+import { useRef } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import {
   Drawer,
   DrawerDescription,
@@ -26,7 +15,11 @@ import {
   DrawerHeader,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn } from "@/lib/utils";
 
 // Time input validation utils
 function isValidHour(value: string) {
@@ -37,7 +30,10 @@ function isValidMinuteOrSecond(value: string) {
   return /^[0-5][0-9]$/.test(value);
 }
 
-function getValidNumber(value: string, { max, min = 0, loop = false }: { max: number; min?: number; loop?: boolean }) {
+function getValidNumber(
+  value: string,
+  { max, min = 0, loop = false }: { max: number; min?: number; loop?: boolean }
+) {
   let numericValue = parseInt(value, 10);
 
   if (!Number.isNaN(numericValue)) {
@@ -48,10 +44,10 @@ function getValidNumber(value: string, { max, min = 0, loop = false }: { max: nu
       if (numericValue > max) numericValue = min;
       if (numericValue < min) numericValue = max;
     }
-    return numericValue.toString().padStart(2, '0');
+    return numericValue.toString().padStart(2, "0");
   }
 
-  return '00';
+  return "00";
 }
 
 function getValidHour(value: string) {
@@ -64,13 +60,16 @@ function getValidMinuteOrSecond(value: string) {
   return getValidNumber(value, { max: 59 });
 }
 
-function getValidArrowNumber(value: string, { min, max, step }: { min: number; max: number; step: number }) {
+function getValidArrowNumber(
+  value: string,
+  { min, max, step }: { min: number; max: number; step: number }
+) {
   let numericValue = parseInt(value, 10);
   if (!Number.isNaN(numericValue)) {
     numericValue += step;
     return getValidNumber(String(numericValue), { min, max, loop: true });
   }
-  return '00';
+  return "00";
 }
 
 function getValidArrowHour(value: string, step: number) {
@@ -83,14 +82,14 @@ function getValidArrowMinuteOrSecond(value: string, step: number) {
 
 // Time picker input component
 interface TimePickerInputProps {
-  picker: 'hours' | 'minutes';
+  picker: "hours" | "minutes";
   value: string;
   onChange: (value: string) => void;
   onRightFocus?: () => void;
   onLeftFocus?: () => void;
   className?: string;
   ref?: React.Ref<HTMLInputElement>;
-  'aria-label'?: string;
+  "aria-label"?: string;
 }
 
 const TimePickerInput = React.forwardRef<HTMLInputElement, TimePickerInputProps>(
@@ -108,27 +107,28 @@ const TimePickerInput = React.forwardRef<HTMLInputElement, TimePickerInputProps>
     }, [flag]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Tab') return;
+      if (e.key === "Tab") return;
       e.preventDefault();
 
-      if (e.key === 'ArrowRight') onRightFocus?.();
-      if (e.key === 'ArrowLeft') onLeftFocus?.();
+      if (e.key === "ArrowRight") onRightFocus?.();
+      if (e.key === "ArrowLeft") onLeftFocus?.();
 
-      if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
-        const step = e.key === 'ArrowUp' ? 1 : -1;
-        const newValue = picker === 'hours'
-          ? getValidArrowHour(value, step)
-          : getValidArrowMinuteOrSecond(value, step);
+      if (["ArrowUp", "ArrowDown"].includes(e.key)) {
+        const step = e.key === "ArrowUp" ? 1 : -1;
+        const newValue =
+          picker === "hours"
+            ? getValidArrowHour(value, step)
+            : getValidArrowMinuteOrSecond(value, step);
 
         if (flag) setFlag(false);
         onChange(newValue);
       }
 
-      if (e.key >= '0' && e.key <= '9') {
+      if (e.key >= "0" && e.key <= "9") {
         const newValue = !flag ? `0${e.key}` : value.slice(1, 2) + e.key;
         if (flag) onRightFocus?.();
         setFlag((prev) => !prev);
-        onChange(picker === 'hours' ? getValidHour(newValue) : getValidMinuteOrSecond(newValue));
+        onChange(picker === "hours" ? getValidHour(newValue) : getValidMinuteOrSecond(newValue));
       }
     };
 
@@ -155,7 +155,7 @@ const TimePickerInput = React.forwardRef<HTMLInputElement, TimePickerInputProps>
   }
 );
 
-TimePickerInput.displayName = 'TimePickerInput';
+TimePickerInput.displayName = "TimePickerInput";
 
 interface InlineDateTimePickerProps {
   value: Date;
@@ -224,9 +224,14 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
       const parsedMinutes = parseInt(minutes, 10);
 
       // Validate input values
-      if (isNaN(parsedHours) || isNaN(parsedMinutes) ||
-        parsedHours < 0 || parsedHours > 23 ||
-        parsedMinutes < 0 || parsedMinutes > 59) {
+      if (
+        isNaN(parsedHours) ||
+        isNaN(parsedMinutes) ||
+        parsedHours < 0 ||
+        parsedHours > 23 ||
+        parsedMinutes < 0 ||
+        parsedMinutes > 59
+      ) {
         console.warn("Invalid time values provided:", { hours, minutes });
         return;
       }
@@ -369,17 +374,17 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
         onSelect={handleDateChange}
         initialFocus
         disabled={(date) =>
-          isBefore(date, now) && date.getDate() !== now.getDate() ||
-          isAfter(date, maxDate)
+          (isBefore(date, now) && date.getDate() !== now.getDate()) || isAfter(date, maxDate)
         }
         className="mx-auto max-w-full"
         classNames={{
-          day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+          day_selected:
+            "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
           day_today: "bg-primary/10 text-accent-foreground",
           day: "h-8 w-8 p-0 font-normal text-xs sm:text-sm aria-selected:opacity-100",
           head_cell: "text-muted-foreground font-normal text-[10px] sm:text-xs",
           caption: "flex justify-center pt-1 relative items-center text-xs sm:text-sm",
-          nav_button: "h-6 w-6 sm:h-7 sm:w-7 bg-transparent p-0 opacity-70 hover:opacity-100"
+          nav_button: "h-6 w-6 sm:h-7 sm:w-7 bg-transparent p-0 opacity-70 hover:opacity-100",
         }}
       />
       <div className="px-4 pt-1 pb-2">
@@ -450,7 +455,7 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
                 className="w-full text-[10px] xs:text-xs sm:text-sm relative overflow-hidden group h-14 xs:h-14 sm:h-12 px-0.5 xs:px-1 rounded-lg border-primary/10 hover:border-primary/30 transition-colors"
                 onClick={() => handleNextDayQuickSelect(time.hours, time.minutes)}
               >
-                <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors rounded-md"></div>
+                <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors rounded-md" />
                 <div className="relative flex flex-col items-center justify-center gap-1">
                   <time.icon className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 text-primary" />
                   <span className="font-medium">{time.label}</span>
@@ -478,9 +483,11 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
                         !date && "text-muted-foreground"
                       )}
                     >
-                      {date && !isNaN(date.getTime())
-                        ? format(date, "EEE, d MMM yyyy")
-                        : <span>Pick a date</span>}
+                      {date && !isNaN(date.getTime()) ? (
+                        format(date, "EEE, d MMM yyyy")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -498,9 +505,11 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
                         !date && "text-muted-foreground"
                       )}
                     >
-                      {date && !isNaN(date.getTime())
-                        ? format(date, "EEE, d MMM yyyy")
-                        : <span>Pick a date</span>}
+                      {date && !isNaN(date.getTime()) ? (
+                        format(date, "EEE, d MMM yyyy")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
                     </Button>
                   </DrawerTrigger>
                   <DrawerContent>
@@ -510,9 +519,7 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
                         Select when you need your ride
                       </DrawerDescription>
                     </DrawerHeader>
-                    <div className="py-3 px-4 flex justify-center">
-                      {renderCalendar()}
-                    </div>
+                    <div className="py-3 px-4 flex justify-center">{renderCalendar()}</div>
                   </DrawerContent>
                 </Drawer>
               )}
@@ -579,10 +586,10 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
           <p className="text-xs sm:text-sm flex items-start gap-1.5 sm:gap-2">
             <CalendarClock className="h-3.5 w-3.5 sm:h-4 sm:w-4 mt-0.5 text-primary" />
             <span>
-              <strong>Scheduled:</strong> {date && !isNaN(date.getTime())
+              <strong>Scheduled:</strong>{" "}
+              {date && !isNaN(date.getTime())
                 ? `${format(date, "EEE d MMM")} at ${format(date, "HH:mm")}`
-                : "No date selected"
-              }
+                : "No date selected"}
             </span>
           </p>
         </div>

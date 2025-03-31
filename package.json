@@ -6,7 +6,8 @@
     "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "eslint --fix 'src/**/*.{js,jsx,ts,tsx}'"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.3",

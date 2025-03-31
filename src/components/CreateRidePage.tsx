@@ -2,7 +2,7 @@
 
 import "react-phone-number-input/style.css";
 import { motion } from "framer-motion";
-import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight } from "lucide-react";
+import { Loader, MapPin, Clock, UserIcon, ArrowRight, FileText } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import type React from "react";
