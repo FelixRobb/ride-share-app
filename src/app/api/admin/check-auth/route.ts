@@ -13,9 +13,12 @@ export async function GET() {
 
   if (!adminJwt) {
     return NextResponse.json(
-      { error: "Unauthorized" },
       {
-        status: 401,
+        authenticated: false,
+        message: "No admin token found",
+      },
+      {
+        status: 200,
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
@@ -29,12 +32,18 @@ export async function GET() {
 
   try {
     const { payload } = await jwtVerify(adminJwt, secret);
+
     if (payload.role !== "admin") {
       throw new Error("Not an admin");
     }
+
     return NextResponse.json(
-      { authenticated: true },
       {
+        authenticated: true,
+        message: "Admin authenticated successfully",
+      },
+      {
+        status: 200,
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
@@ -45,10 +54,16 @@ export async function GET() {
       }
     );
   } catch {
+    // Delete the invalid/expired token
+    cookieStore.delete("admin_jwt");
+
     return NextResponse.json(
-      { error: "Unauthorized" },
       {
-        status: 401,
+        authenticated: false,
+        message: "Invalid or expired admin token",
+      },
+      {
+        status: 200,
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",

@@ -29,11 +29,16 @@ export async function sendPushNotification(
 }
 
 export async function sendImmediateNotification(userId: string, title: string, body: string) {
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
   const { data: subscriptionData, error: subscriptionError } = await supabase
     .from("push_subscriptions")
-    .select("id, subscription, enabled")
+    .select("id, subscription, enabled, last_used")
     .eq("user_id", userId)
-    .eq("enabled", true);
+    .eq("enabled", true)
+    .gte("last_used", oneWeekAgo.toISOString())
+    .order("last_used", { ascending: false });
 
   if (subscriptionError) throw subscriptionError;
 

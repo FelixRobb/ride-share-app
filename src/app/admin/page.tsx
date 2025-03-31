@@ -21,17 +21,21 @@ export default function AdminPage() {
           },
         });
 
-        if (response.ok) {
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
+        const data = await response.json();
+        setIsAuthenticated(data.authenticated);
       } catch {
         setIsAuthenticated(false);
       }
     };
 
+    // Initial auth check
     checkAuth();
+
+    // Set up periodic auth check every 2 hours (7200000 milliseconds)
+    const intervalId = setInterval(checkAuth, 7200000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleLogin = async (password: string) => {
@@ -44,10 +48,13 @@ export default function AdminPage() {
         body: JSON.stringify({ password }),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (data.success) {
         setIsAuthenticated(true);
+        toast.success("Successfully logged in");
       } else {
-        toast.error("Invalid password");
+        toast.error(data.message || "Invalid password");
       }
     } catch {
       toast.error("An error occurred during login");
@@ -63,6 +70,7 @@ export default function AdminPage() {
         },
       });
       setIsAuthenticated(false);
+      toast.success("Successfully logged out");
       router.push("/");
     } catch {
       toast.error("An error occurred during logout");

@@ -179,7 +179,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
 
   const getRequesterName = (ride: Ride) => {
     if (ride.requester_id === currentUser.id) {
-      return currentUser.name;
+      return "Me";
     }
     const contact = contacts.find(
       (c) => c.user_id === ride.requester_id || c.contact_id === ride.requester_id
@@ -189,6 +189,18 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
         ? contact.user.name
         : contact.contact.name
       : "Unknown User";
+  };
+
+  const getOfferedByText = (ride: Ride) => {
+    if (ride.accepter_id === currentUser.id) return "Me";
+    const contact = contacts.find(
+      (c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id
+    );
+    return contact
+      ? contact.user_id === ride.accepter_id
+        ? contact.user.name
+        : contact.contact.name
+      : "Unknown";
   };
 
   // Replace the existing buildMap useEffect with this improved version
@@ -698,7 +710,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
           style={{ width: "100%", height: "300px" }}
         >
           {(isLoadingMap || isLoading || !ride) && (
-            <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center z-10">
+            <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center z-10 rounded-lg">
               <Loader className="w-8 h-8 animate-spin text-primary" />
             </div>
           )}
@@ -871,13 +883,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
                 <LucideUser className="w-5 h-5 text-primary" />
                 <Label className="font-semibold">Offered by</Label>
               </div>
-              <p className="ml-7">
-                {ride.accepter_id === currentUser?.id
-                  ? "Me"
-                  : contacts.find(
-                      (c) => c.user_id === ride.accepter_id || c.contact_id === ride.accepter_id
-                    )?.contact?.name || "Unknown"}
-              </p>
+              <p className="ml-7">{getOfferedByText(ride)}</p>
             </div>
           )}
         <Separator />

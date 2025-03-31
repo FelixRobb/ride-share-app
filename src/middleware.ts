@@ -1,3 +1,4 @@
+import { jwtVerify } from "jose";
 import { NextResponse, NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
@@ -80,15 +81,32 @@ async function handleAdminRoute(request: NextRequest) {
   const adminJwt = request.cookies.get("admin_jwt")?.value;
 
   if (!adminJwt) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      {
+        authenticated: false,
+        message: "No admin token found",
+      },
+      { status: 200 }
+    );
   }
 
   try {
-    // Verify admin JWT here
-    // If verification fails, throw an error
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const { payload } = await jwtVerify(adminJwt, secret);
+
+    if (payload.role !== "admin") {
+      throw new Error("Not an admin");
+    }
+
     return NextResponse.next();
   } catch {
-    const response = NextResponse.redirect(new URL("/admin", request.url));
+    const response = NextResponse.json(
+      {
+        authenticated: false,
+        message: "Invalid or expired admin token",
+      },
+      { status: 200 }
+    );
     response.cookies.delete("admin_jwt");
     return response;
   }
