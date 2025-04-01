@@ -252,6 +252,12 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
       updatedDate.setHours(parsedHours);
       updatedDate.setMinutes(parsedMinutes);
 
+      // Check if the updated date is in the past
+      if (updatedDate < now) {
+        console.warn("Selected time is in the past, reverting to current time.");
+        updatedDate = now; // Revert to current time
+      }
+
       // Double check the date is valid after all operations
       if (isNaN(updatedDate.getTime())) {
         console.warn("Date became invalid after setting time, using current time instead");
@@ -519,7 +525,7 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
                 {quickSelectDates.map((preset) => (
                   <Badge
                     key={preset.label}
-                    className="cursor-pointer bg-primary/10 hover:bg-primary/20 text-primary-foreground border-0 text-xs py-1.5 px-2.5 rounded-md font-medium shadow-sm"
+                    className="cursor-pointer bg-primary hover:bg-primary/80 text-primary-foreground border-0 text-xs py-1.5 px-2.5 rounded-md font-medium shadow-sm"
                     onClick={() => handleQuickDateSelect(preset.value)}
                   >
                     {preset.label}
