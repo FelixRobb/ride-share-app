@@ -377,15 +377,6 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
           (isBefore(date, now) && date.getDate() !== now.getDate()) || isAfter(date, maxDate)
         }
         className="mx-auto max-w-full"
-        classNames={{
-          day_selected:
-            "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-          day_today: "bg-primary/10 text-accent-foreground",
-          day: "h-8 w-8 p-0 font-normal text-xs sm:text-sm aria-selected:opacity-100",
-          head_cell: "text-muted-foreground font-normal text-[10px] sm:text-xs",
-          caption: "flex justify-center pt-1 relative items-center text-xs sm:text-sm",
-          nav_button: "h-6 w-6 sm:h-7 sm:w-7 bg-transparent p-0 opacity-70 hover:opacity-100",
-        }}
       />
       <div className="px-4 pt-1 pb-2">
         <p className="text-[10px] sm:text-xs text-muted-foreground">
