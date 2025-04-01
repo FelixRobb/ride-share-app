@@ -70,8 +70,7 @@ const initialRideData: RideData = {
         throw new Error("Invalid date created");
       }
       return tomorrow.toISOString();
-    } catch (error) {
-      console.error("Error creating default date:", error);
+    } catch {
       return new Date().toISOString(); // Fallback to current time
     }
   })(),
@@ -321,7 +320,6 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
                 setRideData((prev) => {
                   // Ensure date is valid before calling toISOString
                   if (!(date instanceof Date) || isNaN(date.getTime())) {
-                    console.error("Invalid date received from date picker");
                     // Fallback to current date + 24h
                     const fallbackDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
                     return {

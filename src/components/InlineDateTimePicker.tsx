@@ -166,7 +166,6 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
   // Validate the initial value and ensure we have a valid date
   const validatedInitialValue = React.useMemo(() => {
     if (!(value instanceof Date) || isNaN(value.getTime())) {
-      console.warn("Invalid date provided to InlineDateTimePicker, using current time as fallback");
       return new Date();
     }
     return value;
@@ -218,57 +217,50 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
   };
 
   const handleTimeChange = (hours: string, minutes: string) => {
-    try {
-      // Parse the hours and minutes to numbers
-      const parsedHours = parseInt(hours, 10);
-      const parsedMinutes = parseInt(minutes, 10);
+    // Parse the hours and minutes to numbers
+    const parsedHours = parseInt(hours, 10);
+    const parsedMinutes = parseInt(minutes, 10);
 
-      // Validate input values
-      if (
-        isNaN(parsedHours) ||
-        isNaN(parsedMinutes) ||
-        parsedHours < 0 ||
-        parsedHours > 23 ||
-        parsedMinutes < 0 ||
-        parsedMinutes > 59
-      ) {
-        console.warn("Invalid time values provided:", { hours, minutes });
-        return;
-      }
-
-      // Clone the current date or use a fresh date object if none exists
-      let updatedDate;
-
-      if (date && !isNaN(date.getTime())) {
-        updatedDate = new Date(date);
-      } else if (validatedInitialValue && !isNaN(validatedInitialValue.getTime())) {
-        updatedDate = new Date(validatedInitialValue);
-      } else {
-        // Last resort: use current time
-        updatedDate = new Date();
-      }
-
-      // Set hours and minutes
-      updatedDate.setHours(parsedHours);
-      updatedDate.setMinutes(parsedMinutes);
-
-      // Check if the updated date is in the past
-      if (updatedDate < now) {
-        console.warn("Selected time is in the past, reverting to current time.");
-        updatedDate = now; // Revert to current time
-      }
-
-      // Double check the date is valid after all operations
-      if (isNaN(updatedDate.getTime())) {
-        console.warn("Date became invalid after setting time, using current time instead");
-        return;
-      }
-
-      setDate(updatedDate);
-      onChange(updatedDate);
-    } catch (error) {
-      console.error("Error in handleTimeChange:", error);
+    // Validate input values
+    if (
+      isNaN(parsedHours) ||
+      isNaN(parsedMinutes) ||
+      parsedHours < 0 ||
+      parsedHours > 23 ||
+      parsedMinutes < 0 ||
+      parsedMinutes > 59
+    ) {
+      return;
     }
+
+    // Clone the current date or use a fresh date object if none exists
+    let updatedDate;
+
+    if (date && !isNaN(date.getTime())) {
+      updatedDate = new Date(date);
+    } else if (validatedInitialValue && !isNaN(validatedInitialValue.getTime())) {
+      updatedDate = new Date(validatedInitialValue);
+    } else {
+      // Last resort: use current time
+      updatedDate = new Date();
+    }
+
+    // Set hours and minutes
+    updatedDate.setHours(parsedHours);
+    updatedDate.setMinutes(parsedMinutes);
+
+    // Check if the updated date is in the past
+    if (updatedDate < now) {
+      updatedDate = now; // Revert to current time
+    }
+
+    // Double check the date is valid after all operations
+    if (isNaN(updatedDate.getTime())) {
+      return;
+    }
+
+    setDate(updatedDate);
+    onChange(updatedDate);
   };
 
   // Quick time presets with icons
@@ -303,8 +295,7 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
 
       setDate(defaultTime);
       onChange(defaultTime);
-    } catch (error) {
-      console.error("Error resetting date:", error);
+    } catch {
       // Fallback to current time if there's an error
       const fallbackTime = new Date();
       setDate(fallbackTime);
@@ -331,8 +322,7 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
 
       setDate(updatedDate);
       onChange(updatedDate);
-    } catch (error) {
-      console.error("Error setting quick date:", error);
+    } catch {
       // Use current date as fallback
       const fallback = new Date();
       setDate(fallback);
@@ -360,8 +350,7 @@ export function InlineDateTimePicker({ value, onChange }: InlineDateTimePickerPr
 
       setDate(updatedDate);
       onChange(updatedDate);
-    } catch (error) {
-      console.error("Error setting next day quick select:", error);
+    } catch {
       // Use current time + 24 hours as fallback
       const fallback = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       fallback.setHours(hours < 0 || hours > 23 ? 12 : hours); // Default to noon if invalid hour
