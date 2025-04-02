@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { supabase } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
+import { emitDashboardUpdate } from "@/lib/socketServer";
 
 export async function POST(request: Request) {
   const { userId } = await request.json();
@@ -59,6 +60,10 @@ export async function POST(request: Request) {
         type: "Ride Offer Cancelled",
         related_id: rideId,
       });
+
+      // Emit WebSocket updates to affected users
+      await emitDashboardUpdate(ride.requester_id);
+      await emitDashboardUpdate(userId);
     }
 
     return NextResponse.json({ ride: updatedRide });

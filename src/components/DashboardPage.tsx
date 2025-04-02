@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type React from "react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { toast } from "sonner";
 
@@ -41,6 +42,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useSocket } from "@/hooks/useSocket";
 import type { User, Ride, Contact } from "@/types";
 import { fetchDashboardData } from "@/utils/api";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
@@ -219,8 +221,11 @@ export default function DashboardPage({
   const previousRidesRef = useRef<Ride[]>([]);
   const previousContactsRef = useRef<Contact[]>([]);
 
+  // Initialize WebSocket connection
+  const { socket, isConnected } = useSocket(currentUser?.id);
+
   const fetchData = useCallback(
-    async (isInitial: boolean = false) => {
+    async (isInitial = false) => {
       if (isOnline && currentUser) {
         try {
           if (isInitial) {
@@ -265,10 +270,44 @@ export default function DashboardPage({
     // Initial data fetch
     fetchData(true);
 
-    // Set up periodic refresh
-    const intervalId = setInterval(() => fetchData(), 10000); // Refresh every 10 seconds
-    return () => clearInterval(intervalId);
-  }, [fetchData]);
+    // Set up WebSocket listener for dashboard updates
+    if (socket) {
+      const handleDashboardUpdate = (data: { rides: Ride[]; contacts: Contact[] }) => {
+        // Only update state if data has changed
+        const hasRidesChanged =
+          JSON.stringify(data.rides) !== JSON.stringify(previousRidesRef.current);
+        const hasContactsChanged =
+          JSON.stringify(data.contacts) !== JSON.stringify(previousContactsRef.current);
+
+        if (hasRidesChanged) {
+          setRides(data.rides);
+          previousRidesRef.current = data.rides;
+        }
+
+        if (hasContactsChanged) {
+          setContacts(data.contacts);
+          previousContactsRef.current = data.contacts;
+        }
+
+        // Only show toast if data has changed and it's not the initial load
+        if (!isInitialLoading && (hasRidesChanged || hasContactsChanged)) {
+          toast.success("Dashboard updated");
+        }
+      };
+
+      socket.on("dashboard:update", handleDashboardUpdate);
+
+      return () => {
+        socket.off("dashboard:update", handleDashboardUpdate);
+      };
+    }
+
+    // Fallback to polling if WebSocket is not connected
+    if (!isConnected) {
+      const intervalId = setInterval(() => fetchData(), 10000); // Refresh every 10 seconds
+      return () => clearInterval(intervalId);
+    }
+  }, [fetchData, socket, isConnected, isInitialLoading]);
 
   const formatDateTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -727,7 +766,18 @@ export default function DashboardPage({
         <CardHeader className="space-y-6">
           <div>
             <CardTitle className="text-2xl font-bold">Dashboard</CardTitle>
-            <CardDescription>Manage your rides and connections</CardDescription>
+            <CardDescription className="flex items-center gap-2">
+              Manage your rides and connections
+              {isConnected ? (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  Real-time updates active
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                  Using polling updates
+                </Badge>
+              )}
+            </CardDescription>
           </div>
           <div className="flex flex-col sm:flex-row gap-4" data-tutorial="search-filter">
             <div className="relative flex-grow">

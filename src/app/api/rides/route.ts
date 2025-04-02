@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
+import { emitDashboardUpdate } from "@/lib/socketServer";
 
 export async function POST(request: NextRequest) {
   try {
@@ -96,7 +97,13 @@ export async function POST(request: NextRequest) {
           type: "newRide",
           related_id: newRide.id,
         });
+
+        // Emit WebSocket updates to contacts
+        await emitDashboardUpdate(contact.contact_id);
       }
+
+      // Emit update to the requester
+      await emitDashboardUpdate(requester_id);
 
       return NextResponse.json({ ride: newRide });
     } catch {

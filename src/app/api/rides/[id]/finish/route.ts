@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { supabase } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
+import { emitDashboardUpdate } from "@/lib/socketServer";
 
 export async function POST(request: Request) {
   const { userId } = await request.json();
@@ -53,12 +54,17 @@ export async function POST(request: Request) {
       "Ride Completed",
       `Your ride from ${ride.from_location} to ${ride.to_location} has been marked as completed by ${finisher.name}`
     );
+
     await supabase.from("notifications").insert({
       user_id: otherUserId,
       message: `Your ride from ${ride.from_location} to ${ride.to_location} has been marked as completed by ${finisher.name}`,
       type: "rideCompleted",
       related_id: rideId,
     });
+
+    // Emit WebSocket updates to affected users
+    await emitDashboardUpdate(otherUserId);
+    await emitDashboardUpdate(userId);
 
     return NextResponse.json({ ride: updatedRide });
   } catch {

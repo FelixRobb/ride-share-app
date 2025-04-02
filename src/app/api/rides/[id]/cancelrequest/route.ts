@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { supabase } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
+import { emitDashboardUpdate } from "@/lib/socketServer";
 
 export async function POST(request: Request) {
   const { userId } = await request.json();
@@ -48,13 +49,20 @@ export async function POST(request: Request) {
         "Ride Cancelled",
         `Your ride from ${ride.from_location} to ${ride.to_location} you accepted has been cancelled by ${requester.name}`
       );
+
       await supabase.from("notifications").insert({
         user_id: ride.accepter_id,
         message: `Your ride from ${ride.from_location} to ${ride.to_location} you accepted has been cancelled by ${requester.name}`,
         type: "rideCancelled",
         related_id: rideId,
       });
+
+      // Emit WebSocket updates to affected users
+      await emitDashboardUpdate(ride.accepter_id);
     }
+
+    // Emit update to requester
+    await emitDashboardUpdate(userId);
 
     return NextResponse.json({ ride: updatedRide });
   } catch {

@@ -21,6 +21,10 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    serverExternalPackages: ["socket.io", "socket.io-client"],
+  },
+  swcMinify: true,
 };
 
 module.exports = nextConfig;
