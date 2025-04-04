@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 type TutorialStep = {
   key: string;
@@ -500,26 +500,39 @@ const PopupDialog: React.FC<{
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 50 }}
+      initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 50 }}
+      exit={{ opacity: 0, y: 30 }}
       transition={{ duration: 0.2 }}
       className="fixed bottom-20 md:bottom-4 left-0 right-0 mx-auto z-50 w-80 sm:right-4 sm:left-auto sm:mx-0"
     >
-      <Card className="w-80 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-lg">Continue Tutorial?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm">
+      <Card className="w-72 shadow-lg border border-primary/20 bg-card/95 backdrop-blur-sm">
+        <div className="px-3 pt-3 pb-1 flex items-center justify-between border-b border-border/30">
+          <div className="flex items-center space-x-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+            <h3 className="text-sm font-medium">Continue Tutorial?</h3>
+          </div>
+        </div>
+        <CardContent className="py-2">
+          <p className="text-xs text-muted-foreground leading-relaxed">
             Would you like to continue with the tutorial? This will navigate you to the next step.
           </p>
         </CardContent>
-        <CardFooter className="flex justify-between pt-2">
-          <Button variant="outline" size="sm" onClick={() => onChoice(false)}>
-            Skip Tutorial
+        <CardFooter className="flex justify-end gap-2 pt-0 pb-2 px-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onChoice(false)}
+            className="h-7 px-2 text-xs"
+          >
+            Skip
           </Button>
-          <Button variant="default" size="sm" onClick={() => onChoice(true)}>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => onChoice(true)}
+            className="h-7 px-3 text-xs"
+          >
             Continue
           </Button>
         </CardFooter>
