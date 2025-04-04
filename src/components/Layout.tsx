@@ -76,7 +76,7 @@ export default function Layout({ children }: LayoutProps) {
         }}
       >
         <HelpCircle className="mr-2 h-4 w-4" />
-        Restart Tutorial
+        Start Tutorial
       </Button>
     );
   };
