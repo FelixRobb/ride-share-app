@@ -36,21 +36,21 @@ export default function AuthLoader() {
           <div className="absolute inset-0 flex items-center justify-center">
             <Loader className="text-primary animate-spin" size={36} />
           </div>
-          <div className="w-16 h-16 rounded-full border-4 border-gray-700 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center" />
+          <div className="w-16 h-16 rounded-full border-4 border-muted/40 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center" />
           </div>
         </div>
 
         {/* Progress bar */}
-        <div className="w-64 h-2 bg-gray-800 rounded-full mb-6 overflow-hidden">
+        <div className="w-64 h-2 bg-muted rounded-full mb-6 overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-primary/40 to-primary/60 transition-all duration-300 ease-out"
             style={{ width: `${loadingProgress}%` }}
           />
         </div>
 
-        <h3 className="text-lg font-medium text-white mb-2">Authenticating</h3>
-        <p className="text-gray-400 text-center text-sm max-w-xs">
+        <h3 className="text-lg font-medium mb-2">Authenticating</h3>
+        <p className="text-muted-foreground text-center text-sm max-w-xs">
           Please wait while we verify your credentials...
         </p>
       </div>

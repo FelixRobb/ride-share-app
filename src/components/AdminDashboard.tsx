@@ -134,17 +134,14 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }
   };
 
-  // In your fetchReviews function:
   const fetchReviews = async () => {
     setIsLoadingReviews(true);
     try {
       const response = await fetch("/api/admin/reviews");
       const data = await response.json();
-      // Make sure we're setting an array (the data might have a different structure)
-      setReviews(Array.isArray(data) ? data : []);
+      setReviews(Array.isArray(data.reviews) ? data.reviews : []);
     } catch {
       toast.error("Failed to fetch reviews");
-      // Set empty array in case of error
       setReviews([]);
     } finally {
       setIsLoadingReviews(false);

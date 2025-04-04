@@ -30,7 +30,6 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
               <div className="flex flex-col space-y-1.5">
                 <PasswordInput
                   id="password"
-                  type="password"
                   placeholder="Enter admin password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
