@@ -1,12 +1,11 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { getDeviceId, getDeviceInfo } from "@/utils/deviceUtils";
 
 interface PushNotificationMessage {
@@ -215,31 +214,36 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           transition={{ duration: 0.2 }}
-          className="fixed top-16 md:top-20 left-0 right-0 mx-auto z-50 w-80 sm:left-4 sm:right-auto sm:mx-0"
+          className="fixed top-[4.5rem] md:top-[5.5rem] left-0 right-0 mx-auto z-50 w-80 sm:left-4 sm:right-auto sm:mx-0 shadow-lg"
         >
-          <Card className="w-80 shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex justify-between items-center">
-                <span>Enable Notifications</span>
-                <Button variant="ghost" size="sm" onClick={handleDecline}>
-                  <X className="h-4 w-4" />
+          <Card className="border-primary/20 shadow-md shadow-primary/10">
+            <CardContent className="p-3 flex items-center">
+              <div className="flex-1">
+                <p className="text-sm font-medium">Enable Notifications</p>
+                <p className="text-xs text-muted-foreground">
+                  Stay updated about your rides and important information with push notifications on
+                  this device.
+                </p>
+              </div>
+              <div className="flex gap-2 ml-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDecline}
+                  className="h-8 px-3 text-xs"
+                >
+                  Not Now
                 </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">
-                Stay updated about your rides and important information with push notifications on
-                this device.
-              </p>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handlePermissionRequest}
+                  className="h-8 px-3 text-xs"
+                >
+                  Enable
+                </Button>
+              </div>
             </CardContent>
-            <CardFooter className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={handleDecline}>
-                Not Now
-              </Button>
-              <Button variant="default" size="sm" onClick={handlePermissionRequest}>
-                Enable
-              </Button>
-            </CardFooter>
           </Card>
         </motion.div>
       )}

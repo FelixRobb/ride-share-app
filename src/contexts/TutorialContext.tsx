@@ -345,11 +345,11 @@ const WelcomeBanner: React.FC<{
 }> = ({ onStartTutorial, onSkip }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      transition={{ duration: 0.2, delay: 0.5 }}
-      className="fixed top-16 left-0 right-0 mx-auto z-50 max-w-80 sm:right-4 sm:left-auto sm:mx-0 w-11/12"
+      exit={{ opacity: 0, y: 50 }}
+      transition={{ duration: 0.2 }}
+      className="fixed bottom-20 md:bottom-4 left-0 right-0 mx-auto z-50 w-80 sm:right-4 sm:left-auto sm:mx-0 shadow-lg"
     >
       <Card className="border-primary/20 shadow-md shadow-primary/10">
         <CardContent className="p-3 flex items-center">
