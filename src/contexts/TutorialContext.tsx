@@ -49,7 +49,122 @@ const tutorialSteps: TutorialStep[] = [
       "This is your dashboard, the central hub of RideShare. Here you can see your active rides, available rides from contacts, and your ride history.",
     target: "[data-tutorial='dashboard']",
   },
-  // ... rest of tutorial steps remain the same
+  {
+    key: "rides-tabs",
+    page: "/dashboard",
+    step: 3,
+    title: "Ride Categories",
+    content:
+      "Use these tabs to switch between your active rides, available rides from your contacts, and your ride history. This helps you manage all your ride-related activities.",
+    target: "[data-tutorial='dashboard-tabs']",
+  },
+  {
+    key: "filters-and-search",
+    page: "/dashboard",
+    step: 4,
+    title: "Filters and Search",
+    content:
+      "Use these tools to find specific rides. You can filter by status, date, or use the search bar to find rides by location or rider name.",
+    target: "[data-tutorial='search-filter']",
+  },
+  {
+    key: "create-ride",
+    page: "/dashboard",
+    step: 5,
+    title: "Create a Ride",
+    content:
+      "Click this button to offer or request a new ride. You'll be able to set all the necessary details for your journey.",
+    target: "[data-tutorial='create-ride']",
+  },
+  {
+    key: "notifications",
+    page: "/dashboard",
+    step: 6,
+    title: "Notifications",
+    content:
+      "Check your notifications here. You'll be alerted about new ride offers, requests, and any changes to your existing rides.",
+    target: "[data-tutorial='notifications']",
+  },
+  {
+    key: "profile-overview",
+    page: "/profile",
+    step: 7,
+    title: "Profile Overview",
+    content:
+      "Welcome to your profile page! Here you can manage all your personal information, security settings, contacts, and app preferences.",
+    target: "[data-tutorial='profile-header']",
+  },
+  {
+    key: "personal-info",
+    page: "/profile",
+    step: 8,
+    title: "Personal Information",
+    content:
+      "View and edit your personal details including name, email, and phone number. Click 'Edit Profile' to make changes.",
+    target: "[data-tutorial='personal-info']",
+  },
+  {
+    key: "activity-stats",
+    page: "/profile",
+    step: 9,
+    title: "Activity Statistics",
+    content:
+      "Track your platform activity here. See how many rides you've offered and requested over time.",
+    target: "[data-tutorial='activity-stats']",
+  },
+  {
+    key: "associated-people",
+    page: "/profile",
+    step: 10,
+    title: "Associated People",
+    content:
+      "Manage people associated with your account. Add family members or friends you frequently arrange rides for.",
+    target: "[data-tutorial='associated-people']",
+  },
+  {
+    key: "contact-management",
+    page: "/profile",
+    step: 11,
+    title: "Contact Management",
+    content:
+      "View and manage your contacts in the Contacts tab. Add new contacts and manage existing ones to build your trusted network.",
+    target: "[data-tutorial='contacts-tab']",
+  },
+  {
+    key: "security-settings",
+    page: "/profile",
+    step: 12,
+    title: "Security Settings",
+    content:
+      "Access the Security tab to change your password and manage notification preferences to keep your account secure.",
+    target: "[data-tutorial='security-tab']",
+  },
+  {
+    key: "app-settings",
+    page: "/profile",
+    step: 13,
+    title: "App Settings",
+    content:
+      "Customize your app experience in the Settings tab. Choose your preferred theme and check your connection status.",
+    target: "[data-tutorial='settings-tab']",
+  },
+  {
+    key: "create-ride-page",
+    page: "/create-ride",
+    step: 14,
+    title: "Creating a New Ride",
+    content:
+      "This is where you can create a new ride. Fill in all the necessary details like pickup and drop-off locations, date, time, and any special notes.",
+    target: "[data-tutorial='ride-form']",
+  },
+  {
+    key: "finish",
+    page: "/dashboard",
+    step: 15,
+    title: "Congratulations!",
+    content:
+      "You've completed the RideShare tutorial! You're now ready to start sharing rides. Remember, you can always access help and FAQs from the menu if you need more information. Enjoy using RideShare!",
+  },
 ];
 
 export { tutorialSteps };

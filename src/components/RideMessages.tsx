@@ -39,6 +39,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
   const [isLoading, setIsLoading] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [notesUpdated, setNotesUpdated] = useState(false);
 
   const scrollToBottom = useCallback(() => {
     if (typeof window !== "undefined" && scrollAreaRef.current) {
@@ -46,14 +47,26 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
         "[data-radix-scroll-area-viewport]"
       );
       if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        // Force the scroll to the bottom
+        setTimeout(() => {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }, 100);
       }
     }
   }, []);
 
+  // Improved scroll handling with dependencies properly tracked
+  useEffect(() => {
+    if (notesUpdated && !isLoading) {
+      scrollToBottom();
+      setNotesUpdated(false);
+    }
+  }, [notesUpdated, isLoading, scrollToBottom]);
+
   // Load notes when the component mounts
   useEffect(() => {
     let isInitialLoad = true; // Flag to track initial load
+    let isMounted = true; // Flag to prevent state updates after unmount
 
     const loadNotes = async () => {
       if (
@@ -63,16 +76,28 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
       ) {
         try {
           // Only set loading state on the very first load
-          if (isInitialLoad) {
+          if (isInitialLoad && isMounted) {
             setIsLoading(true);
           }
 
           const fetchedNotes = await fetchNotes(ride.id);
-          setNotes(fetchedNotes || []);
+
+          // Bail if unmounted
+          if (!isMounted) return;
+
+          // Check if notes have changed before updating state
+          const notesChanged =
+            fetchedNotes.length !== notes.length ||
+            JSON.stringify(fetchedNotes) !== JSON.stringify(notes);
+
+          if (notesChanged) {
+            setNotes(fetchedNotes || []);
+            setNotesUpdated(true);
+          }
 
           // Automatically mark new notes as seen
           const unseenNotes = fetchedNotes.filter(
-            (note) =>
+            (note: Note) =>
               note.user_id !== currentUser.id &&
               (!note.seen_by || !note.seen_by.includes(currentUser.id))
           );
@@ -80,13 +105,12 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
           if (unseenNotes.length > 0) {
             await Promise.all(unseenNotes.map((note) => markNoteAsSeen(note.id, currentUser.id)));
           }
-
-          // Scroll to bottom after setting notes
-          scrollToBottom();
         } catch {
-          toast.error("Failed to load messages");
+          if (isMounted) {
+            toast.error("Failed to load messages");
+          }
         } finally {
-          if (isInitialLoad) {
+          if (isInitialLoad && isMounted) {
             setIsLoading(false);
             isInitialLoad = false; // Mark initial load as complete
           }
@@ -102,9 +126,17 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
     }, 10000);
 
     return () => {
+      isMounted = false;
       clearInterval(intervalId);
     };
-  }, [ride.id, ride.status, currentUser.id, scrollToBottom]);
+  }, [ride.id, ride.status, currentUser.id, notes]);
+
+  // Additional effect to scroll on first load when loading completes
+  useEffect(() => {
+    if (!isLoading && notes.length > 0) {
+      scrollToBottom();
+    }
+  }, [isLoading, notes.length, scrollToBottom]);
 
   const getUserName = (userId: string) => {
     if (userId === currentUser.id) {
@@ -201,6 +233,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
           const addedNote = await addNote(ride.id, currentUser.id, newNote);
           if (addedNote) {
             setNotes((prevNotes) => [...prevNotes, addedNote]);
+            setNotesUpdated(true); // Flag that notes were updated
             toast.success("Message sent successfully.");
           }
         }
@@ -213,11 +246,6 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
         if (textareaRef.current) {
           textareaRef.current.style.height = "40px";
         }
-
-        // Use setTimeout to ensure scrolling happens after state update and re-render
-        setTimeout(() => {
-          scrollToBottom();
-        }, 100);
       } catch {
         toast.error(
           isEditing

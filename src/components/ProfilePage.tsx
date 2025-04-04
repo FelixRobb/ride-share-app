@@ -133,6 +133,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
 
   const [newPasswordStrength, setNewPasswordStrength] = useState<string>("");
 
+  const [isAddingAssociatedPerson, setIsAddingAssociatedPerson] = useState(false);
+  const [isDeletingAssociatedPerson, setIsDeletingAssociatedPerson] = useState(false);
+
   // Function to evaluate password strength
   const evaluatePasswordStrength = (password: string) => {
     const lengthCriteria = password.length >= 8;
@@ -400,23 +403,29 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
       const associatename = newAssociatedPerson.name.trim();
       const associaterela = newAssociatedPerson.relationship.trim();
       try {
+        setIsAddingAssociatedPerson(true);
         await addAssociatedPerson(user.id, associatename, associaterela);
         setNewAssociatedPerson({ name: "", relationship: "" });
         await fetchData(true);
         toast.success(`${associatename} added successfully!`);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+      } finally {
+        setIsAddingAssociatedPerson(false);
       }
     }
   };
 
   const handleDeleteAssociatedPerson = async (personId: string, personName: string) => {
     try {
+      setIsDeletingAssociatedPerson(true);
       await deleteAssociatedPerson(personId, user.id);
       await fetchData(true);
       toast.success(`${personName} removed successfully.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+    } finally {
+      setIsDeletingAssociatedPerson(false);
     }
   };
 
@@ -744,9 +753,13 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                               size="sm"
                               className="h-8 w-8 p-0 text-destructive"
                               onClick={() => handleDeleteAssociatedPerson(person.id, person.name)}
-                              disabled={!isOnline}
+                              disabled={!isOnline || isDeletingAssociatedPerson}
                             >
-                              <UserX className="h-4 w-4" />
+                              {isDeletingAssociatedPerson ? (
+                                <Loader className="animate-spin h-4 w-4" />
+                              ) : (
+                                <UserX className="h-4 w-4" />
+                              )}
                               <span className="sr-only">Delete</span>
                             </Button>
                           </div>
@@ -784,10 +797,18 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                       onClick={handleAddAssociatedPerson}
                       className="w-full"
                       disabled={
-                        !isOnline || !newAssociatedPerson.name || !newAssociatedPerson.relationship
+                        !isOnline ||
+                        !newAssociatedPerson.name ||
+                        !newAssociatedPerson.relationship ||
+                        isAddingAssociatedPerson
                       }
                     >
-                      <UserPlus className="h-4 w-4 mr-2" /> Add Person
+                      {isAddingAssociatedPerson ? (
+                        <Loader className="animate-spin h-4 w-4 mr-2" />
+                      ) : (
+                        <UserPlus className="h-4 w-4 mr-2" />
+                      )}
+                      Add Person
                     </Button>
                   </CardFooter>
                 </Card>
