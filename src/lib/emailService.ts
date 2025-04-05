@@ -889,3 +889,274 @@ export function getEmailChangeNotificationContent(name: string, newEmail: string
 </html>
   `;
 }
+
+export function getPasswordChangeNotificationContent(name: string): string {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Changed - RideShare</title>
+  <style>
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #080808;
+        --foreground: #dadada;
+        --muted: #f5f5f4;
+        --muted-foreground: #78716c;
+        --card: #0f0f0f;
+        --card-foreground: #dadada;
+        --border: #333333;
+        --primary: #dd5d02;
+        --primary-foreground: #fafaf9;
+        --secondary: #3a1d6e;
+        --secondary-foreground: #e2d9f3;
+        --accent: #086375;
+        --accent-foreground: #d0f0f7;
+        --success: #107869;
+        --success-foreground: #d0f0e8;
+        --destructive: #ef4444;
+        --destructive-foreground: #fafaf9;
+        --ring: #f97316;
+      }
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --background: #ffffff;
+        --foreground: #0f0f0f;
+        --muted: #f5f5f4;
+        --muted-foreground: #6c6c6c;
+        --card: #ffffff;
+        --card-foreground: #0c0a09;
+        --border: #e7e5e4;
+        --primary: #dd5d02;
+        --primary-foreground: #fafaf9;
+        --secondary: #3a1d6e;
+        --secondary-foreground: #e2d9f3;
+        --accent: #086375;
+        --accent-foreground: #ffffff;
+        --success: #107869;
+        --success-foreground: #ffffff;
+        --destructive: #ef4444;
+        --destructive-foreground: #ffffff;
+        --ring: #f97316;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--foreground);
+      background-color: var(--background);
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    h1 {
+      color: var(--primary);
+      font-size: 1.875rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .success-card {
+      background-color: var(--background);
+      border: 1px solid var(--success);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      box-shadow: var(--success) 0px 0px 10px inset;
+    }
+
+    .success-card h2 {
+      color: var(--success);
+      font-size: 1.25rem;
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+    }
+
+    .warning {
+      background-color: var(--background);
+      border: 1px solid var(--destructive);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      box-shadow: var(--destructive) 0px 0px 10px inset;
+    }
+
+    .warning h2 {
+      color: var(--destructive);
+      font-size: 1.25rem;
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+    }
+
+    .security-tips {
+      background-color: var(--background);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1.5rem 0;
+      box-shadow: var(--secondary) 0px 0px 10px inset;
+      border: 1px solid var(--secondary);
+    }
+
+    .security-tips h2 {
+      color: var(--secondary);
+      font-size: 1.25rem;
+      margin-top: 0;
+    }
+
+    .security-icon {
+      width: 24px;
+      height: 24px;
+      background-color: var(--secondary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.75rem;
+      flex-shrink: 0;
+      color: var(--secondary-foreground);
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .security-tip-item {
+      display: flex;
+      margin-bottom: 0.75rem;
+      align-items: flex-start;
+    }
+
+    .action-button {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      text-decoration: none;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      text-align: center;
+      transition: background-color 0.2s;
+    }
+
+    .action-button:hover {
+      background-color: var(--primary);
+      opacity: 0.8;
+      transition: opacity 0.3s;
+    }
+
+    .action-item {
+      display: flex;
+      margin-bottom: 0.75rem;
+      align-items: flex-start;
+    }
+
+    .action-number {
+      width: 24px;
+      height: 24px;
+      background-color: var(--destructive);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.75rem;
+      flex-shrink: 0;
+      color: var(--destructive-foreground);
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .footer {
+      margin-top: 2rem;
+      text-align: center;
+      color: var(--muted-foreground);
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Password Changed</h1>
+    <p>Hello ${name},</p>
+
+    <div class="success-card">
+      <h2>✓ Password Successfully Updated</h2>
+      <p>Your RideShare account password was recently changed. This change was made on ${new Date().toLocaleString()}.</p>
+    </div>
+
+    <div class="warning">
+      <h2>⚠️ Didn't Change Your Password?</h2>
+      <p>If you did not authorize this change, please take immediate action:</p>
+
+      <div class="action-item">
+        <div class="action-number">1</div>
+        <div>Reset your password immediately using the "Forgot Password" option</div>
+      </div>
+
+      <div class="action-item">
+        <div class="action-number">2</div>
+        <div>Contact our support team at <a href="mailto:${process.env.GMAIL_USER}" style="color: var(--destructive);">${process.env.GMAIL_USER}</a></div>
+      </div>
+
+      <div class="action-item">
+        <div class="action-number">3</div>
+        <div>Review your account for any suspicious activity</div>
+      </div>
+    </div>
+
+    <div class="security-tips">
+      <h2>Account Security Tips</h2>
+
+      <div class="security-tip-item">
+        <div class="security-icon">1</div>
+        <div>Never share your password with anyone, including RideShare support</div>
+      </div>
+
+      <div class="security-tip-item">
+        <div class="security-icon">2</div>
+        <div>Use unique passwords for all your online accounts</div>
+      </div>
+
+      <div class="security-tip-item">
+        <div class="security-icon">3</div>
+        <div>Enable two-factor authentication for additional security</div>
+      </div>
+
+      <div class="security-tip-item">
+        <div class="security-icon">4</div>
+        <div>Regularly check your account for unusual activity</div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin: 2rem 0;">
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/profile" class="action-button">Review Account Security</a>
+    </div>
+
+    <div
+      style="text-align: center; color: var(--muted-foreground); background-color: rgba(16, 120, 105, 0.1); padding: 1rem; border-radius: 0.5rem;">
+      <p>This link will take you to your account security settings.</p>
+    </div>
+
+    <div class="footer">
+      <p>Need help? Contact our support team at <a href="mailto:${process.env.GMAIL_USER}"
+          style="color: var(--primary);">${process.env.GMAIL_USER}</a></p>
+      <p>© ${new Date().getFullYear()} RideShare. All rights reserved.</p>
+      <p>This is an automated security notification. Please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+
+</html>
+  `;
+}

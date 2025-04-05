@@ -181,9 +181,12 @@ const NotificationList = ({
   isDesktop: boolean;
 }) => {
   const filteredNotifications = useMemo(() => {
+    // Safety check - if notifications is not an array, initialize as empty array
+    const notificationsArray = Array.isArray(notifications) ? notifications : [];
+
     if (!searchTerm) {
       // If no search term, just apply other filters
-      return notifications
+      return notificationsArray
         .filter((notification) => {
           const matchesType = selectedType === "all" || notification.type === selectedType;
           const matchesFilter =
@@ -196,7 +199,7 @@ const NotificationList = ({
     }
 
     // For search with term, calculate relevance score for each notification
-    return notifications
+    return notificationsArray
       .map((notification) => {
         let score = 0;
         const searchTermLower = searchTerm.toLowerCase();
@@ -565,25 +568,36 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
 
   const fetchNotificationsCallback = useCallback(async () => {
     if (isOnline) {
-      const headers: HeadersInit = {};
-      if (etag) {
-        headers["If-None-Match"] = etag;
-      }
-
-      const response = await fetch(`/api/notifications`, { headers });
-
-      if (response.status === 304) {
-        return null; // Data hasn't changed
-      }
-
-      if (response.ok) {
-        const newEtag = response.headers.get("ETag");
-        const data = await response.json();
-        if (newEtag !== etag) {
-          setEtag(newEtag);
-          setNotifications(data.notifications);
-          setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length);
+      try {
+        const headers: HeadersInit = {};
+        if (etag) {
+          headers["If-None-Match"] = etag;
         }
+
+        const response = await fetch(`/api/notifications`, { headers });
+
+        if (response.status === 304) {
+          return null; // Data hasn't changed
+        }
+
+        if (response.ok) {
+          const newEtag = response.headers.get("ETag");
+          const data = await response.json();
+
+          if (data.notifications && Array.isArray(data.notifications)) {
+            if (newEtag !== etag) {
+              setEtag(newEtag);
+              setNotifications(data.notifications);
+              setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length);
+            }
+          } else {
+            toast.error("Invalid notification data received");
+          }
+        } else {
+          toast.error("Failed to fetch notifications");
+        }
+      } catch {
+        // Silent failure in production, error is caught
       }
     }
   }, [etag, isOnline]);

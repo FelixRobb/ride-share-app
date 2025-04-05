@@ -3,6 +3,12 @@ import { v4 as uuidv4 } from "uuid";
 
 // Generate a unique device ID or retrieve existing one
 export function getDeviceId(): string {
+  // Check if we're in a browser environment
+  if (typeof window === "undefined" || typeof localStorage === "undefined") {
+    // For SSR, return a temporary ID
+    return "server-side";
+  }
+
   const storageKey = "rideshare_device_id";
   let deviceId = localStorage.getItem(storageKey);
 
@@ -16,6 +22,12 @@ export function getDeviceId(): string {
 
 // Get device information for display
 export function getDeviceInfo(): { name: string; type: string } {
+  // Check if we're in a browser environment
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    // Return default values for SSR
+    return { name: "Unknown Browser", type: "Unknown" };
+  }
+
   const parser = new UAParser();
   const result = parser.getResult();
 

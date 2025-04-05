@@ -4,7 +4,11 @@ import { hash } from "bcrypt";
 import { NextResponse } from "next/server";
 
 import { supabase } from "@/lib/db";
-import { sendEmail, getResetPasswordEmailContent } from "@/lib/emailService";
+import {
+  sendEmail,
+  getResetPasswordEmailContent,
+  getPasswordChangeNotificationContent,
+} from "@/lib/emailService";
 
 export async function POST(request: Request) {
   const { email } = await request.json();
@@ -68,6 +72,19 @@ export async function PUT(request: Request) {
       .eq("id", resetToken.user_id);
 
     if (updateError) throw updateError;
+
+    // Get user information to send the notification
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("name, email")
+      .eq("id", resetToken.user_id)
+      .single();
+
+    if (!userError && userData) {
+      // Send password change notification
+      const emailContent = getPasswordChangeNotificationContent(userData.name);
+      await sendEmail(userData.email, "RideShare - Password Change Notification", emailContent);
+    }
 
     const { error: deleteError } = await supabase
       .from("password_reset_tokens")
