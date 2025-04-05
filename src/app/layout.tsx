@@ -38,6 +38,9 @@ export const metadata = {
     images: [twitterImageUrl],
   },
   metadataBase: new URL(siteUrl),
+  verification: {
+    google: "W9GFmL7Uxf4V2KqhH-IFNgbJHdrHziVtC95mXXGPwI0",
+  },
 };
 
 export const viewport = {
