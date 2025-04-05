@@ -1,4 +1,7 @@
+import type React from "react";
+
 import "./globals.css";
+import OfflineStatusIndicator from "@/components/OfflineStatusIndicator";
 import { Toaster } from "@/components/ui/sonner";
 
 import { Providers } from "./Providers";
@@ -54,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <Toaster closeButton richColors position="top-right" />
           {children}
+          <OfflineStatusIndicator />
         </Providers>
       </body>
     </html>
