@@ -689,7 +689,7 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
       // eslint-disable-next-line no-console
       console.log("[DEBUG] NotificationPanel unmounted");
     };
-  }, []);
+  }, [etag, isOnline, notifications.length, unreadCount, userId]);
 
   const fetchNotificationsCallback = useCallback(async () => {
     // eslint-disable-next-line no-console
@@ -819,9 +819,10 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
     // eslint-disable-next-line no-console
     console.log("[DEBUG] Comparing ETags", { newEtag, currentEtag: etag });
 
-    if (newEtag !== etag) {
+    // Update state if both are null (initial load) or they don't match
+    if (newEtag !== etag || (newEtag === null && etag === null)) {
       // eslint-disable-next-line no-console
-      console.log("[DEBUG] ETags different, updating state with valid data");
+      console.log("[DEBUG] Updating state - ETags different or both null");
 
       const unreadFilteredCount = data.notifications.filter((n: Notification) => !n.is_read).length;
 
@@ -847,7 +848,7 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
       // eslint-disable-next-line no-console
       console.log("[DEBUG] ETags match, no state update needed");
     }
-  }, [etag, isOnline]);
+  }, [etag, isOnline, notifications.length, unreadCount]);
 
   useEffect(() => {
     // eslint-disable-next-line no-console
