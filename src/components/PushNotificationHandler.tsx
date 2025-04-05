@@ -214,7 +214,7 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           transition={{ duration: 0.2 }}
-          className="fixed top-[4.5rem] md:top-[5.5rem] left-0 right-0 mx-auto z-50 w-80 sm:left-4 sm:right-auto sm:mx-0 shadow-lg"
+          className="fixed top-[4.5rem] md:top-[5.5rem] left-0 right-0 mx-auto z-50 w-80 sm:left-4 md:right-auto md:mx-0 shadow-lg"
         >
           <Card className="border-primary/20 shadow-md shadow-primary/10">
             <CardContent className="p-3 flex items-center">

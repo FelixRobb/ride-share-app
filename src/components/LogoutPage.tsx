@@ -55,6 +55,7 @@ export default function LogoutPage() {
 
         // Clear specific data from localStorage
         localStorage.removeItem("tutorialstep");
+        localStorage.removeItem("tutorialStarted");
         localStorage.removeItem("rideData");
         localStorage.removeItem("theme");
         localStorage.removeItem("pushNotificationDeclined");
