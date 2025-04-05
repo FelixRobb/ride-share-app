@@ -282,7 +282,7 @@ const NotificationList = ({
 
   return (
     <ScrollArea
-      className={`${isDesktop ? "h-[calc(100vh-12rem)]" : "h-[60svh]"} w-full p-2 pr-4 my-4 border rounded-lg`}
+      className={`${isDesktop ? "h-[calc(100vh-13rem)]" : "h-[66svh]"} w-full p-2 pr-4 my-4 border rounded-lg`}
     >
       {filteredNotifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center">
