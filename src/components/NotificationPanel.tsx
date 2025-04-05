@@ -181,9 +181,12 @@ const NotificationList = ({
   isDesktop: boolean;
 }) => {
   const filteredNotifications = useMemo(() => {
+    // Safety check - if notifications is not an array, initialize as empty array
+    const notificationsArray = Array.isArray(notifications) ? notifications : [];
+
     if (!searchTerm) {
       // If no search term, just apply other filters
-      return notifications
+      const filtered = notificationsArray
         .filter((notification) => {
           const matchesType = selectedType === "all" || notification.type === selectedType;
           const matchesFilter =
@@ -193,10 +196,12 @@ const NotificationList = ({
           return matchesType && matchesFilter;
         })
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      return filtered;
     }
 
     // For search with term, calculate relevance score for each notification
-    return notifications
+    const searchResults = notificationsArray
       .map((notification) => {
         let score = 0;
         const searchTermLower = searchTerm.toLowerCase();
@@ -271,11 +276,13 @@ const NotificationList = ({
       .filter((item) => item.score > 0 && item.matchesFilters) // Only keep matches that pass all filters
       .sort((a, b) => b.score - a.score) // Sort by descending score
       .map((item) => item.notification); // Extract just the notification objects
+
+    return searchResults;
   }, [notifications, selectedType, selectedFilter, searchTerm]);
 
   return (
     <ScrollArea
-      className={`${isDesktop ? "h-[calc(100vh-12rem)]" : "h-[60svh]"} w-full p-2 pr-4 my-4 border rounded-lg`}
+      className={`${isDesktop ? "h-[calc(100vh-13rem)]" : "h-[66svh]"} w-full p-2 pr-4 my-4 border rounded-lg`}
     >
       {filteredNotifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -552,6 +559,46 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
   );
 };
 
+// Utility function to safely fetch data with error handling
+const safeFetch = async (url: string, options?: RequestInit) => {
+  try {
+    const response = await fetch(url, options);
+
+    // For 304 Not Modified, return a special result
+    if (response.status === 304) {
+      return { notModified: true, data: null, response };
+    }
+
+    // For non-ok responses, structure a consistent error
+    if (!response.ok) {
+      return {
+        error: true,
+        status: response.status,
+        statusText: response.statusText,
+        data: null,
+        response,
+      };
+    }
+
+    // Get text and parse as JSON
+    try {
+      const text = await response.text();
+      const data = JSON.parse(text);
+      return { data, response };
+    } catch {
+      return {
+        error: true,
+        parseError: true,
+        data: null,
+        response,
+      };
+    }
+  } catch {
+    // Network error or other fetch failure
+    return { error: true, networkError: true, data: null };
+  }
+};
+
 export function NotificationPanel({ userId }: NotificationPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -564,27 +611,91 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
   const isOnline = useOnlineStatus();
 
   const fetchNotificationsCallback = useCallback(async () => {
-    if (isOnline) {
-      const headers: HeadersInit = {};
-      if (etag) {
-        headers["If-None-Match"] = etag;
-      }
+    if (!isOnline) {
+      return;
+    }
 
-      const response = await fetch(`/api/notifications`, { headers });
+    const headers: HeadersInit = {};
+    if (etag) {
+      headers["If-None-Match"] = etag;
+    }
 
-      if (response.status === 304) {
-        return null; // Data hasn't changed
-      }
+    // Use our safe fetch utility
+    const result = await safeFetch("/api/notifications", { headers });
 
-      if (response.ok) {
-        const newEtag = response.headers.get("ETag");
-        const data = await response.json();
-        if (newEtag !== etag) {
-          setEtag(newEtag);
-          setNotifications(data.notifications);
-          setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length);
-        }
+    // Handle 304 Not Modified
+    if (result.notModified) {
+      return;
+    }
+
+    // Handle errors
+    if (result.error) {
+      if (result.parseError) {
+        toast.error("Error parsing notification data");
+      } else if (result.networkError) {
+        toast.error("Network error, please try again");
+      } else {
+        toast.error("Failed to fetch notifications");
       }
+      return;
+    }
+
+    // We have data at this point
+    const { data, response } = result;
+
+    // Check if response exists
+    if (!response) {
+      toast.error("Error processing notification data");
+      return;
+    }
+
+    const newEtag = response.headers.get("ETag");
+
+    // Validate notification data structure
+    if (!data || !data.notifications) {
+      toast.error("Invalid API response");
+      return;
+    }
+
+    if (!Array.isArray(data.notifications)) {
+      toast.error("Invalid notifications data structure");
+      return;
+    }
+
+    // Check if we have valid notification objects
+    let validStructure = true;
+    let _firstInvalidIdx = -1;
+
+    // Verify the first few notifications have the right shape
+    for (let i = 0; i < Math.min(data.notifications.length, 3); i++) {
+      const n = data.notifications[i];
+      if (
+        !n ||
+        typeof n !== "object" ||
+        !("id" in n) ||
+        !("type" in n) ||
+        !("message" in n) ||
+        !("created_at" in n) ||
+        !("is_read" in n)
+      ) {
+        validStructure = false;
+        _firstInvalidIdx = i;
+        break;
+      }
+    }
+
+    if (!validStructure) {
+      toast.error("Invalid notification data format");
+      return;
+    }
+
+    // Update state if both are null (initial load) or they don't match
+    if (newEtag !== etag || (newEtag === null && etag === null)) {
+      const unreadFilteredCount = data.notifications.filter((n: Notification) => !n.is_read).length;
+
+      setEtag(newEtag);
+      setNotifications(data.notifications);
+      setUnreadCount(unreadFilteredCount);
     }
   }, [etag, isOnline]);
 
@@ -602,9 +713,13 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
       if (!open && unreadCount > 0) {
         const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
 
-        await markNotificationsAsRead(userId, unreadIds);
-        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-        setUnreadCount(0);
+        try {
+          await markNotificationsAsRead(userId, unreadIds);
+          setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+          setUnreadCount(0);
+        } catch {
+          toast.error("Failed to mark notifications as read");
+        }
       }
     },
     [userId, notifications, unreadCount]

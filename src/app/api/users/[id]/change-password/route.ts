@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
+import { sendEmail, getPasswordChangeNotificationContent } from "@/lib/emailService";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -51,6 +52,10 @@ export async function POST(request: Request) {
       .eq("id", userId);
 
     if (updateError) throw updateError;
+
+    // Send password change notification email
+    const emailContent = getPasswordChangeNotificationContent(user.name);
+    await sendEmail(user.email, "RideShare - Password Change Notification", emailContent);
 
     return NextResponse.json({ success: true });
   } catch {

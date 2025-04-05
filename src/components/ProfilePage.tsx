@@ -391,6 +391,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
       await changePassword(user.id, currentPassword, newPassword);
       toast.success("Password changed successfully!");
       setIsChangePasswordOpen(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
