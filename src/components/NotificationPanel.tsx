@@ -180,13 +180,30 @@ const NotificationList = ({
   searchTerm: string;
   isDesktop: boolean;
 }) => {
+  // Debug on component render
+  // eslint-disable-next-line no-console
+  console.log("[DEBUG] NotificationList render", {
+    receivedNotifications: {
+      isArray: Array.isArray(notifications),
+      length: Array.isArray(notifications) ? notifications.length : 0,
+      sample: Array.isArray(notifications) && notifications.length > 0 ? [notifications[0]] : [],
+    },
+    filters: { selectedType, selectedFilter, searchTerm },
+  });
+
   const filteredNotifications = useMemo(() => {
     // Safety check - if notifications is not an array, initialize as empty array
     const notificationsArray = Array.isArray(notifications) ? notifications : [];
 
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] Starting notification filtering", {
+      count: notificationsArray.length,
+      hasSearchTerm: !!searchTerm,
+    });
+
     if (!searchTerm) {
       // If no search term, just apply other filters
-      return notificationsArray
+      const filtered = notificationsArray
         .filter((notification) => {
           const matchesType = selectedType === "all" || notification.type === selectedType;
           const matchesFilter =
@@ -196,10 +213,19 @@ const NotificationList = ({
           return matchesType && matchesFilter;
         })
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      // eslint-disable-next-line no-console
+      console.log("[DEBUG] Basic filtering complete", {
+        resultCount: filtered.length,
+        selectedType,
+        selectedFilter,
+      });
+
+      return filtered;
     }
 
     // For search with term, calculate relevance score for each notification
-    return notificationsArray
+    const searchResults = notificationsArray
       .map((notification) => {
         let score = 0;
         const searchTermLower = searchTerm.toLowerCase();
@@ -274,7 +300,26 @@ const NotificationList = ({
       .filter((item) => item.score > 0 && item.matchesFilters) // Only keep matches that pass all filters
       .sort((a, b) => b.score - a.score) // Sort by descending score
       .map((item) => item.notification); // Extract just the notification objects
+
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] Search filtering complete", {
+      searchTerm,
+      resultCount: searchResults.length,
+    });
+
+    return searchResults;
   }, [notifications, selectedType, selectedFilter, searchTerm]);
+
+  // Debug filtered results
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] NotificationList filtered results", {
+      filtered: {
+        length: filteredNotifications.length,
+        sample: filteredNotifications.slice(0, 1),
+      },
+    });
+  }, [filteredNotifications]);
 
   return (
     <ScrollArea
@@ -555,6 +600,70 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
   );
 };
 
+// Utility function to safely fetch data with error handling
+const safeFetch = async (url: string, options?: RequestInit) => {
+  try {
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] safeFetch", { url, options });
+
+    const response = await fetch(url, options);
+
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] safeFetch response", {
+      url,
+      status: response.status,
+      ok: response.ok,
+      statusText: response.statusText,
+    });
+
+    // For 304 Not Modified, return a special result
+    if (response.status === 304) {
+      return { notModified: true, data: null, response };
+    }
+
+    // For non-ok responses, structure a consistent error
+    if (!response.ok) {
+      return {
+        error: true,
+        status: response.status,
+        statusText: response.statusText,
+        data: null,
+        response,
+      };
+    }
+
+    // Get text first for debugging
+    const text = await response.text();
+
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] safeFetch response text", {
+      length: text.length,
+      preview: text.substring(0, 100),
+    });
+
+    // Try to parse as JSON
+    try {
+      const data = JSON.parse(text);
+      return { data, response };
+    } catch (parseError) {
+      // eslint-disable-next-line no-console
+      console.error("[DEBUG] safeFetch JSON parse error", parseError);
+      return {
+        error: true,
+        parseError: true,
+        data: null,
+        text,
+        response,
+      };
+    }
+  } catch (fetchError) {
+    // Network error or other fetch failure
+    // eslint-disable-next-line no-console
+    console.error("[DEBUG] safeFetch network error", fetchError);
+    return { error: true, networkError: true, data: null };
+  }
+};
+
 export function NotificationPanel({ userId }: NotificationPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -566,63 +675,243 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const isOnline = useOnlineStatus();
 
+  // Add debug logging for initial mount
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] NotificationPanel mounted", {
+      userId,
+      isOnline,
+      isServerSide: typeof window === "undefined",
+      initialState: { notifications: notifications.length, unreadCount, etag },
+    });
+
+    return () => {
+      // eslint-disable-next-line no-console
+      console.log("[DEBUG] NotificationPanel unmounted");
+    };
+  }, []);
+
   const fetchNotificationsCallback = useCallback(async () => {
-    if (isOnline) {
-      try {
-        const headers: HeadersInit = {};
-        if (etag) {
-          headers["If-None-Match"] = etag;
-        }
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] fetchNotificationsCallback called", {
+      isOnline,
+      etag,
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "SSR",
+    });
 
-        const response = await fetch(`/api/notifications`, { headers });
+    if (!isOnline) {
+      // eslint-disable-next-line no-console
+      console.log("[DEBUG] Offline, skipping fetch");
+      return;
+    }
 
-        if (response.status === 304) {
-          return null; // Data hasn't changed
-        }
+    const headers: HeadersInit = {};
+    if (etag) {
+      headers["If-None-Match"] = etag;
+    }
 
-        if (response.ok) {
-          const newEtag = response.headers.get("ETag");
-          const data = await response.json();
+    // Use our safe fetch utility
+    const result = await safeFetch("/api/notifications", { headers });
 
-          if (data.notifications && Array.isArray(data.notifications)) {
-            if (newEtag !== etag) {
-              setEtag(newEtag);
-              setNotifications(data.notifications);
-              setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length);
-            }
-          } else {
-            toast.error("Invalid notification data received");
-          }
-        } else {
-          toast.error("Failed to fetch notifications");
-        }
-      } catch {
-        // Silent failure in production, error is caught
+    // Handle 304 Not Modified
+    if (result.notModified) {
+      // eslint-disable-next-line no-console
+      console.log("[DEBUG] 304 Not Modified - using cached data");
+      return;
+    }
+
+    // Handle errors
+    if (result.error) {
+      if (result.parseError) {
+        // eslint-disable-next-line no-console
+        console.error("[DEBUG] Error parsing notifications JSON", {
+          responseText: result.text,
+        });
+        toast.error("Error parsing notification data");
+      } else if (result.networkError) {
+        // eslint-disable-next-line no-console
+        console.error("[DEBUG] Network error fetching notifications");
+        toast.error("Network error, please try again");
+      } else {
+        // eslint-disable-next-line no-console
+        console.error("[DEBUG] API error fetching notifications", {
+          status: result.status,
+          statusText: result.statusText,
+        });
+        toast.error("Failed to fetch notifications");
       }
+      return;
+    }
+
+    // We have data at this point
+    const { data, response } = result;
+
+    // Check if response exists
+    if (!response) {
+      // eslint-disable-next-line no-console
+      console.error("[DEBUG] Missing response in fetch result");
+      toast.error("Error processing notification data");
+      return;
+    }
+
+    const newEtag = response.headers.get("ETag");
+
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] Processing API response", {
+      hasData: !!data,
+      hasNotifications: data && "notifications" in data,
+      type: data && data.notifications ? typeof data.notifications : "undefined",
+      isArray: data && data.notifications ? Array.isArray(data.notifications) : false,
+      length:
+        data && data.notifications && Array.isArray(data.notifications)
+          ? data.notifications.length
+          : 0,
+    });
+
+    // Validate notification data structure
+    if (!data || !data.notifications) {
+      // eslint-disable-next-line no-console
+      console.error("[DEBUG] Missing notifications in API response", data);
+      toast.error("Invalid API response");
+      return;
+    }
+
+    if (!Array.isArray(data.notifications)) {
+      // eslint-disable-next-line no-console
+      console.error("[DEBUG] Notifications is not an array", typeof data.notifications);
+      toast.error("Invalid notifications data structure");
+      return;
+    }
+
+    // Check if we have valid notification objects
+    let validStructure = true;
+    let firstInvalidIdx = -1;
+
+    // Verify the first few notifications have the right shape
+    for (let i = 0; i < Math.min(data.notifications.length, 3); i++) {
+      const n = data.notifications[i];
+      if (
+        !n ||
+        typeof n !== "object" ||
+        !("id" in n) ||
+        !("type" in n) ||
+        !("message" in n) ||
+        !("created_at" in n) ||
+        !("is_read" in n)
+      ) {
+        validStructure = false;
+        firstInvalidIdx = i;
+        break;
+      }
+    }
+
+    if (!validStructure) {
+      // eslint-disable-next-line no-console
+      console.error("[DEBUG] Invalid notification object structure", {
+        firstInvalidIdx,
+        sample: data.notifications[firstInvalidIdx],
+      });
+      toast.error("Invalid notification data format");
+      return;
+    }
+
+    // ETags comparison and state update
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] Comparing ETags", { newEtag, currentEtag: etag });
+
+    if (newEtag !== etag) {
+      // eslint-disable-next-line no-console
+      console.log("[DEBUG] ETags different, updating state with valid data");
+
+      const unreadFilteredCount = data.notifications.filter((n: Notification) => !n.is_read).length;
+
+      // eslint-disable-next-line no-console
+      console.log("[DEBUG] About to update state", {
+        newNotificationsCount: data.notifications.length,
+        unreadCount: unreadFilteredCount,
+      });
+
+      setEtag(newEtag);
+      setNotifications(data.notifications);
+      setUnreadCount(unreadFilteredCount);
+
+      // Debug check after state update (will show on next render)
+      setTimeout(() => {
+        // eslint-disable-next-line no-console
+        console.log("[DEBUG] After state update", {
+          notificationsLength: notifications.length,
+          unreadCount,
+        });
+      }, 0);
+    } else {
+      // eslint-disable-next-line no-console
+      console.log("[DEBUG] ETags match, no state update needed");
     }
   }, [etag, isOnline]);
 
   useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] Setting up polling effect", { isOnline });
+
     if (isOnline) {
       void fetchNotificationsCallback();
-      const interval = setInterval(() => void fetchNotificationsCallback(), 15000);
-      return () => clearInterval(interval);
+
+      // eslint-disable-next-line no-console
+      console.log("[DEBUG] Setting polling interval");
+
+      const interval = setInterval(() => {
+        // eslint-disable-next-line no-console
+        console.log("[DEBUG] Polling interval triggered");
+        void fetchNotificationsCallback();
+      }, 15000);
+
+      return () => {
+        // eslint-disable-next-line no-console
+        console.log("[DEBUG] Clearing polling interval");
+        clearInterval(interval);
+      };
     }
   }, [fetchNotificationsCallback, isOnline]);
 
   const handleOpenChange = useCallback(
     async (open: boolean) => {
+      // eslint-disable-next-line no-console
+      console.log("[DEBUG] handleOpenChange", { open, unreadCount });
+
       setIsOpen(open);
       if (!open && unreadCount > 0) {
         const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
 
-        await markNotificationsAsRead(userId, unreadIds);
-        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-        setUnreadCount(0);
+        // eslint-disable-next-line no-console
+        console.log("[DEBUG] Marking notifications as read", { unreadIds });
+
+        try {
+          await markNotificationsAsRead(userId, unreadIds);
+
+          // eslint-disable-next-line no-console
+          console.log("[DEBUG] Marked as read, updating state");
+
+          setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+          setUnreadCount(0);
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error("[DEBUG] Error marking as read", error);
+          toast.error("Failed to mark notifications as read");
+        }
       }
     },
     [userId, notifications, unreadCount]
   );
+
+  // Add a debug effect to monitor notifications state changes
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] Notifications state changed", {
+      count: notifications.length,
+      unreadCount,
+      sample: notifications.slice(0, 2).map((n) => ({ id: n.id, type: n.type, read: n.is_read })),
+    });
+  }, [notifications, unreadCount]);
 
   const NotificationButton = useMemo(
     () => (
@@ -647,8 +936,15 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
     [unreadCount, handleOpenChange]
   );
 
-  const NotificationContent = useMemo(
-    () => (
+  const NotificationContent = useMemo(() => {
+    // eslint-disable-next-line no-console
+    console.log("[DEBUG] Rendering NotificationContent", {
+      notificationsLength: notifications.length,
+      selectedType,
+      selectedFilter,
+    });
+
+    return (
       <>
         <NotificationFilters
           selectedType={selectedType}
@@ -666,9 +962,8 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
           isDesktop={isDesktop}
         />
       </>
-    ),
-    [selectedType, selectedFilter, searchTerm, notifications, isDesktop]
-  );
+    );
+  }, [selectedType, selectedFilter, searchTerm, notifications, isDesktop]);
 
   if (isDesktop) {
     return (
