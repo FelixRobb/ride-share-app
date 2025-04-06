@@ -86,6 +86,7 @@ const notificationTypes = {
   rideAccepted: "Accepted Rides",
   rideCancelled: "Cancelled Rides",
   rideCompleted: "Completed Rides",
+  admin_notification: "Admin Notifications",
 };
 
 const getNotificationIcon = (type: string) => {
@@ -101,6 +102,8 @@ const getNotificationIcon = (type: string) => {
       return <Car className="h-4 w-4 text-orange-500" />;
     case "rideCompleted":
       return <CheckCircle className="h-4 w-4 text-purple-500" />;
+    case "admin_notification":
+      return <Bell className="h-4 w-4 text-red-500" />;
     default:
       return <Bell className="h-4 w-4 text-zinc-500" />;
   }
