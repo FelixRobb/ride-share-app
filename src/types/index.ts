@@ -77,7 +77,7 @@ export type Note = {
   id: string;
   ride_id: string;
   user_id: string;
-  note: string;
+  note: string | null;
   created_at: string;
   is_edited: boolean;
   is_deleted: boolean;

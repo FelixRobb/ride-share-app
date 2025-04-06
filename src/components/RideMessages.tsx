@@ -162,7 +162,14 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
         return; // Prevent editing if the note is older than one hour
       }
 
+      // Don't allow editing deleted messages
+      if (noteToEdit.is_deleted || noteToEdit.note === null) {
+        toast.error("Deleted messages cannot be edited.");
+        return;
+      }
+
       setEditingNoteId(noteId);
+      // Since we've checked that the note isn't null above, it's safe to use it
       setNewNote(noteToEdit.note);
       setMessageLength(noteToEdit.note.length);
       setIsEditing(true);
@@ -196,7 +203,13 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
     if (noteToDeleteId) {
       try {
         await deleteNote(noteToDeleteId, currentUser.id);
-        setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteToDeleteId));
+        setNotes((prevNotes) =>
+          prevNotes.map((note) =>
+            note.id === noteToDeleteId
+              ? { ...note, is_deleted: true, note: "Message deleted" }
+              : note
+          )
+        );
         toast.success("Message deleted successfully.");
       } catch {
         toast.error("Failed to delete message. Please try again.");
@@ -375,7 +388,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
                             isCurrentUser
                               ? "bg-primary text-primary-foreground rounded-lg rounded-br-none"
                               : "bg-secondary text-secondary-foreground rounded-lg rounded-bl-none"
-                          }`}
+                          } ${note.is_deleted ? "opacity-70" : ""}`}
                         >
                           <div className="overflow-hidden whitespace-wrap">
                             <p className="text-sm break-words">{note.note}</p>
@@ -388,6 +401,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
                                   minute: "2-digit",
                                 })}
                                 {note.is_edited && " • edited"}
+                                {note.is_deleted && " • deleted"}
                               </span>
                             </div>
                           </div>
@@ -397,7 +411,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
                         {isCurrentUser && !editingNoteId && (
                           <div className="absolute -top-3 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out z-20">
                             <div className="bg-background/90 backdrop-blur-sm rounded-full shadow-md border border-border flex overflow-hidden p-0.5">
-                              {isEditable && (
+                              {isEditable && !note.is_deleted && (
                                 <Button
                                   onClick={() => handleEditNote(note.id)}
                                   size="sm"
@@ -414,7 +428,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
                                 size="sm"
                                 variant="ghost"
                                 className="h-6 w-6 p-0 rounded-full hover:bg-destructive/10 hover:text-destructive"
-                                disabled={!isOnline}
+                                disabled={!isOnline || note.is_deleted}
                               >
                                 <Trash className="h-3 w-3" />
                                 <span className="sr-only">Delete</span>

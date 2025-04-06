@@ -15,12 +15,18 @@ export async function GET(request: Request) {
       .from("ride_notes")
       .select(
         `
-        *,
+        id,
+        created_at,
+        is_edited,
+        is_deleted,
+        user_id,
+        ride_id,
+        seen_by,
+        note:case(is_deleted, 'Message deleted', note),
         user:users (name)
       `
       )
       .eq("ride_id", rideId)
-      .eq("is_deleted", false)
       .order("created_at", { ascending: true });
 
     if (error) throw error;
@@ -130,13 +136,22 @@ export async function DELETE(request: Request) {
   const { noteId, userId } = await request.json();
 
   try {
+    // First fetch the note to make sure it exists and belongs to the user
+    const { error: fetchError } = await supabase
+      .from("ride_notes")
+      .select("id")
+      .eq("id", noteId)
+      .eq("user_id", userId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // Then update it to mark as deleted without changing the note content
     const { error: deleteError } = await supabase
       .from("ride_notes")
       .update({ is_deleted: true })
       .eq("id", noteId)
-      .eq("user_id", userId)
-      .select()
-      .single();
+      .eq("user_id", userId);
 
     if (deleteError) throw deleteError;
 
