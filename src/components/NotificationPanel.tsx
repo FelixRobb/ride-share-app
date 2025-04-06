@@ -324,8 +324,23 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [currentDeviceId] = useState(() => getDeviceId());
+  const [permissionState, setPermissionState] = useState<NotificationPermission | null>(null);
+  const [hasDeclinedInApp, setHasDeclinedInApp] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const isOnline = useOnlineStatus();
+
+  // Check notification permission and declined state on mount and when settings are opened
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if ("Notification" in window) {
+        setPermissionState(Notification.permission);
+      }
+
+      // Check if user has previously declined in the app
+      const hasDeclined = localStorage.getItem("pushNotificationDeclined");
+      setHasDeclinedInApp(hasDeclined === "true");
+    }
+  }, [isSettingsOpen]);
 
   useEffect(() => {
     let mounted = true;
@@ -338,7 +353,21 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
         const response = await fetch(`/api/users/${userId}/push-devices`);
         if (response.ok && mounted) {
           const data = await response.json();
-          setDevices(data.devices);
+
+          // If permission is denied OR the user has declined in app with default permission,
+          // filter out the current device
+          const shouldFilter =
+            permissionState === "denied" || (permissionState === "default" && hasDeclinedInApp);
+
+          if (shouldFilter) {
+            setDevices(
+              data.devices.filter(
+                (device: PushSubscription) => device.device_id !== currentDeviceId
+              )
+            );
+          } else {
+            setDevices(data.devices);
+          }
         }
       } finally {
         if (mounted) {
@@ -352,7 +381,7 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
     return () => {
       mounted = false;
     };
-  }, [userId, isOnline, isSettingsOpen]);
+  }, [userId, isOnline, isSettingsOpen, permissionState, currentDeviceId, hasDeclinedInApp]);
 
   const handleToggleDevice = async (deviceId: string, enabled: boolean) => {
     try {
@@ -405,6 +434,32 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
     }
   };
 
+  const handleRequestPermission = async () => {
+    try {
+      const permission = await Notification.requestPermission();
+      setPermissionState(permission);
+
+      if (permission === "granted") {
+        // Clear the declined flag when permission is granted
+        localStorage.removeItem("pushNotificationDeclined");
+        setHasDeclinedInApp(false);
+
+        // Refresh the page to trigger the PushNotificationHandler to register
+        window.location.reload();
+      } else if (permission === "denied") {
+        toast.error("Permission denied for push notifications");
+      } else {
+        // If still in default state after request (user dismissed the browser dialog)
+        // we'll treat this as a declined state for our app
+        localStorage.setItem("pushNotificationDeclined", "true");
+        setHasDeclinedInApp(true);
+        toast.error("Notification permission prompt was dismissed");
+      }
+    } catch {
+      toast.error("Failed to request notification permission");
+    }
+  };
+
   const SettingsButton = (
     <Button
       variant="ghost"
@@ -415,6 +470,55 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
     >
       <Settings className="h-5 w-5 text-muted-foreground" />
     </Button>
+  );
+
+  // Determine if we should show the permission banner
+  const shouldShowPermissionBanner =
+    permissionState === "denied" || (permissionState === "default" && hasDeclinedInApp);
+
+  const PermissionDeniedBanner = (
+    <Card className="border-destructive/50 bg-destructive/5 hover:shadow-none mb-6">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Bell className="h-5 w-5 text-destructive" />
+            <CardTitle className="text-sm font-semibold">Notifications Blocked</CardTitle>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0 pb-4">
+        <p className="text-sm mb-3">
+          {permissionState === "denied"
+            ? "Push notifications are blocked in your browser settings for this site."
+            : "You previously declined push notifications for this site."}{" "}
+          To receive ride updates and important notifications, please allow them in your browser.
+        </p>
+        <div className="flex flex-col space-y-2">
+          <Button size="sm" onClick={handleRequestPermission} className="w-full">
+            Request Permission Again
+          </Button>
+          <div className="text-xs text-muted-foreground mt-1">
+            <p className="text-center mb-2">
+              If the button doesn&apos;t work, you may need to update permissions in your browser
+              settings:
+            </p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>
+                <strong>Chrome:</strong> Click the lock/info icon in the address bar → Site settings
+                → Notifications
+              </li>
+              <li>
+                <strong>Safari:</strong> Preferences → Websites → Notifications → Find this website
+              </li>
+              <li>
+                <strong>Firefox:</strong> Click the lock icon in the address bar → Connection secure
+                → More information → Permissions
+              </li>
+            </ul>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 
   const SettingsContent = (
@@ -435,11 +539,13 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
           )}
         </div>
 
+        {shouldShowPermissionBanner && PermissionDeniedBanner}
+
         {isLoading ? (
           <div className="flex justify-center py-6">
             <Loader className="animate-spin h-8 w-8 text-primary" />
           </div>
-        ) : devices.length === 0 ? (
+        ) : devices.length === 0 && !shouldShowPermissionBanner ? (
           <div className="text-center py-6 border rounded-lg bg-accent/50">
             <Smartphone className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">No devices registered for notifications</p>

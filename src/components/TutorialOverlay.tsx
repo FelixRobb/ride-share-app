@@ -69,9 +69,9 @@ export const TutorialOverlay: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 30 }}
         transition={{ duration: 0.2 }}
-        className="fixed bottom-20 md:bottom-4 left-0 right-0 mx-auto z-50 w-80 sm:right-4 sm:left-auto sm:mx-0"
+        className="fixed bottom-20 md:bottom-4 left-0 right-0 z-50 w-11/12 mx-auto sm:w-80 sm:right-4 sm:left-auto sm:mx-0"
       >
-        <Card className="w-72 shadow-lg border border-primary/20 bg-card/95 backdrop-blur-sm">
+        <Card className="w-full sm:w-72 shadow-lg border border-primary/20 bg-card/95 backdrop-blur-sm">
           <div className="px-3 pt-3 pb-1 flex items-center justify-between border-b border-border/30">
             <div className="flex items-center space-x-2">
               <div className="w-1.5 h-1.5 rounded-full bg-primary" />
