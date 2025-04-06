@@ -301,18 +301,78 @@ export const fetchUserStats = async (
 };
 
 export const fetchDashboardData = async () => {
-  const response = await fetch(`/api/user-data/dashboard`);
+  // Get the stored ETag for this endpoint
+  const storedETag = localStorage.getItem("etag_dashboard");
+
+  const fetchOptions: RequestInit = {
+    headers: {},
+  };
+
+  // Add If-None-Match header if we have a stored ETag
+  if (storedETag) {
+    fetchOptions.headers = {
+      "If-None-Match": storedETag,
+    };
+  }
+
+  const response = await fetch(`/api/user-data/dashboard`, fetchOptions);
+
+  if (response.status === 304) {
+    // Content hasn't changed, use cached data
+    const cachedData = JSON.parse(localStorage.getItem("data_dashboard") || "{}");
+    return cachedData;
+  }
+
   if (response.ok) {
-    return await response.json();
+    // Store the new ETag
+    const newETag = response.headers.get("etag");
+    if (newETag) {
+      localStorage.setItem("etag_dashboard", newETag);
+    }
+
+    const data = await response.json();
+    // Cache the data
+    localStorage.setItem("data_dashboard", JSON.stringify(data));
+    return data;
   } else {
     throw new Error("Failed to fetch dashboard data");
   }
 };
 
 export const fetchProfileData = async () => {
-  const response = await fetch(`/api/user-data/profile`);
+  // Get the stored ETag for this endpoint
+  const storedETag = localStorage.getItem("etag_profile");
+
+  const fetchOptions: RequestInit = {
+    headers: {},
+  };
+
+  // Add If-None-Match header if we have a stored ETag
+  if (storedETag) {
+    fetchOptions.headers = {
+      "If-None-Match": storedETag,
+    };
+  }
+
+  const response = await fetch(`/api/user-data/profile`, fetchOptions);
+
+  if (response.status === 304) {
+    // Content hasn't changed, use cached data
+    const cachedData = JSON.parse(localStorage.getItem("data_profile") || "{}");
+    return cachedData;
+  }
+
   if (response.ok) {
-    return await response.json();
+    // Store the new ETag
+    const newETag = response.headers.get("etag");
+    if (newETag) {
+      localStorage.setItem("etag_profile", newETag);
+    }
+
+    const data = await response.json();
+    // Cache the data
+    localStorage.setItem("data_profile", JSON.stringify(data));
+    return data;
   } else {
     throw new Error("Failed to fetch profile data");
   }
@@ -321,7 +381,27 @@ export const fetchProfileData = async () => {
 // Update the fetchRideDetailsData function to handle all error types
 export async function fetchRideDetailsData(rideId: string) {
   try {
-    const response = await fetch(`/api/user-data/ride-details?rideId=${rideId}`);
+    // Get the stored ETag for this endpoint
+    const storedETag = localStorage.getItem(`etag_ride_${rideId}`);
+
+    const fetchOptions: RequestInit = {
+      headers: {},
+    };
+
+    // Add If-None-Match header if we have a stored ETag
+    if (storedETag) {
+      fetchOptions.headers = {
+        "If-None-Match": storedETag,
+      };
+    }
+
+    const response = await fetch(`/api/user-data/ride-details?rideId=${rideId}`, fetchOptions);
+
+    if (response.status === 304) {
+      // Content hasn't changed, use cached data
+      const cachedData = JSON.parse(localStorage.getItem(`data_ride_${rideId}`) || "{}");
+      return cachedData;
+    }
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -334,7 +414,16 @@ export async function fetchRideDetailsData(rideId: string) {
       throw error;
     }
 
-    return await response.json();
+    // Store the new ETag
+    const newETag = response.headers.get("etag");
+    if (newETag) {
+      localStorage.setItem(`etag_ride_${rideId}`, newETag);
+    }
+
+    const data = await response.json();
+    // Cache the data
+    localStorage.setItem(`data_ride_${rideId}`, JSON.stringify(data));
+    return data;
   } catch (error) {
     // Re-throw fetch errors (like network errors)
     if (error instanceof Error) {
@@ -357,18 +446,78 @@ export async function fetchRideDetailsData(rideId: string) {
 }
 
 export const fetchEditRideData = async (rideId: string) => {
-  const response = await fetch(`/api/user-data/edit-ride?rideId=${rideId}`);
+  // Get the stored ETag for this endpoint
+  const storedETag = localStorage.getItem(`etag_edit_ride_${rideId}`);
+
+  const fetchOptions: RequestInit = {
+    headers: {},
+  };
+
+  // Add If-None-Match header if we have a stored ETag
+  if (storedETag) {
+    fetchOptions.headers = {
+      "If-None-Match": storedETag,
+    };
+  }
+
+  const response = await fetch(`/api/user-data/edit-ride?rideId=${rideId}`, fetchOptions);
+
+  if (response.status === 304) {
+    // Content hasn't changed, use cached data
+    const cachedData = JSON.parse(localStorage.getItem(`data_edit_ride_${rideId}`) || "{}");
+    return cachedData;
+  }
+
   if (response.ok) {
-    return await response.json();
+    // Store the new ETag
+    const newETag = response.headers.get("etag");
+    if (newETag) {
+      localStorage.setItem(`etag_edit_ride_${rideId}`, newETag);
+    }
+
+    const data = await response.json();
+    // Cache the data
+    localStorage.setItem(`data_edit_ride_${rideId}`, JSON.stringify(data));
+    return data;
   } else {
     throw new Error("Failed to fetch edit ride data");
   }
 };
 
 export const fetchCreateRideData = async () => {
-  const response = await fetch(`/api/user-data/create-ride`);
+  // Get the stored ETag for this endpoint
+  const storedETag = localStorage.getItem("etag_create_ride");
+
+  const fetchOptions: RequestInit = {
+    headers: {},
+  };
+
+  // Add If-None-Match header if we have a stored ETag
+  if (storedETag) {
+    fetchOptions.headers = {
+      "If-None-Match": storedETag,
+    };
+  }
+
+  const response = await fetch(`/api/user-data/create-ride`, fetchOptions);
+
+  if (response.status === 304) {
+    // Content hasn't changed, use cached data
+    const cachedData = JSON.parse(localStorage.getItem("data_create_ride") || "{}");
+    return cachedData;
+  }
+
   if (response.ok) {
-    return await response.json();
+    // Store the new ETag
+    const newETag = response.headers.get("etag");
+    if (newETag) {
+      localStorage.setItem("etag_create_ride", newETag);
+    }
+
+    const data = await response.json();
+    // Cache the data
+    localStorage.setItem("data_create_ride", JSON.stringify(data));
+    return data;
   } else {
     throw new Error("Failed to fetch create ride data");
   }

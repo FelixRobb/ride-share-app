@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
+import { generateETag, isETagMatch } from "@/utils/etag";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user || !session.user.id) {
@@ -62,14 +63,31 @@ export async function GET() {
 
     if (ridesError) throw ridesError;
 
-    return new NextResponse(JSON.stringify({ rides, contacts }), {
+    // Generate response data
+    const responseData = { rides, contacts };
+
+    // Generate ETag for the response data
+    const etag = generateETag(responseData);
+
+    // Check if the client already has this version (ETag match)
+    const ifNoneMatch = req.headers.get("if-none-match");
+    if (isETagMatch(etag, ifNoneMatch)) {
+      // Return 304 Not Modified if the content hasn't changed
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          ETag: `"${etag}"`,
+          "Cache-Control": "public, max-age=0, must-revalidate",
+        },
+      });
+    }
+
+    return new NextResponse(JSON.stringify(responseData), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
-        "Surrogate-Control": "no-store",
+        ETag: `"${etag}"`,
+        "Cache-Control": "public, max-age=0, must-revalidate",
       },
     });
   } catch {

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
+import { generateETag, isETagMatch } from "@/utils/etag";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -174,14 +175,31 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return new NextResponse(JSON.stringify({ ride, contacts }), {
+    // Generate response data
+    const responseData = { ride, contacts };
+
+    // Generate ETag for the response data
+    const etag = generateETag(responseData);
+
+    // Check if the client already has this version (ETag match)
+    const ifNoneMatch = req.headers.get("if-none-match");
+    if (isETagMatch(etag, ifNoneMatch)) {
+      // Return 304 Not Modified if the content hasn't changed
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          ETag: `"${etag}"`,
+          "Cache-Control": "public, max-age=0, must-revalidate",
+        },
+      });
+    }
+
+    return new NextResponse(JSON.stringify(responseData), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
-        "Surrogate-Control": "no-store",
+        ETag: `"${etag}"`,
+        "Cache-Control": "public, max-age=0, must-revalidate",
       },
     });
   } catch {
