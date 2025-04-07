@@ -36,7 +36,7 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 - [React 18](https://reactjs.org/)
 - [TypeScript](https://www.typescriptlang.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
-- [Supabase](https://supabase.io/) for database and authentication
+- [Supabase](https://supabase.io/) for database
 - [MapTiler](https://www.maptiler.com/) for map services
 - [Framer Motion](https://www.framer.com/motion/) for animations
 - [Lucide React](https://lucide.dev/) for icons
