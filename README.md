@@ -33,7 +33,7 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 ## Technologies Used
 
 - [Next.js 15](https://nextjs.org/) with App Router
-- [React](https://reactjs.org/)
+- [React 18](https://reactjs.org/)
 - [TypeScript](https://www.typescriptlang.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Supabase](https://supabase.io/) for database and authentication
