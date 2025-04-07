@@ -1,14 +1,16 @@
 [[headers]]
-  for = "/api/*"
-  [headers.values]
-    Cache-Control = "no-store, no-cache, must-revalidate, proxy-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
-    Surrogate-Control = "no-store"
-  for = "/sitemap.xml"
-  [headers.values]
-    Content-Type = "application/xml"
-    Cache-Control = "no-store, no-cache, must-revalidate, proxy-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
-    Surrogate-Control = "no-store"
+for = "/api/*"
+[headers.values]
+Cache-Control = "no-store, no-cache, must-revalidate, proxy-revalidate"
+Pragma = "no-cache"
+Expires = "0"
+Surrogate-Control = "no-store"
+
+[[headers]]
+for = "/sitemap.xml"
+[headers.values]
+Content-Type = "application/xml"
+Cache-Control = "no-store, no-cache, must-revalidate, proxy-revalidate"
+Pragma = "no-cache"
+Expires = "0"
+Surrogate-Control = "no-store"
