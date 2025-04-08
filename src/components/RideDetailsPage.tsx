@@ -14,9 +14,15 @@ import {
   ServerCrash,
   Loader,
   Pencil,
+  Repeat,
+  MoreHorizontal,
+  Check,
+  X,
 } from "lucide-react";
-import maplibregl, { Map, Marker, Popup } from "maplibre-gl";
+import type maplibregl from "maplibre-gl";
+import { Map, Marker, Popup } from "maplibre-gl";
 import { useRouter } from "next/navigation";
+import type React from "react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 
@@ -42,6 +48,12 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import type { User, Ride, Contact } from "@/types";
@@ -201,6 +213,31 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
         ? contact.user.name
         : contact.contact.name
       : "Unknown";
+  };
+
+  const handleReuseRide = () => {
+    if (!ride) return;
+
+    // Create a new ride data object based on the current ride
+    const reuseRideData = {
+      from_location: ride.from_location,
+      to_location: ride.to_location,
+      from_lat: ride.from_lat,
+      from_lon: ride.from_lon,
+      to_lat: ride.to_lat,
+      to_lon: ride.to_lon,
+      // Time will be reset to default in CreateRidePage
+      time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      rider_name: ride.rider_name,
+      rider_phone: ride.rider_phone,
+      note: ride.note,
+    };
+
+    // Store the ride data in localStorage
+    localStorage.setItem("reuseRideData", JSON.stringify(reuseRideData));
+
+    // Navigate to create ride page
+    router.push("/create-ride?reuse=true");
   };
 
   // Replace the existing buildMap useEffect with this improved version
@@ -654,6 +691,101 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
     );
   }
 
+  // Determine the primary action based on ride status and user role
+  const getPrimaryAction = () => {
+    if (!ride || isLoading) return null;
+
+    if (ride.status === "pending") {
+      if (ride.requester_id !== currentUser?.id) {
+        return (
+          <Button
+            onClick={handleAcceptRide}
+            className="w-full sm:w-auto"
+            disabled={isActionLoading || !isOnline}
+          >
+            {isActionLoading ? (
+              <Loader className="animate-spin h-5 w-5 mr-2" />
+            ) : (
+              <Check className="w-4 h-4 mr-2" />
+            )}
+            Offer Ride
+          </Button>
+        );
+      } else {
+        return (
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/rides/${ride.id}/edit`)}
+            className="w-full sm:w-auto"
+            disabled={!isOnline}
+          >
+            <Pencil className="w-4 h-4 mr-2" />
+            Edit Ride
+          </Button>
+        );
+      }
+    } else if (ride.status === "accepted") {
+      return (
+        <Button
+          onClick={() => setIsFinishRideDialogOpen(true)}
+          className="w-full sm:w-auto"
+          disabled={isActionLoading || !isOnline}
+        >
+          {isActionLoading ? (
+            <Loader className="animate-spin h-5 w-5 mr-2" />
+          ) : (
+            <Check className="w-4 h-4 mr-2" />
+          )}
+          Finish Ride
+        </Button>
+      );
+    }
+
+    return null;
+  };
+
+  // Get secondary actions for the dropdown menu
+  const getSecondaryActions = () => {
+    if (!ride || isLoading) return [];
+
+    const actions = [];
+
+    // Reuse ride is always available
+    actions.push({
+      label: "Reuse Ride",
+      icon: <Repeat className="w-4 h-4 mr-2" />,
+      onClick: handleReuseRide,
+      disabled: !isOnline,
+    });
+
+    // Cancel actions based on role and status
+    if (
+      ride.requester_id === currentUser?.id &&
+      ride.status !== "cancelled" &&
+      ride.status !== "completed"
+    ) {
+      actions.push({
+        label: "Cancel Request",
+        icon: <X className="w-4 h-4 mr-2" />,
+        onClick: handleCancelRequest,
+        disabled: isActionLoading || !isOnline,
+        destructive: true,
+      });
+    }
+
+    if (ride.accepter_id === currentUser?.id && ride.status === "accepted") {
+      actions.push({
+        label: "Cancel Offer",
+        icon: <X className="w-4 h-4 mr-2" />,
+        onClick: handleCancelOffer,
+        disabled: isActionLoading || !isOnline,
+        destructive: true,
+      });
+    }
+
+    return actions;
+  };
+
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
@@ -900,78 +1032,56 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
             />
           )}
       </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row gap-2">
+      <CardFooter className="flex flex-col sm:flex-row gap-2 justify-between">
         {error && (
           <div className="text-red-500">
             <AlertTriangle className="inline-block h-4 w-4 mr-1 align-text-top" />
             {(error as ErrorState).message}
           </div>
         )}
-        {!isLoading &&
-          ride &&
-          ride.status === "pending" &&
-          ride.requester_id === currentUser?.id && (
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/rides/${ride.id}/edit`)}
-              className="w-full sm:w-auto"
-              disabled={!isOnline}
-            >
-              <Pencil className="w-4 h-4 mr-2" />
-              Edit Ride
-            </Button>
-          )}
-        {!isLoading &&
-          ride &&
-          ride.requester_id === currentUser?.id &&
-          ride.status !== "cancelled" &&
-          ride.status !== "completed" && (
-            <Button
-              variant="destructive"
-              onClick={handleCancelRequest}
-              className="w-full sm:w-auto"
-              disabled={isActionLoading || !isOnline}
-            >
-              {isActionLoading ? <Loader className="animate-spin h-5 w-5" /> : "Cancel Request"}
-            </Button>
-          )}
-        {!isLoading &&
-          ride &&
-          ride.accepter_id === currentUser?.id &&
-          ride.status === "accepted" && (
-            <Button
-              variant="destructive"
-              onClick={handleCancelOffer}
-              className="w-full sm:w-auto"
-              disabled={isActionLoading || !isOnline}
-            >
-              {isActionLoading ? <Loader className="animate-spin h-5 w-5" /> : "Cancel Offer"}
-            </Button>
-          )}
-        {!isLoading &&
-          ride &&
-          ride.status === "pending" &&
-          ride.requester_id !== currentUser?.id && (
-            <Button
-              onClick={handleAcceptRide}
-              className="w-full sm:w-auto"
-              disabled={isActionLoading || !isOnline}
-            >
-              {isActionLoading ? <Loader className="animate-spin h-5 w-5" /> : "Offer Ride"}
-            </Button>
-          )}
-        {!isLoading &&
-          ride &&
-          ride.status === "accepted" &&
-          (ride.requester_id === currentUser?.id || ride.accepter_id === currentUser?.id) && (
-            <Button
-              onClick={() => setIsFinishRideDialogOpen(true)}
-              className="w-full sm:w-auto"
-              disabled={isActionLoading || !isOnline}
-            >
-              {isActionLoading ? <Loader className="animate-spin h-5 w-5" /> : "Finish Ride"}
-            </Button>
-          )}
+
+        {!isLoading && !error && (
+          <div className="flex flex-col sm:flex-row gap-2 w-full justify-end">
+            {/* Primary action button */}
+            {getPrimaryAction()}
+
+            {/* Secondary actions dropdown */}
+            {getSecondaryActions().length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    <MoreHorizontal className="h-4 w-4 mr-2" />
+                    Actions
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {getSecondaryActions().map((action, index) =>
+                    action.destructive ? (
+                      <DropdownMenuItem
+                        key={index}
+                        onClick={action.onClick}
+                        disabled={action.disabled}
+                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                      >
+                        {action.icon}
+                        {action.label}
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem
+                        key={index}
+                        onClick={action.onClick}
+                        disabled={action.disabled}
+                      >
+                        {action.icon}
+                        {action.label}
+                      </DropdownMenuItem>
+                    )
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        )}
       </CardFooter>
 
       <AlertDialog open={isCancelRequestDialogOpen} onOpenChange={setIsCancelRequestDialogOpen}>
