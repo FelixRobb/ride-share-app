@@ -15,19 +15,21 @@ export async function GET(request: Request) {
       .from("ride_notes")
       .select(
         `
-        id,
-        created_at,
-        is_edited,
-        is_deleted,
-        user_id,
-        ride_id,
-        seen_by,
-        note:case(is_deleted, 'Message deleted', note),
-        user:users (name)
-      `
+    *,
+    user:users (name)
+  `
       )
       .eq("ride_id", rideId)
       .order("created_at", { ascending: true });
+
+    // Mask content of deleted messages
+    if (notes) {
+      notes.forEach((note) => {
+        if (note.is_deleted) {
+          note.note = "deleted message";
+        }
+      });
+    }
 
     if (error) throw error;
 
@@ -136,22 +138,13 @@ export async function DELETE(request: Request) {
   const { noteId, userId } = await request.json();
 
   try {
-    // First fetch the note to make sure it exists and belongs to the user
-    const { error: fetchError } = await supabase
-      .from("ride_notes")
-      .select("id")
-      .eq("id", noteId)
-      .eq("user_id", userId)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    // Then update it to mark as deleted without changing the note content
     const { error: deleteError } = await supabase
       .from("ride_notes")
       .update({ is_deleted: true })
       .eq("id", noteId)
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .select()
+      .single();
 
     if (deleteError) throw deleteError;
 

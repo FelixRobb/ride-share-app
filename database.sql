@@ -193,7 +193,6 @@ CREATE TABLE public.users (
 );
 CREATE INDEX IF NOT EXISTS idx_users_phone ON public.users USING btree (phone);
 
--- Functions
 CREATE OR REPLACE FUNCTION public.count_reports_by_type()
 RETURNS TABLE(report_type text, count bigint) AS $$
 BEGIN
@@ -288,50 +287,4 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.use_password_reset_token(reset_token uuid, new_password character varying)
-RETURNS boolean AS $$
-DECLARE
-  user_id UUID;
-BEGIN
-  SELECT user_id INTO user_id
-  FROM password_reset_tokens
-  WHERE token = reset_token AND expires_at > CURRENT_TIMESTAMP;
-
-  IF user_id IS NULL THEN
-    RETURN FALSE;
-  END IF;
-
-  UPDATE users
-  SET password = new_password
-  WHERE id = user_id;
-
-  UPDATE password_reset_tokens
-  SET expires_at = CURRENT_TIMESTAMP
-  WHERE token = reset_token;
-
-  RETURN TRUE;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION public.cleanup_expired_tokens()
-RETURNS void AS $$
-BEGIN
-  DELETE FROM password_reset_tokens
-  WHERE expires_at <= CURRENT_TIMESTAMP;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION public.format_to_e164(country_code character varying, phone character varying)
-RETURNS character varying AS $$
-BEGIN
-  RETURN country_code || regexp_replace(phone, '\\D', '', 'g');
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION public.update_bug_reports_updated_at()
-RETURNS trigger AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION public.use_password_reset_token

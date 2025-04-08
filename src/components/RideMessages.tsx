@@ -1,6 +1,7 @@
 "use client";
 
 import { Edit, LucideUser, MessageSquare, Send, Trash } from "lucide-react";
+import type React from "react";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 
@@ -153,6 +154,12 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
   const handleEditNote = async (noteId: string) => {
     const noteToEdit = notes.find((note) => note.id === noteId);
     if (noteToEdit) {
+      // Prevent editing deleted messages
+      if (noteToEdit.is_deleted) {
+        toast.error("Cannot edit a deleted message.");
+        return;
+      }
+
       const noteDate = new Date(noteToEdit.created_at);
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000); // Current time minus one hour
 
@@ -162,14 +169,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
         return; // Prevent editing if the note is older than one hour
       }
 
-      // Don't allow editing deleted messages
-      if (noteToEdit.is_deleted || noteToEdit.note === null) {
-        toast.error("Deleted messages cannot be edited.");
-        return;
-      }
-
       setEditingNoteId(noteId);
-      // Since we've checked that the note isn't null above, it's safe to use it
       setNewNote(noteToEdit.note);
       setMessageLength(noteToEdit.note.length);
       setIsEditing(true);
@@ -203,13 +203,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
     if (noteToDeleteId) {
       try {
         await deleteNote(noteToDeleteId, currentUser.id);
-        setNotes((prevNotes) =>
-          prevNotes.map((note) =>
-            note.id === noteToDeleteId
-              ? { ...note, is_deleted: true, note: "Message deleted" }
-              : note
-          )
-        );
+        setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteToDeleteId));
         toast.success("Message deleted successfully.");
       } catch {
         toast.error("Failed to delete message. Please try again.");
@@ -221,6 +215,12 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
   };
 
   const handleDeleteNote = (noteId: string) => {
+    const noteToDelete = notes.find((note) => note.id === noteId);
+    if (noteToDelete && noteToDelete.is_deleted) {
+      toast.error("This message has already been deleted.");
+      return;
+    }
+
     setNoteToDeleteId(noteId);
     setIsDeleteNoteDialogOpen(true);
   };
@@ -386,12 +386,18 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
                         <div
                           className={`px-4 py-2 shadow-sm overflow-hidden ${
                             isCurrentUser
-                              ? "bg-primary text-primary-foreground rounded-lg rounded-br-none"
-                              : "bg-secondary text-secondary-foreground rounded-lg rounded-bl-none"
-                          } ${note.is_deleted ? "opacity-70" : ""}`}
+                              ? note.is_deleted
+                                ? "bg-muted text-muted-foreground rounded-lg rounded-br-none"
+                                : "bg-primary text-primary-foreground rounded-lg rounded-br-none"
+                              : note.is_deleted
+                                ? "bg-muted text-muted-foreground rounded-lg rounded-bl-none"
+                                : "bg-secondary text-secondary-foreground rounded-lg rounded-bl-none"
+                          }`}
                         >
                           <div className="overflow-hidden whitespace-wrap">
-                            <p className="text-sm break-words">{note.note}</p>
+                            <p className={`text-sm break-words ${note.is_deleted ? "italic" : ""}`}>
+                              {note.note}
+                            </p>
                             <div
                               className={`flex items-center text-xs opacity-70 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}
                             >
@@ -400,18 +406,18 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
                                   hour: "2-digit",
                                   minute: "2-digit",
                                 })}
-                                {note.is_edited && " • edited"}
+                                {note.is_edited && !note.is_deleted && " • edited"}
                                 {note.is_deleted && " • deleted"}
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Action buttons overlay for current user messages */}
-                        {isCurrentUser && !editingNoteId && (
+                        {/* Action buttons overlay for current user messages that aren't deleted */}
+                        {isCurrentUser && !editingNoteId && !note.is_deleted && (
                           <div className="absolute -top-3 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out z-20">
                             <div className="bg-background/90 backdrop-blur-sm rounded-full shadow-md border border-border flex overflow-hidden p-0.5">
-                              {isEditable && !note.is_deleted && (
+                              {isEditable && (
                                 <Button
                                   onClick={() => handleEditNote(note.id)}
                                   size="sm"
@@ -428,7 +434,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
                                 size="sm"
                                 variant="ghost"
                                 className="h-6 w-6 p-0 rounded-full hover:bg-destructive/10 hover:text-destructive"
-                                disabled={!isOnline || note.is_deleted}
+                                disabled={!isOnline}
                               >
                                 <Trash className="h-3 w-3" />
                                 <span className="sr-only">Delete</span>
