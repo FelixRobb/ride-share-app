@@ -46,8 +46,11 @@ export async function GET(request: Request) {
         status: 304,
         headers: {
           ETag: etag,
-          "Cache-Control": "private, max-age=10",
-          Vary: "Authorization",
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+          "Surrogate-Control": "no-store",
         },
       });
     }
@@ -58,8 +61,10 @@ export async function GET(request: Request) {
         headers: {
           ETag: etag,
           "Content-Type": "application/json",
-          "Cache-Control": "private, max-age=10",
-          Vary: "Authorization",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+          "Surrogate-Control": "no-store",
         },
       }
     );
