@@ -11,20 +11,18 @@ import {
   Settings,
   Smartphone,
   Trash2,
+  X,
+  Filter,
+  CheckCheck,
+  AlertCircle,
+  Info,
+  ShieldAlert,
 } from "lucide-react";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -34,13 +32,20 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  DrawerClose,
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
   DrawerDescription,
   DrawerFooter,
+  DrawerTrigger,
 } from "@/components/ui/drawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -92,31 +97,73 @@ const notificationTypes = {
 const getNotificationIcon = (type: string) => {
   switch (type) {
     case "newNote":
-      return <MessageSquare className="h-4 w-4 text-blue-500" />;
+      return <MessageSquare className="h-5 w-5 text-blue-500" />;
     case "contactRequest":
+      return <UserPlus className="h-5 w-5 text-emerald-500" />;
     case "contactAccepted":
-      return <UserPlus className="h-4 w-4 text-green-500" />;
+      return <CheckCheck className="h-5 w-5 text-green-500" />;
     case "newRide":
+      return <Car className="h-5 w-5 text-amber-500" />;
     case "rideAccepted":
+      return <CheckCircle className="h-5 w-5 text-indigo-500" />;
     case "rideCancelled":
-      return <Car className="h-4 w-4 text-orange-500" />;
+      return <X className="h-5 w-5 text-rose-500" />;
     case "rideCompleted":
-      return <CheckCircle className="h-4 w-4 text-purple-500" />;
+      return <CheckCheck className="h-5 w-5 text-purple-500" />;
     case "admin_notification":
-      return <Bell className="h-4 w-4 text-red-500" />;
+      return <ShieldAlert className="h-5 w-5 text-red-500" />;
     default:
-      return <Bell className="h-4 w-4 text-zinc-500" />;
+      return <Info className="h-5 w-5 text-zinc-500" />;
+  }
+};
+
+const getNotificationColor = (type: string) => {
+  switch (type) {
+    case "newNote":
+      return "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800";
+    case "contactRequest":
+      return "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800";
+    case "contactAccepted":
+      return "bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800";
+    case "newRide":
+      return "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800";
+    case "rideAccepted":
+      return "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800";
+    case "rideCancelled":
+      return "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800";
+    case "rideCompleted":
+      return "bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800";
+    case "admin_notification":
+      return "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800";
+    default:
+      return "bg-zinc-50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800";
   }
 };
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return date.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) {
+    return "Just now";
+  } else if (diffMins < 60) {
+    return `${diffMins} ${diffMins === 1 ? "minute" : "minutes"} ago`;
+  } else if (diffHours < 24) {
+    return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+  } else if (diffDays < 7) {
+    return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
+  } else {
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+    });
+  }
 };
 
 const NotificationFilters = ({
@@ -134,11 +181,16 @@ const NotificationFilters = ({
   searchTerm: string;
   setSearchTerm: (term: string) => void;
 }) => {
-  return (
-    <div className="flex flex-col gap-4 mb-2 mt-4">
-      <div className="flex gap-4">
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+
+  const renderFilters = () => (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <label htmlFor="notification-type" className="text-sm font-medium">
+          Notification Type
+        </label>
         <Select value={selectedType} onValueChange={setSelectedType}>
-          <SelectTrigger className="flex-1 min-w-10">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Filter by type" />
           </SelectTrigger>
           <SelectContent>
@@ -149,22 +201,75 @@ const NotificationFilters = ({
             ))}
           </SelectContent>
         </Select>
-        <Tabs value={selectedFilter} onValueChange={setSelectedFilter} className="w-fit">
-          <TabsList>
+      </div>
+
+      <div className="space-y-1.5">
+        <span className="text-sm font-medium">Status</span>
+        <Tabs value={selectedFilter} onValueChange={setSelectedFilter} className="w-full">
+          <TabsList className="w-full grid grid-cols-2">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="unread">Unread</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
       <div className="relative">
-        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
           placeholder="Search notifications..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-8"
+          className="pl-10 pr-10 rounded-full"
         />
+        {isDesktop ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full"
+              >
+                <Filter className="h-4 w-4" />
+                <span className="sr-only">Toggle filters</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-72 p-3" align="end">
+              {renderFilters()}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full"
+              >
+                <Filter className="h-4 w-4" />
+                <span className="sr-only">Toggle filters</span>
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>Filters</DrawerTitle>
+                <DrawerDescription>Customize your notification list</DrawerDescription>
+              </DrawerHeader>
+              <div className="p-4">{renderFilters()}</div>
+              <DrawerFooter>
+                <DrawerClose asChild>
+                  <Button variant="outline" className="w-full">
+                    Close
+                  </Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
+        )}
       </div>
     </div>
   );
@@ -285,38 +390,51 @@ const NotificationList = ({
 
   return (
     <ScrollArea
-      className={`${isDesktop ? "h-[calc(100vh-13rem)]" : "h-[66svh]"} w-full p-2 pr-4 my-4 border rounded-lg`}
+      className={`${isDesktop ? "h-[calc(100vh-10rem)]" : "h-[70svh]"} w-full my-4 border rounded-lg p-2 pr-4`}
     >
       {filteredNotifications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <Bell className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-lg font-medium">No notifications found</p>
-          <p className="text-sm text-muted-foreground">Try adjusting your filters or search term</p>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="bg-muted/30 p-6 rounded-full mb-4">
+            <Bell className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-medium mb-1">No notifications found</h3>
+          <p className="text-sm text-muted-foreground max-w-xs">
+            Try adjusting your filters or search term to find what you&apos;re looking for
+          </p>
         </div>
       ) : (
-        filteredNotifications.map((notification) => (
-          <Card
-            key={notification.id}
-            className={`mb-4 transition-all duration-200 hover:shadow-md ${notification.is_read ? "opacity-60" : ""}`}
-          >
-            <CardHeader className="p-4 pb-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
+        <div className="space-y-3">
+          {filteredNotifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`p-3 rounded-lg border transition-all duration-200 hover:shadow-sm ${
+                notification.is_read ? "opacity-70" : ""
+              } ${getNotificationColor(notification.type)}`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 bg-background rounded-full p-2 border">
                   {getNotificationIcon(notification.type)}
-                  <CardTitle className="text-sm font-medium">
-                    {notificationTypes[notification.type as keyof typeof notificationTypes]}
-                  </CardTitle>
                 </div>
-                <CardDescription className="text-xs">
-                  {formatDate(notification.created_at)}
-                </CardDescription>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <h4 className="text-sm font-medium truncate">
+                      {notificationTypes[notification.type as keyof typeof notificationTypes]}
+                    </h4>
+                    <div className="flex items-center gap-1">
+                      {!notification.is_read && (
+                        <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                      )}
+                      <time className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDate(notification.created_at)}
+                      </time>
+                    </div>
+                  </div>
+                  <p className="text-sm">{notification.message}</p>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <p className="text-sm">{notification.message}</p>
-            </CardContent>
-          </Card>
-        ))
+            </div>
+          ))}
+        </div>
       )}
     </ScrollArea>
   );
@@ -329,8 +447,8 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
   const [currentDeviceId] = useState(() => getDeviceId());
   const [permissionState, setPermissionState] = useState<NotificationPermission | null>(null);
   const [hasDeclinedInApp, setHasDeclinedInApp] = useState(false);
-  const isDesktop = useMediaQuery("(min-width: 768px)");
   const isOnline = useOnlineStatus();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   // Check notification permission and declined state on mount and when settings are opened
   useEffect(() => {
@@ -480,28 +598,22 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
     permissionState === "denied" || (permissionState === "default" && hasDeclinedInApp);
 
   const PermissionDeniedBanner = (
-    <Card className="border-destructive/50 bg-destructive/5 hover:shadow-none mb-6">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Bell className="h-5 w-5 text-destructive" />
-            <CardTitle className="text-sm font-semibold">Notifications Blocked</CardTitle>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0 pb-4">
-        <p className="text-sm mb-3">
-          {permissionState === "denied"
-            ? "Push notifications are blocked in your browser settings for this site."
-            : "You previously declined push notifications for this site."}{" "}
-          To receive ride updates and important notifications, please allow them in your browser.
-        </p>
-        <div className="flex flex-col space-y-2">
-          <Button size="sm" onClick={handleRequestPermission} className="w-full">
+    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+      <div className="flex items-start gap-3">
+        <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+        <div>
+          <h3 className="font-medium text-destructive mb-1">Notifications Blocked</h3>
+          <p className="text-sm mb-3">
+            {permissionState === "denied"
+              ? "Push notifications are blocked in your browser settings for this site."
+              : "You previously declined push notifications for this site."}{" "}
+            To receive ride updates and important notifications, please allow them in your browser.
+          </p>
+          <Button size="sm" onClick={handleRequestPermission} variant="outline" className="w-full">
             Request Permission Again
           </Button>
-          <div className="text-xs text-muted-foreground mt-1">
-            <p className="text-center mb-2">
+          <div className="text-xs text-muted-foreground mt-3">
+            <p className="mb-1">
               If the button doesn&apos;t work, you may need to update permissions in your browser
               settings:
             </p>
@@ -520,16 +632,16 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
             </ul>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 
   const SettingsContent = (
-    <div className="space-y-6 py-5">
+    <div className="space-y-6 py-2">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Device Notifications</h3>
+            <h3 className="text-lg font-medium">Device Notifications</h3>
             <p className="text-sm text-muted-foreground">
               Manage push notifications across your devices
             </p>
@@ -545,77 +657,80 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
         {shouldShowPermissionBanner && PermissionDeniedBanner}
 
         {isLoading ? (
-          <div className="flex justify-center py-6">
-            <Loader className="animate-spin h-8 w-8 text-primary" />
+          <div className="flex justify-center py-12">
+            <div className="flex flex-col items-center">
+              <Loader className="animate-spin h-8 w-8 text-primary mb-3" />
+              <p className="text-sm text-muted-foreground">Loading devices...</p>
+            </div>
           </div>
         ) : devices.length === 0 && !shouldShowPermissionBanner ? (
-          <div className="text-center py-6 border rounded-lg bg-accent/50">
-            <Smartphone className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No devices registered for notifications</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              Connect a new device to receive push notifications
+          <div className="flex flex-col items-center justify-center py-12 text-center bg-muted/30 rounded-lg">
+            <div className="bg-background p-4 rounded-full border mb-4">
+              <Smartphone className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-base font-medium mb-1">No devices registered</h3>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Connect a new device to receive push notifications about your rides and contacts
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {devices.map((device) => (
-              <Card
+              <div
                 key={device.device_id}
-                className={`
-                  ${device.device_id === currentDeviceId ? "border-primary" : "border-border"}
-                  hover:shadow-sm transition-shadow duration-200
-                  ${!device.enabled ? "opacity-60" : ""}
-                `}
+                className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${
+                  device.device_id === currentDeviceId ? "border-primary" : ""
+                } ${!device.enabled ? "opacity-70 bg-muted/30" : "bg-card"}`}
               >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Smartphone
-                        className={`h-5 w-5 ${device.enabled ? "text-primary" : "text-muted-foreground"}`}
-                      />
-                      <div>
-                        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                          {device.device_name}
-                          {device.device_id === currentDeviceId && (
-                            <Badge variant="outline" className="text-xs text-nowrap truncate">
-                              Current Device
-                            </Badge>
-                          )}
-                        </CardTitle>
-                        <CardDescription className="text-xs mt-1">
-                          Last used: {formatLastUsed(device.last_used)}
-                        </CardDescription>
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`p-2 rounded-full ${device.enabled ? "bg-primary/10" : "bg-muted"}`}
+                  >
+                    <Smartphone
+                      className={`h-5 w-5 ${device.enabled ? "text-primary" : "text-muted-foreground"}`}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        {device.device_name}
+                        {device.device_id === currentDeviceId && (
+                          <Badge variant="outline" className="text-xs">
+                            Current Device
+                          </Badge>
+                        )}
+                      </h4>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Last used: {formatLastUsed(device.last_used)}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={device.enabled}
+                          onCheckedChange={(checked) =>
+                            handleToggleDevice(device.device_id, checked)
+                          }
+                          disabled={!isOnline}
+                        />
+                        <span className="text-sm">{device.enabled ? "Enabled" : "Disabled"}</span>
                       </div>
+                      {!(device.device_id === currentDeviceId) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveDevice(device.device_id)}
+                          disabled={!isOnline}
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                      )}
                     </div>
                   </div>
-                </CardHeader>
-                <CardFooter className="pt-0 flex justify-between items-center">
-                  <div className="flex items-center space-x-3">
-                    <Switch
-                      checked={device.enabled}
-                      onCheckedChange={(checked) => handleToggleDevice(device.device_id, checked)}
-                      disabled={!isOnline}
-                      className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-input"
-                    />
-                    <span
-                      className={`text-sm ${device.enabled ? "text-foreground" : "text-muted-foreground"}`}
-                    >
-                      {device.enabled ? "Notifications On" : "Notifications Off"}
-                    </span>
-                  </div>
-                  {!(device.device_id === currentDeviceId) && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveDevice(device.device_id)}
-                      disabled={!isOnline}
-                      className="text-destructive hover:bg-destructive/10 transition-colors duration-200"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </CardFooter>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -628,14 +743,14 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
       <>
         {SettingsButton}
         <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-          <DialogContent className="sm:max-w-[500px] max-h-[90svh]">
+          <DialogContent className="sm:max-w-[500px] max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle className="text-2xl">Notification Preferences</DialogTitle>
+              <DialogTitle className="text-xl">Notification Preferences</DialogTitle>
               <DialogDescription>
                 Customize how and where you receive notifications across your devices
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="max-h-[60vh] px-4">{SettingsContent}</ScrollArea>
+            <ScrollArea className="max-h-[60vh] pr-4">{SettingsContent}</ScrollArea>
             <DialogFooter>
               <Button onClick={() => setIsSettingsOpen(false)} variant="outline">
                 Close
@@ -656,7 +771,7 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
             <DrawerTitle className="text-xl">Notification Preferences</DrawerTitle>
             <DrawerDescription>Customize how and where you receive notifications</DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 max-h-[60svh] overflow-auto">{SettingsContent}</div>
+          <div className="px-4 max-h-[60vh] overflow-auto">{SettingsContent}</div>
           <DrawerFooter className="pt-2">
             <Button variant="outline" onClick={() => setIsSettingsOpen(false)} className="w-full">
               Close
@@ -715,29 +830,15 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
   const [selectedType, setSelectedType] = useState("all");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [etag, setEtag] = useState<string | null>(null);
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const isOnline = useOnlineStatus();
-
   const fetchNotificationsCallback = useCallback(async () => {
     if (!isOnline) {
       return;
     }
 
-    const headers: HeadersInit = {};
-    if (etag) {
-      headers["If-None-Match"] = etag;
-    }
+    const result = await safeFetch("/api/notifications");
 
-    // Use our safe fetch utility
-    const result = await safeFetch("/api/notifications", { headers });
-
-    // Handle 304 Not Modified
-    if (result.notModified) {
-      return;
-    }
-
-    // Handle errors
     if (result.error) {
       if (result.parseError) {
         toast.error("Error parsing notification data");
@@ -750,15 +851,7 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
     }
 
     // We have data at this point
-    const { data, response } = result;
-
-    // Check if response exists
-    if (!response) {
-      toast.error("Error processing notification data");
-      return;
-    }
-
-    const newEtag = response.headers.get("ETag");
+    const { data } = result;
 
     // Validate notification data structure
     if (!data || !data.notifications) {
@@ -795,24 +888,18 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
 
     if (!validStructure) {
       toast.error("Invalid notification data format");
-      return;
     }
 
     // Update state if both are null (initial load) or they don't match
-    if (newEtag !== etag || (newEtag === null && etag === null)) {
-      const unreadFilteredCount = data.notifications.filter((n: Notification) => !n.is_read).length;
+    const unreadFilteredCount = data.notifications.filter((n: Notification) => !n.is_read).length;
 
-      setEtag(newEtag);
-      setNotifications(data.notifications);
-      setUnreadCount(unreadFilteredCount);
-    }
-  }, [etag, isOnline]);
+    setNotifications(data.notifications);
+    setUnreadCount(unreadFilteredCount);
+  }, [isOnline]);
 
   useEffect(() => {
     if (isOnline) {
       void fetchNotificationsCallback();
-      const interval = setInterval(() => void fetchNotificationsCallback(), 15000);
-      return () => clearInterval(interval);
     }
   }, [fetchNotificationsCallback, isOnline]);
 
@@ -837,17 +924,20 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
   const NotificationButton = useMemo(
     () => (
       <Button
-        variant="outline"
+        variant="ghost"
         size="icon"
-        className="relative rounded-full hover:bg-accent/80 transition-all"
+        className="relative rounded-full hover:bg-accent/20 transition-colors duration-200"
         onClick={() => handleOpenChange(true)}
         data-tutorial="notifications"
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+          <Badge
+            variant="destructive"
+            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+          >
             {unreadCount}
-          </span>
+          </Badge>
         )}
       </Button>
     ),
@@ -882,11 +972,11 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
       <>
         {NotificationButton}
         <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-          <SheetContent>
-            <SheetHeader className="flex flex-row items-center justify-between pr-2">
+          <SheetContent className="sm:max-w-md">
+            <SheetHeader className="flex flex-row items-center justify-between pr-2 mb-2">
               <div>
-                <SheetTitle>Notifications</SheetTitle>
-                <SheetDescription>Your recent notifications</SheetDescription>
+                <SheetTitle className="text-xl">Notifications</SheetTitle>
+                <SheetDescription>Stay updated with your rides and contacts</SheetDescription>
               </div>
               <NotificationSettings userId={userId} />
             </SheetHeader>
@@ -903,10 +993,10 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
       <Drawer open={isOpen} onOpenChange={handleOpenChange}>
         <DrawerContent>
           <div className="h-[90svh]">
-            <DrawerHeader className="flex flex-row items-center justify-between pr-4">
+            <DrawerHeader className="flex flex-row items-center justify-between pr-4 mb-2">
               <div>
-                <DrawerTitle>Notifications</DrawerTitle>
-                <DrawerDescription>Your recent notifications</DrawerDescription>
+                <DrawerTitle className="text-xl">Notifications</DrawerTitle>
+                <DrawerDescription>Stay updated with your rides and contacts</DrawerDescription>
               </div>
               <NotificationSettings userId={userId} />
             </DrawerHeader>
