@@ -575,3 +575,28 @@ export async function updateBugReportStatus(
 
   return await response.json();
 }
+
+export const fetchNotifications = async () => {
+  try {
+    const response = await fetch(`/api/notifications`, {
+      cache: "no-cache", // Ensures we always make a request to the server
+      headers: {
+        "Cache-Control": "max-age=0",
+      },
+    });
+
+    if (response.status === 304) {
+      // Content hasn't changed, browser will use its cached data
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch notifications");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    throw error;
+  }
+};

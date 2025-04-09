@@ -18,7 +18,7 @@ import {
   Info,
   ShieldAlert,
 } from "lucide-react";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -783,46 +783,6 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
   );
 };
 
-// Utility function to safely fetch data with error handling
-const safeFetch = async (url: string, options?: RequestInit) => {
-  try {
-    const response = await fetch(url, options);
-
-    // For 304 Not Modified, return a special result
-    if (response.status === 304) {
-      return { notModified: true, data: null, response };
-    }
-
-    // For non-ok responses, structure a consistent error
-    if (!response.ok) {
-      return {
-        error: true,
-        status: response.status,
-        statusText: response.statusText,
-        data: null,
-        response,
-      };
-    }
-
-    // Get text and parse as JSON
-    try {
-      const text = await response.text();
-      const data = JSON.parse(text);
-      return { data, response };
-    } catch {
-      return {
-        error: true,
-        parseError: true,
-        data: null,
-        response,
-      };
-    }
-  } catch {
-    // Network error or other fetch failure
-    return { error: true, networkError: true, data: null };
-  }
-};
-
 export function NotificationPanel({ userId }: NotificationPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -832,74 +792,109 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const isOnline = useOnlineStatus();
+  const cachedNotificationsRef = useRef<Notification[]>([]);
+  const etagRef = useRef<string | null>(null);
+
   const fetchNotificationsCallback = useCallback(async () => {
     if (!isOnline) {
       return;
     }
 
-    const result = await safeFetch("/api/notifications");
+    try {
+      const headers: HeadersInit = {
+        "Cache-Control": "max-age=0",
+      };
 
-    if (result.error) {
-      if (result.parseError) {
-        toast.error("Error parsing notification data");
-      } else if (result.networkError) {
-        toast.error("Network error, please try again");
-      } else {
-        toast.error("Failed to fetch notifications");
+      // Add If-None-Match header if we have a stored ETag
+      if (etagRef.current) {
+        headers["If-None-Match"] = etagRef.current;
       }
-      return;
-    }
 
-    // We have data at this point
-    const { data } = result;
+      const response = await fetch("/api/notifications", {
+        cache: "no-cache",
+        headers,
+      });
 
-    // Validate notification data structure
-    if (!data || !data.notifications) {
-      toast.error("Invalid API response");
-      return;
-    }
-
-    if (!Array.isArray(data.notifications)) {
-      toast.error("Invalid notifications data structure");
-      return;
-    }
-
-    // Check if we have valid notification objects
-    let validStructure = true;
-    let _firstInvalidIdx = -1;
-
-    // Verify the first few notifications have the right shape
-    for (let i = 0; i < Math.min(data.notifications.length, 3); i++) {
-      const n = data.notifications[i];
-      if (
-        !n ||
-        typeof n !== "object" ||
-        !("id" in n) ||
-        !("type" in n) ||
-        !("message" in n) ||
-        !("created_at" in n) ||
-        !("is_read" in n)
-      ) {
-        validStructure = false;
-        _firstInvalidIdx = i;
-        break;
+      // If we get a 304 Not Modified, use our cached data
+      if (response.status === 304) {
+        return;
       }
+
+      // Store the new ETag if available
+      const newETag = response.headers.get("etag");
+      if (newETag) {
+        etagRef.current = newETag;
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch notifications");
+      }
+
+      const data = await response.json();
+
+      // Validate notification data structure
+      if (!data || !data.notifications) {
+        toast.error("Invalid API response");
+        return;
+      }
+
+      if (!Array.isArray(data.notifications)) {
+        toast.error("Invalid notifications data structure");
+        return;
+      }
+
+      // Check if we have valid notification objects
+      let validStructure = true;
+      let _firstInvalidIdx = -1;
+
+      // Verify the first few notifications have the right shape
+      for (let i = 0; i < Math.min(data.notifications.length, 3); i++) {
+        const n = data.notifications[i];
+        if (
+          !n ||
+          typeof n !== "object" ||
+          !("id" in n) ||
+          !("type" in n) ||
+          !("message" in n) ||
+          !("created_at" in n) ||
+          !("is_read" in n)
+        ) {
+          validStructure = false;
+          _firstInvalidIdx = i;
+          break;
+        }
+      }
+
+      if (!validStructure) {
+        toast.error("Invalid notification data format");
+        return;
+      }
+
+      // Update our cache and state
+      cachedNotificationsRef.current = data.notifications;
+      setNotifications(data.notifications);
+
+      // Update unread count
+      const unreadFilteredCount = data.notifications.filter((n: Notification) => !n.is_read).length;
+      setUnreadCount(unreadFilteredCount);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      toast.error("Failed to fetch notifications");
     }
-
-    if (!validStructure) {
-      toast.error("Invalid notification data format");
-    }
-
-    // Update state if both are null (initial load) or they don't match
-    const unreadFilteredCount = data.notifications.filter((n: Notification) => !n.is_read).length;
-
-    setNotifications(data.notifications);
-    setUnreadCount(unreadFilteredCount);
   }, [isOnline]);
 
+  // Set up polling for notifications
   useEffect(() => {
     if (isOnline) {
+      // Initial fetch
       void fetchNotificationsCallback();
+
+      // Set up polling every 30 seconds
+      const intervalId = setInterval(() => {
+        void fetchNotificationsCallback();
+      }, 30000);
+
+      return () => clearInterval(intervalId);
     }
   }, [fetchNotificationsCallback, isOnline]);
 

@@ -42,7 +42,14 @@ export async function GET(request: Request) {
 
     // If ETag matches, return 304 Not Modified
     if (ifNoneMatch === etag) {
-      return new NextResponse(null, { status: 304 });
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          ETag: etag,
+          "Cache-Control": "private, max-age=10",
+          Vary: "Authorization",
+        },
+      });
     }
 
     return NextResponse.json(
@@ -51,10 +58,8 @@ export async function GET(request: Request) {
         headers: {
           ETag: etag,
           "Content-Type": "application/json",
-          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-          "Surrogate-Control": "no-store",
+          "Cache-Control": "private, max-age=10",
+          Vary: "Authorization",
         },
       }
     );
