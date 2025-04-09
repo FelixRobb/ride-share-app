@@ -18,10 +18,12 @@ import {
   UserX,
   Smartphone,
   Trash2,
+  AlertCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
+import type React from "react";
 import { useState, useEffect, useCallback } from "react";
 import PhoneInput from "react-phone-number-input";
 import { toast } from "sonner";
@@ -119,6 +121,8 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
   const [isPushLoading, setIsPushLoading] = useState(true);
   const [currentDeviceId] = useState(() => getDeviceId());
   const [editedUserData, setEditedUserData] = useState<User | null>(null);
+  const [permissionState, setPermissionState] = useState<NotificationPermission | null>(null);
+  const [hasDeclinedInApp, setHasDeclinedInApp] = useState(false);
 
   // Add this line in the component, near the other state declarations
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -213,6 +217,44 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if ("Notification" in window) {
+        setPermissionState(Notification.permission);
+      }
+
+      // Check if user has previously declined in the app
+      const hasDeclined = localStorage.getItem("pushNotificationDeclined");
+      setHasDeclinedInApp(hasDeclined === "true");
+    }
+  }, [activeTab]); // Re-check when tab changes
+
+  const handleRequestPermission = async () => {
+    try {
+      const permission = await Notification.requestPermission();
+      setPermissionState(permission);
+
+      if (permission === "granted") {
+        // Clear the declined flag when permission is granted
+        localStorage.removeItem("pushNotificationDeclined");
+        setHasDeclinedInApp(false);
+
+        // Refresh the page to trigger the PushNotificationHandler to register
+        window.location.reload();
+      } else if (permission === "denied") {
+        toast.error("Permission denied for push notifications");
+      } else {
+        // If still in default state after request (user dismissed the browser dialog)
+        // we'll treat this as a declined state for our app
+        localStorage.setItem("pushNotificationDeclined", "true");
+        setHasDeclinedInApp(true);
+        toast.error("Notification permission prompt was dismissed");
+      }
+    } catch {
+      toast.error("Failed to request notification permission");
+    }
+  };
+
+  useEffect(() => {
     const fetchPushDevices = async () => {
       if (!isOnline || !user) return;
 
@@ -221,7 +263,21 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
         const response = await fetch(`/api/users/${user.id}/push-devices`);
         if (response.ok) {
           const data = await response.json();
-          setPushDevices(data.devices || []);
+
+          // If permission is denied OR the user has declined in app with default permission,
+          // filter out the current device
+          const shouldFilter =
+            permissionState === "denied" || (permissionState === "default" && hasDeclinedInApp);
+
+          if (shouldFilter) {
+            setPushDevices(
+              data.devices.filter(
+                (device: AppPushSubscription) => device.device_id !== currentDeviceId
+              )
+            );
+          } else {
+            setPushDevices(data.devices);
+          }
         } else {
           // Handle error case
           setPushDevices([]);
@@ -236,7 +292,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
     };
 
     void fetchPushDevices();
-  }, [user, user?.id, isOnline]);
+  }, [user, user?.id, isOnline, permissionState, currentDeviceId, hasDeclinedInApp]);
 
   const handleToggleDevice = async (deviceId: string, enabled: boolean) => {
     try {
@@ -882,12 +938,65 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                           Manage push notifications for each of your devices
                         </p>
 
+                        {(permissionState === "denied" ||
+                          (permissionState === "default" && hasDeclinedInApp)) && (
+                          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+                            <div className="flex items-start gap-3">
+                              <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+                              <div>
+                                <h3 className="font-medium text-destructive mb-1">
+                                  Notifications Blocked
+                                </h3>
+                                <p className="text-sm mb-3">
+                                  {permissionState === "denied"
+                                    ? "Push notifications are blocked in your browser settings for this site."
+                                    : "You previously declined push notifications for this site."}{" "}
+                                  To receive ride updates and important notifications, please allow
+                                  them in your browser.
+                                </p>
+                                <Button
+                                  size="sm"
+                                  onClick={handleRequestPermission}
+                                  variant="outline"
+                                  className="w-full"
+                                >
+                                  Request Permission Again
+                                </Button>
+                                <div className="text-xs text-muted-foreground mt-3">
+                                  <p className="mb-1">
+                                    If the button doesn&apos;t work, you may need to update
+                                    permissions in your browser settings:
+                                  </p>
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    <li>
+                                      <strong>Chrome:</strong> Click the lock/info icon in the
+                                      address bar → Site settings → Notifications
+                                    </li>
+                                    <li>
+                                      <strong>Safari:</strong> Preferences → Websites →
+                                      Notifications → Find this website
+                                    </li>
+                                    <li>
+                                      <strong>Firefox:</strong> Click the lock icon in the address
+                                      bar → Connection secure → More information → Permissions
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {isPushLoading ? (
                           <div className="space-y-4">
                             <Skeleton className="h-24 w-full" />
                             <Skeleton className="h-24 w-full" />
                           </div>
-                        ) : pushDevices.length === 0 ? (
+                        ) : pushDevices.length === 0 &&
+                          !(
+                            permissionState === "denied" ||
+                            (permissionState === "default" && hasDeclinedInApp)
+                          ) ? (
                           <div className="text-center py-4 bg-secondary/30 rounded-lg">
                             <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
                             <p className="text-sm text-muted-foreground">
