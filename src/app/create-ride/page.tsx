@@ -1,9 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { toast } from "sonner";
 
 import AuthLoader from "@/components/AuthLoader";
@@ -12,10 +12,30 @@ import type { User } from "@/types";
 
 const CreateRidePage = dynamic(() => import("@/components/CreateRidePage"), { ssr: false });
 
-export default function CreateRide() {
-  const router = useRouter();
+// Create a separate component that uses useSearchParams
+function CreateRideContent({ currentUser }: { currentUser: User }) {
+  // Import useSearchParams only within this component
   const searchParams = useSearchParams();
   const isReusingRide = searchParams.get("reuse") === "true";
+
+  useEffect(() => {
+    if (isReusingRide) {
+      // Use a timeout to ensure the toast appears after the page loads
+      const timer = setTimeout(() => {
+        toast.success(
+          "Ride details loaded. Please update the time and any other details as needed."
+        );
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isReusingRide]);
+
+  return <CreateRidePage currentUser={currentUser} />;
+}
+
+export default function CreateRide() {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const currentUser = session?.user as User | null;
 
@@ -24,20 +44,6 @@ export default function CreateRide() {
       router.push("/login");
     }
   }, [status, router]);
-
-  useEffect(() => {
-    if (isReusingRide && status === "authenticated") {
-      // Use a timeout to ensure the toast appears after the page loads
-      const timer = setTimeout(() => {
-        // We need to import toast, so add it to the imports at the top
-        toast.success(
-          "Ride details loaded. Please update the time and any other details as needed."
-        );
-      }, 500);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isReusingRide, status]);
 
   if (status === "loading") {
     return <AuthLoader />;
@@ -48,5 +54,11 @@ export default function CreateRide() {
     return null;
   }
 
-  return <Layout>{currentUser && <CreateRidePage currentUser={currentUser} />}</Layout>;
+  return (
+    <Layout>
+      <Suspense fallback={<div>Loading...</div>}>
+        {currentUser && <CreateRideContent currentUser={currentUser} />}
+      </Suspense>
+    </Layout>
+  );
 }
