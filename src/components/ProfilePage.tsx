@@ -134,7 +134,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
   const [newPasswordStrength, setNewPasswordStrength] = useState<string>("");
 
   const [isAddingAssociatedPerson, setIsAddingAssociatedPerson] = useState(false);
-  const [isDeletingAssociatedPerson, setIsDeletingAssociatedPerson] = useState(false);
+  const [isDeletingAssociatedPerson, setIsDeletingAssociatedPerson] = useState<string | null>(null);
 
   // Function to evaluate password strength
   const evaluatePasswordStrength = (password: string) => {
@@ -421,14 +421,14 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
 
   const handleDeleteAssociatedPerson = async (personId: string, personName: string) => {
     try {
-      setIsDeletingAssociatedPerson(true);
+      setIsDeletingAssociatedPerson(personId);
       await deleteAssociatedPerson(personId, user.id);
       await fetchData(true);
       toast.success(`${personName} removed successfully.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
-      setIsDeletingAssociatedPerson(false);
+      setIsDeletingAssociatedPerson(personId);
     }
   };
 
@@ -756,9 +756,9 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                               size="sm"
                               className="h-8 w-8 p-0 text-destructive"
                               onClick={() => handleDeleteAssociatedPerson(person.id, person.name)}
-                              disabled={!isOnline || isDeletingAssociatedPerson}
+                              disabled={!isOnline || isDeletingAssociatedPerson === person.id}
                             >
-                              {isDeletingAssociatedPerson ? (
+                              {isDeletingAssociatedPerson === person.id ? (
                                 <Loader className="animate-spin h-4 w-4" />
                               ) : (
                                 <UserX className="h-4 w-4" />
