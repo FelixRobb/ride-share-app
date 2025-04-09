@@ -21,10 +21,10 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import {
+  DialogFooter,
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -125,6 +125,25 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
   }, []);
 
   useEffect(() => {
+    // Check for reused ride data first (takes priority)
+    const reusedRideData = localStorage.getItem("reuseRideData");
+    if (reusedRideData) {
+      const parsedData: RideData = JSON.parse(reusedRideData);
+      setRideData({
+        ...parsedData,
+        // Ensure time is set to default (24 hours from now)
+        time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      });
+
+      // If we're reusing a ride, we want to show the first step (locations)
+      setCurrentStep(0);
+
+      // Remove the reused ride data from localStorage
+      localStorage.removeItem("reuseRideData");
+      return;
+    }
+
+    // If no reused ride data, check for draft ride data
     const storedRideData = localStorage.getItem("rideData");
     if (storedRideData) {
       const parsedData: RideData = JSON.parse(storedRideData);
@@ -215,6 +234,7 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
       if (!isMounted) return;
       toast.success("Your ride request has been created successfully.");
       localStorage.removeItem("rideData");
+      localStorage.removeItem("reuseRideData");
       router.push("/dashboard");
     } catch (error) {
       if (!isMounted) return;
