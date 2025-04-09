@@ -5,39 +5,35 @@ import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
 export async function POST(request: Request) {
   const { userId } = await request.json();
-
   const url = new URL(request.url);
   const rideId = url.pathname.split("/").at(-2);
 
-  if (!userId || !rideId) {
-    return NextResponse.json({ error: "Missing required data" }, { status: 400 });
-  }
-
   try {
+    // Get the ride details
     const { data: ride, error: rideError } = await supabase
       .from("rides")
       .select("*")
       .eq("id", rideId)
-      .eq("accepter_id", userId)
       .single();
 
-    if (rideError || !ride) {
-      return NextResponse.json(
-        { error: "Ride not found or you are not the accepter" },
-        { status: 404 }
-      );
+    if (rideError) throw rideError;
+
+    // Check if the user is the accepter
+    if (ride.accepter_id !== userId) {
+      return NextResponse.json({ error: "You are not the accepter of this ride" }, { status: 403 });
     }
 
+    // Update the ride
     const { data: updatedRide, error: updateError } = await supabase
       .from("rides")
-      .update({ status: "pending", accepter_id: null })
+      .update({ accepter_id: null, status: "pending" })
       .eq("id", rideId)
       .select()
       .single();
 
     if (updateError) throw updateError;
 
-    // Fetch the accepter's name
+    // Get the accepter's name
     const { data: accepter, error: accepterError } = await supabase
       .from("users")
       .select("name")
@@ -46,26 +42,25 @@ export async function POST(request: Request) {
 
     if (accepterError) throw accepterError;
 
-    if (ride.requester_id) {
-      await sendImmediateNotification(
-        ride.requester_id,
-        "Ride Offer Cancelled",
-        `The accepted offer for your ride from ${ride.from_location} to ${ride.to_location} has been cancelled by ${accepter.name}`
-      );
+    // Send notification to the requester
+    await sendImmediateNotification(
+      ride.requester_id,
+      "Ride Offer Cancelled",
+      `${accepter.name} has cancelled their offer for your ride from ${ride.from_location} to ${ride.to_location}`
+    );
 
-      await supabase.from("notifications").insert({
-        user_id: ride.requester_id,
-        message: `The accepted offer for your ride from ${ride.from_location} to ${ride.to_location} has been cancelled by ${accepter.name}`,
-        type: "Ride Offer Cancelled",
-        related_id: rideId,
-      });
-    }
+    // Create a notification in the database
+    const { error: notificationError } = await supabase.from("notifications").insert({
+      user_id: ride.requester_id,
+      message: `${accepter.name} has cancelled their offer for your ride from ${ride.from_location} to ${ride.to_location}`,
+      type: "rideCancelled",
+      related_id: rideId,
+    });
+
+    if (notificationError) throw notificationError;
 
     return NextResponse.json({ ride: updatedRide });
-  } catch (error) {
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

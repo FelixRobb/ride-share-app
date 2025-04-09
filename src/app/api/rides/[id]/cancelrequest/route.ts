@@ -5,25 +5,28 @@ import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
 export async function POST(request: Request) {
   const { userId } = await request.json();
-
   const url = new URL(request.url);
   const rideId = url.pathname.split("/").at(-2);
 
   try {
+    // Get the ride details
     const { data: ride, error: rideError } = await supabase
       .from("rides")
       .select("*")
       .eq("id", rideId)
-      .eq("requester_id", userId)
       .single();
 
-    if (rideError || !ride) {
+    if (rideError) throw rideError;
+
+    // Check if the user is the requester
+    if (ride.requester_id !== userId) {
       return NextResponse.json(
-        { error: "Ride not found or you are not the requester" },
-        { status: 404 }
+        { error: "You are not the requester of this ride" },
+        { status: 403 }
       );
     }
 
+    // Update the ride
     const { data: updatedRide, error: updateError } = await supabase
       .from("rides")
       .update({ status: "cancelled" })
@@ -33,8 +36,9 @@ export async function POST(request: Request) {
 
     if (updateError) throw updateError;
 
+    // If there's an accepter, notify them
     if (ride.accepter_id) {
-      // Fetch the requester's name
+      // Get the requester's name
       const { data: requester, error: requesterError } = await supabase
         .from("users")
         .select("name")
@@ -43,17 +47,22 @@ export async function POST(request: Request) {
 
       if (requesterError) throw requesterError;
 
+      // Send notification to the accepter
       await sendImmediateNotification(
         ride.accepter_id,
         "Ride Cancelled",
-        `Your ride from ${ride.from_location} to ${ride.to_location} you accepted has been cancelled by ${requester.name}`
+        `${requester.name} has cancelled their ride request from ${ride.from_location} to ${ride.to_location}`
       );
-      await supabase.from("notifications").insert({
+
+      // Create a notification in the database
+      const { error: notificationError } = await supabase.from("notifications").insert({
         user_id: ride.accepter_id,
-        message: `Your ride from ${ride.from_location} to ${ride.to_location} you accepted has been cancelled by ${requester.name}`,
+        message: `${requester.name} has cancelled their ride request from ${ride.from_location} to ${ride.to_location}`,
         type: "rideCancelled",
         related_id: rideId,
       });
+
+      if (notificationError) throw notificationError;
     }
 
     return NextResponse.json({ ride: updatedRide });

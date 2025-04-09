@@ -20,7 +20,7 @@ import {
   Trash2,
   AlertCircle,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import type React from "react";
@@ -113,8 +113,10 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
     ridesRequested: number;
   } | null>(null);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("profile");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") || "profile";
+  const [activeTab, setActiveTab] = useState(initialTab); // Set initial tab
   const isOnline = useOnlineStatus();
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [pushDevices, setPushDevices] = useState<AppPushSubscription[]>([]);

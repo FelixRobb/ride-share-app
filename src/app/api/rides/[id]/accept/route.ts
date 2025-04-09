@@ -5,25 +5,25 @@ import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
 export async function POST(request: Request) {
   const { userId } = await request.json();
-
   const url = new URL(request.url);
   const rideId = url.pathname.split("/").at(-2);
 
   try {
+    // Get the ride details
     const { data: ride, error: rideError } = await supabase
       .from("rides")
       .select("*")
       .eq("id", rideId)
       .single();
 
-    if (rideError || !ride) {
-      return NextResponse.json({ error: "Ride not found" }, { status: 404 });
+    if (rideError) throw rideError;
+
+    // Check if the ride is already accepted
+    if (ride.accepter_id) {
+      return NextResponse.json({ error: "Ride already accepted" }, { status: 400 });
     }
 
-    if (ride.status !== "pending") {
-      return NextResponse.json({ error: "Ride is not available" }, { status: 400 });
-    }
-
+    // Update the ride
     const { data: updatedRide, error: updateError } = await supabase
       .from("rides")
       .update({ accepter_id: userId, status: "accepted" })
@@ -33,26 +33,31 @@ export async function POST(request: Request) {
 
     if (updateError) throw updateError;
 
-    // Fetch the current user's name
-    const { data: currentUser, error: userError } = await supabase
+    // Get the accepter's name
+    const { data: accepter, error: accepterError } = await supabase
       .from("users")
       .select("name")
       .eq("id", userId)
       .single();
 
-    if (userError) throw userError;
+    if (accepterError) throw accepterError;
 
+    // Send notification to the requester
     await sendImmediateNotification(
       ride.requester_id,
       "Ride Accepted",
-      `Your ride request from ${ride.from_location} to ${ride.to_location} has been accepted by ${currentUser.name}`
+      `${accepter.name} has accepted your ride from ${ride.from_location} to ${ride.to_location}`
     );
-    await supabase.from("notifications").insert({
+
+    // Create a notification in the database
+    const { error: notificationError } = await supabase.from("notifications").insert({
       user_id: ride.requester_id,
-      message: `Your ride request from ${ride.from_location} to ${ride.to_location} has been accepted by ${currentUser.name}`,
+      message: `${accepter.name} has accepted your ride from ${ride.from_location} to ${ride.to_location}`,
       type: "rideAccepted",
       related_id: rideId,
     });
+
+    if (notificationError) throw notificationError;
 
     return NextResponse.json({ ride: updatedRide });
   } catch {

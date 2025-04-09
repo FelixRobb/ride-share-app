@@ -15,6 +15,7 @@ export async function POST(request: Request) {
       user_id: userId,
       message: `${title}: ${body}`,
       type: "admin_notification",
+      related_id: null, // Admin notifications typically don't have a related entity
     });
 
     if (notificationError) {
