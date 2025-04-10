@@ -1,70 +1,50 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { supabase } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   const url = new URL(request.url);
   const contactId = url.pathname.split("/").at(-2);
 
-  const { userId } = await request.json();
-
   try {
+    // Get the contact details
     const { data: contact, error: contactError } = await supabase
       .from("contacts")
-      .select("*")
+      .select(
+        "*, user:users!contacts_user_id_fkey(name), contact:users!contacts_contact_id_fkey(name)"
+      )
       .eq("id", contactId)
-      .eq("contact_id", userId)
       .single();
 
-    if (contactError || !contact) {
-      return NextResponse.json({ error: "Contact request not found" }, { status: 404 });
-    }
+    if (contactError) throw contactError;
 
-    const { error: updateError } = await supabase
+    // Update the contact status
+    const { data: updatedContact, error: updateError } = await supabase
       .from("contacts")
       .update({ status: "accepted" })
-      .eq("id", contactId);
+      .eq("id", contactId)
+      .select()
+      .single();
 
     if (updateError) throw updateError;
 
-    // Fetch the current user's name
-    const { data: currentUser, error: userError } = await supabase
-      .from("users")
-      .select("name")
-      .eq("id", userId)
-      .single();
-
-    if (userError) throw userError;
-
+    // Send notification to the requester
     await sendImmediateNotification(
       contact.user_id,
       "Contact Request Accepted",
-      `Your contact request has been accepted by ${currentUser.name}`
+      `${contact.contact.name} has accepted your contact request`
     );
 
+    // Create a notification in the database
     const { error: notificationError } = await supabase.from("notifications").insert({
       user_id: contact.user_id,
-      message: `Your contact request has been accepted by ${currentUser.name}`,
+      message: `${contact.contact.name} has accepted your contact request`,
       type: "contactAccepted",
       related_id: contactId,
     });
 
     if (notificationError) throw notificationError;
-
-    const { data: updatedContact, error: fetchError } = await supabase
-      .from("contacts")
-      .select(
-        `
-        *,
-        user:users!contacts_user_id_fkey (name, phone),
-        contact:users!contacts_contact_id_fkey (name, phone)
-      `
-      )
-      .eq("id", contactId)
-      .single();
-
-    if (fetchError) throw fetchError;
 
     return NextResponse.json({ contact: updatedContact });
   } catch {

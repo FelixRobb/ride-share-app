@@ -7,17 +7,19 @@ import {
   Car,
   CheckCircle,
   Search,
-  Loader,
-  Settings,
-  Smartphone,
-  Trash2,
   X,
   Filter,
   CheckCheck,
-  AlertCircle,
   Info,
   ShieldAlert,
+  ArrowRight,
+  AlertCircle,
+  Settings,
+  Loader,
+  Smartphone,
+  Trash2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
@@ -62,13 +64,14 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import type { PushSubscription } from "@/types";
+import { PushSubscription } from "@/types";
 import { markNotificationsAsRead } from "@/utils/api";
-import { getDeviceId, formatLastUsed } from "@/utils/deviceUtils";
+import { formatLastUsed, getDeviceId } from "@/utils/deviceUtils";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
+
+import { Switch } from "./ui/switch";
 
 interface Notification {
   id: string;
@@ -76,6 +79,8 @@ interface Notification {
   message: string;
   created_at: string;
   is_read: boolean;
+  related_id?: string | null;
+  link?: string | null;
 }
 
 interface NotificationPanelProps {
@@ -94,6 +99,30 @@ const notificationTypes = {
   admin_notification: "Admin Notifications",
 };
 
+const getNotificationColor = (type: string) => {
+  switch (type) {
+    case "newNote":
+      return "bg-blue-50/60 dark:bg-blue-950/20 border-blue-200/70 dark:border-blue-800/40";
+    case "contactRequest":
+      return "bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200/70 dark:border-emerald-800/40";
+    case "contactAccepted":
+      return "bg-green-50/60 dark:bg-green-950/20 border-green-200/70 dark:border-green-800/40";
+    case "newRide":
+      return "bg-amber-50/60 dark:bg-amber-950/20 border-amber-200/70 dark:border-amber-800/40";
+    case "rideAccepted":
+      return "bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-200/70 dark:border-indigo-800/40";
+    case "rideCancelled":
+      return "bg-rose-50/60 dark:bg-rose-950/20 border-rose-200/70 dark:border-rose-800/40";
+    case "rideCompleted":
+      return "bg-purple-50/60 dark:bg-purple-950/20 border-purple-200/70 dark:border-purple-800/40";
+    case "admin_notification":
+      return "bg-red-50/60 dark:bg-red-950/20 border-red-200/70 dark:border-red-800/40";
+    default:
+      return "bg-zinc-50/60 dark:bg-zinc-900/20 border-zinc-200/70 dark:border-zinc-800/40";
+  }
+};
+
+// The notification icon function remains mostly the same
 const getNotificationIcon = (type: string) => {
   switch (type) {
     case "newNote":
@@ -114,29 +143,6 @@ const getNotificationIcon = (type: string) => {
       return <ShieldAlert className="h-5 w-5 text-red-500" />;
     default:
       return <Info className="h-5 w-5 text-zinc-500" />;
-  }
-};
-
-const getNotificationColor = (type: string) => {
-  switch (type) {
-    case "newNote":
-      return "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800";
-    case "contactRequest":
-      return "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800";
-    case "contactAccepted":
-      return "bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800";
-    case "newRide":
-      return "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800";
-    case "rideAccepted":
-      return "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800";
-    case "rideCancelled":
-      return "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800";
-    case "rideCompleted":
-      return "bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800";
-    case "admin_notification":
-      return "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800";
-    default:
-      return "bg-zinc-50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800";
   }
 };
 
@@ -235,6 +241,9 @@ const NotificationFilters = ({
                 className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full"
               >
                 <Filter className="h-4 w-4" />
+                {selectedType !== "all" || selectedFilter !== "all" ? (
+                  <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-primary" />
+                ) : null}
                 <span className="sr-only">Toggle filters</span>
               </Button>
             </DropdownMenuTrigger>
@@ -251,6 +260,9 @@ const NotificationFilters = ({
                 className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full"
               >
                 <Filter className="h-4 w-4" />
+                {selectedType !== "all" || selectedFilter !== "all" ? (
+                  <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-primary" />
+                ) : null}
                 <span className="sr-only">Toggle filters</span>
               </Button>
             </DrawerTrigger>
@@ -288,6 +300,39 @@ const NotificationList = ({
   searchTerm: string;
   isDesktop: boolean;
 }) => {
+  const router = useRouter();
+
+  const handleNotificationClick = (notification: Notification) => {
+    // Determine the destination based on notification type and related_id
+    let destination = notification.link || null;
+
+    if (!destination && notification.related_id) {
+      switch (notification.type) {
+        case "newNote":
+        case "rideAccepted":
+        case "rideCancelled":
+        case "rideCompleted":
+          destination = `/rides/${notification.related_id}`;
+          break;
+        case "contactRequest":
+        case "contactAccepted":
+          destination = `/profile?tab=contacts`;
+          break;
+        case "newRide":
+          destination = `/dashboard`;
+          break;
+        // Admin notifications and others might not have a specific destination
+        default:
+          break;
+      }
+    }
+
+    // Navigate if we have a destination
+    if (destination) {
+      router.push(destination);
+    }
+  };
+
   const filteredNotifications = useMemo(() => {
     // Safety check - if notifications is not an array, initialize as empty array
     const notificationsArray = Array.isArray(notifications) ? notifications : [];
@@ -390,52 +435,122 @@ const NotificationList = ({
 
   return (
     <ScrollArea
-      className={`${isDesktop ? "h-[calc(100vh-10rem)]" : "h-[70svh]"} w-full my-4 border rounded-lg p-2 pr-4`}
+      className={`${isDesktop ? "h-[calc(100vh-10rem)]" : "h-[70svh]"} w-full my-4 border rounded-lg`}
     >
-      {filteredNotifications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="bg-muted/30 p-6 rounded-full mb-4">
-            <Bell className="h-10 w-10 text-muted-foreground" />
+      <div className="p-3">
+        {filteredNotifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="bg-muted/30 p-6 rounded-full mb-4">
+              <Bell className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium mb-1">No notifications found</h3>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Try adjusting your filters or search term to find what you&apos;re looking for
+            </p>
           </div>
-          <h3 className="text-lg font-medium mb-1">No notifications found</h3>
-          <p className="text-sm text-muted-foreground max-w-xs">
-            Try adjusting your filters or search term to find what you&apos;re looking for
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredNotifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={`p-3 rounded-lg border transition-all duration-200 hover:shadow-sm ${
-                notification.is_read ? "opacity-70" : ""
-              } ${getNotificationColor(notification.type)}`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 bg-background rounded-full p-2 border">
-                  {getNotificationIcon(notification.type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <h4 className="text-sm font-medium truncate">
-                      {notificationTypes[notification.type as keyof typeof notificationTypes]}
-                    </h4>
-                    <div className="flex items-center gap-1">
-                      {!notification.is_read && (
-                        <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
-                      )}
-                      <time className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDate(notification.created_at)}
-                      </time>
+        ) : (
+          <div className="space-y-3 pr-1">
+            {filteredNotifications.map((notification: Notification) => {
+              // Determine action button label based on notification type
+              const getActionLabel = () => {
+                switch (notification.type) {
+                  case "newNote":
+                    return "View Message";
+                  case "contactRequest":
+                    return "Respond";
+                  case "contactAccepted":
+                    return "View Contact";
+                  case "newRide":
+                    return "View Ride";
+                  case "rideAccepted":
+                    return "See Details";
+                  case "rideCancelled":
+                    return "View Status";
+                  case "rideCompleted":
+                    return "View Summary";
+                  case "admin_notification":
+                    return "Read More";
+                  default:
+                    return "View";
+                }
+              };
+
+              // Generate button color based on notification type
+              const getButtonStyle = (type: string) => {
+                switch (type) {
+                  case "newNote":
+                    return "bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 dark:text-blue-300 dark:border-blue-800/30";
+                  case "contactRequest":
+                    return "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800/30";
+                  case "contactAccepted":
+                    return "bg-green-50 hover:bg-green-100 text-green-700 border-green-200 dark:bg-green-900/40 dark:hover:bg-green-900/60 dark:text-green-300 dark:border-green-800/30";
+                  case "newRide":
+                    return "bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 dark:text-amber-300 dark:border-amber-800/30";
+                  case "rideAccepted":
+                    return "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/40 dark:hover:bg-indigo-900/60 dark:text-indigo-300 dark:border-indigo-800/30";
+                  case "rideCancelled":
+                    return "bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/40 dark:hover:bg-rose-900/60 dark:text-rose-300 dark:border-rose-800/30";
+                  case "rideCompleted":
+                    return "bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-900/60 dark:text-purple-300 dark:border-purple-800/30";
+                  case "admin_notification":
+                    return "bg-red-50 hover:bg-red-100 text-red-700 border-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 dark:text-red-300 dark:border-red-800/30";
+                  default:
+                    return "bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800/40 dark:hover:bg-zinc-800/60 dark:text-zinc-300 dark:border-zinc-700/30";
+                }
+              };
+
+              return (
+                <div
+                  key={notification.id}
+                  className={`rounded-lg border transition-all duration-200 hover:shadow-sm ${
+                    notification.is_read ? "opacity-70" : ""
+                  } ${getNotificationColor(notification.type)}`}
+                >
+                  {/* Main content section */}
+                  <div className="p-2 sm:p-3">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="mt-0.5 flex-shrink-0 bg-white/80 dark:bg-black/20 backdrop-blur-sm rounded-full p-2 shadow-sm border">
+                        {getNotificationIcon(notification.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 sm:gap-2 mb-1">
+                          <h4 className="text-sm font-medium truncate flex items-center gap-2">
+                            {notificationTypes[notification.type as keyof typeof notificationTypes]}
+                            {!notification.is_read && (
+                              <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                            )}
+                          </h4>
+                          <time className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+                            {formatDate(notification.created_at)}
+                          </time>
+                        </div>
+                        <p className="text-sm leading-relaxed break-words">
+                          {notification.message}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-sm">{notification.message}</p>
+
+                  {/* Action section with custom-styled button */}
+                  {(notification.related_id || notification.link) && (
+                    <div className="border-t border-t-black/5 dark:border-t-white/5 px-2 py-1.5 flex justify-end bg-black/[0.02] dark:bg-white/[0.02]">
+                      <button
+                        onClick={() => handleNotificationClick(notification)}
+                        className={`text-xs sm:text-sm px-3 sm:px-4 py-1 sm:py-1.5 rounded-md border transition-all ${getButtonStyle(
+                          notification.type
+                        )} flex items-center justify-center gap-1 sm:gap-1.5 font-medium`}
+                      >
+                        {getActionLabel()}
+                        <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </ScrollArea>
   );
 };
@@ -919,17 +1034,17 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
   const NotificationButton = useMemo(
     () => (
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
-        className="relative rounded-full hover:bg-accent/20 transition-colors duration-200"
+        className="relative rounded-full hover:bg-accent/20 transition-all duration-200 border-muted-foreground/20 hover:border-primary/30"
         onClick={() => handleOpenChange(true)}
         data-tutorial="notifications"
       >
-        <Bell className="h-5 w-5" />
+        <Bell className={`h-5 w-5 ${unreadCount > 0 ? "text-primary" : "text-muted-foreground"}`} />
         {unreadCount > 0 && (
           <Badge
             variant="destructive"
-            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse"
           >
             {unreadCount}
           </Badge>

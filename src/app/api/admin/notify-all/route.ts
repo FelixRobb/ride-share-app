@@ -45,6 +45,7 @@ export async function POST(request: Request) {
       user_id: user.id,
       message: `${title}: ${body}`, // Combine title and body into the message
       type: "admin_notification",
+      related_id: null, // Admin notifications typically don't have a related entity
     }));
 
     const { error: notificationsError } = await supabase
