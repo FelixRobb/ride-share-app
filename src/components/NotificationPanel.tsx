@@ -293,12 +293,14 @@ const NotificationList = ({
   selectedFilter,
   searchTerm,
   isDesktop,
+  onClose, // Add a new prop to handle closing
 }: {
   notifications: Notification[];
   selectedType: string;
   selectedFilter: string;
   searchTerm: string;
   isDesktop: boolean;
+  onClose: () => void; // Function to close the panel
 }) => {
   const router = useRouter();
 
@@ -327,9 +329,19 @@ const NotificationList = ({
       }
     }
 
+    // Always close the panel if we're already on the destination page
+    const isCurrentPage = destination && window.location.pathname === destination.split("?")[0];
+
+    if (isCurrentPage) {
+      // If we're already on this page, just close the panel
+      onClose();
+      return;
+    }
+
     // Navigate if we have a destination
     if (destination) {
       router.push(destination);
+      onClose(); // Close the panel after navigation
     }
   };
 
@@ -998,6 +1010,9 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
     }
   }, [isOnline]);
 
+  const handleClosePanel = useCallback(() => {
+    setIsOpen(false);
+  }, []);
   // Set up polling for notifications
   useEffect(() => {
     if (isOnline) {
@@ -1071,10 +1086,11 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
           selectedFilter={selectedFilter}
           searchTerm={searchTerm}
           isDesktop={isDesktop}
+          onClose={handleClosePanel} // Pass down the close handler
         />
       </>
     ),
-    [selectedType, selectedFilter, searchTerm, notifications, isDesktop]
+    [selectedType, selectedFilter, searchTerm, notifications, isDesktop, handleClosePanel]
   );
 
   if (isDesktop) {
