@@ -4,7 +4,7 @@ import "react-phone-number-input/style.css";
 import { motion } from "framer-motion";
 import { Loader, MapPin, Clock, UserIcon, ArrowRight, FileText } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type React from "react";
 import { useState, useEffect } from "react";
 import PhoneInput from "react-phone-number-input";
@@ -97,6 +97,21 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const isOnline = useOnlineStatus();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isReusingRide = searchParams.get("reuse") === "true";
+
+  useEffect(() => {
+    if (isReusingRide) {
+      // Use a timeout to ensure the toast appears after the page loads
+      const timer = setTimeout(() => {
+        toast.success(
+          "Ride details loaded. Please update the time and any other details as needed."
+        );
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isReusingRide]);
 
   // Fetch associated people data
   useEffect(() => {
