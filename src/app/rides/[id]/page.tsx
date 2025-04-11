@@ -1,56 +1,18 @@
-"use client";
+import type { Metadata } from "next";
 
-import { ArrowBigLeft } from "lucide-react";
-import dynamic from "next/dynamic";
-import { useRouter, useSearchParams, useParams } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { useEffect } from "react";
+import RideDetailsClient from "./client";
 
-import AuthLoader from "@/components/AuthLoader";
-import Layout from "@/components/Layout";
-import { Button } from "@/components/ui/button";
-import type { User } from "@/types";
-
-const RideDetailsPage = dynamic(() => import("@/components/RideDetailsPage"), { ssr: false });
+export const metadata: Metadata = {
+  title: "Ride Details | RideShare",
+  description:
+    "View detailed information about a specific ride, including route, participants, and status.",
+  openGraph: {
+    title: "Ride Details | RideShare",
+    description:
+      "View detailed information about a specific ride, including route, participants, and status.",
+  },
+};
 
 export default function RideDetails() {
-  const router = useRouter();
-  const { id } = useParams();
-  const searchParams = useSearchParams();
-  const fromTab = searchParams.get("from") || "available";
-  const { data: session, status } = useSession();
-  const currentUser = session?.user as User | null;
-  const isFromRideHistory = fromTab === "ride-history";
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
-
-  if (status === "loading") {
-    return <AuthLoader />;
-  }
-
-  if (status === "unauthenticated") {
-    router.push("/login");
-    return null;
-  }
-
-  return (
-    <Layout>
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={() =>
-          router.push(isFromRideHistory ? "/ride-history" : `/dashboard?tab=${fromTab}`)
-        }
-        className="mb-2"
-      >
-        <ArrowBigLeft />
-        {isFromRideHistory ? "Back to Ride History" : "Go Back to Dashboard"}
-      </Button>
-      {currentUser && id && <RideDetailsPage currentUser={currentUser} rideId={id as string} />}
-    </Layout>
-  );
+  return <RideDetailsClient />;
 }

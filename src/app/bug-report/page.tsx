@@ -1,25 +1,16 @@
-"use client";
+import type { Metadata } from "next";
 
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { useEffect } from "react";
+import BugReportClient from "./client";
 
-import BugReportForm from "@/components/BugReportForm";
-import Layout from "@/components/Layout";
+export const metadata: Metadata = {
+  title: "Report a Bug | RideShare",
+  description: "Help us improve by reporting any issues you encounter while using RideShare.",
+  openGraph: {
+    title: "Report a Bug | RideShare",
+    description: "Help us improve by reporting any issues you encounter while using RideShare.",
+  },
+};
 
 export default function BugReportPage() {
-  const router = useRouter();
-  const { status } = useSession();
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
-
-  return (
-    <Layout>
-      <BugReportForm />
-    </Layout>
-  );
+  return <BugReportClient />;
 }

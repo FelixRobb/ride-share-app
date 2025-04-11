@@ -41,6 +41,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [notesUpdated, setNotesUpdated] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const scrollToBottom = useCallback(() => {
     if (typeof window !== "undefined" && scrollAreaRef.current) {
@@ -228,8 +229,10 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newNote.trim() && currentUser && ride) {
+    if (newNote.trim() && currentUser && ride && !isSubmitting) {
       try {
+        setIsSubmitting(true); // Prevent multiple submissions
+
         if (isEditing && editingNoteId) {
           // Handle edit case
           const updatedNote = await editNote(editingNoteId, currentUser.id, newNote);
@@ -265,6 +268,8 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
             ? "Failed to edit message. Please try again."
             : "Failed to send message. Please try again."
         );
+      } finally {
+        setIsSubmitting(false); // Re-enable submission
       }
     }
   };
@@ -530,12 +535,20 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={!isOnline || !newNote.trim()}
+                  disabled={!isOnline || !newNote.trim() || isSubmitting}
                   className={`h-10 w-10 shrink-0 rounded-full ${isEditing ? "bg-amber-500 hover:bg-amber-600" : ""}`}
                   title={isEditing ? "Save edit (Ctrl+Enter)" : "Send message (Ctrl+Enter)"}
                 >
-                  {isEditing ? <Edit className="h-4 w-4" /> : <Send className="h-4 w-4" />}
-                  <span className="sr-only">{isEditing ? "Save edit" : "Send message"}</span>
+                  {isSubmitting ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : isEditing ? (
+                    <Edit className="h-4 w-4" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">
+                    {isSubmitting ? "Sending..." : isEditing ? "Save edit" : "Send message"}
+                  </span>
                 </Button>
               </form>
 
