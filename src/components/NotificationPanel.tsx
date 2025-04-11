@@ -338,10 +338,11 @@ const NotificationList = ({
       return;
     }
 
+    // Close the panel before navigating
+    onClose(); // Close the panel before navigating
     // Navigate if we have a destination
     if (destination) {
       router.push(destination);
-      onClose(); // Close the panel after navigation
     }
   };
 
