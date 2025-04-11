@@ -293,18 +293,24 @@ const NotificationList = ({
   selectedFilter,
   searchTerm,
   isDesktop,
-  onClose, // Add a new prop to handle closing
+  onClose,
+  userId,
+  setNotifications, // Add this to update parent state
+  setUnreadCount, // Add this to update parent state
 }: {
   notifications: Notification[];
   selectedType: string;
   selectedFilter: string;
   searchTerm: string;
   isDesktop: boolean;
-  onClose: () => void; // Function to close the panel
+  onClose: () => void;
+  userId: string;
+  setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
+  setUnreadCount: React.Dispatch<React.SetStateAction<number>>;
 }) => {
   const router = useRouter();
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
     // Determine the destination based on notification type and related_id
     let destination = notification.link || null;
 
@@ -338,9 +344,26 @@ const NotificationList = ({
       return;
     }
 
-    // Close the panel before navigating
-    onClose(); // Close the panel before navigating
-    // Navigate if we have a destination
+    // Mark notification as read before navigating
+    if (!notification.is_read) {
+      try {
+        // Call the API to mark this notification as read
+        await markNotificationsAsRead(userId, [notification.id]);
+
+        // Update local state for immediate UI feedback
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n))
+        );
+
+        // Decrement unread count
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+        // Continue with navigation even if marking as read fails
+      }
+    }
+
+    onClose();
     if (destination) {
       router.push(destination);
     }
@@ -1087,11 +1110,14 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
           selectedFilter={selectedFilter}
           searchTerm={searchTerm}
           isDesktop={isDesktop}
-          onClose={handleClosePanel} // Pass down the close handler
+          onClose={handleClosePanel}
+          userId={userId}
+          setNotifications={setNotifications}
+          setUnreadCount={setUnreadCount}
         />
       </>
     ),
-    [selectedType, selectedFilter, searchTerm, notifications, isDesktop, handleClosePanel]
+    [selectedType, selectedFilter, searchTerm, notifications, isDesktop, handleClosePanel, userId]
   );
 
   if (isDesktop) {
