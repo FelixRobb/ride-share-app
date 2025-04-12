@@ -688,7 +688,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
       {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] w-11/12">
+        <DialogContent className="sm:max-w-[600px] w-11/12 rounded-lg">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>Make changes to the user&apos;s information.</DialogDescription>
@@ -750,7 +750,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
       {/* Notify User Dialog */}
       <Dialog open={isNotifyUserDialogOpen} onOpenChange={setIsNotifyUserDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] w-11/12">
+        <DialogContent className="sm:max-w-[600px] w-11/12 rounded-lg">
           <DialogHeader>
             <DialogTitle>Send Notification to User</DialogTitle>
             <DialogDescription>Send a push notification to {selectedUser?.name}.</DialogDescription>
