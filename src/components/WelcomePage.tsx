@@ -1,5 +1,7 @@
 "use client";
 
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import { createClient } from "@supabase/supabase-js";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
@@ -21,9 +23,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import Slider from "react-slick";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "./ui/drawer";
@@ -102,6 +104,57 @@ export default function WelcomePage() {
   );
 
   const { status } = useSession();
+
+  interface ReviewCardProps {
+    review: Review;
+  }
+
+  const ReviewCard = ({ review }: ReviewCardProps) => {
+    return (
+      <div className="h-full">
+        <div className="h-full bg-card/30 backdrop-blur-sm border border-border/50 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 p-6">
+          {/* Rating */}
+          <div className="flex mb-4">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`w-5 h-5 ${i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
+              />
+            ))}
+          </div>
+
+          {/* Review content */}
+          <div className="mb-4">
+            <p className="text-foreground/90 italic leading-relaxed text-sm">
+              &quot;{review.review}&quot;
+            </p>
+          </div>
+
+          {/* User info and date */}
+          <div className="flex justify-between items-center pt-4 border-t border-border/30">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold">
+                {review.user_name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-medium text-primary/90">{review.user_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(review.created_at).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Visual decorative element */}
+          <div className="h-1 w-full bg-gradient-to-r from-primary/50 via-secondary/50 to-primary/50 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -437,35 +490,43 @@ export default function WelcomePage() {
       </section>
 
       {/* Reviews Section */}
+
       <section className="py-20 bg-background relative">
         <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid" />
         <div className="container mx-auto px-4 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center text-primary">
             What Our Users Say
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {approvedReviews.map((review) => (
-              <Card key={review.id} className="bg-background/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex justify-between items-center">
-                    <span className="text-xl whitespace-nowrap overflow-hidden text-ellipsis">
-                      {review.user_name}
-                    </span>
-                    <div className="flex">
-                      {[...Array(review.rating)].map((_, i) => (
-                        <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                      ))}
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{review.review}</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {new Date(review.created_at).toLocaleDateString()}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="relative">
+            <div className="absolute left-0 top-0 bottom-0 w-24 md:w-32 bg-gradient-to-r from-background via-background/80 to-transparent z-10" />
+
+            {/* Right gradient overlay */}
+            <div className="absolute right-0 top-0 bottom-0 w-24 md:w-32 bg-gradient-to-l from-background via-background/80 to-transparent z-10" />
+
+            {/* Infinite Carousel using react-slick */}
+            <div className="review-carousel-container">
+              {approvedReviews.length > 0 ? (
+                <Slider
+                  dots={false}
+                  infinite={true}
+                  speed={5000}
+                  slidesToShow={isLargeScreen ? 3 : isMediumScreen ? 2 : 1}
+                  slidesToScroll={1}
+                  autoplay={true}
+                  autoplaySpeed={0}
+                  cssEase="linear"
+                  pauseOnHover={true}
+                  arrows={false}
+                  className="review-slider"
+                >
+                  {approvedReviews.map((review) => (
+                    <ReviewCard key={review.id} review={review} />
+                  ))}
+                </Slider>
+              ) : (
+                <div className="text-center text-muted-foreground">Loading reviews...</div>
+              )}
+            </div>
           </div>
         </div>
       </section>

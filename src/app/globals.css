@@ -63,7 +63,20 @@ body {
   }
 }
 
+.review-slider .slick-track {
+  display: flex;
+  gap: 1rem;
+}
 
+.review-slider .slick-slide {
+  height: inherit;
+  padding: 1rem 0.5rem;
+}
+
+/* Ensure all slides are equally sized */
+.review-slider .slick-slide > div {
+  height: 100%;
+}
 
 @layer base {
   * {
