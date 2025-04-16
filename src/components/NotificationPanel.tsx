@@ -1076,7 +1076,7 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
       <Button
         variant="outline"
         size="icon"
-        className="relative rounded-full hover:bg-accent/20 transition-all duration-200 border-muted-foreground/20 hover:border-primary/30"
+        className="relative rounded-full"
         onClick={() => handleOpenChange(true)}
         data-tutorial="notifications"
       >
@@ -1084,7 +1084,7 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
         {unreadCount > 0 && (
           <Badge
             variant="destructive"
-            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse"
+            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
           >
             {unreadCount}
           </Badge>
