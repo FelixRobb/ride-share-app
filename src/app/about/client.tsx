@@ -1,45 +1,14 @@
 "use client";
 
-// app/about/client.tsx (Client Component)
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { useEffect } from "react";
 
-import AuthLoader from "@/components/AuthLoader";
-import Layout from "@/components/Layout";
+import LayoutAuth from "@/components/LayoutAuth";
 import { Button } from "@/components/ui/button";
-import type { User } from "@/types";
 
 export default function AboutClient() {
-  const router = useRouter();
-  const { data: session, status } = useSession();
-  const currentUser = session?.user as User | undefined;
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
-
-  // Show loading states
-  if (status === "loading") {
-    return <AuthLoader />;
-  }
-
-  // Handle unauthenticated state
-  if (status === "unauthenticated") {
-    router.push("/login");
-    return null;
-  }
-
-  if (!currentUser) {
-    return <div>Error: User not found</div>;
-  }
-
   return (
-    <Layout>
+    <LayoutAuth>
       <div className="container mx-auto px-4 py-8">
         <Button asChild variant="ghost" className="mb-4">
           <Link href="/">
@@ -153,6 +122,6 @@ export default function AboutClient() {
           </section>
         </div>
       </div>
-    </Layout>
+    </LayoutAuth>
   );
 }

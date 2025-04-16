@@ -4,6 +4,7 @@ import { ArrowLeft, Search } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo } from "react";
 
+import LayoutAuth from "@/components/LayoutAuth";
 import {
   Accordion,
   AccordionContent,
@@ -138,37 +139,39 @@ export default function FAQClient() {
   }, [searchTerm]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Button asChild variant="ghost" className="mb-4">
-        <Link href="/">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Link>
-      </Button>
-      <h1 className="text-4xl font-bold mb-6">Frequently Asked Questions</h1>
-      <div className="relative mb-6">
-        <Input
-          type="text"
-          placeholder="Search FAQ..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+    <LayoutAuth>
+      <div className="container mx-auto px-4 py-8">
+        <Button asChild variant="ghost" className="mb-4">
+          <Link href="/">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Link>
+        </Button>
+        <h1 className="text-4xl font-bold mb-6">Frequently Asked Questions</h1>
+        <div className="relative mb-6">
+          <Input
+            type="text"
+            placeholder="Search FAQ..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+        </div>
+        <Accordion type="single" collapsible className="w-full">
+          {filteredFaqs.map((faq, index) => (
+            <AccordionItem key={index} value={`item-${index}`}>
+              <AccordionTrigger>{faq.question}</AccordionTrigger>
+              <AccordionContent>{faq.answer}</AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+        {filteredFaqs.length === 0 && (
+          <p className="text-center text-muted-foreground mt-4">
+            No results found. Please try a different search term.
+          </p>
+        )}
       </div>
-      <Accordion type="single" collapsible className="w-full">
-        {filteredFaqs.map((faq, index) => (
-          <AccordionItem key={index} value={`item-${index}`}>
-            <AccordionTrigger>{faq.question}</AccordionTrigger>
-            <AccordionContent>{faq.answer}</AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
-      {filteredFaqs.length === 0 && (
-        <p className="text-center text-muted-foreground mt-4">
-          No results found. Please try a different search term.
-        </p>
-      )}
-    </div>
+    </LayoutAuth>
   );
 }

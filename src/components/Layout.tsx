@@ -235,7 +235,7 @@ export default function Layout({ children }: LayoutProps) {
                           />
                         </PopoverTrigger>
                         <PopoverContent
-                          className={`w-${isLargeScreen ? "96" : "80"} p-0 bg-card/95 backdrop-blur-md border border-border/50 shadow-lg rounded-xl`}
+                          className={`w-${isLargeScreen ? "96" : "80"} p-0 bg-card/95 backdrop-blur-md border border-border/50 shadow-lg rounded-xl mr-3`}
                         >
                           <div className="p-2">
                             <div className="py-3 px-4 border-b border-border/20">
