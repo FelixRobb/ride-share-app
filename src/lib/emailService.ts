@@ -370,12 +370,12 @@ export function getVerificationEmailContent(name: string, verificationUrl: strin
       :root {
         --background: #09090b;
         --foreground: #f8fafc;
-        --muted: #1e293b;
+        --muted: #363636;
         --muted-foreground: #94a3b8;
         --border: #27272a;
         --primary: #f97316;
         --primary-foreground: #fafaf9;
-        --secondary: #334155;
+        --secondary: #5d4a45;
         --secondary-foreground: #f8fafc;
         --destructive: #ef4444;
         --destructive-foreground: #fafaf9;
@@ -671,12 +671,12 @@ export function getResetPasswordEmailContent(resetUrl: string): string {
       :root {
         --background: #09090b;
         --foreground: #f8fafc;
-        --muted: #1e293b;
+        --muted: #363636;
         --muted-foreground: #94a3b8;
         --border: #27272a;
         --primary: #f97316;
         --primary-foreground: #fafaf9;
-        --secondary: #334155;
+        --secondary: #5d4a45;
         --secondary-foreground: #f8fafc;
         --destructive: #ef4444;
         --destructive-foreground: #fafaf9;
@@ -983,12 +983,12 @@ export function getEmailChangeNotificationContent(name: string, newEmail: string
       :root {
         --background: #09090b;
         --foreground: #f8fafc;
-        --muted: #1e293b;
+        --muted: #363636;
         --muted-foreground: #94a3b8;
         --border: #27272a;
         --primary: #f97316;
         --primary-foreground: #fafaf9;
-        --secondary: #334155;
+        --secondary: #5d4a45;
         --secondary-foreground: #f8fafc;
         --destructive: #ef4444;
         --destructive-foreground: #fafaf9;
@@ -1300,12 +1300,12 @@ export function getPasswordChangeNotificationContent(name: string): string {
       :root {
         --background: #09090b;
         --foreground: #f8fafc;
-        --muted: #1e293b;
+        --muted: #363636;
         --muted-foreground: #94a3b8;
         --border: #27272a;
         --primary: #f97316;
         --primary-foreground: #fafaf9;
-        --secondary: #334155;
+        --secondary: #5d4a45;
         --secondary-foreground: #f8fafc;
         --destructive: #ef4444;
         --destructive-foreground: #fafaf9;

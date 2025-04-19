@@ -1,13 +1,7 @@
 "use client";
 
 import { SearchIcon, MapPin, Crosshair, Loader, Copy, ExternalLink, X } from "lucide-react";
-import maplibregl, {
-  Map,
-  Marker,
-  NavigationControl,
-  ScaleControl,
-  FullscreenControl,
-} from "maplibre-gl";
+import maplibregl, { Map, Marker, NavigationControl, ScaleControl } from "maplibre-gl";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { Drawer } from "vaul";
@@ -155,9 +149,6 @@ const MapDialog: React.FC<MapDialogProps> = ({
             }),
             "bottom-left"
           );
-
-          // Add fullscreen control
-          map.addControl(new FullscreenControl({}), "top-right");
 
           // Set up map event handlers
           map.on("click", handleMapClick);
