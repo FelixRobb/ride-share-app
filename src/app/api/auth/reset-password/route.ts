@@ -55,7 +55,7 @@ export async function PUT(request: Request) {
   try {
     const { data: resetToken, error: tokenError } = await supabase
       .from("password_reset_tokens")
-      .select("user_id")
+      .select("user_id, created_by_admin")
       .eq("token", token)
       .gt("expires_at", new Date().toISOString())
       .single();

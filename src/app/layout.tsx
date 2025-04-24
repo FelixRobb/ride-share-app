@@ -1,4 +1,6 @@
 import "./globals.css";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+
 import { Toaster } from "@/components/ui/sonner";
 
 import { Providers } from "./Providers";
@@ -55,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Toaster closeButton richColors position="top-right" />
           {children}
         </Providers>
+        <SpeedInsights />
       </body>
     </html>
   );

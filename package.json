@@ -28,6 +28,7 @@
     "@supabase/supabase-js": "^2.46.1",
     "@types/nodemailer": "^6.4.16",
     "@types/ua-parser-js": "^0.7.39",
+    "@vercel/speed-insights": "^1.2.0",
     "bcrypt": "^5.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

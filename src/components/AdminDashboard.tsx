@@ -7,7 +7,9 @@ import {
   Bell,
   CheckCircle,
   ClipboardList,
+  Copy,
   Edit,
+  Key,
   LogOut,
   MessageSquareWarning,
   Search,
@@ -15,9 +17,11 @@ import {
   Star,
   Trash2,
   Users,
-  User as UserIcon,
+  UserIcon,
   XCircle,
+  Loader,
 } from "lucide-react";
+import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -94,6 +98,9 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [isResetLinkDialogOpen, setIsResetLinkDialogOpen] = useState(false);
+  const [resetUrl, setResetUrl] = useState("");
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
   // Fetch users function
   const fetchUsers = useCallback(async (page: number, search = "") => {
@@ -254,6 +261,40 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     } catch {
       toast.error("Failed to send notification");
     }
+  };
+
+  const handleGenerateResetLink = async () => {
+    if (!selectedUser) return;
+
+    setIsGeneratingLink(true);
+    try {
+      const response = await fetch("/api/admin/generate-reset-link", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: selectedUser.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate reset link");
+      }
+
+      const data = await response.json();
+      setResetUrl(data.resetUrl);
+      setIsResetLinkDialogOpen(true);
+    } catch {
+      toast.error("Failed to generate password reset link");
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  const copyResetLink = () => {
+    navigator.clipboard
+      .writeText(resetUrl)
+      .then(() => toast.success("Reset link copied to clipboard"))
+      .catch(() => toast.error("Failed to copy reset link"));
   };
 
   // Review management functions
@@ -512,6 +553,17 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                   }}
                                 >
                                   <Bell className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    handleGenerateResetLink();
+                                  }}
+                                  title="Generate password reset link"
+                                >
+                                  {isGeneratingLink ? <Loader /> : <Key className="h-4 w-4" />}
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -784,6 +836,37 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Link Dialog */}
+      <Dialog open={isResetLinkDialogOpen} onOpenChange={setIsResetLinkDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] w-11/12 rounded-lg">
+          <DialogHeader>
+            <DialogTitle>Password Reset Link</DialogTitle>
+            <DialogDescription>
+              A password reset link has been generated for {selectedUser?.name}. This link will
+              expire in 24 hours.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Reset Link</Label>
+              <div className="flex items-center gap-2">
+                <Input value={resetUrl} readOnly />
+                <Button variant="ghost" size="icon" className="" onClick={copyResetLink}>
+                  <Copy className="h-4 w-4" />
+                  <span className="sr-only">Copy to clipboard</span>
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Share this link with the user to allow them to reset their password.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsResetLinkDialogOpen(false)}>Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
