@@ -60,7 +60,7 @@ export default function LayoutAuth({ children }: LayoutProps) {
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className={`text-${isMediumScreen ? "sm" : "xs"} font-medium text-foreground/80`}>
-              &copy; {new Date().getFullYear()} RideShare by Félix Robb.
+              <a href="/admin">&copy;</a> {new Date().getFullYear()} RideShare by Félix Robb.
               <span className="text-muted-foreground ml-1">All rights reserved.</span>
             </p>
 

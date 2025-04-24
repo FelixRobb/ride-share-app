@@ -509,7 +509,7 @@ export default function WelcomePage() {
                 <Slider
                   dots={false}
                   infinite={true}
-                  speed={5000}
+                  speed={8000}
                   slidesToShow={isLargeScreen ? 3 : isMediumScreen ? 2 : 1}
                   slidesToScroll={1}
                   autoplay={true}
@@ -602,7 +602,10 @@ export default function WelcomePage() {
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className={`text-${isMediumScreen ? "sm" : "xs"} font-medium text-foreground/80`}>
-              &copy; {new Date().getFullYear()} RideShare by Félix Robb.
+              <a className="cursor-default" href="/admin">
+                &copy;
+              </a>{" "}
+              {new Date().getFullYear()} RideShare by Félix Robb.
               <span className="text-muted-foreground ml-1">All rights reserved.</span>
             </p>
 

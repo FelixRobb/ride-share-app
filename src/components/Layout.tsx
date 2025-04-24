@@ -169,7 +169,7 @@ export default function Layout({ children }: LayoutProps) {
                   <p
                     className={`text-${isMediumScreen ? "sm" : "xs"} font-medium text-foreground/80`}
                   >
-                    &copy; {new Date().getFullYear()} RideShare by Félix Robb.
+                    <a href="/admin">&copy;</a> {new Date().getFullYear()} RideShare by Félix Robb.
                     <span className="text-muted-foreground ml-1">All rights reserved.</span>
                   </p>
 
