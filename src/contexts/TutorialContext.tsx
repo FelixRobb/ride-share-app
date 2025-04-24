@@ -29,7 +29,7 @@ type TutorialContextType = {
   handlePopupChoice: (choice: boolean) => void;
   isTargetReady: boolean;
   showWelcomeBanner: boolean;
-  getTabForCurrentStep: () => string | null; // Add this new function
+  getTabForCurrentStep: () => string | null;
 };
 
 const TutorialContext = createContext<TutorialContextType | undefined>(undefined);
@@ -184,6 +184,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isTargetReady, setIsTargetReady] = useState(false);
   const observerRef = useRef<MutationObserver | null>(null);
+  const targetCheckAttemptsRef = useRef(0);
 
   const scrollToTarget = useCallback((target: string) => {
     const element = document.querySelector(target);
@@ -196,22 +197,46 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, []);
 
+  // Improved waitForTarget function with retry mechanism
   const waitForTarget = useCallback((target: string, maxWaitTime = 5000) => {
     setIsTargetReady(false);
+    targetCheckAttemptsRef.current = 0;
+
     return new Promise<void>((resolve) => {
       const checkElement = () => {
         const element = document.querySelector(target);
         if (element) {
           setIsTargetReady(true);
           resolve();
+          return true;
         }
+        return false;
       };
 
       // Check immediately
-      checkElement();
+      if (checkElement()) return;
 
       // Set up MutationObserver
-      const observer = new MutationObserver(checkElement);
+      const observer = new MutationObserver(() => {
+        if (checkElement()) {
+          observer.disconnect();
+        } else {
+          // Increment attempt counter
+          targetCheckAttemptsRef.current += 1;
+
+          // If we've tried many times and still can't find the element,
+          // let's force a resolve to prevent getting stuck
+          if (targetCheckAttemptsRef.current > 20) {
+            console.log(
+              `Target element ${target} not found after multiple attempts, continuing anyway`
+            );
+            observer.disconnect();
+            setIsTargetReady(true);
+            resolve();
+          }
+        }
+      });
+
       observerRef.current = observer;
       observer.observe(document.body, { childList: true, subtree: true });
 
@@ -235,11 +260,17 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const handleStep = useCallback(
     async (step: TutorialStep) => {
+      // Set current step immediately to ensure tab switching happens before target check
+      setCurrentStep(step);
+
+      // Small delay to allow tab switching to complete before looking for target
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       if (step.target) {
         await waitForTarget(step.target);
         scrollToTarget(step.target);
       }
-      setCurrentStep(step);
+
       setShowStepPopup(true);
     },
     [scrollToTarget, waitForTarget]
@@ -417,26 +448,24 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, []);
 
-  // Add this function inside the TutorialProvider component before the return statement
+  // Improved tab mapping function with more explicit step-to-tab mapping
   const getTabForCurrentStep = useCallback(() => {
     if (!currentStep) return null;
 
-    // Map tutorial steps to specific tabs
-    if (
-      currentStep.key === "associated-people" ||
-      currentStep.key === "activity-stats" ||
-      currentStep.key === "personal-info" ||
-      currentStep.key === "profile-overview"
-    )
-      return "profile";
-    if (currentStep.key === "contact-management") return "contacts";
-    if (currentStep.key === "security-settings") return "security";
-    if (currentStep.key === "app-settings") return "settings";
+    // Create a direct mapping from step keys to tab values
+    const stepToTabMap: Record<string, string> = {
+      "profile-overview": "profile",
+      "personal-info": "profile",
+      "activity-stats": "profile",
+      "associated-people": "profile",
+      "security-settings": "security",
+      "contact-management": "contacts",
+      "app-settings": "settings",
+    };
 
-    return null;
+    return stepToTabMap[currentStep.key] || null;
   }, [currentStep]);
 
-  // Include the new function in the context value
   return (
     <TutorialContext.Provider
       value={{
@@ -450,7 +479,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         handlePopupChoice,
         isTargetReady,
         showWelcomeBanner,
-        getTabForCurrentStep, // Add this new function to the context value
+        getTabForCurrentStep,
       }}
     >
       {children}
@@ -528,7 +557,7 @@ const PopupDialog: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 30 }}
       transition={{ duration: 0.2 }}
-      className="fixed bottom-20 md:bottom-4 left-0 right-0 z-50 w-11/12 mx-auto md:w-80 md:right-4 md:left-auto md:mx-0"
+      className="fixed bottom-20 md:bottom-4 left-0 right-0 z-50 w-11/12 mx-auto sm:w-80 sm:right-4 sm:left-auto sm:mx-0"
     >
       <Card className="w-full md:w-72 shadow-lg border border-primary/20 bg-card/95 backdrop-blur-sm">
         <div className="px-3 pt-3 pb-1 flex items-center justify-between border-b border-border/30">

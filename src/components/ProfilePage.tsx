@@ -211,7 +211,12 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
     // Only switch tabs if we're on a tutorial step that requires a specific tab
     // and we're currently on the profile page
     if (tabForStep && pathname === "/profile") {
-      setActiveTab(tabForStep);
+      // Add a small delay to ensure the DOM is ready
+      const timeoutId = setTimeout(() => {
+        setActiveTab(tabForStep);
+      }, 50);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [currentStep, getTabForCurrentStep, pathname]);
 
