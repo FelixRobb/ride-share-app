@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, usePathname } from "next/navigation";
+import type React from "react";
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 
 import { TutorialOverlay } from "@/components/TutorialOverlay";
@@ -28,6 +29,7 @@ type TutorialContextType = {
   handlePopupChoice: (choice: boolean) => void;
   isTargetReady: boolean;
   showWelcomeBanner: boolean;
+  getTabForCurrentStep: () => string | null; // Add this new function
 };
 
 const TutorialContext = createContext<TutorialContextType | undefined>(undefined);
@@ -123,22 +125,22 @@ const tutorialSteps: TutorialStep[] = [
     target: "[data-tutorial='associated-people']",
   },
   {
-    key: "contact-management",
-    page: "/profile",
-    step: 11,
-    title: "Contact Management",
-    content:
-      "View and manage your contacts in the Contacts tab. Add new contacts and manage existing ones to build your trusted network.",
-    target: "[data-tutorial='contacts-tab']",
-  },
-  {
     key: "security-settings",
     page: "/profile",
-    step: 12,
+    step: 11,
     title: "Security Settings",
     content:
       "Access the Security tab to change your password and manage notification preferences to keep your account secure.",
     target: "[data-tutorial='security-tab']",
+  },
+  {
+    key: "contact-management",
+    page: "/profile",
+    step: 12,
+    title: "Contact Management",
+    content:
+      "View and manage your contacts in the Contacts tab. Add new contacts and manage existing ones to build your trusted network.",
+    target: "[data-tutorial='contacts-tab']",
   },
   {
     key: "app-settings",
@@ -415,6 +417,26 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, []);
 
+  // Add this function inside the TutorialProvider component before the return statement
+  const getTabForCurrentStep = useCallback(() => {
+    if (!currentStep) return null;
+
+    // Map tutorial steps to specific tabs
+    if (
+      currentStep.key === "associated-people" ||
+      currentStep.key === "activity-stats" ||
+      currentStep.key === "personal-info" ||
+      currentStep.key === "profile-overview"
+    )
+      return "profile";
+    if (currentStep.key === "contact-management") return "contacts";
+    if (currentStep.key === "security-settings") return "security";
+    if (currentStep.key === "app-settings") return "settings";
+
+    return null;
+  }, [currentStep]);
+
+  // Include the new function in the context value
   return (
     <TutorialContext.Provider
       value={{
@@ -428,6 +450,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         handlePopupChoice,
         isTargetReady,
         showWelcomeBanner,
+        getTabForCurrentStep, // Add this new function to the context value
       }}
     >
       {children}

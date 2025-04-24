@@ -20,7 +20,7 @@ import {
   Trash2,
   AlertCircle,
 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import type React from "react";
@@ -62,6 +62,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTutorial } from "@/contexts/TutorialContext";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { unregisterServiceWorker } from "@/utils/cleanupService";
 import { getDeviceId, formatLastUsed } from "@/utils/deviceUtils";
@@ -129,6 +130,12 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
   // Add this line in the component, near the other state declarations
   const isMobile = useMediaQuery("(max-width: 768px)");
 
+  const pathname = usePathname();
+
+  // Inside the ProfilePage component, add the tutorial context
+  // Add this after the other useState declarations
+  const { currentStep, getTabForCurrentStep } = useTutorial();
+
   const { setTheme } = useTheme();
   const [currentMode, setCurrentMode] = useState<"system" | "light" | "dark">(() => {
     if (typeof window !== "undefined") {
@@ -194,6 +201,19 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
     localStorage.setItem("theme", currentMode);
     setTheme(currentMode);
   }, [currentMode, setTheme]);
+
+  // Add an effect to handle tab switching during tutorial
+  // Add this effect after the other useEffect hooks
+  useEffect(() => {
+    // Get the tab that should be active for the current tutorial step
+    const tabForStep = getTabForCurrentStep();
+
+    // Only switch tabs if we're on a tutorial step that requires a specific tab
+    // and we're currently on the profile page
+    if (tabForStep && pathname === "/profile") {
+      setActiveTab(tabForStep);
+    }
+  }, [currentStep, getTabForCurrentStep, pathname]);
 
   const toggleTheme = (newMode: "system" | "light" | "dark") => {
     setCurrentMode(newMode);
