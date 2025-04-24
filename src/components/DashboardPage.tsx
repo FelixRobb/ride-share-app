@@ -454,7 +454,7 @@ export default function DashboardPage({
     return (
       <Link href={`/rides/${ride.id}?from=${activeTab}`}>
         <Card
-          className={`mb-4 hover:bg-accent/50 transition-all duration-200 group border-l-4 hover:shadow-md 
+          className={`mb-4 hover:bg-accent/50 transition-all duration-200 group border-l-4 hover:shadow-md w-full
             ${
               ride.status === "completed"
                 ? "border-l-blue-500"
@@ -470,45 +470,51 @@ export default function DashboardPage({
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col space-y-4">
               {/* Header with status and time */}
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between flex-wrap gap-2">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2 mb-1">
-                    <CalendarIcon2 className="w-4 h-4 text-muted-foreground" />
+                    <CalendarIcon2 className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
                     <div className="flex flex-col items-start justify-center">
                       <span className="text-sm font-medium">{relative}</span>
                       <span className="text-sm text-muted-foreground">{time}</span>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <User2 className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{getRequesterName(ride)}</span>
+                    <User2 className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground truncate max-w-[150px]">
+                      {getRequesterName(ride)}
+                    </span>
                   </div>
                 </div>
                 <StatusBadge status={ride.status} />
               </div>
 
               {/* Route information */}
-              <div className="flex items-center space-x-3">
-                <div className="flex flex-col items-center space-y-1">
-                  <MapPin className="w-3 h-3 rounded-full text-primary" />
+              <div className="flex items-start space-x-3">
+                <div className="flex flex-col items-center space-y-1 flex-shrink-0">
+                  <MapPin className="w-3 h-3 rounded-full text-primary mt-1" />
                   <div className="w-0.5 h-10 bg-muted-foreground/30" />
                   <MapPin className="w-3 h-3 rounded-full text-destructive" />
                 </div>
-                <div className="flex-1 space-y-4">
+                <div className="flex-1 space-y-4 min-w-0">
                   <div className="flex-1">
-                    <p className="font-medium text-sm sm:text-base">{fromLocationShort}</p>
-                    <p className="text-xs text-muted-foreground truncate max-w-full">
+                    <p className="font-medium text-sm sm:text-base break-words">
+                      {fromLocationShort}
+                    </p>
+                    <p className="text-xs text-muted-foreground break-words">
                       {ride.from_location.replace(fromLocationShort + ",", "")}
                     </p>
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-sm sm:text-base">{toLocationShort}</p>
-                    <p className="text-xs text-muted-foreground truncate max-w-full">
+                    <p className="font-medium text-sm sm:text-base break-words">
+                      {toLocationShort}
+                    </p>
+                    <p className="text-xs text-muted-foreground break-words">
                       {ride.to_location.replace(toLocationShort + ",", "")}
                     </p>
                   </div>
                 </div>
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 pt-1">
                   {ride.status === "completed" ? (
                     <CheckCircle className="w-5 h-5 text-blue-500" />
                   ) : (
@@ -522,8 +528,8 @@ export default function DashboardPage({
                 <>
                   <Separator className="my-1" />
                   <div className="flex items-center space-x-2">
-                    <User2 className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
+                    <User2 className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground break-words">
                       Offered by: {getOfferedByText(ride)}
                     </span>
                   </div>
@@ -532,8 +538,8 @@ export default function DashboardPage({
               {ride.note && (
                 <>
                   <Separator className="my-1" />
-                  <div>
-                    <p className="text-sm text-muted-foreground line-clamp-1">
+                  <div className="min-w-0">
+                    <p className="text-sm text-muted-foreground break-words">
                       <span className="font-medium">Note:</span> {ride.note}
                     </p>
                   </div>
@@ -609,7 +615,7 @@ export default function DashboardPage({
       return (
         <Card
           key={ride.id}
-          className={`mb-4 hover:bg-accent/50 transition-all duration-200 group border-l-4 hover:shadow-md 
+          className={`mb-4 hover:bg-accent/50 transition-all duration-200 group border-l-4 hover:shadow-md w-full
             ${
               ride.status === "completed"
                 ? "border-blue-500"
@@ -624,11 +630,11 @@ export default function DashboardPage({
         >
           <Link href={`/rides/${ride.id}?from=active`}>
             <CardHeader className="pb-2 bg-primary/5">
-              <div className="flex justify-between items-start flex-col sm:flex-row">
-                <div className="">
+              <div className="flex justify-between items-start flex-col sm:flex-row gap-2">
+                <div className="min-w-0">
                   <CardTitle className="text-md flex items-center">
                     <div className="flex items-center space-x-2 mb-1">
-                      <CalendarIcon2 className="w-4 h-4 text-muted-foreground" />
+                      <CalendarIcon2 className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
                       <div className="flex flex-col items-start justify-center">
                         <span className="text-sm font-medium">{relative}</span>
                         <span className="text-sm text-muted-foreground">{time}</span>
@@ -636,11 +642,11 @@ export default function DashboardPage({
                     </div>
                   </CardTitle>
                   <CardDescription className="flex items-center gap-2 ml-1 mb-1">
-                    <User2 className="h-4 w-4 inline text-muted-foreground" />{" "}
-                    {getRequesterName(ride)}
+                    <User2 className="h-4 w-4 flex-shrink-0 inline text-muted-foreground" />
+                    <span className="truncate max-w-[200px]">{getRequesterName(ride)}</span>
                   </CardDescription>
                 </div>
-                <div className="flex flex-row justify-between items-center sm:justify-end sm:flex-col sm:items-end gap-4 sm:gap-1">
+                <div className="flex flex-row justify-between items-center sm:justify-end sm:flex-col sm:items-end gap-4 sm:gap-1 flex-shrink-0">
                   <div>
                     <StatusBadge status={ride.status} />
                   </div>
@@ -649,22 +655,22 @@ export default function DashboardPage({
               </div>
             </CardHeader>
             <CardContent className="pt-4 bg-primary/5">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="flex flex-col items-center space-y-1">
-                  <MapPin className="w-3 h-3 rounded-full text-primary" />
+              <div className="flex items-start space-x-3 mb-4">
+                <div className="flex flex-col items-center space-y-1 flex-shrink-0">
+                  <MapPin className="w-3 h-3 rounded-full text-primary mt-1" />
                   <div className="w-0.5 h-10 bg-muted-foreground/30" />
                   <MapPin className="w-3 h-3 rounded-full text-destructive" />
                 </div>
-                <div className="flex-1 space-y-4">
+                <div className="flex-1 space-y-4 min-w-0">
                   <div className="flex-1">
-                    <p className="font-medium text-sm">{fromLocationShort}</p>
-                    <p className="text-xs text-muted-foreground truncate max-w-full">
+                    <p className="font-medium text-sm break-words">{fromLocationShort}</p>
+                    <p className="text-xs text-muted-foreground break-words">
                       {ride.from_location.replace(fromLocationShort + ",", "")}
                     </p>
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-sm">{toLocationShort}</p>
-                    <p className="text-xs text-muted-foreground truncate max-w-full">
+                    <p className="font-medium text-sm break-words">{toLocationShort}</p>
+                    <p className="text-xs text-muted-foreground break-words">
                       {ride.to_location.replace(toLocationShort + ",", "")}
                     </p>
                   </div>
@@ -672,30 +678,38 @@ export default function DashboardPage({
               </div>
 
               <div className="space-y-2 border rounded-lg p-3 bg-card">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-1">
                   <span className="text-sm font-medium">Requester:</span>
-                  <span>{getRequesterName(ride)}</span>
+                  <span className="text-sm break-words max-w-[60%] text-right">
+                    {getRequesterName(ride)}
+                  </span>
                 </div>
                 {ride.status === "accepted" && (
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
                     <span className="text-sm font-medium">Offered by:</span>
-                    <span>{getOfferedByText(ride)}</span>
+                    <span className="text-sm break-words max-w-[60%] text-right">
+                      {getOfferedByText(ride)}
+                    </span>
                   </div>
                 )}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-1">
                   <span className="text-sm font-medium">Rider:</span>
-                  <span>{ride.rider_name}</span>
+                  <span className="text-sm break-words max-w-[60%] text-right">
+                    {ride.rider_name}
+                  </span>
                 </div>
                 {ride.rider_phone && (
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
                     <span className="text-sm font-medium">Rider Phone:</span>
-                    <span>{ride.rider_phone}</span>
+                    <span className="text-sm break-words max-w-[60%] text-right">
+                      {ride.rider_phone}
+                    </span>
                   </div>
                 )}
                 {ride.note && (
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">Note:</span>
-                    <span className="text-sm break-words max-w-[70%]">{ride.note}</span>
+                    <span className="text-sm break-words">{ride.note}</span>
                   </div>
                 )}
               </div>
@@ -793,30 +807,32 @@ export default function DashboardPage({
             <div>
               {["active", "available", "history"].map((tab) => (
                 <TabsContent key={tab} value={tab}>
-                  <ScrollArea className="h-[calc(100vh-300px)] pr-3">
-                    {isInitialLoading ? (
-                      Array(7)
-                        .fill(0)
-                        .map((_, i) => <RideCardSkeleton key={i} />)
-                    ) : (
-                      <>
-                        {tab === "active" && renderRides(activeRides)}
-                        {tab === "available" && renderRides(availableRides)}
-                        {tab === "history" && (
-                          <>
-                            {renderRides(historyRides)}
-                            <div className="mt-4 text-center">
-                              <Button
-                                onClick={() => router.push("/ride-history")}
-                                variant="outline"
-                              >
-                                View Full Ride History
-                              </Button>
-                            </div>
-                          </>
-                        )}
-                      </>
-                    )}
+                  <ScrollArea className="h-[calc(100vh-300px)] pr-3 w-full">
+                    <div className="w-full">
+                      {isInitialLoading ? (
+                        Array(7)
+                          .fill(0)
+                          .map((_, i) => <RideCardSkeleton key={i} />)
+                      ) : (
+                        <>
+                          {tab === "active" && renderRides(activeRides)}
+                          {tab === "available" && renderRides(availableRides)}
+                          {tab === "history" && (
+                            <>
+                              {renderRides(historyRides)}
+                              <div className="mt-4 text-center">
+                                <Button
+                                  onClick={() => router.push("/ride-history")}
+                                  variant="outline"
+                                >
+                                  View Full Ride History
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </ScrollArea>
                 </TabsContent>
               ))}
