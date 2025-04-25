@@ -245,8 +245,7 @@ export default function WelcomePage() {
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Enhanced Header */}
       <motion.header
-        className={`fixed top-4 left-0 right-0 z-50 transition-all duration-300 border rounded-full w-11/12 m-auto shadow-lg bg-background/80 backdrop-blur-sm"
-          }`}
+        className="fixed top-4 left-0 right-0 z-50 transition-all duration-300 border rounded-full w-11/12 m-auto shadow-lg bg-background/80 backdrop-blur-md"
         initial={{ y: -100 }}
         animate={{
           y: showHeader ? 0 : -100,
@@ -258,7 +257,7 @@ export default function WelcomePage() {
         }}
       >
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">RideShare</h1>
+          <h1 className="text-2xl font-bold text-primary-3">RideShare</h1>
           <nav>
             {status === "authenticated" ? (
               <Button

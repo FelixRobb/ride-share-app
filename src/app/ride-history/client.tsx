@@ -527,7 +527,18 @@ export default function RideHistoryClient() {
         )}
 
         {statusFilter !== "all" && (
-          <Badge variant="secondary" className="px-3 py-1">
+          <Badge
+            variant="secondary"
+            className={`px-3 py-1 ${
+              statusFilter === "completed"
+                ? "bg-blue-500"
+                : statusFilter === "accepted"
+                  ? "bg-green-500"
+                  : statusFilter === "cancelled"
+                    ? "bg-destructive"
+                    : "bg-border"
+            }`}
+          >
             Status: {STATUS_OPTIONS.find((s) => s.value === statusFilter)?.label}
             <Button
               variant="ghost"
@@ -593,7 +604,7 @@ export default function RideHistoryClient() {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="pl-4 pr-4 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="pl-4 pr-4 w-full rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -643,7 +654,7 @@ export default function RideHistoryClient() {
             </div>
           ) : (
             // Empty state
-            <div className="text-center py-12 border rounded-lg bg-muted/20">
+            <div className="text-center py-12 rounded-lg bg-muted/20">
               <div className="flex flex-col items-center justify-center space-y-3">
                 <div className="rounded-full bg-muted p-3">
                   <Search className="h-6 w-6 text-muted-foreground" />

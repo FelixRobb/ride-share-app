@@ -227,9 +227,6 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           // If we've tried many times and still can't find the element,
           // let's force a resolve to prevent getting stuck
           if (targetCheckAttemptsRef.current > 20) {
-            console.log(
-              `Target element ${target} not found after multiple attempts, continuing anyway`
-            );
             observer.disconnect();
             setIsTargetReady(true);
             resolve();
@@ -517,7 +514,7 @@ const WelcomeBanner: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 50 }}
       transition={{ duration: 0.2 }}
-      className="fixed bottom-20 md:bottom-4 left-0 right-0 z-50 w-11/12 mx-auto md:w-80 md:right-4 md:left-auto md:mx-0 shadow-lg"
+      className="fixed bottom-20 md:bottom-4 left-0 right-0 z-50 w-11/12 mx-auto sm:w-80 sm:right-4 sm:left-auto sm:mx-0"
     >
       <Card className="border-primary/20 shadow-md shadow-primary/10">
         <CardContent className="p-3 flex items-center">
