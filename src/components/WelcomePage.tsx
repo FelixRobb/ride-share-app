@@ -257,7 +257,7 @@ export default function WelcomePage() {
         }}
       >
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary-3">RideShare</h1>
+          <h1 className="text-2xl font-bold text-primary">RideShare</h1>
           <nav>
             {status === "authenticated" ? (
               <Button

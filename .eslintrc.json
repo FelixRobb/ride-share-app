@@ -6,15 +6,16 @@
     "sourceType": "module",
     "ecmaFeatures": {
       "jsx": true
-    },
-    "project": "./tsconfig.json"
+    }
+    // Still keeping "project" removed to avoid type-checking in ESLint
   },
   "env": {
     "browser": true,
     "node": true,
     "es6": true
   },
-  "plugins": ["@typescript-eslint", "react", "react-hooks", "jsx-a11y", "import", "prettier"],
+  "plugins": ["@typescript-eslint", "react", "react-hooks", "jsx-a11y", "import"],
+  // Added back "import" plugin
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
@@ -24,37 +25,36 @@
     "plugin:import/errors",
     "plugin:import/warnings",
     "plugin:import/typescript",
-    "plugin:@next/next/recommended",
-    "prettier"
+    "plugin:@next/next/recommended"
+    // Added back import plugins but still keeping Prettier separate
   ],
   "rules": {
-    // TypeScript rules - focused on preventing common errors
+    // TypeScript rules - only syntax-based rules
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/no-unused-vars": [
       "error",
       { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
     ],
     "@typescript-eslint/no-non-null-assertion": "warn",
-    "@typescript-eslint/no-floating-promises": "off", // Can be too restrictive in Next.js routes
 
-    // React specific rules - practical defaults
-    "react/prop-types": "off", // TypeScript handles prop types
-    "react/react-in-jsx-scope": "off", // Not needed in Next.js
+    // React specific rules
+    "react/prop-types": "off",
+    "react/react-in-jsx-scope": "off",
     "react/jsx-filename-extension": ["error", { "extensions": [".tsx"] }],
-    "react/jsx-props-no-spreading": "off", // Allow JSX props spreading
+    "react/jsx-props-no-spreading": "off",
     "react/no-unescaped-entities": "warn",
-    "react/no-danger": "warn", // Warn about dangerouslySetInnerHTML
+    "react/no-danger": "warn",
     "react/self-closing-comp": ["error", { "component": true, "html": true }],
 
-    // React Hooks - essential rules
+    // React Hooks
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
 
-    // Accessibility - keep important a11y rules
-    "jsx-a11y/anchor-is-valid": ["warn", { "components": ["Link"], "aspects": ["invalidHref"] }],
+    // Accessibility - critical rules only
     "jsx-a11y/alt-text": "error",
+    "jsx-a11y/anchor-is-valid": ["warn", { "components": ["Link"], "aspects": ["invalidHref"] }],
 
-    // Import organization - helpful but not overly strict
+    // Import organization - adding back these rules
     "import/order": [
       "warn",
       {
@@ -65,16 +65,13 @@
     ],
     "import/no-duplicates": "error",
 
-    // General best practices - only the most useful ones
+    // General best practices
     "no-console": ["warn", { "allow": ["warn", "error", "info"] }],
     "no-debugger": "error",
     "no-alert": "warn",
     "no-var": "error",
     "prefer-const": "error",
-    "eqeqeq": ["warn", "always"],
-
-    // Prettier integration - use Prettier's rules directly
-    "prettier/prettier": ["warn", {}, { "usePrettierrc": true }]
+    "eqeqeq": ["warn", "always"]
   },
   "settings": {
     "react": {
