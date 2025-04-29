@@ -1048,7 +1048,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
 
             {/* Secondary actions dropdown */}
             {getSecondaryActions().length > 0 && (
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="w-full sm:w-auto">
                     <MoreHorizontal className="h-4 w-4 mr-2" />
