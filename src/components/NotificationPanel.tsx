@@ -328,7 +328,7 @@ const NotificationList = ({
           destination = `/profile?tab=contacts`;
           break;
         case "newRide":
-          destination = `/dashboard`;
+          destination = `/dashboard?tab=available`;
           break;
         // Admin notifications and others might not have a specific destination
         default:
