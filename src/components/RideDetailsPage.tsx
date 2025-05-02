@@ -1056,28 +1056,19 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {getSecondaryActions().map((action, index) =>
-                    action.destructive ? (
+                  {getSecondaryActions().map((action, index) => (
+                    <>
                       <DropdownMenuItem
                         key={index}
                         onClick={action.onClick}
                         disabled={action.disabled}
-                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                        className={action.destructive ? "text-destructive" : ""}
                       >
                         {action.icon}
                         {action.label}
                       </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem
-                        key={index}
-                        onClick={action.onClick}
-                        disabled={action.disabled}
-                      >
-                        {action.icon}
-                        {action.label}
-                      </DropdownMenuItem>
-                    )
-                  )}
+                    </>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}

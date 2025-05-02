@@ -593,8 +593,8 @@ export default function WelcomePage() {
       <footer
         className={`
         bg-gradient-to-r from-primary/5 to-secondary/5 
-        rounded-lg mx-${isLargeScreen ? "6" : "4"} 
-        mb-20 md:mb-6 py-6 px-4 
+        rounded-lg mx-${isLargeScreen ? "8" : "4"} 
+        mb-20 py-6 px-4 
         shadow-md border border-border/50
       `}
       >

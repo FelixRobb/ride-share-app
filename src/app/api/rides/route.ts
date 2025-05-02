@@ -69,9 +69,14 @@ export async function POST(request: NextRequest) {
       // Notify contacts about the new ride
       const { data: contacts, error: contactsError } = await supabase
         .from("contacts")
-        .select("contact_id")
-        .eq("user_id", requester_id)
-        .eq("status", "accepted");
+        .select(
+          `
+      *,
+      user:users!contacts_user_id_fkey (id, name, phone),
+      contact:users!contacts_contact_id_fkey (id, name, phone)
+    `
+        )
+        .or(`user_id.eq.${requester_id},contact_id.eq.${requester_id}`);
 
       if (contactsError) throw contactsError;
 
