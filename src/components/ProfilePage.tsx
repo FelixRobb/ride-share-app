@@ -7,8 +7,6 @@ import {
   Phone,
   Car,
   Loader,
-  Moon,
-  Sun,
   Monitor,
   Settings,
   Shield,
@@ -22,7 +20,6 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useTheme } from "next-themes";
 import type React from "react";
 import { useState, useEffect, useCallback } from "react";
 import PhoneInput from "react-phone-number-input";
@@ -86,6 +83,7 @@ import {
 } from "../utils/api";
 
 import { ContactManager } from "./ContactDialog";
+import ThemeToggleButton from "./ui/theme-toggle-button";
 
 interface ProfilePageProps {
   currentUser: User;
@@ -135,14 +133,6 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
   // Inside the ProfilePage component, add the tutorial context
   // Add this after the other useState declarations
   const { currentStep, getTabForCurrentStep } = useTutorial();
-
-  const { setTheme } = useTheme();
-  const [currentMode, setCurrentMode] = useState<"system" | "light" | "dark">(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("theme") as "system" | "light" | "dark") || "system";
-    }
-    return "system";
-  });
 
   const [newPasswordStrength, setNewPasswordStrength] = useState<string>("");
 
@@ -198,13 +188,6 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
   }, [fetchData]);
 
   useEffect(() => {
-    localStorage.setItem("theme", currentMode);
-    setTheme(currentMode);
-  }, [currentMode, setTheme]);
-
-  // Add an effect to handle tab switching during tutorial
-  // Add this effect after the other useEffect hooks
-  useEffect(() => {
     // Get the tab that should be active for the current tutorial step
     const tabForStep = getTabForCurrentStep();
 
@@ -219,11 +202,6 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
       return () => clearTimeout(timeoutId);
     }
   }, [currentStep, getTabForCurrentStep, pathname]);
-
-  const toggleTheme = (newMode: "system" | "light" | "dark") => {
-    setCurrentMode(newMode);
-    localStorage.setItem("theme", newMode);
-  };
 
   const logout = async () => {
     router.push("/logout");
@@ -1192,48 +1170,29 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
             ) : (
               <>
                 <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-xl flex items-center">
-                      <Monitor className="h-5 w-5 mr-2 text-primary" /> App Appearance
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-xl flex items-center gap-2 sm:gap-3">
+                      <span className="inline-flex items-center justify-center rounded-full bg-primary/10 p-2 mr-2 sm:mr-0">
+                        <Monitor className="h-5 w-5 text-primary" />
+                      </span>
+                      <span>App Appearance</span>
                     </CardTitle>
-                    <CardDescription>Customize how the app looks on your device</CardDescription>
+                    <CardDescription className="text-sm sm:text-base">
+                      Customize how the app looks on your device
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="bg-secondary/30 p-4 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
-                      <div>
-                        <h3 className="font-medium mb-1">Theme Preference</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Select how you want the application to appear
+                    <div className="flex flex-col sm:flex-row items-center sm:items-stretch justify-between gap-4 sm:gap-8 bg-secondary/40 p-4 sm:p-6 rounded-xl transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold mb-1 text-base sm:text-lg">
+                          Theme Preference
+                        </h3>
+                        <p className="text-sm text-muted-foreground max-w-xs">
+                          Choose your preferred appearance mode for a comfortable experience.
                         </p>
                       </div>
-                      <div className="inline-flex w-fit gap-1 md:self-end self-center items-center rounded-full bg-background p-1 shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
-                        <button
-                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
-                            currentMode === "system" ? "bg-accent" : "hover:bg-accent/50"
-                          }`}
-                          onClick={() => toggleTheme("system")}
-                          aria-label="System theme"
-                        >
-                          <Monitor className="h-4 w-4" />
-                        </button>
-                        <button
-                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
-                            currentMode === "light" ? "bg-accent" : "hover:bg-accent/50"
-                          }`}
-                          onClick={() => toggleTheme("light")}
-                          aria-label="Light theme"
-                        >
-                          <Sun className="h-4 w-4" />
-                        </button>
-                        <button
-                          className={`flex items-center justify-center rounded-full p-1.5 transition-colors ${
-                            currentMode === "dark" ? "bg-accent" : "hover:bg-accent/50"
-                          }`}
-                          onClick={() => toggleTheme("dark")}
-                          aria-label="Dark theme"
-                        >
-                          <Moon className="h-4 w-4" />
-                        </button>
+                      <div className="flex items-center justify-center sm:justify-end w-full sm:w-auto">
+                        <ThemeToggleButton variant="circle-blur" start="top-left" />
                       </div>
                     </div>
                   </CardContent>
