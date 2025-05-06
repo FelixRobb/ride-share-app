@@ -1,11 +1,12 @@
 "use client";
 
-import { MoonIcon, SunIcon } from "lucide-react";
+import { ComputerIcon, MoonIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { AnimationStart, AnimationVariant, createAnimation } from "@/hooks/theme-animations";
+import { cn } from "@/lib/utils";
 
 interface ThemeToggleAnimationProps {
   variant?: AnimationVariant;
@@ -21,6 +22,12 @@ export default function ThemeToggleButton({
   url = "",
 }: ThemeToggleAnimationProps) {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // After mounting, we can safely show the themed content
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const styleId = "theme-transition-styles";
 
@@ -40,13 +47,19 @@ export default function ThemeToggleButton({
 
   const toggleTheme = useCallback(() => {
     const animation = createAnimation(variant, start, url);
-
     updateStyles(animation.css);
 
     if (typeof window === "undefined") return;
 
     const switchTheme = () => {
-      setTheme(theme === "light" ? "dark" : "light");
+      // Cycle through: light -> dark -> system
+      if (theme === "light") {
+        setTheme("dark");
+      } else if (theme === "dark") {
+        setTheme("system");
+      } else {
+        setTheme("light");
+      }
     };
 
     if (!document.startViewTransition) {
@@ -57,25 +70,54 @@ export default function ThemeToggleButton({
     document.startViewTransition(switchTheme);
   }, [variant, start, url, updateStyles, setTheme, theme]);
 
+  // Get the icon based on the current theme
+  const getIcon = () => {
+    if (!mounted) return null;
+
+    if (theme === "system") {
+      return <ComputerIcon className="size-[1.2rem]" />;
+    } else if (theme === "light") {
+      return <SunIcon className="size-[1.2rem]" />;
+    } else {
+      return <MoonIcon className="size-[1.2rem]" />;
+    }
+  };
+
+  // Get the label for hover tooltip
+  const getThemeLabel = () => {
+    if (theme === "system") return "System";
+    if (theme === "light") return "Light";
+    return "Dark";
+  };
+
   return (
     <Button
       onClick={toggleTheme}
-      variant="ghost"
+      variant="outline"
       size="icon"
-      className="w-9 p-0 h-9 relative group rounded-full"
-      name="Theme Toggle Button"
+      className={cn(
+        "w-10 h-10 rounded-full relative group transition-all duration-300",
+        "hover:scale-110 hover:shadow-md",
+        "border border-primary/20 bg-background/80 backdrop-blur-sm"
+      )}
+      aria-label="Theme Toggle Button"
     >
-      <SunIcon className="size-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <MoonIcon className="absolute size-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-      <span className="sr-only">Theme Toggle </span>
+      <div className="relative flex items-center justify-center transition-all duration-300">
+        {getIcon()}
+      </div>
+      <span className="sr-only">Toggle {getThemeLabel()} Theme</span>
+
+      {/* Hover tooltip */}
+      <span className="absolute -bottom-8 scale-0 group-hover:scale-100 transition-transform duration-200 py-1 px-2 rounded-md text-xs bg-background border shadow-sm">
+        {getThemeLabel()}
+      </span>
+
       {showLabel && (
         <>
           <span className="hidden group-hover:block border rounded-full px-2 absolute -top-10">
-            {" "}
             variant = {variant}
           </span>
           <span className="hidden group-hover:block border rounded-full px-2 absolute -bottom-10">
-            {" "}
             start = {start}
           </span>
         </>
