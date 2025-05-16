@@ -6,8 +6,8 @@
     "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "lint:fix": "eslint --fix 'src/**/*.{js,jsx,ts,tsx}'",
+    "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}' --config .eslintrc.json",
+    "lint:fix": "eslint --fix 'src/**/*.{js,jsx,ts,tsx}' --config .eslintrc.json",
     "npminstall": "npm install"
   },
   "dependencies": {

@@ -39,7 +39,7 @@ export default function EditRideClient() {
   return (
     <Layout>
       <Suspense fallback={<div className="p-4 text-center">Hold on... Fetching ride details</div>}>
-        <EditRidePage currentUser={currentUser} rideId={id as string} />
+        <EditRidePage rideId={id as string} />
       </Suspense>
     </Layout>
   );

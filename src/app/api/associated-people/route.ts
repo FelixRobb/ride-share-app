@@ -67,19 +67,38 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { userId, name, relationship } = await request.json();
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user.id) {
+    return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+        "Surrogate-Control": "no-store",
+      },
+    });
+  }
 
   try {
+    const { name, relationship } = await request.json();
+
+    if (!name || !relationship) {
+      return NextResponse.json({ error: "Name and relationship are required" }, { status: 400 });
+    }
+
     const { data, error } = await supabase
       .from("associated_people")
-      .insert({ user_id: userId, name, relationship })
+      .insert({ user_id: session.user.id, name, relationship })
       .select()
       .single();
 
     if (error) throw error;
 
     return NextResponse.json({ associatedPerson: data });
-  } catch {
+  } catch (error) {
+    console.error("Error creating associated person:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       {
@@ -97,13 +116,26 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user.id) {
+    return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+        "Surrogate-Control": "no-store",
+      },
+    });
+  }
+
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
-  const userId = searchParams.get("userId");
 
-  if (!id || !userId) {
+  if (!id) {
     return NextResponse.json(
-      { error: "Associated person ID and User ID are required" },
+      { error: "Associated person ID is required" },
       {
         status: 400,
         headers: {
@@ -122,7 +154,7 @@ export async function DELETE(request: Request) {
       .from("associated_people")
       .delete()
       .eq("id", id)
-      .eq("user_id", userId);
+      .eq("user_id", session.user.id);
 
     if (error) throw error;
 

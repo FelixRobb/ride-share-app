@@ -28,17 +28,16 @@ import { cn } from "@/lib/utils";
 import { updateRide, fetchEditRideData } from "@/utils/api";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
-import type { RideData, User } from "../types";
+import type { RideData } from "../types";
 
 const LocationSearch = dynamic(() => import("./LocationSearch"), { ssr: false });
 const MapDialog = dynamic(() => import("./MapDialog"), { ssr: false });
 
 interface EditRidePageProps {
-  currentUser: User;
   rideId: string;
 }
 
-export default function EditRidePage({ currentUser, rideId }: EditRidePageProps) {
+export default function EditRidePage({ rideId }: EditRidePageProps) {
   const [rideData, setRideData] = useState<RideData | null>(null);
   const [isFromMapOpen, setIsFromMapOpen] = useState(false);
   const [isToMapOpen, setIsToMapOpen] = useState(false);
@@ -85,7 +84,7 @@ export default function EditRidePage({ currentUser, rideId }: EditRidePageProps)
         }
         rideData.rider_phone = phoneNumber.format("E.164");
       }
-      await updateRide(rideId, rideData, currentUser.id);
+      await updateRide(rideId, rideData);
       toast.success("Your ride has been updated successfully.");
       router.push(`/rides/${rideId}`);
     } catch (error) {

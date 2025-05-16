@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 
+import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
 
 export async function POST(request: Request) {
-  const { userId, reviewerName, review, rating } = await request.json();
-
+  const { reviewerName, review, rating } = await request.json();
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user.id) {
+    return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+  }
+  const userId = session.user.id;
   if (!userId || !reviewerName || !review || !rating) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }

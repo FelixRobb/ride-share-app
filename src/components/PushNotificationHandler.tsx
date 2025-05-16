@@ -14,7 +14,7 @@ interface PushNotificationMessage {
   body?: string;
 }
 
-export default function PushNotificationHandler({ userId }: { userId: string }) {
+export default function PushNotificationHandler() {
   const [showPermissionPopup, setShowPermissionPopup] = useState(false);
   const [hasSeenPopup, setHasSeenPopup] = useState(false);
   const [deviceId] = useState(() => getDeviceId());
@@ -70,7 +70,6 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
         },
         body: JSON.stringify({
           subscription: subscription.toJSON(),
-          userId,
           deviceId,
           deviceName: deviceInfo.name,
         }),
@@ -83,7 +82,7 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
       const data = await response.json();
       return data.enabled;
     },
-    [userId, deviceId, deviceInfo.name]
+    [deviceId, deviceInfo.name]
   );
 
   const deleteSubscription = useCallback(async () => {
@@ -94,7 +93,6 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId,
           deviceId,
         }),
       });
@@ -108,7 +106,7 @@ export default function PushNotificationHandler({ userId }: { userId: string }) 
       console.error("Failed to delete subscription:", error);
       return false;
     }
-  }, [userId, deviceId]);
+  }, [deviceId]);
 
   const handlePermissionGranted = useCallback(
     async (registration: ServiceWorkerRegistration) => {

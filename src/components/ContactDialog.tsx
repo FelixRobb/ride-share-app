@@ -232,7 +232,7 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
           throw new Error("Invalid phone number");
         }
         const e164PhoneNumber = phoneNumber.format("E.164");
-        await addContact(currentUser.id, e164PhoneNumber);
+        await addContact(e164PhoneNumber);
         await fetchProfileData();
         setSearchQuery("");
         setSearchResults([]);
@@ -246,7 +246,7 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
         setAddingUserId(null);
       }
     },
-    [currentUser.id, isOnline, fetchProfileData, fetchSuggestedContacts]
+    [isOnline, fetchProfileData, fetchSuggestedContacts]
   );
 
   const handleAcceptContact = useCallback(
@@ -254,7 +254,7 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
       if (!isOnline) return;
       setAddingUserId(contactId);
       try {
-        await acceptContact(contactId, currentUser.id);
+        await acceptContact(contactId);
         await fetchProfileData();
         // Update the selectedContact state if it's the one being accepted
         if (selectedContact && selectedContact.id === contactId) {
@@ -272,7 +272,7 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
         setAddingUserId(null);
       }
     },
-    [currentUser.id, isOnline, fetchProfileData, selectedContact, setSelectedContact]
+    [isOnline, fetchProfileData, selectedContact, setSelectedContact]
   );
 
   // Replace the handleDeleteContact function with this updated version
@@ -291,7 +291,7 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
     const contactId = contactToDelete.id;
     setDeletingContactId(contactId);
     try {
-      const result = await deleteContact(contactId, currentUser.id);
+      const result = await deleteContact(contactId);
       await fetchProfileData();
       setIsContactDetailsOpen(false);
 
@@ -326,7 +326,7 @@ export function ContactManager({ currentUser, contacts, fetchProfileData }: Cont
       setDeletingContactId(null);
       setContactToDelete(null);
     }
-  }, [contactToDelete, currentUser.id, isOnline, fetchProfileData]);
+  }, [contactToDelete, isOnline, fetchProfileData]);
 
   const getContactStatus = useCallback(
     (user: ExtendedUser | Contact): string | null => {

@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 
+import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
 
 export async function POST(request: Request) {
-  const { subscription, userId, deviceId, deviceName } = await request.json();
-
+  const { subscription, deviceId, deviceName } = await request.json();
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user.id) {
+    return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+  }
+  const userId = session.user.id;
   try {
     const { error } = await supabase.from("push_subscriptions").upsert(
       {
@@ -29,8 +37,14 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { userId, deviceId } = await request.json();
-
+  const { deviceId } = await request.json();
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user.id) {
+    return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+  }
+  const userId = session.user.id;
   try {
     const { error } = await supabase
       .from("push_subscriptions")

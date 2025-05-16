@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
+import { getUserContacts } from "@/lib/contactService";
 import { supabase } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
@@ -67,19 +68,10 @@ export async function POST(request: NextRequest) {
       if (insertError) throw insertError;
 
       // Notify contacts about the new ride
-      const { data: contacts, error: contactsError } = await supabase
-        .from("contacts")
-        .select(
-          `
-      *,
-      user:users!contacts_user_id_fkey (id, name, phone),
-      contact:users!contacts_contact_id_fkey (id, name, phone)
-    `
-        )
-        .or(`user_id.eq.${requester_id},contact_id.eq.${requester_id}`);
+      const { data: contacts, error: contactsError } = await getUserContacts(requester_id);
+      // Removed console.log statement
 
       if (contactsError) throw contactsError;
-
       // Fetch the current user's name
       const { data: currentUser, error: userError } = await supabase
         .from("users")
@@ -89,14 +81,20 @@ export async function POST(request: NextRequest) {
 
       if (userError) throw userError;
 
-      for (const contact of contacts) {
+      // Fixed: Map through the contacts array correctly
+      const contactNotifications = contacts.map((contact) => ({
+        user_id: contact.user_id?.toString() === userId ? contact.contact_id : contact.user_id,
+      }));
+
+      // Fixed: Access each contact item in the array correctly
+      for (const contact of contactNotifications) {
         await sendImmediateNotification(
-          contact.contact_id,
+          contact.user_id, // Fixed: Using contact.user_id instead of contactNotifications.user_id
           "New Ride Available",
           `A new ride is available from your contact ${currentUser.name} from ${from_location} to ${to_location}`
         );
         await supabase.from("notifications").insert({
-          user_id: contact.contact_id,
+          user_id: contact.user_id, // Fixed: Using contact.user_id
           message: `A new ride is available from your contact ${currentUser.name} from ${from_location} to ${to_location}`,
           type: "newRide",
           related_id: newRide.id,

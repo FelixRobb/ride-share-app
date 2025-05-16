@@ -1,12 +1,12 @@
 import type { User, RideData, Contact, AssociatedPerson, Note, BugReportFormData } from "../types";
 
-export const createRide = async (rideData: RideData, userId: string) => {
+export const createRide = async (rideData: RideData) => {
   const response = await fetch("/api/rides", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ ...rideData, requester_id: userId }),
+    body: JSON.stringify({ ...rideData }),
   });
   if (response.ok) {
     return await response.json();
@@ -16,13 +16,12 @@ export const createRide = async (rideData: RideData, userId: string) => {
   }
 };
 
-export const acceptRide = async (rideId: string, userId: string) => {
+export const acceptRide = async (rideId: string) => {
   const response = await fetch(`/api/rides/${rideId}/accept`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ userId }),
   });
   if (response.ok) {
     return await response.json();
@@ -32,13 +31,12 @@ export const acceptRide = async (rideId: string, userId: string) => {
   }
 };
 
-export const cancelRequest = async (rideId: string, userId: string) => {
+export const cancelRequest = async (rideId: string) => {
   const response = await fetch(`/api/rides/${rideId}/cancelrequest`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ userId }),
   });
   if (response.ok) {
     return await response.json();
@@ -48,13 +46,12 @@ export const cancelRequest = async (rideId: string, userId: string) => {
   }
 };
 
-export const cancelOffer = async (rideId: string, userId: string) => {
+export const cancelOffer = async (rideId: string) => {
   const response = await fetch(`/api/rides/${rideId}/canceloffer`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ userId }),
   });
   if (response.ok) {
     return await response.json();
@@ -64,13 +61,13 @@ export const cancelOffer = async (rideId: string, userId: string) => {
   }
 };
 
-export const updateRide = async (rideId: string, rideData: RideData, userId: string) => {
+export const updateRide = async (rideId: string, rideData: RideData) => {
   const response = await fetch(`/api/rides/${rideId}/edit`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ ...rideData, userId }),
+    body: JSON.stringify({ ...rideData }),
   });
 
   if (!response.ok) {
@@ -81,13 +78,13 @@ export const updateRide = async (rideId: string, rideData: RideData, userId: str
   return await response.json();
 };
 
-export const addNote = async (rideId: string, userId: string, note: string): Promise<Note> => {
+export const addNote = async (rideId: string, note: string): Promise<Note> => {
   const response = await fetch(`/api/rides/${rideId}/notes`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ userId, note }),
+    body: JSON.stringify({ note }),
   });
   if (response.ok) {
     const data = await response.json();
@@ -108,13 +105,13 @@ export const fetchNotes = async (rideId: string): Promise<Note[]> => {
   }
 };
 
-export const editNote = async (noteId: string, userId: string, note: string): Promise<Note> => {
+export const editNote = async (noteId: string, note: string): Promise<Note> => {
   const response = await fetch(`/api/rides/${noteId}/notes`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ noteId, userId, note }),
+    body: JSON.stringify({ noteId, note }),
   });
   if (response.ok) {
     const data = await response.json();
@@ -125,13 +122,13 @@ export const editNote = async (noteId: string, userId: string, note: string): Pr
   }
 };
 
-export const deleteNote = async (noteId: string, userId: string): Promise<void> => {
+export const deleteNote = async (noteId: string): Promise<void> => {
   const response = await fetch(`/api/rides/${noteId}/notes`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ noteId, userId }),
+    body: JSON.stringify({ noteId }),
   });
   if (!response.ok) {
     const errorData = await response.json();
@@ -139,13 +136,13 @@ export const deleteNote = async (noteId: string, userId: string): Promise<void> 
   }
 };
 
-export const markNoteAsSeen = async (noteId: string, userId: string): Promise<void> => {
+export const markNoteAsSeen = async (noteId: string): Promise<void> => {
   const response = await fetch(`/api/rides/${noteId}/notes`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ noteId, userId }),
+    body: JSON.stringify({ noteId }),
   });
   if (!response.ok) {
     const errorData = await response.json();
@@ -153,11 +150,11 @@ export const markNoteAsSeen = async (noteId: string, userId: string): Promise<vo
   }
 };
 
-export const addContact = async (userId: string, contactPhone: string): Promise<Contact> => {
+export const addContact = async (contactPhone: string): Promise<Contact> => {
   const response = await fetch("/api/contacts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, contactPhone }),
+    body: JSON.stringify({ contactPhone }),
   });
   const data = await response.json();
   if (response.ok && data.contact) {
@@ -167,11 +164,11 @@ export const addContact = async (userId: string, contactPhone: string): Promise<
   }
 };
 
-export const acceptContact = async (contactId: string, userId: string): Promise<Contact> => {
+export const acceptContact = async (contactId: string): Promise<Contact> => {
   const response = await fetch(`/api/contacts/${contactId}/accept`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId }),
+    body: JSON.stringify({ contactId }),
   });
   const data = await response.json();
   if (response.ok && data.contact) {
@@ -181,11 +178,11 @@ export const acceptContact = async (contactId: string, userId: string): Promise<
   }
 };
 
-export const deleteContact = async (contactId: string, userId: string) => {
+export const deleteContact = async (contactId: string) => {
   const response = await fetch(`/api/contacts/${contactId}`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId }),
+    body: JSON.stringify({ contactId }),
   });
   if (!response.ok) {
     const errorData = await response.json();
@@ -224,14 +221,13 @@ export const changePassword = async (
 };
 
 export const addAssociatedPerson = async (
-  userId: string,
   name: string,
   relationship: string
 ): Promise<AssociatedPerson> => {
   const response = await fetch("/api/associated-people", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, name, relationship }),
+    body: JSON.stringify({ name, relationship }),
   });
   const data = await response.json();
   if (response.ok && data.associatedPerson) {
@@ -267,20 +263,19 @@ export const markNotificationsAsRead = async (userId: string, notificationIds: s
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ userId, notificationIds }),
+    body: JSON.stringify({ notificationIds }),
   });
   if (!response.ok) {
     throw new Error("Failed to mark notifications as read");
   }
 };
 
-export const finishRide = async (rideId: string, userId: string) => {
+export const finishRide = async (rideId: string) => {
   const response = await fetch(`/api/rides/${rideId}/finish`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ userId }),
   });
   if (response.ok) {
     return await response.json();

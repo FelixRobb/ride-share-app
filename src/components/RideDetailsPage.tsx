@@ -440,7 +440,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
 
     setIsActionLoading(true);
     try {
-      await acceptRide(ride.id, currentUser.id);
+      await acceptRide(ride.id);
       await fetchData(true);
       toast.success("Ride offered successfully.");
     } catch {
@@ -460,7 +460,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
     try {
       setIsActionLoading(true);
       setIsCancelRequestDialogOpen(false);
-      await cancelRequest(ride.id, currentUser.id);
+      await cancelRequest(ride.id);
       await fetchData(true);
       toast.success("Ride request cancelled successfully.");
       router.push("/dashboard");
@@ -481,7 +481,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
     try {
       setIsActionLoading(true);
       setIsCancelOfferDialogOpen(false);
-      await cancelOffer(ride.id, currentUser.id);
+      await cancelOffer(ride.id);
       await fetchData(true);
       toast.success("Ride offer cancelled successfully.");
       setIsCancelOfferDialogOpen(false);
@@ -499,7 +499,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
     setIsActionLoading(true);
     setIsFinishRideDialogOpen(false);
     try {
-      await finishRide(ride.id, currentUser.id);
+      await finishRide(ride.id);
       await fetchData(true);
       toast.success("Ride marked as completed.");
     } catch {
@@ -1057,17 +1057,15 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   {getSecondaryActions().map((action, index) => (
-                    <>
-                      <DropdownMenuItem
-                        key={index}
-                        onClick={action.onClick}
-                        disabled={action.disabled}
-                        className={action.destructive ? "text-destructive" : ""}
-                      >
-                        {action.icon}
-                        {action.label}
-                      </DropdownMenuItem>
-                    </>
+                    <DropdownMenuItem
+                      key={index}
+                      onClick={action.onClick}
+                      disabled={action.disabled}
+                      className={action.destructive ? "text-destructive" : ""}
+                    >
+                      {action.icon}
+                      {action.label}
+                    </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>

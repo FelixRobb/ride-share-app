@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 
+import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
@@ -61,7 +63,14 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { userId, note } = await request.json();
+  const { note } = await request.json();
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user.id) {
+    return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+  }
+  const userId = session.user.id;
   const url = new URL(request.url);
   const rideId = url.pathname.split("/").at(-2);
 
@@ -115,8 +124,14 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const { noteId, userId, note } = await request.json();
-
+  const { noteId, note } = await request.json();
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user.id) {
+    return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+  }
+  const userId = session.user.id;
   try {
     const { data: updatedNote, error: updateError } = await supabase
       .from("ride_notes")
@@ -135,8 +150,14 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { noteId, userId } = await request.json();
-
+  const { noteId } = await request.json();
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user.id) {
+    return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+  }
+  const userId = session.user.id;
   try {
     const { error: deleteError } = await supabase
       .from("ride_notes")
@@ -155,8 +176,14 @@ export async function DELETE(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const { noteId, userId } = await request.json();
-
+  const { noteId } = await request.json();
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user.id) {
+    return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+  }
+  const userId = session.user.id;
   try {
     const { data: note, error: fetchError } = await supabase
       .from("ride_notes")

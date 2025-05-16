@@ -34,7 +34,6 @@ export function ReviewForm() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: session.user.id,
           reviewerName: session.user.name,
           review,
           rating,

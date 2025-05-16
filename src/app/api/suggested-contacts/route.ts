@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
+import { getUserContacts } from "@/lib/contactService";
 import { supabase } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -27,10 +28,7 @@ export async function GET() {
   try {
     // 1. Get ALL contacts of the current user (both accepted and pending)
     // We need this to exclude them from suggestions later
-    const { data: allUserContacts, error: allUserContactsError } = await supabase
-      .from("contacts")
-      .select("user_id, contact_id, status")
-      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
+    const { data: allUserContacts, error: allUserContactsError } = await getUserContacts(userId);
 
     if (allUserContactsError) throw allUserContactsError;
 

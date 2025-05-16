@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
+import { getUserContacts } from "@/lib/contactService";
 import { supabase } from "@/lib/db";
 import { generateETag, isETagMatch } from "@/utils/etag";
 
@@ -34,16 +35,7 @@ export async function GET(req: NextRequest) {
 
     if (userError) throw userError;
 
-    const { data: contacts, error: contactsError } = await supabase
-      .from("contacts")
-      .select(
-        `
-      *,
-      user:users!contacts_user_id_fkey (id, name, phone),
-      contact:users!contacts_contact_id_fkey (id, name, phone)
-    `
-      )
-      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
+    const { data: contacts, error: contactsError } = await getUserContacts(userId);
 
     if (contactsError) throw contactsError;
 

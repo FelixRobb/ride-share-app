@@ -105,7 +105,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
           );
 
           if (unseenNotes.length > 0) {
-            await Promise.all(unseenNotes.map((note) => markNoteAsSeen(note.id, currentUser.id)));
+            await Promise.all(unseenNotes.map((note) => markNoteAsSeen(note.id)));
           }
         } catch {
           if (isMounted) {
@@ -203,7 +203,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
   const confirmDeleteNote = async () => {
     if (noteToDeleteId) {
       try {
-        await deleteNote(noteToDeleteId, currentUser.id);
+        await deleteNote(noteToDeleteId);
         setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteToDeleteId));
         toast.success("Message deleted successfully.");
       } catch {
@@ -235,7 +235,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
 
         if (isEditing && editingNoteId) {
           // Handle edit case
-          const updatedNote = await editNote(editingNoteId, currentUser.id, newNote);
+          const updatedNote = await editNote(editingNoteId, newNote);
           setNotes((prevNotes) =>
             prevNotes.map((note) => (note.id === editingNoteId ? updatedNote : note))
           );
@@ -246,7 +246,7 @@ export function RideMessages({ ride, currentUser, contacts, isOnline }: RideMess
           setIsEditing(false);
         } else {
           // Handle new message case
-          const addedNote = await addNote(ride.id, currentUser.id, newNote);
+          const addedNote = await addNote(ride.id, newNote);
           if (addedNote) {
             setNotes((prevNotes) => [...prevNotes, addedNote]);
             setNotesUpdated(true); // Flag that notes were updated

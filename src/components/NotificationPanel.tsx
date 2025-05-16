@@ -1,6 +1,5 @@
 "use client";
 
-
 import {
   Bell,
   MessageSquare,
@@ -693,7 +692,7 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
       const response = await fetch(`/api/push-subscription`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, deviceId }),
+        body: JSON.stringify({ deviceId }),
       });
 
       if (!response.ok) {

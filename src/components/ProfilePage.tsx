@@ -335,7 +335,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
       const response = await fetch(`/api/push-subscription`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, deviceId }),
+        body: JSON.stringify({ deviceId }),
       });
 
       if (!response.ok) {
@@ -468,7 +468,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
       const associaterela = newAssociatedPerson.relationship.trim();
       try {
         setIsAddingAssociatedPerson(true);
-        await addAssociatedPerson(user.id, associatename, associaterela);
+        await addAssociatedPerson(associatename, associaterela);
         setNewAssociatedPerson({ name: "", relationship: "" });
         await fetchData(true);
         toast.success(`${associatename} added successfully!`);

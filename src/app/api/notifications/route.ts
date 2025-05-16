@@ -86,8 +86,14 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { userId, notificationIds } = await request.json();
-
+  const { notificationIds } = await request.json();
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user.id) {
+    return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+  }
+  const userId = session.user.id;
   if (!userId || !notificationIds || !Array.isArray(notificationIds)) {
     return NextResponse.json({ error: "Invalid request data" }, { status: 400 });
   }

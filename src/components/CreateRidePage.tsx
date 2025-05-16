@@ -245,7 +245,7 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
       if (rideData.rider_phone && !rideData.rider_phone.startsWith("+")) {
         throw new Error("Invalid phone number format. Please use the international format.");
       }
-      await createRide(rideData, currentUser.id);
+      await createRide(rideData);
       if (!isMounted) return;
       toast.success("Your ride request has been created successfully.");
       localStorage.removeItem("rideData");

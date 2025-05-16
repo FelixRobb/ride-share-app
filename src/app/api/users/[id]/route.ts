@@ -1,6 +1,7 @@
 import { parsePhoneNumber } from "libphonenumber-js";
 import { NextResponse } from "next/server";
 
+import { getUserContacts } from "@/lib/contactService";
 import { supabase } from "@/lib/db";
 import { sendEmail, getEmailChangeNotificationContent } from "@/lib/emailService";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
@@ -92,10 +93,7 @@ export async function DELETE(request: Request) {
 
   try {
     // Get user's contacts
-    const { data: contacts, error: contactsError } = await supabase
-      .from("contacts")
-      .select("*")
-      .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
+    const { data: contacts, error: contactsError } = await getUserContacts(userId);
 
     if (contactsError) throw contactsError;
 
