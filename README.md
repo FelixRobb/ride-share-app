@@ -1,4 +1,4 @@
-# RideShare  [![Netlify Status](https://api.netlify.com/api/v1/badges/3c958cfa-2c19-4c63-9cdb-d5a09d003b81/deploy-status)](https://app.netlify.com/sites/rideshareappweb/deploys)
+# RideShare [![Netlify Status](https://api.netlify.com/api/v1/badges/3c958cfa-2c19-4c63-9cdb-d5a09d003b81/deploy-status)](https://app.netlify.com/sites/rideshareappweb/deploys)
 
 RideShare is a modern, user-friendly web application that facilitates ride-sharing among users. It allows people to connect, offer, and request rides within their trusted network of contacts.
 
@@ -56,18 +56,21 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 ### Installation
 
 1. Clone the repository:
+
    ```
    git clone https://github.com/FelixRobb/ride-share-app/
    cd ride-share-app
    ```
 
 2. Install dependencies:
+
    ```
    npm install
    ```
 
 3. Set up environment variables:
    Create a `.env.local` file in the root directory and add the following variables:
+
    ```
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -78,6 +81,7 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
    ```
 
 4. Run the development server:
+
    ```
    npm run dev
    ```
@@ -134,4 +138,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 Félix Robb - [rideshareapp.mail@gmail.com](rideshareapp.mail@gmail.com)
 
 Github Project Link: [https://github.com/FelixRobb/ride-share-app/](https://github.com/FelixRobb/ride-share-app/)
-

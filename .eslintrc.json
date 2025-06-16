@@ -26,7 +26,6 @@
     "plugin:import/warnings",
     "plugin:import/typescript",
     "plugin:@next/next/recommended"
-    // Added back import plugins but still keeping Prettier separate
   ],
   "rules": {
     // TypeScript rules - only syntax-based rules

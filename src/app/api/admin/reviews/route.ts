@@ -9,12 +9,7 @@ export async function GET() {
   try {
     const { data, error } = await supabase
       .from("reviews")
-      .select(
-        `
-        *,
-        users:user_id (name)
-      `
-      )
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -26,7 +21,7 @@ export async function GET() {
       rating: review.rating,
       createdAt: review.created_at,
       is_approved: review.is_approved,
-      userName: review.users.name,
+      userName: review.reviewer_name,
     }));
 
     return NextResponse.json(
